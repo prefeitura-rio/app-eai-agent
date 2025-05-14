@@ -7,16 +7,15 @@ import uuid
 
 from src.config import env
 
-client=letta_service.get_client()
-
-def create_agentic_search_agent(tags: List[str] = None, name: str = None):
+async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
   """Cria um novo agentic_search agent"""
   try:
-    agent = client.agents.create(
+    client = letta_service.get_client_async()
+    agent = await client.agents.create(
       agent_type="memgpt_agent",
       name=f"agentic_search_{name if name else str(uuid.uuid4())}",
       description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
-      context_window_limit=2000000,
+      context_window_limit=1048576,
       include_base_tools=True,
       include_base_tool_rules=False,
       tools=[
@@ -25,7 +24,7 @@ def create_agentic_search_agent(tags: List[str] = None, name: str = None):
       ],
       tags=tags if tags else ["agentic_search"],
       model=env.LLM_MODEL,
-      embedding_config=env.EMBEDDING_MODEL,
+      embedding=env.EMBEDDING_MODEL,
       system=get_agentic_search_system_prompt_text(),
       memory_blocks=get_agentic_search_memory_blocks(),
     )

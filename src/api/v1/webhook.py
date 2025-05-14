@@ -16,7 +16,7 @@ async def processar_evento(evento: WebhookEvent):
         evento: Dados do evento a ser processado
     """
     try:
-        if evento.tipo == "message":
+        if evento.type == "message":
           try:
             if "user_number" in evento.data and "message" in evento.data:
               
@@ -24,10 +24,10 @@ async def processar_evento(evento: WebhookEvent):
                 user_number = evento.data["user_number"]
                 message = evento.data["message"]
                 
-                agent_id = letta_service.get_agent_id_by_tags([user_number])
+                agent_id = await letta_service.get_agent_id_by_tags([user_number])
                 
                 if not agent_id:
-                  agent = letta_service.create_agent(agent_type="agentic_search", tags=[user_number])
+                  agent = await letta_service.create_agent(agent_type="agentic_search", tags=[user_number])
                   agent_id = agent.id         
                 
                 response = await letta_service.send_message(
@@ -41,15 +41,16 @@ async def processar_evento(evento: WebhookEvent):
             print(f"Erro ao processar evento: {str(e)}")
             return {"status": "error", "message": str(e)}
           
-        elif evento.tipo == "timer":
+        elif evento.type == "timer":
           try:
             if "user_number" in evento.data:
               
-                agent_id = letta_service.get_agent_id_by_tags([user_number])
+                user_number = evento.data["user_number"]
+                agent_id = await letta_service.get_agent_id_by_tags([user_number])
                 
                 if not agent_id:
                   
-                  agent = letta_service.create_agent(agent_type="agentic_search", tags=[user_number])
+                  agent = await letta_service.create_agent(agent_type="agentic_search", tags=[user_number])
                   agent_id = agent.id
                   
                 response = await letta_service.send_timer_message(agent_id=agent_id)
@@ -68,8 +69,8 @@ async def receber_webhook(evento: WebhookEvent):
     """
     Endpoint para receber eventos webhook.
     """
-    tipos_validos = ["mensagem", "timer", "notificacao"]
-    if evento.tipo not in tipos_validos:
+    tipos_validos = ["message", "timer"]
+    if evento.type not in tipos_validos:
         raise HTTPException(status_code=400, detail=f"Tipo de evento inválido. Valores aceitos: {', '.join(tipos_validos)}")
     
     response = await processar_evento(evento)

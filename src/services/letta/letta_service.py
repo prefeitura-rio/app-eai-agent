@@ -1,9 +1,8 @@
 import os
 from typing import List
-from letta_client import Letta
+from letta_client import Letta, AsyncLetta
 
 import src.config.env as env
-from src.services.letta.agents.agentic_search_agent import create_agentic_search_agent
 from src.services.letta.message_wrapper import process_stream
 
 class LettaService:
@@ -12,21 +11,30 @@ class LettaService:
         self.token = env.LETTA_API_TOKEN
         self.base_url = env.LETTA_API_URL
         self.client = Letta(token=self.token, base_url=self.base_url)
+        self.client_async = AsyncLetta(token=self.token, base_url=self.base_url)
             
     def get_client(self):
         """Retorna a instância do cliente Letta."""
         return self.client
-    
-    def get_agent_id_by_tags(self, tags: List[str]):
-        """Retorna o ID do agente que possui as tags especificadas."""
-        return self.client.agents.list(tags=tags).agents[0].id
       
-    def create_agent(self, agent_type: str, tags: List[str] = None, name: str = None):
+    def get_client_async(self):
+        """Retorna a instância do cliente Letta assíncrono."""
+        return self.client_async
+    
+    async def get_agent_id_by_tags(self, tags: List[str]):
+        """Retorna o ID do agente que possui as tags especificadas."""
+        agents = await self.client_async.agents.list(tags=tags)
+        if agents and len(agents) > 0:
+            return agents[0].id
+        return None
+      
+    async def create_agent(self, agent_type: str, tags: List[str] = None, name: str = None):
       """Cria um novo agente de acordo com o tipo de agente passado."""
-      dispatch = {
-        "agentic_search": create_agentic_search_agent,
-      }
-      return dispatch[agent_type](tags=tags, name=name)
+      if agent_type == "agentic_search":
+          from src.services.letta.agents.agentic_search_agent import create_agentic_search_agent
+          return await create_agentic_search_agent(tags=tags, name=name)
+      else:
+          raise ValueError(f"Tipo de agente não suportado: {agent_type}")
       
     async def send_timer_message(self,agent_id: str) -> str:
         """
