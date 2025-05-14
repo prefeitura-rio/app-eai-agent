@@ -4,4 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.12",
+    "letta-client>=0.1.143",
+    "redis>=6.1.0",
+    "taskipy>=1.14.1",
+    "uvicorn>=0.34.2",
+]
