@@ -3,6 +3,7 @@ from typing import List
 from letta_client import Letta
 
 import src.config.env as env
+from src.services.letta.agents.agentic_search_agent import create_agentic_search_agent
 from src.services.letta.message_wrapper import process_stream
 
 class LettaService:
@@ -19,6 +20,12 @@ class LettaService:
     def get_agent_id_by_tags(self, tags: List[str]):
         """Retorna o ID do agente que possui as tags especificadas."""
         return self.client.agents.list(tags=tags).agents[0].id
+      
+    def create_agent(self, agent_type: str, tags: List[str] = None, name: str = None):
+      dispatch = {
+        "agentic_search": create_agentic_search_agent,
+      }
+      return dispatch[agent_type](tags=tags, name=name)
       
     async def send_timer_message(self,agent_id: str) -> str:
         """

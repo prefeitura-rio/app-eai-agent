@@ -9,7 +9,7 @@ from src.config import env
 
 client=letta_service.get_client()
 
-def create_agentic_search_agent(tags: List[str], name: str = None):
+def create_agentic_search_agent(tags: List[str] = None, name: str = None):
   try:
     agent = client.agents.create(
       agent_type="memgpt_agent",
@@ -22,7 +22,7 @@ def create_agentic_search_agent(tags: List[str], name: str = None):
       ],
       tool_rules=[
       ],
-      tags=tags,
+      tags=tags if tags else ["agentic_search"],
       model=env.LLM_MODEL,
       embedding_config=env.EMBEDDING_MODEL,
       system=get_agentic_search_system_prompt_text(),
