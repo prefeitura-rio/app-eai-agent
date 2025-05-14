@@ -10,6 +10,7 @@ from src.config import env
 client=letta_service.get_client()
 
 def create_agentic_search_agent(tags: List[str] = None, name: str = None):
+  """Cria um novo agentic_search agent"""
   try:
     agent = client.agents.create(
       agent_type="memgpt_agent",
