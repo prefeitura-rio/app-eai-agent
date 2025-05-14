@@ -3,7 +3,7 @@ def get_agentic_search_memory_blocks():
   return [
     {
       "label": "human",
-      "limit": 5000,
+      "limit": 10000,
       "value": """\
 This is my section of core memory devoted to information about the human.
 I don't yet know anything about them.

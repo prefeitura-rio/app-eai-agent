@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.core.security.dependencies import validar_token
 from src.services.letta.letta_service import letta_service
-from src.schemas.letta import MessageRequest, MessageResponse
+from src.schemas.letta_schema import MessageRequest, MessageResponse
 
 router = APIRouter(prefix="/letta", tags=["Letta"], dependencies=[Depends(validar_token)])
 

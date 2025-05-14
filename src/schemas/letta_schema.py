@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class MessageRequest(BaseModel):
     """Schema para requisição de envio de mensagem para o agente Letta."""
@@ -25,4 +25,4 @@ class MessageResponse(BaseModel):
             "example": {
                 "response": "Olá! Sou o assistente Letta e estou aqui para ajudar."
             }
-        } 
+        }

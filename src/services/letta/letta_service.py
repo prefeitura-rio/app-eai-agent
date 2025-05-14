@@ -60,9 +60,9 @@ class LettaService:
         Envia uma mensagem para o agente e recebe a resposta.
         
         Args:
-            sender_info: Informações sobre o remetente
+            agent_id: ID do agente
             message_content: Conteúdo da mensagem
-            message_type: Tipo da mensagem
+            name: Nome do remetente
             
         Returns:
             str: Resposta do agente
