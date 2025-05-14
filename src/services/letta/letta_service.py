@@ -22,6 +22,7 @@ class LettaService:
         return self.client.agents.list(tags=tags).agents[0].id
       
     def create_agent(self, agent_type: str, tags: List[str] = None, name: str = None):
+      """Cria um novo agente de acordo com o tipo de agente passado."""
       dispatch = {
         "agentic_search": create_agentic_search_agent,
       }
