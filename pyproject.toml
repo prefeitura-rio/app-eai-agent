@@ -12,3 +12,7 @@ dependencies = [
     "taskipy>=1.14.1",
     "uvicorn>=0.34.2",
 ]
+
+[tool.taskipy.tasks]
+ngrok = "ngrok http --url=ideal-burro-barely.ngrok-free.app 8089"
+serve = "uvicorn src.main:app --reload --host 0.0.0.0 --port 8089 --log-level info"

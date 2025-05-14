@@ -25,3 +25,4 @@ wheels/
 *.swp
 *.swo
 .DS_Store
+logs/

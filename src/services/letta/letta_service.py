@@ -3,6 +3,7 @@ from typing import List
 from letta_client import Letta
 
 import src.config.env as env
+from src.services.letta.message_wrapper import process_stream
 
 class LettaService:
     def __init__(self):
@@ -18,5 +19,68 @@ class LettaService:
     def get_agent_id_by_tags(self, tags: List[str]):
         """Retorna o ID do agente que possui as tags especificadas."""
         return self.client.agents.list(tags=tags).agents[0].id
+      
+    async def send_timer_message(self,agent_id: str) -> str:
+        """
+        Envia uma mensagem de timer para o agente.
+        
+        Returns:
+            str: Resposta do agente
+        """
+        client = self.client
+            
+        letta_message = {
+            "role": "user",
+            "content": '[EVENTO] Este é um heartbeat automático temporizado (visível apenas para você). Use este evento para enviar uma mensagem, refletir e editar suas memórias, ou não fazer nada. Cabe a você! Considere, no entanto, que esta é uma oportunidade para você pensar por si mesmo - já que seu circuito não será ativado até o próximo heartbeat automático/temporizado ou evento de mensagem recebida.'
+        }
+        
+        try:
+            response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
+            
+            if response:
+                agent_message_response = await process_stream(response)
+                return agent_message_response or ""
+            
+            return ""
+        except Exception as error:
+            print(f"Erro: {error}")
+            return 'Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde.'
+
+
+    async def send_message(self, agent_id: str, message_content: str, name: str = None) -> str:
+        """
+        Envia uma mensagem para o agente e recebe a resposta.
+        
+        Args:
+            sender_info: Informações sobre o remetente
+            message_content: Conteúdo da mensagem
+            message_type: Tipo da mensagem
+            
+        Returns:
+            str: Resposta do agente
+        """
+        client = self.client
+        
+        content = message_content
+        
+        letta_message = {
+            "role": "user",
+            "content": content
+        }
+        
+        if name:
+            letta_message["name"] = name
+        
+        try:
+            response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
+            
+            if response:
+                agent_message_response = await process_stream(response)
+                return agent_message_response or ""
+            
+            return ""
+        except Exception as error:
+            print(f"Erro: {error}")
+            return 'Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde.'
 
 letta_service = LettaService()
