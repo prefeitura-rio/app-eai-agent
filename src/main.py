@@ -21,7 +21,7 @@ logger.add(
 
 app = FastAPI(
     title="Agentic Search API",
-    description="API para busca agêntica utilizando Letta",
+    description="API que gerencia os fluxos e ferramentas dos agentes de IA da Prefeitura do Rio de Janeiro",
     version="0.1.0",
     docs_url=None,
     redoc_url=None,
@@ -60,17 +60,3 @@ async def custom_swagger_ui_html():
     )
 
 app.include_router(api_router)
-
-def start_dev_server():
-    """Inicia o servidor de desenvolvimento."""
-    uvicorn.run(
-        "src.main:app",
-        host="0.0.0.0",
-        port=8089,
-        reload=True,
-        log_level="info",
-    )
-
-if __name__ == "__main__":
-    os.makedirs("logs", exist_ok=True)
-    start_dev_server()
