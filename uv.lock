@@ -30,6 +30,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "letta-client" },
+    { name = "loguru" },
     { name = "redis" },
     { name = "taskipy" },
     { name = "uvicorn" },
@@ -39,6 +40,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "letta-client", specifier = ">=0.1.143" },
+    { name = "loguru", specifier = ">=0.7.3" },
     { name = "redis", specifier = ">=6.1.0" },
     { name = "taskipy", specifier = ">=1.14.1" },
     { name = "uvicorn", specifier = ">=0.34.2" },
@@ -157,6 +159,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/92/ee/c046855a79ff14bc0c6f95f4a17360ced194372ceddabbe2fb939012c962/letta_client-0.1.143.tar.gz", hash = "sha256:bdff6a752145e1e2acc629c552afc433a20263f8723d8b1074d24b877cf71451", size = 107025 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/83/81/a1350825b0101e916681713bc077b91d1e5e5231d1e12c9aacb684266bfa/letta_client-0.1.143-py3-none-any.whl", hash = "sha256:814651c142063191726b4933d6ff10039f84e7a90dbe196e00ae9c997c40b9b1", size = 280925 },
+]
+
+[[package]]
+name = "loguru"
+version = "0.7.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595 },
 ]
 
 [[package]]
@@ -322,4 +337,13 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a6/ae/9bbb19b9e1c450cf9ecaef06463e40234d98d95bf572fab11b4f19ae5ded/uvicorn-0.34.2.tar.gz", hash = "sha256:0e929828f6186353a80b58ea719861d2629d766293b6d19baf086ba31d4f3328", size = 76815 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b1/4b/4cef6ce21a2aaca9d852a6e84ef4f135d99fcd74fa75105e2fc0c8308acd/uvicorn-0.34.2-py3-none-any.whl", hash = "sha256:deb49af569084536d269fe0a6d67e3754f104cf03aba7c11c40f01aadf33c403", size = 62483 },
+]
+
+[[package]]
+name = "win32-setctime"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083 },
 ]

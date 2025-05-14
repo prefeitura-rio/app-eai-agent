@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.12",
     "letta-client>=0.1.143",
+    "loguru>=0.7.3",
     "redis>=6.1.0",
     "taskipy>=1.14.1",
     "uvicorn>=0.34.2",
