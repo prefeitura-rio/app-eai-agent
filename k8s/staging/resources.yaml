@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: agentic-search
-          image: ghcr.io/prefeitura-rio/agentic-search:latest
+          image: ghcr.io/prefeitura-rio/app-agentic-search:latest
           ports:
             - containerPort: 80
           envFrom:
