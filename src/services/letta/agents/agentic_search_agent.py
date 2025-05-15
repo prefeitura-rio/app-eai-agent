@@ -19,8 +19,10 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
       include_base_tools=True,
       include_base_tool_rules=False,
       tools=[
+        #TODO: Adicionar as ferramentas necessárias para o agente
       ],
       tool_rules=[
+        #TODO: Adicionar as regras necessárias para o agente
       ],
       tags=tags if tags else ["agentic_search"],
       model=env.LLM_MODEL,

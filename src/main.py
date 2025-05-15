@@ -13,7 +13,7 @@ from src.core.middlewares.logging import LoggingMiddleware
 logger.add(
     "logs/api_{time}.log",
     rotation="1 day",
-    retention="7 days",
+    retention="1 day",
     level="INFO",
     backtrace=True,
     diagnose=True,
