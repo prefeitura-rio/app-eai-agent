@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: staging-letta-pvc
+  namespace: staging-agentic-search
+  annotations:
+    argocd.argoproj.io/sync-options: Skip
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: staging-letta
+  namespace: staging-agentic-search
+  labels:
+    app: staging-letta
+spec:
+  selector:
+    app: staging-letta
+  ports:
+    - port: 8283
+      targetPort: 8283
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: staging-letta
+  namespace: staging-agentic-search
+  labels:
+    app: staging-letta
+spec:
+  serviceName: staging-letta
+  replicas: 1
+  selector:
+    matchLabels:
+      app: staging-letta
+  template:
+    metadata:
+      labels:
+        app: staging-letta
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: staging-letta
+          image: letta/letta:latest
+          ports:
+            - containerPort: 8283
+          env:
+            - name: PGDATA
+              value: '/var/lib/postgresql/data/pgdata'
+          envFrom:
+            - secretRef:
+                name: staging-agentic-search-secrets
+          volumeMounts:
+            - name: staging-letta-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: staging-letta-storage
+          persistentVolumeClaim:
+            claimName: staging-letta-pvc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: staging-letta
+  namespace: staging-agentic-search
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: 'letsencrypt'
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+spec:
+  tls:
+    - hosts:
+        - staging.letta.dados.rio
+      secretName: staging-letta-tls
+  rules:
+    - host: staging.letta.dados.rio
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: staging-letta
+                port:
+                  number: 8283
