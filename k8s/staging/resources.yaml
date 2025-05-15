@@ -2,12 +2,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: staging-agentic-search
+  name: agentic-search
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: staging-agentic-search
+      app: agentic-search
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -15,16 +15,16 @@ spec:
   template:
     metadata:
       labels:
-        app: staging-agentic-search
+        app: agentic-search
     spec:
       containers:
-        - name: staging-agentic-search
+        - name: agentic-search
           image: ghcr.io/prefeitura-rio/agentic-search:latest
           ports:
             - containerPort: 80
           envFrom:
             - secretRef:
-                name: staging-agentic-search-secrets
+                name: agentic-search-secrets
           livenessProbe:
             httpGet:
               path: /health
@@ -50,10 +50,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: staging-agentic-search
+  name: agentic-search
 spec:
   selector:
-    app: staging-agentic-search
+    app: agentic-search
   ports:
     - protocol: TCP
       port: 80
@@ -65,7 +65,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: staging-agentic-search
+  name: agentic-search
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /
@@ -75,7 +75,7 @@ spec:
   tls:
     - hosts:
         - agentic-search.staging.dados.rio
-      secretName: staging-agentic-search-tls
+      secretName: agentic-search-tls
   rules:
     - host: agentic-search.staging.dados.rio
       http:
@@ -84,6 +84,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: staging-agentic-search
+                name: agentic-search
                 port:
                   number: 80
