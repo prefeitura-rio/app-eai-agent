@@ -74,10 +74,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - staging.agentic.dados.rio
+        - agentic-search.staging.dados.rio
       secretName: staging-agentic-search-tls
   rules:
-    - host: staging.agentic.dados.rio
+    - host: agentic-search.staging.dados.rio
       http:
         paths:
           - path: /
