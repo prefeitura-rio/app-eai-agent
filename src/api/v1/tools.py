@@ -1,11 +1,8 @@
-# from fastapi import APIRouter, Depends, Body
-# from typing import Optional
+from fastapi import APIRouter, Depends
 
-# from src.core.security.dependencies import validar_token
-# from src.schemas.letta_schema import MessageRequest, MessageResponse
-# from src.services.letta.agents.tasks.google_search import google_search
+from src.core.security.dependencies import validar_token
 
-# router = APIRouter(prefix="/letta/tools", tags=["Letta", "Tools"], dependencies=[Depends(validar_token)])
+router = APIRouter(prefix="/letta/tools", tags=["Letta", "Tools"], dependencies=[Depends(validar_token)])
 
 # @router.get("/google_search", name="Busca Google")
 # async def google_search(
