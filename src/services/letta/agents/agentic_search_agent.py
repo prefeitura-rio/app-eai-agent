@@ -24,6 +24,11 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
         "typesense_search",
       ]
       tool_rules=[
+        ContinueToolRule(tool_name="conversation_search"),
+        ContinueToolRule(tool_name="core_memory_append"),
+        ContinueToolRule(tool_name="core_memory_replace"),
+        ContinueToolRule(tool_name="archival_memory_search"),
+        ContinueToolRule(tool_name="archival_memory_insert"),
         ContinueToolRule(tool_name="google_search"),
         ContinueToolRule(tool_name="typesense_search"),
         TerminalToolRule(tool_name="send_message"),
