@@ -160,6 +160,10 @@ function loadData() {
             })
     ])
     .then(([currentData, historyData]) => {
+        // Log dos dados recebidos para depuração
+        console.log('Dados atuais:', currentData);
+        console.log('Dados do histórico:', historyData);
+        
         // Preencher dados do prompt atual
         promptText.value = currentData.prompt || '';
         currentPromptId = currentData.prompt_id;
@@ -196,6 +200,12 @@ function renderHistory(prompts) {
         const isActive = prompt.is_active;
         const date = new Date(prompt.created_at).toLocaleDateString();
         
+        // Obter texto para preview - tentamos diferentes propriedades
+        let previewText = '(Sem conteúdo)';
+        if (typeof prompt.content === 'string') {
+            previewText = prompt.content;
+        }
+        
         const item = document.createElement('div');
         item.className = `history-item ${prompt.prompt_id === currentPromptId ? 'active' : ''}`;
         item.dataset.promptId = prompt.prompt_id;
@@ -211,45 +221,77 @@ function renderHistory(prompts) {
                     `<span class="metadata-badge">Autor: ${prompt.metadata.author}</span>` : ''}
             </div>
             <div class="text-truncate mt-1 small">
-                ${prompt.content.substring(0, 50)}...
+                ${previewText.substring(0, 50)}...
             </div>
         `;
         
         item.addEventListener('click', () => {
-            selectPrompt(prompt.prompt_id);
+            // Passa o próprio prompt para garantir acesso ao conteúdo completo
+            selectPromptById(prompt.prompt_id);
         });
         
         historyList.appendChild(item);
     });
 }
 
-function selectPrompt(promptId) {
-    // Encontrar o prompt pelo ID no array global
-    const prompt = promptsData.find(p => p.prompt_id === promptId);
+// Nova função para selecionar por ID e obter o prompt novamente via API
+function selectPromptById(promptId) {
+    console.log('Buscando prompt por ID:', promptId);
     
-    if (!prompt) {
-        console.error('Prompt não encontrado:', promptId);
-        return;
-    }
+    showLoading();
+    const agentType = agentTypeSelect.value;
     
-    // Atualizar o conteúdo com o prompt completo, não apenas a prévia
-    promptText.value = prompt.content;
-    currentPromptId = prompt.prompt_id;
-    
-    if (prompt.metadata) {
-        authorInput.value = prompt.metadata.author || '';
-        reasonInput.value = prompt.metadata.reason || '';
-    }
-    
-    // Atualizar a classe ativa
-    const items = historyList.querySelectorAll('.history-item');
-    items.forEach(item => item.classList.remove('active'));
-    
-    // Encontrar e marcar o novo item ativo
-    const activeItems = historyList.querySelectorAll(`.history-item[data-prompt-id="${promptId}"]`);
-    activeItems.forEach(item => {
-        item.classList.add('active');
-    });
+    // Buscar o prompt específico da API usando o history endpoint
+    apiRequest('GET', `/api/v1/system-prompt/history?agent_type=${agentType}`)
+        .then(data => {
+            // Encontrar o prompt específico pelo ID
+            const prompt = (data.prompts || []).find(p => p.prompt_id === promptId);
+            
+            if (!prompt) {
+                console.error('Prompt não encontrado no histórico:', promptId);
+                hideLoading();
+                return;
+            }
+            
+            console.log('Prompt encontrado:', prompt);
+            
+            // Agora buscamos o conteúdo completo usando o endpoint específico
+            return apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}&version=${prompt.version}`)
+                .then(fullPrompt => {
+                    console.log('Dados completos do prompt:', fullPrompt);
+                    
+                    // Usar o conteúdo completo do prompt
+                    promptText.value = fullPrompt.prompt || '';
+                    currentPromptId = promptId;
+                    
+                    if (prompt.metadata) {
+                        authorInput.value = prompt.metadata.author || '';
+                        reasonInput.value = prompt.metadata.reason || '';
+                    }
+                    
+                    // Atualizar a classe ativa
+                    const items = historyList.querySelectorAll('.history-item');
+                    items.forEach(item => item.classList.remove('active'));
+                    
+                    // Encontrar e marcar o novo item ativo
+                    const activeItem = historyList.querySelector(`.history-item[data-prompt-id="${promptId}"]`);
+                    if (activeItem) {
+                        activeItem.classList.add('active');
+                    }
+                    
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar conteúdo completo do prompt:', error);
+                    hideLoading();
+                    showAlert('Erro ao carregar o conteúdo completo do prompt', 'danger');
+                });
+        })
+        .catch(error => {
+            console.error('Erro ao buscar histórico para seleção de prompt:', error);
+            hideLoading();
+            showAlert('Erro ao selecionar prompt do histórico', 'danger');
+        });
 }
 
 // Helper para fazer requisições API
