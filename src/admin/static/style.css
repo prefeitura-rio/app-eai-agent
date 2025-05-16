@@ -121,23 +121,23 @@ body {
 
 /* Estilos para o editor expandido */
 .prompt-editor.expanded {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    height: 85vh;
-    max-width: 1300px;
-    z-index: 10005;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
-    resize: none;
-    padding: 25px;
-    margin: 0;
-    border: 2px solid var(--primary-color);
-    transition: all 0.3s ease;
-    font-size: 16px;
-    background-color: var(--card-bg);
-    border-radius: 16px;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    height: 85vh !important;
+    max-width: 1300px !important;
+    z-index: 9999 !important;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5) !important;
+    resize: none !important;
+    padding: 25px !important;
+    margin: 0 !important;
+    border: 2px solid var(--primary-color) !important;
+    transition: all 0.3s ease !important;
+    font-size: 16px !important;
+    background-color: var(--card-bg) !important;
+    border-radius: 16px !important;
 }
 
 /* Overlay para quando o editor estiver expandido */
@@ -150,7 +150,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    z-index: 10004;
+    z-index: 9998;
     display: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -184,7 +184,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10006;
+    z-index: 10000;
     transition: all 0.2s ease;
     color: white;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
@@ -570,4 +570,15 @@ input:checked + .slider:before {
 /* Garantir que o corpo da página não tenha scroll enquanto o editor estiver expandido */
 body.editor-expanded {
     overflow: hidden !important;
+    position: relative;
+}
+
+/* Ajustes para garantir visibilidade dos elementos expandidos */
+body.editor-expanded .close-expanded-editor,
+body.editor-expanded .prompt-editor.expanded {
+    display: flex !important;
+}
+
+body.editor-expanded .editor-overlay.active {
+    display: block !important;
 } 

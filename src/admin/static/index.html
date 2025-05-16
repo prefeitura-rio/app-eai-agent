@@ -102,12 +102,6 @@
                         <div class="position-relative">
                             <textarea id="promptText" class="prompt-editor" required></textarea>
                         </div>
-                        
-                        <!-- Overlay e botão de fechar em nível global para evitar problemas de sobreposição -->
-                        <div id="editorOverlay" class="editor-overlay"></div>
-                        <button id="closeExpandedEditor" class="close-expanded-editor" title="Fechar editor expandido">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
                     </div>
                     
                     <div class="row mb-3">
@@ -145,6 +139,12 @@
             </div>
         </div>
     </div>
+    
+    <!-- Overlay e botão de fechar em nível global -->
+    <div id="editorOverlay" class="editor-overlay"></div>
+    <button id="closeExpandedEditor" class="close-expanded-editor" title="Fechar editor expandido">
+        <i class="bi bi-x-lg"></i>
+    </button>
     
     <!-- JavaScript para modificar comportamento de login -->
     <script>

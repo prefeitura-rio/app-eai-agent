@@ -15,6 +15,7 @@
     let originalHeight = null;
     let editorContainer = null;
     let supportEmail = null;
+    let originalEditorParent = null;
     
     // Função para inicializar a funcionalidade
     function initialize() {
@@ -30,14 +31,14 @@
             return;
         }
         
-        // Salva a altura original
+        // Salva a altura original e o elemento pai
         originalHeight = editor.style.height || getComputedStyle(editor).height;
         editorContainer = editor.closest('.position-relative');
+        originalEditorParent = editor.parentNode;
         
-        // Garante que o overlay seja inserido no final do body para cobrir tudo
-        document.body.appendChild(overlay);
-        // Garante que o botão de fechar seja inserido no final do body
-        document.body.appendChild(closeButton);
+        // Configura o overlay e botão de fechar
+        overlay.style.display = 'none';
+        closeButton.style.display = 'none';
         
         // Remove o evento de duplo clique no editor para evitar conflitos
         // e adiciona apenas ao botão expandir
@@ -69,105 +70,152 @@
     // Função para expandir o editor
     function expandEditor(event) {
         if (!isExpanded) {
-            // Previne comportamento padrão
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            // Oculta temporariamente o texto de suporte para não aparecer sobre o editor
-            if (supportEmail) {
-                supportEmail.style.visibility = 'hidden';
-                supportEmail.style.opacity = '0';
-            }
-            
-            // Adiciona classe ao body para impedir scroll
-            document.body.classList.add('editor-expanded');
-            document.body.style.overflow = 'hidden';
-            
-            // Configura overlay para cobrir toda a tela
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100vw';
-            overlay.style.height = '100vh';
-            overlay.style.zIndex = '10004';
-            
-            // Mostra overlay com animação
-            overlay.classList.add('active');
-            
-            // Guarda o conteúdo e a posição do cursor
-            const content = editor.value;
-            const selectionStart = editor.selectionStart;
-            const selectionEnd = editor.selectionEnd;
-            
-            // Pequeno timeout para garantir a transição suave
-            setTimeout(() => {
-                // Configura o editor expandido
-                editor.classList.add('expanded');
-                editor.style.zIndex = '10005';
+            try {
+                // Previne comportamento padrão
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
                 
-                // Exibe o botão de fechar
-                closeButton.style.display = 'flex';
-                closeButton.style.zIndex = '10006';
-                closeButton.style.top = '20px';
-                closeButton.style.right = '20px';
+                // Guarda o conteúdo e a posição do cursor
+                const content = editor.value;
+                const selectionStart = editor.selectionStart;
+                const selectionEnd = editor.selectionEnd;
                 
-                // Atualiza estado
-                isExpanded = true;
+                // Oculta temporariamente o texto de suporte
+                if (supportEmail) {
+                    supportEmail.style.visibility = 'hidden';
+                    supportEmail.style.opacity = '0';
+                }
                 
-                // Restaura o conteúdo e a posição do cursor
-                editor.value = content;
-                editor.selectionStart = selectionStart;
-                editor.selectionEnd = selectionEnd;
+                // Impede scroll do body
+                document.body.classList.add('editor-expanded');
+                document.body.style.overflow = 'hidden';
                 
-                // Foca o editor para facilitar a digitação
+                // Move o overlay e botão para o body
+                if (!document.body.contains(overlay)) {
+                    document.body.appendChild(overlay);
+                }
+                if (!document.body.contains(closeButton)) {
+                    document.body.appendChild(closeButton);
+                }
+                
+                // Configura o overlay
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100vw';
+                overlay.style.height = '100vh';
+                overlay.style.zIndex = '9998';
+                overlay.style.display = 'block';
+                
+                // Mostra overlay com animação
                 setTimeout(() => {
-                    editor.focus();
-                }, 50);
-            }, 50);
+                    overlay.classList.add('active');
+                    
+                    // Move o editor para o final do body
+                    document.body.appendChild(editor);
+                    
+                    // Configura o editor expandido
+                    editor.classList.add('expanded');
+                    editor.style.zIndex = '9999';
+                    
+                    // Configura o botão de fechar
+                    closeButton.style.display = 'flex';
+                    closeButton.style.zIndex = '10000';
+                    closeButton.style.top = '20px';
+                    closeButton.style.right = '20px';
+                    
+                    // Restaura o conteúdo e a posição do cursor
+                    editor.value = content;
+                    editor.selectionStart = selectionStart;
+                    editor.selectionEnd = selectionEnd;
+                    
+                    // Atualiza estado
+                    isExpanded = true;
+                    
+                    // Foca o editor
+                    setTimeout(() => {
+                        editor.focus();
+                    }, 50);
+                }, 10);
+            } catch (error) {
+                console.error('Erro ao expandir editor:', error);
+            }
         }
     }
     
     // Função para colapsar o editor
     function collapseEditor() {
         if (isExpanded) {
-            // Guarda o conteúdo e a posição do cursor
-            const content = editor.value;
-            const selectionStart = editor.selectionStart;
-            const selectionEnd = editor.selectionEnd;
-            
-            // Remove classes na ordem correta para animação suave
-            editor.classList.remove('expanded');
-            
-            // Primeiro escondemos o botão fechar
-            closeButton.style.display = 'none';
-            
-            // Depois removemos o overlay (com um pequeno atraso para transição)
-            setTimeout(() => {
+            try {
+                // Guarda o conteúdo e a posição do cursor
+                const content = editor.value;
+                const selectionStart = editor.selectionStart;
+                const selectionEnd = editor.selectionEnd;
+                
+                // Remove classe expandida do editor
+                editor.classList.remove('expanded');
+                editor.style.zIndex = '';
+                
+                // Esconde o botão de fechar
+                closeButton.style.display = 'none';
+                
+                // Inicia animação de fade-out do overlay
                 overlay.classList.remove('active');
                 
-                // Restaura o scroll do corpo da página
+                // Dá tempo para a animação acontecer
+                setTimeout(() => {
+                    // Restaura o editor para sua posição original
+                    if (originalEditorParent && editor.parentNode !== originalEditorParent) {
+                        originalEditorParent.appendChild(editor);
+                    }
+                    
+                    // Esconde completamente o overlay
+                    overlay.style.display = 'none';
+                    
+                    // Restaura o scroll do corpo da página
+                    document.body.style.overflow = 'auto';
+                    document.body.classList.remove('editor-expanded');
+                    
+                    // Restaura a visibilidade do texto de suporte
+                    if (supportEmail) {
+                        supportEmail.style.visibility = 'visible';
+                        supportEmail.style.opacity = '0.8';
+                    }
+                    
+                    // Atualiza estado
+                    isExpanded = false;
+                    
+                    // Restaura o conteúdo e a posição do cursor
+                    editor.value = content;
+                    
+                    // Pequeno timeout para garantir que o editor esteja pronto
+                    setTimeout(() => {
+                        editor.selectionStart = selectionStart;
+                        editor.selectionEnd = selectionEnd;
+                        editor.focus();
+                    }, 10);
+                    
+                    // Garantir que a página faz scroll até o editor
+                    setTimeout(() => {
+                        editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                }, 200);
+            } catch (error) {
+                console.error('Erro ao colapsar editor:', error);
+                // Recuperação de erro: força o estado normal
+                if (originalEditorParent) {
+                    originalEditorParent.appendChild(editor);
+                }
+                editor.classList.remove('expanded');
+                closeButton.style.display = 'none';
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
                 document.body.style.overflow = 'auto';
                 document.body.classList.remove('editor-expanded');
-                
-                // Restaura a visibilidade do texto de suporte
-                if (supportEmail) {
-                    supportEmail.style.visibility = 'visible';
-                    supportEmail.style.opacity = '0.8';
-                }
-                
-                // Atualiza estado
                 isExpanded = false;
-                
-                // Restaura o conteúdo e a posição do cursor
-                editor.value = content;
-                editor.selectionStart = selectionStart;
-                editor.selectionEnd = selectionEnd;
-                
-                // Garantir que a página faz scroll até o editor
-                editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 150);
+            }
         }
     }
     
