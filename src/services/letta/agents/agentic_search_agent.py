@@ -5,7 +5,7 @@ from src.services.letta.agents.system_prompts.agentic_search_sp import get_agent
 from src.services.letta.letta_service import letta_service
 import uuid
 
-from letta_client import ContinueToolRule, TerminalToolRule, MaxCountPerStepToolRule
+from letta_client import ContinueToolRule
 from src.config import env
 
 async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
