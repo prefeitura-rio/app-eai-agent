@@ -111,4 +111,25 @@ class SystemPromptHistoryResponse(BaseModel):
                     }
                 ]
             }
+        }
+
+
+class SystemPromptResetResponse(BaseModel):
+    """Schema para resposta do reset de system prompt."""
+    success: bool = Field(..., description="Status geral da operação")
+    agent_type: str = Field(..., description="Tipo de agente que foi resetado")
+    agents_updated: Dict[str, bool] = Field(..., description="Status da atualização dos agentes")
+    message: str = Field("", description="Mensagem adicional sobre a operação")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "agent_type": "agentic_search",
+                "agents_updated": {
+                    "agt_123456789": True,
+                    "agt_987654321": True
+                },
+                "message": "System prompt resetado com sucesso para 2 agentes."
+            }
         } 

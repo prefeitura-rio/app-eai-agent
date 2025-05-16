@@ -6,6 +6,7 @@ from loguru import logger
 from src.db import get_db_session
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.services.letta.letta_service import letta_service
+from src.models.system_prompt_model import SystemPrompt, SystemPromptDeployment
 
 class SystemPromptService:
     """
@@ -280,5 +281,88 @@ class SystemPromptService:
             })
             
         return formatted_prompts
+    
+    async def reset_system_prompt(self,
+                                agent_type: str,
+                                update_agents: bool = False,
+                                db: Session = None) -> Dict[str, Any]:
+        """
+        Reseta o system prompt para o tipo de agente, removendo todo o histórico
+        e criando um novo prompt padrão.
+        
+        Args:
+            agent_type: Tipo do agente para resetar
+            update_agents: Se deve atualizar os agentes existentes
+            db: Sessão do banco de dados
+            
+        Returns:
+            Dict: Resultado da operação
+        """
+        result = {
+            "success": True,
+            "agents_updated": {}
+        }
+        
+        if db is None:
+            with get_db_session() as session:
+                db = session
+        
+        try:
+            prompt_ids = SystemPromptRepository.get_prompt_ids_by_agent_type(db, agent_type)
+            
+            if prompt_ids:
+                SystemPromptRepository.delete_deployments_by_prompt_ids(db, prompt_ids)
+            
+            SystemPromptRepository.delete_prompts_by_agent_type(db, agent_type)
+            
+            db.commit()
+            
+            default_prompt = self._get_default_prompt(agent_type)
+            
+            new_prompt = SystemPromptRepository.create_prompt(
+                db=db,
+                agent_type=agent_type,
+                content=default_prompt,
+                version=1,
+                metadata={"source": "reset", "reset_by": "api"}
+            )
+            
+            if update_agents:
+                agents_result = await self.update_all_agents_system_prompt(
+                    new_prompt=default_prompt,
+                    agent_type=agent_type,
+                    db=db,
+                    prompt_id=new_prompt.prompt_id
+                )
+                result["agents_updated"] = agents_result
+                
+                if agents_result and not all(agents_result.values()):
+                    result["success"] = False
+            
+            return result
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Erro ao resetar system prompt: {str(e)}")
+            result["success"] = False
+            return result
+    
+    def _get_default_prompt(self, agent_type: str) -> str:
+        """
+        Retorna o conteúdo padrão para um system prompt de acordo com o tipo de agente.
+        
+        Args:
+            agent_type: Tipo do agente
+            
+        Returns:
+            str: Texto padrão do system prompt
+        """
+        return f"""You are an AI assistant for the {agent_type} role.
+Follow these guidelines:
+1. Answer concisely but accurately
+2. Use tools when necessary
+3. Focus on providing factual information
+4. Be helpful, harmless, and honest"""
+
 
 system_prompt_service = SystemPromptService() 

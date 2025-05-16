@@ -203,4 +203,61 @@ class SystemPromptRepository:
         """
         return db.query(SystemPromptDeployment).filter(
             SystemPromptDeployment.prompt_id == prompt_id
-        ).order_by(desc(SystemPromptDeployment.deployed_at)).offset(offset).limit(limit).all() 
+        ).order_by(desc(SystemPromptDeployment.deployed_at)).offset(offset).limit(limit).all()
+    
+    @staticmethod
+    def delete_deployments_by_prompt_ids(db: Session, prompt_ids: List[str]) -> int:
+        """
+        Exclui todas as implantações associadas aos IDs de prompts fornecidos.
+        
+        Args:
+            db: Sessão do banco de dados
+            prompt_ids: Lista de IDs de prompts
+            
+        Returns:
+            int: Número de registros excluídos
+        """
+        if not prompt_ids:
+            return 0
+            
+        result = db.query(SystemPromptDeployment).filter(
+            SystemPromptDeployment.prompt_id.in_(prompt_ids)
+        ).delete(synchronize_session=False)
+        
+        return result
+    
+    @staticmethod
+    def delete_prompts_by_agent_type(db: Session, agent_type: str) -> int:
+        """
+        Exclui todos os prompts de um tipo de agente específico.
+        
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            
+        Returns:
+            int: Número de registros excluídos
+        """
+        result = db.query(SystemPrompt).filter(
+            SystemPrompt.agent_type == agent_type
+        ).delete(synchronize_session=False)
+        
+        return result
+    
+    @staticmethod
+    def get_prompt_ids_by_agent_type(db: Session, agent_type: str) -> List[str]:
+        """
+        Obtém todos os IDs de prompts de um tipo de agente.
+        
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            
+        Returns:
+            List[str]: Lista de IDs de prompts
+        """
+        prompts = db.query(SystemPrompt.prompt_id).filter(
+            SystemPrompt.agent_type == agent_type
+        ).all()
+        
+        return [p.prompt_id for p in prompts] if prompts else [] 

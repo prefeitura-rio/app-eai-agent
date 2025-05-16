@@ -12,7 +12,8 @@ from src.schemas.system_prompt_schema import (
     SystemPromptUpdateResponse,
     SystemPromptGetResponse,
     SystemPromptHistoryResponse,
-    SystemPromptHistoryItem
+    SystemPromptHistoryItem,
+    SystemPromptResetResponse
 )
 
 router = APIRouter(prefix="/system-prompt", tags=["System Prompt"], dependencies=[Depends(validar_token)])
@@ -213,4 +214,61 @@ async def get_system_prompt_by_id(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao obter system prompt por ID: {str(e)}"
+        )
+
+@router.delete("/reset", response_model=SystemPromptResetResponse)
+async def reset_system_prompt(
+    agent_type: str = Query(..., description="Tipo do agente para resetar o prompt"),
+    update_agents: bool = Query(False, description="Atualizar também os agentes existentes"),
+    db: Session = Depends(get_db)
+):
+    """
+    Remove todos os system prompts históricos para o tipo de agente especificado
+    e restaura para o valor padrão.
+    
+    Args:
+        agent_type: Tipo do agente
+        update_agents: Se verdadeiro, também atualiza os agentes existentes
+        db: Sessão do banco de dados
+        
+    Returns:
+        SystemPromptResetResponse: Resposta contendo o resultado da operação
+    """
+    try:
+        if not agent_type or agent_type.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="É necessário especificar um tipo de agente válido"
+            )
+            
+        result = await system_prompt_service.reset_system_prompt(
+            agent_type=agent_type,
+            update_agents=update_agents,
+            db=db
+        )
+        
+        message = "System prompt resetado com sucesso"
+        
+        if update_agents:
+            updated_agents = sum(1 for success in result["agents_updated"].values() if success)
+            total_agents = len(result["agents_updated"])
+            
+            if total_agents > 0:
+                message += f", {updated_agents}/{total_agents} agentes foram atualizados"
+        
+        return SystemPromptResetResponse(
+            success=result["success"],
+            agent_type=agent_type,
+            agents_updated=result.get("agents_updated", {}),
+            message=message
+        )
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao resetar system prompt: {str(e)}"
         ) 
