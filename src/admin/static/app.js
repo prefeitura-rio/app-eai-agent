@@ -35,6 +35,33 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.addEventListener('click', handleSavePrompt);
     logoutBtn.addEventListener('click', handleLogout);
     copyButton.addEventListener('click', handleCopyPrompt);
+    
+    // Adicionar event listener global para itens de histórico
+    document.addEventListener('click', function(e) {
+        console.log('Clique detectado em:', e.target);
+        
+        // Procurar pelo elemento .history-item mais próximo
+        const historyItem = e.target.closest('.history-item');
+        if (historyItem && historyItem.dataset.promptId) {
+            console.log('Clique em item do histórico detectado via delegação de eventos');
+            console.log('Prompt ID:', historyItem.dataset.promptId);
+            console.log('Versão:', historyItem.dataset.version);
+            
+            e.preventDefault();
+            e.stopPropagation();
+            selectPromptById(historyItem.dataset.promptId);
+        }
+    });
+    
+    // Adicionar debug específico para o historyList
+    if (historyList) {
+        console.log('Elemento historyList encontrado:', historyList);
+        historyList.addEventListener('click', function(e) {
+            console.log('Clique direto em historyList');
+        });
+    } else {
+        console.error('Elemento historyList não encontrado no DOM');
+    }
 });
 
 // Funções de UI
@@ -218,9 +245,32 @@ function loadData() {
         promptText.value = currentData.prompt || '';
         currentPromptId = currentData.prompt_id;
         
+        // Atualizar metadados iniciais
+        if (currentData.prompt_id) {
+            // Encontrar o prompt correspondente no histórico para obter metadados
+            const activePrompt = (historyData.prompts || []).find(p => p.prompt_id === currentData.prompt_id);
+            if (activePrompt && activePrompt.metadata) {
+                authorInput.value = activePrompt.metadata.author || '';
+                reasonInput.value = activePrompt.metadata.reason || '';
+            }
+        }
+        
         // Se for um prompt novo, mostramos mensagem de orientação
         if (currentData.is_new) {
             showAlert('Nenhum prompt configurado para este tipo de agente. Adicione o texto do prompt e clique em Salvar para criar o primeiro.', 'info');
+        }
+        
+        // Armazenar prompt atual no promptsData para fácil acesso
+        if (currentData.prompt && currentData.prompt_id && !historyData.prompts.some(p => p.prompt_id === currentData.prompt_id)) {
+            // Adicionar o prompt atual ao array caso ainda não esteja lá
+            historyData.prompts.unshift({
+                prompt_id: currentData.prompt_id,
+                version: currentData.version || 1,
+                content: currentData.prompt,
+                is_active: true,
+                created_at: currentData.created_at || new Date().toISOString(),
+                metadata: {}
+            });
         }
         
         // Salvar os dados dos prompts globalmente para acesso fácil
@@ -260,6 +310,8 @@ function renderHistory(prompts) {
         item.className = `history-item ${prompt.prompt_id === currentPromptId ? 'active' : ''}`;
         item.dataset.promptId = prompt.prompt_id;
         item.dataset.version = prompt.version;
+        
+        // Adaptando para corresponder ao layout visualizado na captura de tela
         item.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <span class="history-version">v${prompt.version}</span>
@@ -277,95 +329,111 @@ function renderHistory(prompts) {
             </div>
         `;
         
-        item.addEventListener('click', () => {
-            // Passa o próprio prompt para garantir acesso ao conteúdo completo
+        // Readicionando o listener de clique diretamente, além da delegação de eventos
+        item.addEventListener('click', function(e) {
+            console.log('Clique direto no item do histórico:', prompt.prompt_id);
             selectPromptById(prompt.prompt_id);
+            e.preventDefault();
+            e.stopPropagation();
         });
         
         historyList.appendChild(item);
     });
+    
+    // Adiciona uma verificação para debugging
+    console.log(`Renderizados ${prompts.length} itens no histórico`);
+    document.querySelectorAll('.history-item').forEach(item => {
+        console.log(`Item: v${item.dataset.version}, ID: ${item.dataset.promptId}`);
+    });
 }
 
-// Nova função para selecionar por ID e obter o prompt novamente via API
+// Nova função completamente reescrita para selecionar por ID
 function selectPromptById(promptId) {
-    console.log('Buscando prompt por ID:', promptId);
+    console.log('Iniciando seleção de prompt por ID:', promptId);
+    if (!promptId) {
+        console.error('ID de prompt inválido:', promptId);
+        showAlert('ID de prompt inválido', 'danger');
+        return;
+    }
     
     showLoading();
     const agentType = agentTypeSelect.value;
     
-    // Buscar o prompt específico da API usando o history endpoint
-    apiRequest('GET', `/api/v1/system-prompt/history?agent_type=${agentType}`)
-        .then(data => {
-            // Encontrar o prompt específico pelo ID
-            const prompt = (data.prompts || []).find(p => p.prompt_id === promptId);
+    // Encontrar o prompt no array local para obter a versão
+    const localPrompt = promptsData.find(p => p.prompt_id === promptId);
+    if (!localPrompt) {
+        console.error('Prompt não encontrado no histórico local:', promptId);
+        hideLoading();
+        showAlert('Prompt não encontrado no histórico local', 'danger');
+        return;
+    }
+    
+    console.log('Prompt encontrado localmente:', localPrompt);
+    const version = localPrompt.version;
+    
+    // Buscar pela API usando a versão específica
+    // Construir a URL para obter o conteúdo completo
+    const url = `/api/v1/system-prompt?agent_type=${agentType}&version=${version}`;
+    console.log('Buscando conteúdo completo na URL:', url);
+    
+    // Fazer requisição diretamente, sem passar por funções intermediárias
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log(`Resposta da API: ${response.status} ${response.statusText}`);
+        if (!response.ok) {
+            throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Dados recebidos da API:', data);
+        
+        // Atualizar o conteúdo do editor
+        promptText.value = data.prompt || '';
+        currentPromptId = promptId;
+        
+        // Atualizar metadados do formulário
+        if (localPrompt.metadata) {
+            authorInput.value = localPrompt.metadata.author || '';
+            reasonInput.value = localPrompt.metadata.reason || '';
+        }
+        
+        // Atualizar a classe ativa nos itens do histórico
+        updateActiveHistoryItem(promptId);
+        
+        // Mostrar mensagem de sucesso
+        showAlert('Prompt carregado com sucesso', 'success');
+        
+        hideLoading();
+    })
+    .catch(error => {
+        console.error('Erro ao buscar dados completos do prompt:', error);
+        
+        // Tentar usar dados locais como fallback
+        if (localPrompt.content) {
+            console.log('Usando dados locais como fallback:', localPrompt.content);
+            promptText.value = localPrompt.content;
+            currentPromptId = promptId;
             
-            if (!prompt) {
-                console.error('Prompt não encontrado no histórico:', promptId);
-                hideLoading();
-                showAlert('Prompt não encontrado no histórico', 'danger');
-                return;
+            if (localPrompt.metadata) {
+                authorInput.value = localPrompt.metadata.author || '';
+                reasonInput.value = localPrompt.metadata.reason || '';
             }
             
-            console.log('Prompt encontrado no histórico:', prompt);
-            
-            // Sempre buscar o conteúdo completo diretamente da API
-            console.log('Buscando conteúdo completo na API');
-            
-            // Buscar pela versão se estiver disponível
-            const versionParam = prompt.version ? `&version=${prompt.version}` : '';
-            
-            apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}${versionParam}`)
-                .then(fullPrompt => {
-                    console.log('Dados completos do prompt:', fullPrompt);
-                    
-                    // Usar o conteúdo completo do prompt
-                    promptText.value = fullPrompt.prompt || '';
-                    currentPromptId = promptId;
-                    
-                    // Atualizar metadados
-                    updatePromptMetadata(prompt);
-                    
-                    // Atualizar a classe ativa
-                    updateActiveHistoryItem(promptId);
-                    
-                    hideLoading();
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar conteúdo completo do prompt:', error);
-                    
-                    // Tente usar o que já temos como fallback apenas em caso de erro
-                    if (prompt.content) {
-                        console.log('Usando conteúdo do histórico como fallback');
-                        promptText.value = prompt.content;
-                        currentPromptId = promptId;
-                        
-                        // Atualizar metadados
-                        updatePromptMetadata(prompt);
-                        
-                        // Atualizar a classe ativa
-                        updateActiveHistoryItem(promptId);
-                        
-                        showAlert('Possível conteúdo parcial do prompt. Erro ao buscar versão completa.', 'warning');
-                    } else {
-                        showAlert('Erro ao carregar o conteúdo completo do prompt', 'danger');
-                    }
-                    
-                    hideLoading();
-                });
-        })
-        .catch(error => {
-            console.error('Erro ao buscar histórico para seleção de prompt:', error);
-            hideLoading();
-            showAlert('Erro ao selecionar prompt do histórico', 'danger');
-        });
-}
-
-// Função auxiliar para atualizar metadados do prompt
-function updatePromptMetadata(prompt) {
-    if (prompt.metadata) {
-        authorInput.value = prompt.metadata.author || '';
-        reasonInput.value = prompt.metadata.reason || '';
-    }
+            updateActiveHistoryItem(promptId);
+            showAlert('Usando dados locais do prompt (podem estar incompletos)', 'warning');
+        } else {
+            showAlert('Erro ao carregar dados do prompt: ' + error.message, 'danger');
+        }
+        
+        hideLoading();
+    });
 }
 
 // Função auxiliar para atualizar o item ativo no histórico
