@@ -5,6 +5,7 @@ from src.services.letta.agents.system_prompts.agentic_search_sp import get_agent
 from src.services.letta.letta_service import letta_service
 import uuid
 
+from letta_client import ContinueToolRule, TerminalToolRule, MaxCountPerStepToolRule
 from src.config import env
 
 async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
@@ -19,10 +20,13 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
       include_base_tools=True,
       include_base_tool_rules=False,
       tools=[
-        #TODO: Adicionar as ferramentas necessárias para o agente
-      ],
+        "google_search",
+        "typesense_search",
+      ]
       tool_rules=[
-        #TODO: Adicionar as regras necessárias para o agente
+        ContinueToolRule(tool_name="google_search"),
+        ContinueToolRule(tool_name="typesense_search"),
+        TerminalToolRule(tool_name="send_message"),
       ],
       tags=["agentic_search"] + (tags if tags else []),
       model=env.LLM_MODEL,
