@@ -52,3 +52,15 @@ async def typesense_search_tool(
         raise HTTPException(
             status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
         )
+        
+@router.get("/final_summary", name="Resumo final")
+async def final_summary_tool(
+    context: str = Query(..., description="Contexto da consulta"),
+):
+    try:
+        pass
+    except Exception as e:
+        logger.error(f"Erro: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
+        )
