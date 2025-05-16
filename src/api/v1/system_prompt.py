@@ -50,6 +50,12 @@ async def get_system_prompt(
         SystemPromptGetResponse: Resposta contendo o system prompt atual
     """
     try:
+        if not agent_type or agent_type.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="É necessário especificar um tipo de agente válido"
+            )
+            
         prompt_text = await system_prompt_service.get_current_system_prompt(agent_type, db)
         
         active_prompt = SystemPromptRepository.get_active_prompt(db, agent_type)

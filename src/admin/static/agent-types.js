@@ -10,6 +10,9 @@ function loadAgentTypes() {
         const agentTypeSelect = document.getElementById('agentType');
         agentTypeSelect.innerHTML = ''; // Limpar opções existentes
         
+        let defaultType = "agentic_search";
+        let typesAvailable = false;
+        
         if (response.data && response.data.length > 0) {
             // Adicionar as opções retornadas pelo endpoint
             response.data.forEach(type => {
@@ -18,17 +21,25 @@ function loadAgentTypes() {
                 option.textContent = type;
                 agentTypeSelect.appendChild(option);
             });
+            typesAvailable = true;
+            // Usar o primeiro tipo como padrão
+            defaultType = response.data[0];
         } else {
             // Caso não haja tipos de agentes, adicionar opção padrão
             const option = document.createElement('option');
-            option.value = "agentic_search";
-            option.textContent = "agentic_search";
+            option.value = defaultType;
+            option.textContent = defaultType;
             agentTypeSelect.appendChild(option);
         }
         
-        // Disparar o evento change para carregar o prompt do tipo selecionado
-        const event = new Event('change');
-        agentTypeSelect.dispatchEvent(event);
+        // Definir explicitamente o valor selecionado antes de disparar evento
+        agentTypeSelect.value = defaultType;
+        
+        // Disparar evento personalizado para iniciar o carregamento de dados
+        const loadDataEvent = new CustomEvent('agentTypesLoaded', { 
+            detail: { selectedType: defaultType, typesAvailable: typesAvailable }
+        });
+        document.dispatchEvent(loadDataEvent);
     })
     .catch(error => {
         console.error('Erro ao carregar tipos de agentes:', error);
@@ -41,9 +52,14 @@ function loadAgentTypes() {
         option.textContent = "agentic_search";
         agentTypeSelect.appendChild(option);
         
-        // Disparar o evento change para carregar o prompt do tipo selecionado
-        const event = new Event('change');
-        agentTypeSelect.dispatchEvent(event);
+        // Definir explicitamente o valor selecionado
+        agentTypeSelect.value = "agentic_search";
+        
+        // Disparar evento personalizado para iniciar o carregamento de dados
+        const loadDataEvent = new CustomEvent('agentTypesLoaded', { 
+            detail: { selectedType: "agentic_search", typesAvailable: false }
+        });
+        document.dispatchEvent(loadDataEvent);
     });
 }
 

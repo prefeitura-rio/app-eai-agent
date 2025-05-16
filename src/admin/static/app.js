@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar se já existe um token salvo
     if (currentToken) {
         showAdminPanel();
-        loadData();
+        // Não chamar loadData() aqui - será chamado após carregamento dos tipos de agentes
     }
     
     // Event Listeners
@@ -51,6 +51,17 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             selectPromptById(historyItem.dataset.promptId);
         }
+    });
+    
+    // Adicionar listener para o evento de tipos de agentes carregados
+    document.addEventListener('agentTypesLoaded', function(e) {
+        console.log('Evento agentTypesLoaded recebido:', e.detail);
+        
+        // Aguardar um momento para garantir que o valor do select esteja estável
+        setTimeout(() => {
+            console.log('Iniciando carregamento de dados após tipos de agentes carregados');
+            loadData();
+        }, 100);
     });
     
     // Adicionar debug específico para o historyList
@@ -118,7 +129,11 @@ function handleLogin(e) {
         currentToken = token;
         errorMsg.classList.add('d-none');
         showAdminPanel();
-        loadData();
+        
+        // Disparar o evento para carregar tipos de agentes
+        document.dispatchEvent(new Event('agentTypesReady'));
+        
+        // Não chamar loadData() aqui - será chamado após carregamento dos tipos de agentes
     })
     .catch(error => {
         errorMsg.textContent = 'Token inválido ou erro de conexão';
