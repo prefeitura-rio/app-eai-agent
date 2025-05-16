@@ -49,5 +49,5 @@ async def get_admin_panel(request: Request):
 async def get_favicon():
     return FileResponse(os.path.join(STATIC_DIR, "favicon.ico"))
 
-# Configurar rotas para servir arquivos estáticos
-router.mount("/static", StaticFiles(directory=STATIC_DIR), name="static") 
+# Configurar rotas para servir arquivos estáticos no prefixo correto
+router.mount("/static", StaticFiles(directory=STATIC_DIR), name="admin_static") 

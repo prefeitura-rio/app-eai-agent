@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 import os
 
@@ -63,6 +64,9 @@ async def custom_swagger_ui_html():
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
     )
+
+admin_static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin/static")
+app.mount("/admin/static", StaticFiles(directory=admin_static_dir), name="admin_static_direct")
 
 app.include_router(api_router)
 app.include_router(admin_router)
