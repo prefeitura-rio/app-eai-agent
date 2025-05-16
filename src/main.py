@@ -11,6 +11,7 @@ import os
 from src.api import router as api_router
 from src.admin import router as admin_router
 from src.core.middlewares.logging import LoggingMiddleware
+from src.core.middlewares.static_cache import NoCacheStaticFilesMiddleware
 from src.db import Base, engine
 
 Base.metadata.create_all(bind=engine)
@@ -33,6 +34,7 @@ app = FastAPI(
 )
 
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(NoCacheStaticFilesMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
