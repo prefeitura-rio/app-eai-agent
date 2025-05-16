@@ -10,10 +10,10 @@ async def typesense_search(
 ):
   try:
     base_url = env.TYPESENSE_CLIENT_API_URL
-    endpoint = f"{base_url}/tools/search"
+    endpoint = f"{base_url}/search/hybrid"
     
     params = {
-        "query": query,
+        "q": query,
         "cs": collections,
         "limit": limit
     }
