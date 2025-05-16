@@ -122,6 +122,32 @@ body {
     padding-left: 20px;
 }
 
+/* Adicionando regras para o scroll no histórico */
+#historyList {
+    max-height: 500px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-right: 5px;
+}
+
+#historyList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#historyList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#historyList::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+#historyList::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
 .metadata-badge {
     display: inline-block;
     background-color: #e9ecef;
@@ -166,4 +192,42 @@ body {
 
 #saveButton:hover {
     background-color: #0b5ed7;
+}
+
+/* Estilos responsivos para dispositivos menores */
+@media (max-width: 991px) {
+    .flex-container {
+        flex-direction: column;
+    }
+    
+    .history-container {
+        border-left: none;
+        border-top: 1px solid #eee;
+        padding-left: 0;
+        padding-top: 20px;
+        margin-top: 20px;
+        width: 100%;
+    }
+    
+    #historyList {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-container {
+        padding: 15px;
+    }
+    
+    .navbar {
+        padding: 10px 15px;
+    }
+    
+    .nav-title {
+        font-size: 1.2rem;
+    }
+    
+    #historyList {
+        max-height: 350px;
+    }
 } 
