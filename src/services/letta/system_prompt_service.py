@@ -264,7 +264,7 @@ class SystemPromptService:
                     agent_type: str, 
                     limit: int) -> List[Dict[str, Any]]:
         """
-        Implementação interna para obter o histórico de versões.
+        Implementação síncrona para obter o histórico de versões.
         
         Args:
             db: Sessão do banco de dados
@@ -272,26 +272,35 @@ class SystemPromptService:
             limit: Limite de resultados
             
         Returns:
-            List[Dict[str, Any]]: Lista de prompts com informações resumidas
+            List[Dict[str, Any]]: Lista de prompts formatada
         """
         prompts = SystemPromptRepository.list_prompts(
-            db=db,
-            agent_type=agent_type,
+            db=db, 
+            agent_type=agent_type, 
             limit=limit
         )
         
-        return [
-            {
+        # Formata os resultados
+        formatted_prompts = []
+        for p in prompts:
+            # Resumo do conteúdo para preview
+            content_preview = p.content[:100] + "..." if len(p.content) > 100 else p.content
+            
+            # Formata datas para string ISO
+            created_at_str = p.created_at.isoformat() if p.created_at else None
+            updated_at_str = p.updated_at.isoformat() if p.updated_at else None
+            
+            formatted_prompts.append({
                 "prompt_id": p.prompt_id,
                 "version": p.version,
                 "is_active": p.is_active,
-                "created_at": p.created_at.isoformat(),
-                "updated_at": p.updated_at.isoformat(),
-                "content": p.content[:100] + "..." if len(p.content) > 100 else p.content,
-                "metadata": p.metadata
-            }
-            for p in prompts
-        ]
+                "created_at": created_at_str,
+                "updated_at": updated_at_str,
+                "content": content_preview,
+                "metadata": p.prompt_metadata
+            })
+            
+        return formatted_prompts
 
 
 # Instância do serviço

@@ -18,7 +18,7 @@ class SystemPrompt(Base):
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    metadata = Column(JSONB, nullable=True)
+    prompt_metadata = Column(JSONB, nullable=True)
 
     __table_args__ = (
         UniqueConstraint('agent_type', 'version', name='uix_agent_type_version'),

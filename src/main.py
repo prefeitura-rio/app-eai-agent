@@ -8,6 +8,7 @@ from loguru import logger
 import os
 
 from src.api import router as api_router
+from src.admin import router as admin_router
 from src.core.middlewares.logging import LoggingMiddleware
 from src.db import Base, engine
 
@@ -64,3 +65,4 @@ async def custom_swagger_ui_html():
     )
 
 app.include_router(api_router)
+app.include_router(admin_router)

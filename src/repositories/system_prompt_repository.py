@@ -47,7 +47,7 @@ class SystemPromptRepository:
             content=content,
             version=version,
             is_active=True,
-            metadata=metadata or {}
+            prompt_metadata=metadata or {}
         )
         
         db.add(prompt)
