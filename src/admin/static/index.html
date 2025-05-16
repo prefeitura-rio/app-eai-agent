@@ -95,6 +95,10 @@
                             </button>
                         </div>
                         <textarea id="promptText" class="prompt-editor" required></textarea>
+                        <div id="editorOverlay" class="editor-overlay"></div>
+                        <button id="closeExpandedEditor" class="close-expanded-editor">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
                     
                     <div class="row mb-3">
@@ -163,6 +167,9 @@
     
     <!-- JavaScript para carregar tipos de agentes -->
     <script src="/admin/static/agent-types.js"></script>
+    
+    <!-- JavaScript para expandir o editor de prompts -->
+    <script src="/admin/static/editor-expander.js"></script>
     
     <!-- JavaScript principal da Aplicação -->
     <script src="/admin/static/app.js"></script>
