@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Body, HTTPException, status
-from typing import Dict, List, Optional
 
 from src.core.security.dependencies import validar_token
 from src.services.letta.system_prompt_service import system_prompt_service
