@@ -250,13 +250,37 @@ function selectPromptById(promptId) {
             if (!prompt) {
                 console.error('Prompt não encontrado no histórico:', promptId);
                 hideLoading();
+                showAlert('Prompt não encontrado no histórico', 'danger');
                 return;
             }
             
-            console.log('Prompt encontrado:', prompt);
+            console.log('Prompt encontrado no histórico:', prompt);
             
-            // Agora buscamos o conteúdo completo usando o endpoint específico
-            return apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}&version=${prompt.version}`)
+            // Verificar se o conteúdo completo já está disponível
+            if (prompt.content && prompt.content.length > 50) {
+                console.log('Usando conteúdo já disponível no histórico');
+                // O conteúdo completo já está disponível, usar diretamente
+                promptText.value = prompt.content;
+                currentPromptId = promptId;
+                
+                if (prompt.metadata) {
+                    authorInput.value = prompt.metadata.author || '';
+                    reasonInput.value = prompt.metadata.reason || '';
+                }
+                
+                // Atualizar a classe ativa
+                updateActiveHistoryItem(promptId);
+                hideLoading();
+                return;
+            }
+            
+            // Se o conteúdo completo não estiver disponível, precisamos buscá-lo
+            console.log('Buscando conteúdo completo na API');
+            
+            // Primeiro, tente buscar pela versão se estiver disponível
+            const versionParam = prompt.version ? `&version=${prompt.version}` : '';
+            
+            apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}${versionParam}`)
                 .then(fullPrompt => {
                     console.log('Dados completos do prompt:', fullPrompt);
                     
@@ -264,27 +288,35 @@ function selectPromptById(promptId) {
                     promptText.value = fullPrompt.prompt || '';
                     currentPromptId = promptId;
                     
-                    if (prompt.metadata) {
-                        authorInput.value = prompt.metadata.author || '';
-                        reasonInput.value = prompt.metadata.reason || '';
-                    }
+                    // Atualizar metadados
+                    updatePromptMetadata(prompt);
                     
                     // Atualizar a classe ativa
-                    const items = historyList.querySelectorAll('.history-item');
-                    items.forEach(item => item.classList.remove('active'));
-                    
-                    // Encontrar e marcar o novo item ativo
-                    const activeItem = historyList.querySelector(`.history-item[data-prompt-id="${promptId}"]`);
-                    if (activeItem) {
-                        activeItem.classList.add('active');
-                    }
+                    updateActiveHistoryItem(promptId);
                     
                     hideLoading();
                 })
                 .catch(error => {
                     console.error('Erro ao buscar conteúdo completo do prompt:', error);
+                    
+                    // Tente usar o que já temos
+                    if (prompt.content) {
+                        console.log('Usando conteúdo parcial do histórico');
+                        promptText.value = prompt.content;
+                        currentPromptId = promptId;
+                        
+                        // Atualizar metadados
+                        updatePromptMetadata(prompt);
+                        
+                        // Atualizar a classe ativa
+                        updateActiveHistoryItem(promptId);
+                        
+                        showAlert('Carregado conteúdo parcial do prompt', 'warning');
+                    } else {
+                        showAlert('Erro ao carregar o conteúdo completo do prompt', 'danger');
+                    }
+                    
                     hideLoading();
-                    showAlert('Erro ao carregar o conteúdo completo do prompt', 'danger');
                 });
         })
         .catch(error => {
@@ -292,6 +324,27 @@ function selectPromptById(promptId) {
             hideLoading();
             showAlert('Erro ao selecionar prompt do histórico', 'danger');
         });
+}
+
+// Função auxiliar para atualizar metadados do prompt
+function updatePromptMetadata(prompt) {
+    if (prompt.metadata) {
+        authorInput.value = prompt.metadata.author || '';
+        reasonInput.value = prompt.metadata.reason || '';
+    }
+}
+
+// Função auxiliar para atualizar o item ativo no histórico
+function updateActiveHistoryItem(promptId) {
+    // Remover ativo de todos os itens
+    const items = historyList.querySelectorAll('.history-item');
+    items.forEach(item => item.classList.remove('active'));
+    
+    // Encontrar e marcar o novo item ativo
+    const activeItem = historyList.querySelector(`.history-item[data-prompt-id="${promptId}"]`);
+    if (activeItem) {
+        activeItem.classList.add('active');
+    }
 }
 
 // Helper para fazer requisições API
