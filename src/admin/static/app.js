@@ -357,23 +357,9 @@ function selectPromptById(promptId) {
     }
     
     showLoading();
-    const agentType = agentTypeSelect.value;
     
-    // Encontrar o prompt no array local para obter a versão
-    const localPrompt = promptsData.find(p => p.prompt_id === promptId);
-    if (!localPrompt) {
-        console.error('Prompt não encontrado no histórico local:', promptId);
-        hideLoading();
-        showAlert('Prompt não encontrado no histórico local', 'danger');
-        return;
-    }
-    
-    console.log('Prompt encontrado localmente:', localPrompt);
-    const version = localPrompt.version;
-    
-    // Buscar pela API usando a versão específica
-    // Construir a URL para obter o conteúdo completo
-    const url = `/api/v1/system-prompt?agent_type=${agentType}&version=${version}`;
+    // Usar o novo endpoint para buscar o prompt pelo ID
+    const url = `/api/v1/system-prompt/by-id/${promptId}`;
     console.log('Buscando conteúdo completo na URL:', url);
     
     // Fazer requisição diretamente, sem passar por funções intermediárias
@@ -398,8 +384,9 @@ function selectPromptById(promptId) {
         promptText.value = data.prompt || '';
         currentPromptId = promptId;
         
-        // Atualizar metadados do formulário
-        if (localPrompt.metadata) {
+        // Encontrar o prompt no array local para obter metadados adicionais
+        const localPrompt = promptsData.find(p => p.prompt_id === promptId);
+        if (localPrompt && localPrompt.metadata) {
             authorInput.value = localPrompt.metadata.author || '';
             reasonInput.value = localPrompt.metadata.reason || '';
         }
@@ -407,16 +394,14 @@ function selectPromptById(promptId) {
         // Atualizar a classe ativa nos itens do histórico
         updateActiveHistoryItem(promptId);
         
-        // Mostrar mensagem de sucesso
-        showAlert('Prompt carregado com sucesso', 'success');
-        
         hideLoading();
     })
     .catch(error => {
         console.error('Erro ao buscar dados completos do prompt:', error);
         
         // Tentar usar dados locais como fallback
-        if (localPrompt.content) {
+        const localPrompt = promptsData.find(p => p.prompt_id === promptId);
+        if (localPrompt && localPrompt.content) {
             console.log('Usando dados locais como fallback:', localPrompt.content);
             promptText.value = localPrompt.content;
             currentPromptId = promptId;

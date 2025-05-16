@@ -154,4 +154,45 @@ async def get_system_prompt_history(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao obter histórico de system prompts: {str(e)}"
+        )
+
+
+@router.get("/by-id/{prompt_id}", response_model=SystemPromptGetResponse)
+async def get_system_prompt_by_id(
+    prompt_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtém um system prompt específico pelo ID.
+    
+    Args:
+        prompt_id: ID do system prompt
+        db: Sessão do banco de dados
+        
+    Returns:
+        SystemPromptGetResponse: Resposta contendo o system prompt específico
+    """
+    try:
+        # Busca o prompt específico pelo ID
+        prompt = SystemPromptRepository.get_prompt_by_id(db, prompt_id)
+        
+        if not prompt:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"System prompt com ID {prompt_id} não encontrado"
+            )
+            
+        return SystemPromptGetResponse(
+            prompt=prompt.content,
+            agent_type=prompt.agent_type,
+            version=prompt.version,
+            prompt_id=prompt.prompt_id,
+            created_at=prompt.created_at
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter system prompt por ID: {str(e)}"
         ) 
