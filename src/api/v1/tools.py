@@ -7,7 +7,7 @@ from src.services.llm.gemini_service import GeminiService
 
 router = APIRouter(
     prefix="/letta/tools",
-    tags=["Letta", "Tools"],
+    tags=["Letta Tools"],
     dependencies=[Depends(validar_token)],
 )
 
