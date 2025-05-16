@@ -147,26 +147,34 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100%;
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
     z-index: 10004;
     display: none;
     opacity: 0;
     transition: opacity 0.3s ease;
     backdrop-filter: blur(5px);
-    width: 100vw;
-    height: 100vh;
+    pointer-events: auto;
 }
 
 .editor-overlay.active {
     display: block;
     opacity: 1;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
 }
 
 /* Botão para fechar o editor expandido */
 .close-expanded-editor {
     position: fixed;
-    top: calc(50% - 42.5vh - 30px);
-    right: calc(50% - 45% - 30px);
+    top: 20px;
+    right: 20px;
     background-color: var(--primary-color);
     border: 2px solid white;
     border-radius: 50%;
@@ -557,4 +565,9 @@ input:checked + .slider:before {
     .theme-switch-wrapper {
         margin-bottom: 10px;
     }
+}
+
+/* Garantir que o corpo da página não tenha scroll enquanto o editor estiver expandido */
+body.editor-expanded {
+    overflow: hidden !important;
 } 

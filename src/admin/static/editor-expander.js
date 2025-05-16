@@ -34,6 +34,11 @@
         originalHeight = editor.style.height || getComputedStyle(editor).height;
         editorContainer = editor.closest('.position-relative');
         
+        // Garante que o overlay seja inserido no final do body para cobrir tudo
+        document.body.appendChild(overlay);
+        // Garante que o botão de fechar seja inserido no final do body
+        document.body.appendChild(closeButton);
+        
         // Remove o evento de duplo clique no editor para evitar conflitos
         // e adiciona apenas ao botão expandir
         expandButton.addEventListener('click', function(e) {
@@ -70,46 +75,56 @@
                 event.stopPropagation();
             }
             
-            // Guarda a posição de scroll atual
-            const scrollPosition = window.scrollY;
-            
-            // Certifica que o overlay cobre toda a página
-            overlay.style.width = '100vw';
-            overlay.style.height = '100vh';
-            
             // Oculta temporariamente o texto de suporte para não aparecer sobre o editor
             if (supportEmail) {
                 supportEmail.style.visibility = 'hidden';
                 supportEmail.style.opacity = '0';
             }
             
-            // Aplica classes ao overlay primeiro para criar efeito de fade
+            // Adiciona classe ao body para impedir scroll
+            document.body.classList.add('editor-expanded');
+            document.body.style.overflow = 'hidden';
+            
+            // Configura overlay para cobrir toda a tela
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.zIndex = '10004';
+            
+            // Mostra overlay com animação
             overlay.classList.add('active');
+            
+            // Guarda o conteúdo e a posição do cursor
+            const content = editor.value;
+            const selectionStart = editor.selectionStart;
+            const selectionEnd = editor.selectionEnd;
             
             // Pequeno timeout para garantir a transição suave
             setTimeout(() => {
-                // Aplica a classe ao editor
+                // Configura o editor expandido
                 editor.classList.add('expanded');
+                editor.style.zIndex = '10005';
                 
                 // Exibe o botão de fechar
                 closeButton.style.display = 'flex';
-                
-                // Ajusta posição do botão de fechar baseado no tamanho atual do editor
-                const editorRect = editor.getBoundingClientRect();
-                closeButton.style.top = (editorRect.top - 25) + 'px';
-                closeButton.style.right = (window.innerWidth - editorRect.right - 25) + 'px';
-                
-                // Desabilita o scroll do corpo da página
-                document.body.style.overflow = 'hidden';
+                closeButton.style.zIndex = '10006';
+                closeButton.style.top = '20px';
+                closeButton.style.right = '20px';
                 
                 // Atualiza estado
                 isExpanded = true;
                 
-                // Foca o editor para facilitar a digitação imediata
-                editor.focus();
+                // Restaura o conteúdo e a posição do cursor
+                editor.value = content;
+                editor.selectionStart = selectionStart;
+                editor.selectionEnd = selectionEnd;
                 
-                // Restaura a posição de scroll
-                window.scrollTo(0, scrollPosition);
+                // Foca o editor para facilitar a digitação
+                setTimeout(() => {
+                    editor.focus();
+                }, 50);
             }, 50);
         }
     }
@@ -134,6 +149,7 @@
                 
                 // Restaura o scroll do corpo da página
                 document.body.style.overflow = 'auto';
+                document.body.classList.remove('editor-expanded');
                 
                 // Restaura a visibilidade do texto de suporte
                 if (supportEmail) {
