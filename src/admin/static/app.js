@@ -71,12 +71,29 @@ function handleLogin(e) {
         return;
     }
     
-    // Salvar token e mostrar painel admin
-    localStorage.setItem('adminToken', token);
-    currentToken = token;
-    errorMsg.classList.add('d-none');
-    showAdminPanel();
-    loadData();
+    // Testar token fazendo uma requisição de verificação
+    fetch('/api/v1/system-prompt/history?agent_type=agentic_search', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Token inválido');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Token válido, salvar e mostrar painel
+        localStorage.setItem('adminToken', token);
+        currentToken = token;
+        errorMsg.classList.add('d-none');
+        showAdminPanel();
+        loadData();
+    })
+    .catch(error => {
+        errorMsg.textContent = 'Token inválido ou erro de conexão';
+        errorMsg.classList.remove('d-none');
+        console.error('Erro de autenticação:', error);
+    });
 }
 
 function handleLogout() {
@@ -140,6 +157,7 @@ function loadData() {
     .catch(error => {
         hideLoading();
         showAlert('Erro ao carregar dados: ' + (error.message || 'Erro desconhecido'), 'danger');
+        console.error('Erro ao carregar dados:', error);
     });
 }
 
@@ -199,28 +217,47 @@ function selectPrompt(prompt) {
 
 // Helper para fazer requisições API
 function apiRequest(method, url, data = null) {
+    console.log(`Fazendo requisição ${method} para ${url}`);
+    
     const options = {
-        method,
+        method: method,
         headers: {
             'Authorization': `Bearer ${currentToken}`,
             'Content-Type': 'application/json'
         }
     };
     
-    if (data) {
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
         options.body = JSON.stringify(data);
     }
     
+    console.log('Opções da requisição:', { 
+        url, 
+        method: options.method,
+        headers: { ...options.headers, 'Authorization': 'Bearer ***' } 
+    });
+    
     return fetch(url, options)
         .then(response => {
+            console.log(`Resposta da API: ${response.status} ${response.statusText}`);
+            
             if (!response.ok) {
                 if (response.status === 401) {
                     // Caso token seja inválido, fazer logout
                     handleLogout();
                     throw new Error('Token inválido ou expirado');
                 }
-                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                
+                // Tentar obter detalhes do erro
+                return response.json().then(errorData => {
+                    console.error('Erro da API:', errorData);
+                    throw new Error(`Erro ${response.status}: ${errorData.detail || response.statusText}`);
+                }).catch(err => {
+                    // Se não conseguir parsear JSON
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                });
             }
+            
             return response.json();
         });
 } 
