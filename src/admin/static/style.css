@@ -125,17 +125,19 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 90%;
+    width: 85%;
     height: 80vh;
     max-width: 1200px;
-    z-index: 1000;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
     resize: none;
-    padding: 20px;
+    padding: 25px;
     margin: 0;
     border: 2px solid var(--primary-color);
     transition: all 0.3s ease;
-    font-size: 16px; /* Tamanho de fonte um pouco maior para facilitar leitura */
+    font-size: 16px;
+    background-color: var(--card-bg);
+    border-radius: 16px;
 }
 
 /* Overlay para quando o editor estiver expandido */
@@ -145,47 +147,46 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
     display: none;
     opacity: 0;
     transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
 .editor-overlay.active {
     display: block;
     opacity: 1;
-    backdrop-filter: blur(3px);
 }
 
 /* Botão para fechar o editor expandido */
 .close-expanded-editor {
     position: fixed;
-    top: 10vh;
-    right: 5vw;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
+    top: calc(50% - 40vh - 30px);
+    right: calc(50% - 42.5% - 30px);
+    background-color: var(--primary-color);
+    border: 2px solid white;
     border-radius: 50%;
-    width: 42px;
-    height: 42px;
+    width: 50px;
+    height: 50px;
     display: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 1002;
+    z-index: 10001;
     transition: all 0.2s ease;
-    color: var(--text-color);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    color: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
 }
 
 .close-expanded-editor:hover {
     transform: scale(1.1);
-    background-color: rgba(255, 255, 255, 0.9);
-    color: var(--primary-color);
+    background-color: var(--primary-hover);
 }
 
 .close-expanded-editor i {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
 }
 
 .prompt-editor:focus {
@@ -471,12 +472,35 @@ input:checked + .slider:before {
     transform: translateY(-2px);
 }
 
+.support-email-container {
+    width: 100%;
+    text-align: center;
+    margin-top: 25px;
+    position: relative;
+    z-index: 10;
+}
+
 .support-email {
     text-align: center;
-    margin-top: 20px;
     font-size: 13px;
     color: var(--text-color);
     opacity: 0.8;
+    position: relative;
+    z-index: 10;
+    margin: 0;
+}
+
+/* Ajuste global de z-index para garantir que o overlay fique por cima de tudo exceto o editor expandido e o botão fechar */
+#adminPanel {
+    position: relative;
+    z-index: 1;
+}
+
+#contentArea,
+.navbar,
+.support-email-container {
+    position: relative;
+    z-index: 1;
 }
 
 /* Loading spinner */

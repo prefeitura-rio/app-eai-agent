@@ -101,11 +101,13 @@
                         </div>
                         <div class="position-relative">
                             <textarea id="promptText" class="prompt-editor" required></textarea>
-                            <div id="editorOverlay" class="editor-overlay"></div>
-                            <button id="closeExpandedEditor" class="close-expanded-editor" title="Fechar editor expandido">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
                         </div>
+                        
+                        <!-- Overlay e botão de fechar em nível global para evitar problemas de sobreposição -->
+                        <div id="editorOverlay" class="editor-overlay"></div>
+                        <button id="closeExpandedEditor" class="close-expanded-editor" title="Fechar editor expandido">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
                     
                     <div class="row mb-3">
@@ -137,7 +139,10 @@
                 </div>
             </div>
             
-            <p class="support-email">Em caso de suporte, entre em contato com o desenvolvedor: frederico.zolio@prefeitura.rio</p>
+            <!-- Texto de suporte -->
+            <div class="support-email-container">
+                <p class="support-email">Em caso de suporte, entre em contato com o desenvolvedor: frederico.zolio@prefeitura.rio</p>
+            </div>
         </div>
     </div>
     

@@ -2,7 +2,7 @@
  * Editor Expander - Funcionalidade para expandir o editor de prompt
  * 
  * Este script adiciona a capacidade de expandir o editor de prompts 
- * ao clicar nele, tornando mais fácil a edição e visualização.
+ * ao clicar no botão expandir, tornando mais fácil a edição e visualização.
  */
 
 (function() {
@@ -14,6 +14,7 @@
     let isExpanded = false;
     let originalHeight = null;
     let editorContainer = null;
+    let supportEmail = null;
     
     // Função para inicializar a funcionalidade
     function initialize() {
@@ -22,6 +23,7 @@
         overlay = document.getElementById('editorOverlay');
         closeButton = document.getElementById('closeExpandedEditor');
         expandButton = document.getElementById('expandButton');
+        supportEmail = document.querySelector('.support-email');
         
         if (!editor || !overlay || !closeButton) {
             console.error('Elementos necessários não encontrados');
@@ -42,12 +44,14 @@
         }
         
         closeButton.addEventListener('click', function(e) {
-            e.stopPropagation(); // Evita propagação
+            e.preventDefault();
+            e.stopPropagation();
             collapseEditor();
         });
         
         overlay.addEventListener('click', function(e) {
-            e.stopPropagation(); // Evita propagação
+            e.preventDefault();
+            e.stopPropagation();
             collapseEditor();
         });
         
@@ -71,22 +75,26 @@
             // Guarda a posição de scroll atual
             const scrollPosition = window.scrollY;
             
-            // Desabilita o scroll do corpo da página
-            document.body.style.overflow = 'hidden';
-            
-            // Aplica as classes
-            editor.classList.add('expanded');
+            // Aplica classes ao overlay primeiro para criar efeito de fade
             overlay.classList.add('active');
             
-            // Exibe o botão de fechar
-            closeButton.style.display = 'flex';
-            
-            // Atualiza estado
-            isExpanded = true;
-            
-            // Foca o editor para facilitar a digitação imediata
+            // Pequeno timeout para garantir a transição suave
             setTimeout(() => {
+                // Aplica a classe ao editor
+                editor.classList.add('expanded');
+                
+                // Exibe o botão de fechar
+                closeButton.style.display = 'flex';
+                
+                // Desabilita o scroll do corpo da página
+                document.body.style.overflow = 'hidden';
+                
+                // Atualiza estado
+                isExpanded = true;
+                
+                // Foca o editor para facilitar a digitação imediata
                 editor.focus();
+                
                 // Restaura a posição de scroll
                 window.scrollTo(0, scrollPosition);
             }, 50);
@@ -101,28 +109,30 @@
             const selectionStart = editor.selectionStart;
             const selectionEnd = editor.selectionEnd;
             
-            // Remove classes
+            // Remove classes na ordem correta para animação suave
             editor.classList.remove('expanded');
-            overlay.classList.remove('active');
             
-            // Esconde o botão
+            // Primeiro escondemos o botão fechar
             closeButton.style.display = 'none';
             
-            // Restaura o scroll do corpo da página
-            document.body.style.overflow = 'auto';
-            
-            // Atualiza estado
-            isExpanded = false;
-            
-            // Restaura o conteúdo e a posição do cursor
+            // Depois removemos o overlay (com um pequeno atraso para transição)
             setTimeout(() => {
+                overlay.classList.remove('active');
+                
+                // Restaura o scroll do corpo da página
+                document.body.style.overflow = 'auto';
+                
+                // Atualiza estado
+                isExpanded = false;
+                
+                // Restaura o conteúdo e a posição do cursor
                 editor.value = content;
                 editor.selectionStart = selectionStart;
                 editor.selectionEnd = selectionEnd;
                 
                 // Garantir que a página faz scroll até o editor
                 editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 50);
+            }, 150);
         }
     }
     
