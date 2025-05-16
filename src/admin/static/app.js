@@ -76,7 +76,8 @@ function handleLogin(e) {
         headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => {
-        if (!response.ok) {
+        if (!response.ok && response.status !== 400) {
+            // Se não for erro 400 (que pode ser só não ter prompts ainda)
             throw new Error('Token inválido');
         }
         return response.json();
@@ -139,18 +140,36 @@ function loadData() {
     
     // Carregar dados em paralelo
     Promise.all([
-        // Carregar prompt atual
-        apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}`),
-        // Carregar histórico
+        // Carregar prompt atual (pode falhar se não existir)
+        apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}`)
+            .catch(error => {
+                // Se for erro de "não encontrado", retornamos um objeto vazio
+                if (error.message && error.message.includes('Nenhum system prompt encontrado')) {
+                    console.log('Nenhum prompt encontrado ainda, preparando para criar o primeiro');
+                    return { prompt: '', is_new: true };
+                }
+                throw error; // Para outros erros, propagamos
+            }),
+        // Carregar histórico (pode estar vazio)
         apiRequest('GET', `/api/v1/system-prompt/history?agent_type=${agentType}`)
+            .catch(error => {
+                // Se falhar, retornamos lista vazia
+                console.warn('Erro ao carregar histórico:', error);
+                return { prompts: [] };
+            })
     ])
     .then(([currentData, historyData]) => {
         // Preencher dados do prompt atual
-        promptText.value = currentData.prompt;
+        promptText.value = currentData.prompt || '';
         currentPromptId = currentData.prompt_id;
         
+        // Se for um prompt novo, mostramos mensagem de orientação
+        if (currentData.is_new) {
+            showAlert('Nenhum prompt configurado para este tipo de agente. Adicione o texto do prompt e clique em Salvar para criar o primeiro.', 'info');
+        }
+        
         // Limpar e preencher o histórico
-        renderHistory(historyData.prompts);
+        renderHistory(historyData.prompts || []);
         
         hideLoading();
     })
@@ -163,6 +182,11 @@ function loadData() {
 
 function renderHistory(prompts) {
     historyList.innerHTML = '';
+    
+    if (prompts.length === 0) {
+        historyList.innerHTML = '<div class="text-muted p-3">Nenhum histórico disponível</div>';
+        return;
+    }
     
     prompts.forEach(prompt => {
         const isActive = prompt.is_active;
