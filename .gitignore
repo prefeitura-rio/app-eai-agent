@@ -26,3 +26,5 @@ wheels/
 *.swo
 .DS_Store
 logs/
+
+scripts/*
