@@ -1,86 +1,87 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import os
-import json
 from pathlib import Path
 from datetime import datetime
+from fastapi import Depends
+from sqlalchemy.orm import Session
 
 from loguru import logger
 
+from src.db import get_db, get_db_session
+from src.models.system_prompt_model import SystemPrompt, SystemPromptDeployment
+from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.services.letta.letta_service import letta_service
 
 
 class SystemPromptService:
     """
     Serviço para gerenciar system prompts dos agentes.
-    Permite atualizar o system prompt do template e de todos os agentes existentes.
+    Permite atualizar o system prompt e os agentes existentes.
     """
     
-    def __init__(self, cache_dir: str = "src/services/letta/agents/system_prompts/cache"):
+    def __init__(self):
         """
         Inicializa o serviço de system prompt.
-        
-        Args:
-            cache_dir: Diretório para cache dos system prompts
         """
-        self.cache_dir = cache_dir
-        os.makedirs(self.cache_dir, exist_ok=True)
+        pass
         
-    async def get_current_system_prompt(self, agent_type: str = "agentic_search") -> str:
+    async def get_current_system_prompt(self, agent_type: str = "agentic_search", db: Session = None) -> str:
         """
         Obtém o system prompt atual para o tipo de agente especificado.
         
         Args:
             agent_type: Tipo do agente
+            db: Sessão do banco de dados
             
         Returns:
             str: Texto do system prompt atual
         """
-        if agent_type == "agentic_search":
-            from src.services.letta.agents.system_prompts.agentic_search_sp import get_agentic_search_system_prompt_text
-            return get_agentic_search_system_prompt_text()
-        else:
-            raise ValueError(f"Tipo de agente não suportado: {agent_type}")
+        # Tenta obter o prompt do banco de dados
+        if db:
+            prompt = SystemPromptRepository.get_active_prompt(db, agent_type)
+            if prompt:
+                return prompt.content
+        
+        # Se não encontrar no banco ou não tiver conexão
+        with get_db_session() as session:
+            prompt = SystemPromptRepository.get_active_prompt(session, agent_type)
+            if prompt:
+                return prompt.content
+                
+        # Se não encontrar nenhum prompt
+        raise ValueError(f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}")
     
-    async def update_template_system_prompt(self, new_prompt: str, agent_type: str = "agentic_search") -> bool:
+    def get_active_system_prompt_from_db(self, agent_type: str = "agentic_search") -> str:
         """
-        Atualiza o system prompt no arquivo de template.
+        Obtém o system prompt ativo do banco de dados de forma síncrona.
+        Este método deve ser usado para criação de novos agentes.
         
         Args:
-            new_prompt: Novo texto para o system prompt
             agent_type: Tipo do agente
             
         Returns:
-            bool: True se a atualização foi bem-sucedida
+            str: Texto do system prompt ativo no banco de dados
         """
         try:
-            await self._create_backup(agent_type)
-            
-            if agent_type == "agentic_search":
-                template_path = Path("src/services/letta/agents/system_prompts/agentic_search_sp.py")
+            # Abre uma sessão do banco de dados
+            with get_db_session() as db:
+                # Busca o prompt ativo no banco de dados
+                prompt = SystemPromptRepository.get_active_prompt(db, agent_type)
+                if prompt:
+                    return prompt.content
                 
-                if not template_path.exists():
-                    logger.error(f"Arquivo de template não encontrado: {template_path}")
-                    return False
-                
-                new_content = 'def get_agentic_search_system_prompt_text():\n  return """\\\n'
-                new_content += new_prompt
-                new_content += '\n"""'
-                
-                template_path.write_text(new_content)
-                
-                return True
-            else:
-                logger.error(f"Tipo de agente não suportado: {agent_type}")
-                return False
-                
+            # Se não encontrar nenhum prompt
+            raise ValueError(f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}")
         except Exception as e:
-            logger.error(f"Erro ao atualizar template do system prompt: {str(e)}")
-            return False
-    
+            logger.error(f"Erro ao obter system prompt do banco: {str(e)}")
+            raise
+            
     async def update_all_agents_system_prompt(self, 
                                              new_prompt: str, 
                                              agent_type: str = "agentic_search",
-                                             tags: Optional[List[str]] = None) -> Dict[str, bool]:
+                                             tags: Optional[List[str]] = None,
+                                             db: Session = None,
+                                             prompt_id: str = None) -> Dict[str, bool]:
         """
         Atualiza o system prompt de todos os agentes existentes do tipo especificado.
         
@@ -88,6 +89,8 @@ class SystemPromptService:
             new_prompt: Novo texto para o system prompt
             agent_type: Tipo do agente
             tags: Filtrar agentes por tags específicas
+            db: Sessão do banco de dados
+            prompt_id: ID do prompt no banco de dados
             
         Returns:
             Dict[str, bool]: Dicionário com agent_id: status da atualização
@@ -111,9 +114,32 @@ class SystemPromptService:
                     )
                     results[agent.id] = True
                     logger.info(f"System prompt atualizado para o agente: {agent.id}")
+                    
+                    # Registra a implantação no banco de dados se disponível
+                    if db and prompt_id:
+                        SystemPromptRepository.create_deployment(
+                            db=db,
+                            prompt_id=prompt_id,
+                            agent_id=agent.id,
+                            agent_type=agent_type,
+                            status="success",
+                            details={"tags": agent.tags if hasattr(agent, "tags") else []}
+                        )
+                        
                 except Exception as agent_error:
                     results[agent.id] = False
                     logger.error(f"Erro ao atualizar agente {agent.id}: {str(agent_error)}")
+                    
+                    # Registra a falha na implantação no banco de dados se disponível
+                    if db and prompt_id:
+                        SystemPromptRepository.create_deployment(
+                            db=db,
+                            prompt_id=prompt_id,
+                            agent_id=agent.id,
+                            agent_type=agent_type,
+                            status="failed",
+                            details={"error": str(agent_error), "tags": agent.tags if hasattr(agent, "tags") else []}
+                        )
             
             return results
         
@@ -124,37 +150,87 @@ class SystemPromptService:
     async def update_system_prompt(self, 
                                   new_prompt: str,
                                   agent_type: str = "agentic_search", 
-                                  update_template: bool = True,
                                   update_agents: bool = True,
-                                  tags: Optional[List[str]] = None) -> Dict[str, any]:
+                                  tags: Optional[List[str]] = None,
+                                  metadata: Optional[Dict[str, Any]] = None,
+                                  db: Session = None) -> Dict[str, any]:
         """
-        Atualiza o system prompt no template e em todos os agentes existentes.
+        Atualiza o system prompt no banco de dados e em todos os agentes existentes.
         
         Args:
             new_prompt: Novo texto para o system prompt
             agent_type: Tipo do agente
-            update_template: Se deve atualizar o template
             update_agents: Se deve atualizar os agentes existentes
             tags: Filtrar agentes por tags específicas
+            metadata: Metadados adicionais para armazenar com o prompt
+            db: Sessão do banco de dados
             
         Returns:
             Dict: Resultado das operações
         """
         result = {
             "success": True,
-            "template_updated": False,
+            "prompt_id": None,
             "agents_updated": {}
         }
         
-        if update_template:
-            template_result = await self.update_template_system_prompt(new_prompt, agent_type)
-            result["template_updated"] = template_result
-            
-            if not template_result:
-                result["success"] = False
+        # Usa gerenciador de contexto para sessão se db não for fornecido
+        if db is None:
+            with get_db_session() as session:
+                db = session
         
+        # Usa a sessão que foi fornecida ou criada
+        return await self._perform_update(
+            db, 
+            new_prompt, 
+            agent_type, 
+            update_agents, 
+            tags, 
+            metadata, 
+            result
+        )
+    
+    async def _perform_update(self,
+                             db: Session,
+                             new_prompt: str,
+                             agent_type: str,
+                             update_agents: bool,
+                             tags: Optional[List[str]],
+                             metadata: Optional[Dict[str, Any]],
+                             result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Executa a atualização do system prompt com uma sessão de banco de dados.
+        
+        Args:
+            db: Sessão do banco de dados
+            new_prompt: Novo texto para o system prompt
+            agent_type: Tipo do agente
+            update_agents: Se deve atualizar os agentes existentes
+            tags: Filtrar agentes por tags específicas
+            metadata: Metadados adicionais para armazenar com o prompt
+            result: Dicionário de resultado parcial
+            
+        Returns:
+            Dict: Resultado das operações atualizado
+        """
+        # Salva o novo prompt no banco de dados
+        prompt = SystemPromptRepository.create_prompt(
+            db=db,
+            agent_type=agent_type,
+            content=new_prompt,
+            metadata=metadata or {"source": "api"}
+        )
+        result["prompt_id"] = prompt.prompt_id
+        
+        # Atualiza os agentes existentes se solicitado
         if update_agents:
-            agents_result = await self.update_all_agents_system_prompt(new_prompt, agent_type, tags)
+            agents_result = await self.update_all_agents_system_prompt(
+                new_prompt=new_prompt, 
+                agent_type=agent_type, 
+                tags=tags,
+                db=db,
+                prompt_id=prompt.prompt_id
+            )
             result["agents_updated"] = agents_result
             
             if agents_result and not all(agents_result.values()):
@@ -162,33 +238,61 @@ class SystemPromptService:
         
         return result
     
-    async def _create_backup(self, agent_type: str = "agentic_search") -> bool:
+    async def get_prompt_history(self, 
+                                agent_type: str = "agentic_search",
+                                limit: int = 10,
+                                db: Session = None) -> List[Dict[str, Any]]:
         """
-        Cria um backup do system prompt atual.
+        Obtém o histórico de versões de um system prompt.
         
         Args:
             agent_type: Tipo do agente
+            limit: Limite de resultados
+            db: Sessão do banco de dados
             
         Returns:
-            bool: True se o backup foi criado com sucesso
+            List[Dict[str, Any]]: Lista de prompts com informações resumidas
         """
-        try:
-            current_prompt = await self.get_current_system_prompt(agent_type)
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_file = Path(self.cache_dir) / f"{agent_type}_prompt_{timestamp}.json"
+        if db is None:
+            with get_db_session() as session:
+                return self._get_history(session, agent_type, limit)
+        else:
+            return self._get_history(db, agent_type, limit)
+    
+    def _get_history(self, 
+                    db: Session, 
+                    agent_type: str, 
+                    limit: int) -> List[Dict[str, Any]]:
+        """
+        Implementação interna para obter o histórico de versões.
+        
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            limit: Limite de resultados
             
-            backup_data = {
-                "agent_type": agent_type,
-                "timestamp": timestamp,
-                "prompt": current_prompt
+        Returns:
+            List[Dict[str, Any]]: Lista de prompts com informações resumidas
+        """
+        prompts = SystemPromptRepository.list_prompts(
+            db=db,
+            agent_type=agent_type,
+            limit=limit
+        )
+        
+        return [
+            {
+                "prompt_id": p.prompt_id,
+                "version": p.version,
+                "is_active": p.is_active,
+                "created_at": p.created_at.isoformat(),
+                "updated_at": p.updated_at.isoformat(),
+                "content": p.content[:100] + "..." if len(p.content) > 100 else p.content,
+                "metadata": p.metadata
             }
-            
-            with open(backup_file, "w") as f:
-                json.dump(backup_data, f, indent=2)
-            
-            return True
-        except Exception as e:
-            logger.error(f"Erro ao criar backup do system prompt: {str(e)}")
-            return False
+            for p in prompts
+        ]
 
+
+# Instância do serviço
 system_prompt_service = SystemPromptService() 

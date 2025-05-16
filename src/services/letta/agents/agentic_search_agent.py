@@ -1,7 +1,7 @@
 from typing import List
 
 from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agentic_search_memory_blocks
-from src.services.letta.agents.system_prompts.agentic_search_sp import get_agentic_search_system_prompt_text
+from src.services.letta.system_prompt_service import system_prompt_service
 from src.services.letta.letta_service import letta_service
 import uuid
 
@@ -12,6 +12,9 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
   """Cria um novo agentic_search agent"""
   try:
     client = letta_service.get_client_async()
+    
+    system_prompt = system_prompt_service.get_active_system_prompt_from_db(agent_type="agentic_search")
+    
     agent = await client.agents.create(
       agent_type="memgpt_agent",
       name=f"agentic_search_{name if name else str(uuid.uuid4())}",
@@ -35,7 +38,7 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
       tags=["agentic_search"] + (tags if tags else []),
       model=env.LLM_MODEL,
       embedding=env.EMBEDDING_MODEL,
-      system=get_agentic_search_system_prompt_text(),
+      system=system_prompt,
       memory_blocks=get_agentic_search_memory_blocks(),
     )
     return agent

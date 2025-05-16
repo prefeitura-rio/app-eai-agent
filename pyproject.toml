@@ -12,8 +12,15 @@ dependencies = [
     "redis>=6.1.0",
     "taskipy>=1.14.1",
     "uvicorn>=0.34.2",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "alembic>=1.12.0",
 ]
 
 [tool.taskipy.tasks]
 ngrok = "ngrok http --url=ideal-burro-barely.ngrok-free.app 8089"
 serve = "uvicorn src.main:app --reload --host 0.0.0.0 --port 8089 --log-level info"
+db-init = "python -c \"from src.db import Base, engine; Base.metadata.create_all(bind=engine)\""
+db-migrate = "alembic revision --autogenerate -m"
+db-upgrade = "alembic upgrade head"
+db-downgrade = "alembic downgrade"
