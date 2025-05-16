@@ -90,15 +90,22 @@
                     <div class="mb-3 mt-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <label for="promptText" class="form-label mb-0">Conteúdo do Prompt</label>
-                            <button id="copyButton" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-clipboard me-1"></i>Copiar
+                            <div>
+                                <button id="expandButton" class="btn btn-sm btn-outline-secondary me-2" title="Expandir editor">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+                                <button id="copyButton" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-clipboard me-1"></i>Copiar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="position-relative">
+                            <textarea id="promptText" class="prompt-editor" required></textarea>
+                            <div id="editorOverlay" class="editor-overlay"></div>
+                            <button id="closeExpandedEditor" class="close-expanded-editor" title="Fechar editor expandido">
+                                <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
-                        <textarea id="promptText" class="prompt-editor" required></textarea>
-                        <div id="editorOverlay" class="editor-overlay"></div>
-                        <button id="closeExpandedEditor" class="close-expanded-editor">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
                     </div>
                     
                     <div class="row mb-3">
