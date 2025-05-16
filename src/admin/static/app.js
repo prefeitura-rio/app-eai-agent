@@ -10,6 +10,7 @@ const authorInput = document.getElementById('author');
 const reasonInput = document.getElementById('reason');
 const updateAgentsCheckbox = document.getElementById('updateAgents');
 const saveButton = document.getElementById('saveButton');
+const copyButton = document.getElementById('copyButton');
 const historyList = document.getElementById('historyList');
 const logoutBtn = document.getElementById('logoutBtn');
 const errorMsg = document.getElementById('errorMsg');
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     agentTypeSelect.addEventListener('change', loadData);
     saveButton.addEventListener('click', handleSavePrompt);
     logoutBtn.addEventListener('click', handleLogout);
+    copyButton.addEventListener('click', handleCopyPrompt);
 });
 
 // Funções de UI
@@ -134,6 +136,54 @@ function handleSavePrompt() {
         });
 }
 
+function handleCopyPrompt() {
+    // Usar API Clipboard moderna se disponível
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(promptText.value)
+            .then(() => {
+                showCopyFeedback();
+            })
+            .catch(err => {
+                console.error('Erro ao copiar com Clipboard API:', err);
+                // Fallback para o método antigo
+                fallbackCopy();
+            });
+    } else {
+        // Método antigo para navegadores que não suportam a API Clipboard
+        fallbackCopy();
+    }
+}
+
+function fallbackCopy() {
+    try {
+        promptText.select();
+        const success = document.execCommand('copy');
+        if (success) {
+            showCopyFeedback();
+        } else {
+            console.error('Falha ao executar execCommand("copy")');
+            showAlert('Não foi possível copiar o texto. Tente selecionar e copiar manualmente.', 'warning');
+        }
+    } catch (err) {
+        console.error('Erro ao usar método de cópia alternativo:', err);
+        showAlert('Não foi possível copiar o texto. Tente selecionar e copiar manualmente.', 'warning');
+    }
+}
+
+function showCopyFeedback() {
+    // Efeito visual feedback
+    const originalText = copyButton.innerHTML;
+    copyButton.innerHTML = '<i class="bi bi-check2 me-1"></i>Copiado!';
+    copyButton.classList.add('btn-success');
+    copyButton.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        copyButton.innerHTML = originalText;
+        copyButton.classList.remove('btn-success');
+        copyButton.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
 // Funções de dados
 function loadData() {
     showLoading();
@@ -203,7 +253,7 @@ function renderHistory(prompts) {
         // Obter texto para preview - tentamos diferentes propriedades
         let previewText = '(Sem conteúdo)';
         if (typeof prompt.content === 'string') {
-            previewText = prompt.content;
+            previewText = prompt.content.replace(/\n/g, ' ').trim();
         }
         
         const item = document.createElement('div');
@@ -211,17 +261,19 @@ function renderHistory(prompts) {
         item.dataset.promptId = prompt.prompt_id;
         item.dataset.version = prompt.version;
         item.innerHTML = `
-            <div class="d-flex justify-content-between">
-                <strong>v${prompt.version}</strong>
-                <small>${date}</small>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="history-version">v${prompt.version}</span>
+                <span class="history-date">${date}</span>
             </div>
-            <div>
+            <div class="my-2">
                 ${isActive ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
                 ${prompt.metadata && prompt.metadata.author ? 
                     `<span class="metadata-badge">Autor: ${prompt.metadata.author}</span>` : ''}
+                ${prompt.metadata && prompt.metadata.reason ? 
+                    `<span class="metadata-badge">${prompt.metadata.reason}</span>` : ''}
             </div>
-            <div class="text-truncate mt-1 small">
-                ${previewText.substring(0, 50)}...
+            <div class="history-preview" title="${previewText.length > 150 ? previewText.substring(0, 150) + '...' : previewText}">
+                ${previewText.substring(0, 100)}${previewText.length > 100 ? '...' : ''}
             </div>
         `;
         
@@ -256,28 +308,10 @@ function selectPromptById(promptId) {
             
             console.log('Prompt encontrado no histórico:', prompt);
             
-            // Verificar se o conteúdo completo já está disponível
-            if (prompt.content && prompt.content.length > 50) {
-                console.log('Usando conteúdo já disponível no histórico');
-                // O conteúdo completo já está disponível, usar diretamente
-                promptText.value = prompt.content;
-                currentPromptId = promptId;
-                
-                if (prompt.metadata) {
-                    authorInput.value = prompt.metadata.author || '';
-                    reasonInput.value = prompt.metadata.reason || '';
-                }
-                
-                // Atualizar a classe ativa
-                updateActiveHistoryItem(promptId);
-                hideLoading();
-                return;
-            }
-            
-            // Se o conteúdo completo não estiver disponível, precisamos buscá-lo
+            // Sempre buscar o conteúdo completo diretamente da API
             console.log('Buscando conteúdo completo na API');
             
-            // Primeiro, tente buscar pela versão se estiver disponível
+            // Buscar pela versão se estiver disponível
             const versionParam = prompt.version ? `&version=${prompt.version}` : '';
             
             apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}${versionParam}`)
@@ -299,9 +333,9 @@ function selectPromptById(promptId) {
                 .catch(error => {
                     console.error('Erro ao buscar conteúdo completo do prompt:', error);
                     
-                    // Tente usar o que já temos
+                    // Tente usar o que já temos como fallback apenas em caso de erro
                     if (prompt.content) {
-                        console.log('Usando conteúdo parcial do histórico');
+                        console.log('Usando conteúdo do histórico como fallback');
                         promptText.value = prompt.content;
                         currentPromptId = promptId;
                         
@@ -311,7 +345,7 @@ function selectPromptById(promptId) {
                         // Atualizar a classe ativa
                         updateActiveHistoryItem(promptId);
                         
-                        showAlert('Carregado conteúdo parcial do prompt', 'warning');
+                        showAlert('Possível conteúdo parcial do prompt. Erro ao buscar versão completa.', 'warning');
                     } else {
                         showAlert('Erro ao carregar o conteúdo completo do prompt', 'danger');
                     }
