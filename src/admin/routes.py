@@ -15,10 +15,10 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # Rota principal do painel admin que serve o HTML
 @router.get("/", response_class=HTMLResponse)
-async def get_admin_panel(request: Request, token: str = Depends(validar_token)):
+async def get_admin_panel(request: Request):
     """
     Retorna a página principal do painel administrativo.
-    Requer autenticação com token.
+    A autenticação será gerenciada pelo frontend.
     """
     with open(os.path.join(STATIC_DIR, "index.html"), "r") as f:
         html_content = f.read()
