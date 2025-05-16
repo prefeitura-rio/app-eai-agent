@@ -140,7 +140,7 @@ async def update_system_prompt(
 @router.get("/history", response_model=SystemPromptHistoryResponse)
 async def get_system_prompt_history(
     agent_type: str = "agentic_search",
-    limit: int = Query(10, ge=1, le=100, description="Limite de resultados"),
+    limit: int = Query(10, ge=1, description="Limite de resultados"),
     db: Session = Depends(get_db)
 ):
     """
