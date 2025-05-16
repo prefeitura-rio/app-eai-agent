@@ -34,8 +34,18 @@
         
         <div id="adminPanel" class="admin-container d-none">
             <div class="navbar">
-                <h1 class="nav-title">Painel Admin - System Prompts</h1>
-                <button id="logoutBtn" class="btn btn-sm btn-outline-light">Sair</button>
+                <h1 class="nav-title">Painel de edição de System Prompts</h1>
+                <div class="d-flex align-items-center">
+                    <div class="theme-switch-wrapper">
+                        <span class="icon sun-icon"><i class="bi bi-brightness-high-fill"></i></span>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="icon moon-icon"><i class="bi bi-moon-fill"></i></span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-sm btn-outline-light">Sair</button>
+                </div>
             </div>
             
             <div id="alertArea"></div>
@@ -94,6 +104,8 @@
                     <div id="historyList" class="list-group mt-3"></div>
                 </div>
             </div>
+            
+            <p class="support-email">Em caso de suporte, entre em contato com o desenvolvedor: frederico.zolio@prefeitura.rio</p>
         </div>
     </div>
     

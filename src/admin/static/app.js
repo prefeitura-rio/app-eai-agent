@@ -14,15 +14,21 @@ const copyButton = document.getElementById('copyButton');
 const historyList = document.getElementById('historyList');
 const logoutBtn = document.getElementById('logoutBtn');
 const errorMsg = document.getElementById('errorMsg');
+const themeToggle = document.getElementById('themeToggle');
 
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
 let currentPromptId = null;
 let promptsData = []; // Array para armazenar todos os dados dos prompts
+let currentTheme = localStorage.getItem('theme') || 'light';
 
 // Configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM carregado, inicializando painel admin');
+    
+    // Inicializar tema
+    initTheme();
+    
     // Verificar se já existe um token salvo
     if (currentToken) {
         showAdminPanel();
@@ -35,6 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.addEventListener('click', handleSavePrompt);
     logoutBtn.addEventListener('click', handleLogout);
     copyButton.addEventListener('click', handleCopyPrompt);
+    
+    // Adicionar listener para o toggle de tema
+    if (themeToggle) {
+        themeToggle.addEventListener('change', switchTheme);
+    }
     
     // Adicionar event listener global para itens de histórico
     document.addEventListener('click', function(e) {
@@ -74,6 +85,33 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Elemento historyList não encontrado no DOM');
     }
 });
+
+// Funções de tema
+function initTheme() {
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (themeToggle) {
+            themeToggle.checked = true;
+        }
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        if (themeToggle) {
+            themeToggle.checked = false;
+        }
+    }
+}
+
+function switchTheme(e) {
+    if (e.target.checked) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        currentTheme = 'dark';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        currentTheme = 'light';
+    }
+}
 
 // Funções de UI
 function showAdminPanel() {

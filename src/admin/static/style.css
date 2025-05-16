@@ -1,6 +1,36 @@
 body {
     font-family: 'Segoe UI', 'Roboto', sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+:root {
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --primary-color: #0d6efd;
+    --hover-bg: #f5f5f5;
+    --active-bg: #e0f7fa;
+    --navbar-bg: #0d6efd;
+    --navbar-text: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #ced4da;
+}
+
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --card-bg: #1e1e1e;
+    --border-color: #444;
+    --primary-color: #3d8bfd;
+    --hover-bg: #2c2c2c;
+    --active-bg: #2a3b47;
+    --navbar-bg: #1e88e5;
+    --navbar-text: #ffffff;
+    --input-bg: #2c2c2c;
+    --input-border: #555;
 }
 
 .login-container {
@@ -9,7 +39,7 @@ body {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    background-color: white;
+    background-color: var(--card-bg);
 }
 
 .admin-container {
@@ -18,15 +48,15 @@ body {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    background-color: white;
+    background-color: var(--card-bg);
 }
 
 .navbar {
     margin-bottom: 20px;
-    background-color: #0d6efd;
+    background-color: var(--navbar-bg);
     padding: 15px 20px;
     border-radius: 5px;
-    color: white;
+    color: var(--navbar-text);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -40,7 +70,7 @@ body {
 
 .prompt-editor {
     border-radius: 5px;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--input-border);
     min-height: 300px;
     width: 100%;
     padding: 15px;
@@ -53,10 +83,12 @@ body {
     white-space: pre-wrap;
     overflow-wrap: break-word;
     overflow: auto;
+    background-color: var(--input-bg);
+    color: var(--text-color);
 }
 
 .prompt-editor:focus {
-    border-color: #86b7fe;
+    border-color: var(--primary-color);
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
@@ -67,21 +99,22 @@ body {
     border-radius: 5px;
     margin-bottom: 10px;
     transition: background-color 0.2s;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
     position: relative;
     z-index: 1;
+    background-color: var(--card-bg);
 }
 
 .history-item:hover {
-    background-color: #f5f5f5;
-    border-left: 3px solid #0d6efd;
+    background-color: var(--hover-bg);
+    border-left: 3px solid var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .history-item.active {
-    background-color: #e0f7fa;
-    border-left: 3px solid #0d6efd;
+    background-color: var(--active-bg);
+    border-left: 3px solid var(--primary-color);
 }
 
 .history-item::after {
@@ -102,23 +135,23 @@ body {
 .prompt-container {
     flex: 3;
     padding: 20px;
-    background-color: #fff;
+    background-color: var(--card-bg);
     border-radius: 5px;
 }
 
 .prompt-container h4, .history-container h4 {
     font-size: 18px;
     font-weight: 600;
-    color: #212529;
+    color: var(--text-color);
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #eaeaea;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .history-container {
     flex: 1;
     min-width: 300px;
-    border-left: 1px solid #eee;
+    border-left: 1px solid var(--border-color);
     padding-left: 20px;
 }
 
@@ -135,7 +168,7 @@ body {
 }
 
 #historyList::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--hover-bg);
     border-radius: 10px;
 }
 
@@ -150,18 +183,18 @@ body {
 
 .metadata-badge {
     display: inline-block;
-    background-color: #e9ecef;
+    background-color: var(--hover-bg);
     padding: 2px 6px;
     border-radius: 4px;
     margin-right: 5px;
     font-size: 12px;
-    color: #495057;
+    color: var(--text-color);
 }
 
 /* Novos estilos para o histórico de prompts */
 .history-version {
     font-weight: bold;
-    color: #0d6efd;
+    color: var(--primary-color);
 }
 
 .history-date {
@@ -176,7 +209,7 @@ body {
 }
 
 .history-preview {
-    color: #495057;
+    color: var(--text-color);
     font-size: 13px;
     margin-top: 5px;
     font-family: monospace;
@@ -195,7 +228,70 @@ body {
     background-color: #0b5ed7;
 }
 
-/* Estilos responsivos para dispositivos menores */
+/* Botão e Toggle para tema */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 24px;
+    position: relative;
+    width: 48px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #ccc;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    background-color: white;
+    bottom: 4px;
+    content: "";
+    height: 16px;
+    left: 4px;
+    position: absolute;
+    transition: .4s;
+    width: 16px;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.theme-switch-wrapper .icon {
+    margin: 0 5px;
+    font-size: 14px;
+}
+
+.theme-switch-wrapper .sun-icon {
+    color: #FFD700;
+}
+
+.theme-switch-wrapper .moon-icon {
+    color: #C4C4C4;
+}
+
+/* Responsividade para dispositivos menores */
 @media (max-width: 991px) {
     .flex-container {
         flex-direction: column;
@@ -203,7 +299,7 @@ body {
     
     .history-container {
         border-left: none;
-        border-top: 1px solid #eee;
+        border-top: 1px solid var(--border-color);
         padding-left: 0;
         padding-top: 20px;
         margin-top: 20px;
@@ -231,4 +327,34 @@ body {
     #historyList {
         max-height: 350px;
     }
+    
+    .theme-switch-wrapper {
+        margin-right: 5px;
+    }
+}
+
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--input-border);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.card {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.support-email {
+    text-align: center;
+    color: var(--text-color);
+    opacity: 0.6;
+    font-size: 0.85rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-style: italic;
 } 
