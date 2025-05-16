@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from src.core.security.dependencies import validar_token
 from src.db import get_db
 from src.services.letta.system_prompt_service import system_prompt_service
+from src.services.letta.letta_service import letta_service
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.schemas.system_prompt_schema import (
     SystemPromptUpdateRequest,
@@ -16,6 +17,22 @@ from src.schemas.system_prompt_schema import (
 
 router = APIRouter(prefix="/system-prompt", tags=["System Prompt"], dependencies=[Depends(validar_token)])
 
+@router.get("/agent-types", response_model=List[str])
+async def get_agent_types():
+    """
+    Obtém os tipos de agentes disponíveis baseados nas tags que contêm 'agentic'.
+    
+    Returns:
+        List[str]: Lista de tags de agentes
+    """
+    try:
+        agent_types = await letta_service.get_agentic_tags()
+        return agent_types
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter tipos de agentes: {str(e)}"
+        )
 
 @router.get("", response_model=SystemPromptGetResponse)
 async def get_system_prompt(

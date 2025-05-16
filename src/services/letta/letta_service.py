@@ -27,6 +27,25 @@ class LettaService:
         if agents and len(agents) > 0:
             return agents[0].id
         return None
+    
+    async def get_agentic_tags(self) -> List[str]:
+        """
+        Retorna uma lista de tags que contenham 'agentic' em seu conteúdo.
+        
+        Returns:
+            List[str]: Lista de tags filtradas
+        """
+        try:
+            agents = await self.client_async.agents.list()
+            all_tags = set()
+            for agent in agents:
+                if hasattr(agent, "tags") and agent.tags:
+                    all_tags.update(agent.tags)
+            agentic_tags = [tag for tag in all_tags if "agentic" in tag.lower()]
+            return agentic_tags
+        except Exception as error:
+            print(f"Erro ao obter tags: {error}")
+            return []
       
     async def create_agent(self, agent_type: str, tags: List[str] = None, name: str = None):
       """Cria um novo agente de acordo com o tipo de agente passado."""

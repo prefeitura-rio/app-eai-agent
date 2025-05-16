@@ -41,7 +41,7 @@
             <div class="mb-4">
                 <label for="agentType" class="form-label">Tipo de Agente</label>
                 <select id="agentType" class="form-select">
-                    <option value="agentic_search">Agentic Search</option>
+                    <option value="">Carregando...</option>
                 </select>
             </div>
             
@@ -95,7 +95,41 @@
         </div>
     </div>
     
-    <!-- JavaScript da Aplicação - Vanilla JS -->
+    <!-- JavaScript para modificar comportamento de login -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const token = document.getElementById('token').value;
+                
+                // Validar token
+                axios.get('/api/v1/system-prompt', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(response => {
+                    // Token válido, salvar e mostrar painel
+                    localStorage.setItem('adminToken', token);
+                    document.querySelector('.login-container').classList.add('d-none');
+                    document.getElementById('adminPanel').classList.remove('d-none');
+                    
+                    // Disparar evento para carregar tipos de agentes
+                    document.dispatchEvent(new Event('agentTypesReady'));
+                })
+                .catch(error => {
+                    const errorMsg = document.getElementById('errorMsg');
+                    errorMsg.classList.remove('d-none');
+                    errorMsg.textContent = 'Token inválido ou erro de autenticação.';
+                });
+            });
+        });
+    </script>
+    
+    <!-- JavaScript para carregar tipos de agentes -->
+    <script src="/admin/static/agent-types.js"></script>
+    
+    <!-- JavaScript principal da Aplicação -->
     <script src="/admin/static/app.js"></script>
 </body>
 </html> 
