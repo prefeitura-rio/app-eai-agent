@@ -33,10 +33,8 @@ async def get_system_prompt(
         SystemPromptGetResponse: Resposta contendo o system prompt atual
     """
     try:
-        # Obtém o prompt do banco de dados
         prompt_text = await system_prompt_service.get_current_system_prompt(agent_type, db)
         
-        # Busca os metadados adicionais se disponíveis
         active_prompt = SystemPromptRepository.get_active_prompt(db, agent_type)
         if active_prompt:
             return SystemPromptGetResponse(
@@ -88,7 +86,6 @@ async def update_system_prompt(
             db=db
         )
         
-        # Prepara mensagem de resposta
         message = "System prompt atualizado com sucesso"
         
         if request.update_agents:
@@ -140,7 +137,6 @@ async def get_system_prompt_history(
             db=db
         )
         
-        # Converte para o formato de resposta
         prompts = [
             SystemPromptHistoryItem(**item)
             for item in history
@@ -173,7 +169,6 @@ async def get_system_prompt_by_id(
         SystemPromptGetResponse: Resposta contendo o system prompt específico
     """
     try:
-        # Busca o prompt específico pelo ID
         prompt = SystemPromptRepository.get_prompt_by_id(db, prompt_id)
         
         if not prompt:

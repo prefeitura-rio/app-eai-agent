@@ -1,17 +1,11 @@
 from typing import Dict, List, Optional, Any
-import os
-from pathlib import Path
-from datetime import datetime
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from loguru import logger
 
-from src.db import get_db, get_db_session
-from src.models.system_prompt_model import SystemPrompt, SystemPromptDeployment
+from src.db import get_db_session
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.services.letta.letta_service import letta_service
-
 
 class SystemPromptService:
     """
@@ -36,19 +30,16 @@ class SystemPromptService:
         Returns:
             str: Texto do system prompt atual
         """
-        # Tenta obter o prompt do banco de dados
         if db:
             prompt = SystemPromptRepository.get_active_prompt(db, agent_type)
             if prompt:
                 return prompt.content
         
-        # Se não encontrar no banco ou não tiver conexão
         with get_db_session() as session:
             prompt = SystemPromptRepository.get_active_prompt(session, agent_type)
             if prompt:
                 return prompt.content
                 
-        # Se não encontrar nenhum prompt
         raise ValueError(f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}")
     
     def get_active_system_prompt_from_db(self, agent_type: str = "agentic_search") -> str:
@@ -63,14 +54,11 @@ class SystemPromptService:
             str: Texto do system prompt ativo no banco de dados
         """
         try:
-            # Abre uma sessão do banco de dados
             with get_db_session() as db:
-                # Busca o prompt ativo no banco de dados
                 prompt = SystemPromptRepository.get_active_prompt(db, agent_type)
                 if prompt:
                     return prompt.content
                 
-            # Se não encontrar nenhum prompt
             raise ValueError(f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}")
         except Exception as e:
             logger.error(f"Erro ao obter system prompt do banco: {str(e)}")
@@ -115,7 +103,6 @@ class SystemPromptService:
                     results[agent.id] = True
                     logger.info(f"System prompt atualizado para o agente: {agent.id}")
                     
-                    # Registra a implantação no banco de dados se disponível
                     if db and prompt_id:
                         SystemPromptRepository.create_deployment(
                             db=db,
@@ -130,7 +117,6 @@ class SystemPromptService:
                     results[agent.id] = False
                     logger.error(f"Erro ao atualizar agente {agent.id}: {str(agent_error)}")
                     
-                    # Registra a falha na implantação no banco de dados se disponível
                     if db and prompt_id:
                         SystemPromptRepository.create_deployment(
                             db=db,
@@ -174,12 +160,10 @@ class SystemPromptService:
             "agents_updated": {}
         }
         
-        # Usa gerenciador de contexto para sessão se db não for fornecido
         if db is None:
             with get_db_session() as session:
                 db = session
         
-        # Usa a sessão que foi fornecida ou criada
         return await self._perform_update(
             db, 
             new_prompt, 
@@ -213,7 +197,6 @@ class SystemPromptService:
         Returns:
             Dict: Resultado das operações atualizado
         """
-        # Salva o novo prompt no banco de dados
         prompt = SystemPromptRepository.create_prompt(
             db=db,
             agent_type=agent_type,
@@ -222,7 +205,6 @@ class SystemPromptService:
         )
         result["prompt_id"] = prompt.prompt_id
         
-        # Atualiza os agentes existentes se solicitado
         if update_agents:
             agents_result = await self.update_all_agents_system_prompt(
                 new_prompt=new_prompt, 
@@ -280,13 +262,10 @@ class SystemPromptService:
             limit=limit
         )
         
-        # Formata os resultados
         formatted_prompts = []
         for p in prompts:
-            # Resumo do conteúdo para preview
             content_preview = p.content[:100] + "..." if len(p.content) > 100 else p.content
             
-            # Formata datas para string ISO
             created_at_str = p.created_at.isoformat() if p.created_at else None
             updated_at_str = p.updated_at.isoformat() if p.updated_at else None
             
@@ -302,6 +281,4 @@ class SystemPromptService:
             
         return formatted_prompts
 
-
-# Instância do serviço
 system_prompt_service = SystemPromptService() 

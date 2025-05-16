@@ -13,7 +13,6 @@ from src.admin import router as admin_router
 from src.core.middlewares.logging import LoggingMiddleware
 from src.db import Base, engine
 
-# Criar tabelas no banco de dados se não existirem
 Base.metadata.create_all(bind=engine)
 
 logger.add(
