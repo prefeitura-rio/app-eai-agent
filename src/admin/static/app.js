@@ -313,7 +313,30 @@ function renderHistory(prompts) {
     
     prompts.forEach(prompt => {
         const isActive = prompt.is_active;
-        const date = new Date(prompt.created_at).toLocaleDateString();
+        const dateObj = new Date(prompt.created_at);
+        
+        // Configuração para o fuso horário brasileiro (UTC-3)
+        const options = { 
+            timeZone: 'America/Sao_Paulo', 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        };
+        
+        // Formatando data com o fuso do Brasil
+        const date = dateObj.toLocaleDateString('pt-BR', options);
+        
+        // Obtendo horas e minutos no fuso do Brasil (UTC-3)
+        // Primeiro criamos um formatter que inclui apenas hora/minuto
+        const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        
+        // E usamos para formatar a data
+        const timeStr = timeFormatter.format(dateObj);
         
         // Obter texto para preview - tentamos diferentes propriedades
         let previewText = '(Sem conteúdo)';
@@ -330,7 +353,7 @@ function renderHistory(prompts) {
         item.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <span class="history-version">v${prompt.version}</span>
-                <span class="history-date">${date}</span>
+                <span class="history-date">${date} ${timeStr}</span>
             </div>
             <div class="my-2">
                 ${isActive ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
