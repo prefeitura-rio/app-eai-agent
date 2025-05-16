@@ -17,6 +17,7 @@ const errorMsg = document.getElementById('errorMsg');
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
 let currentPromptId = null;
+let promptsData = []; // Array para armazenar todos os dados dos prompts
 
 // Configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
@@ -168,8 +169,11 @@ function loadData() {
             showAlert('Nenhum prompt configurado para este tipo de agente. Adicione o texto do prompt e clique em Salvar para criar o primeiro.', 'info');
         }
         
+        // Salvar os dados dos prompts globalmente para acesso fácil
+        promptsData = historyData.prompts || [];
+        
         // Limpar e preencher o histórico
-        renderHistory(historyData.prompts || []);
+        renderHistory(promptsData);
         
         hideLoading();
     })
@@ -194,6 +198,8 @@ function renderHistory(prompts) {
         
         const item = document.createElement('div');
         item.className = `history-item ${prompt.prompt_id === currentPromptId ? 'active' : ''}`;
+        item.dataset.promptId = prompt.prompt_id;
+        item.dataset.version = prompt.version;
         item.innerHTML = `
             <div class="d-flex justify-content-between">
                 <strong>v${prompt.version}</strong>
@@ -210,14 +216,23 @@ function renderHistory(prompts) {
         `;
         
         item.addEventListener('click', () => {
-            selectPrompt(prompt);
+            selectPrompt(prompt.prompt_id);
         });
         
         historyList.appendChild(item);
     });
 }
 
-function selectPrompt(prompt) {
+function selectPrompt(promptId) {
+    // Encontrar o prompt pelo ID no array global
+    const prompt = promptsData.find(p => p.prompt_id === promptId);
+    
+    if (!prompt) {
+        console.error('Prompt não encontrado:', promptId);
+        return;
+    }
+    
+    // Atualizar o conteúdo com o prompt completo, não apenas a prévia
     promptText.value = prompt.content;
     currentPromptId = prompt.prompt_id;
     
@@ -231,11 +246,9 @@ function selectPrompt(prompt) {
     items.forEach(item => item.classList.remove('active'));
     
     // Encontrar e marcar o novo item ativo
-    const activeItems = historyList.querySelectorAll(`.history-item`);
+    const activeItems = historyList.querySelectorAll(`.history-item[data-prompt-id="${promptId}"]`);
     activeItems.forEach(item => {
-        if (item.textContent.includes(`v${prompt.version}`)) {
-            item.classList.add('active');
-        }
+        item.classList.add('active');
     });
 }
 
