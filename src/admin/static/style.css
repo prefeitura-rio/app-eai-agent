@@ -1,75 +1,100 @@
 body {
     font-family: 'Segoe UI', 'Roboto', sans-serif;
-    background-color: var(--bg-color);
+    background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
+    min-height: 100vh;
+    background-attachment: fixed;
 }
 
 :root {
-    --bg-color: #f8f9fa;
+    --bg-gradient-start: #f8f9fa;
+    --bg-gradient-end: #e9ecef;
     --text-color: #212529;
-    --card-bg: #ffffff;
-    --border-color: #e0e0e0;
-    --primary-color: #0d6efd;
-    --hover-bg: #f5f5f5;
-    --active-bg: #e0f7fa;
-    --navbar-bg: #0d6efd;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --border-color: rgba(224, 224, 224, 0.5);
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --hover-bg: rgba(245, 245, 245, 0.6);
+    --active-bg: rgba(224, 247, 250, 0.7);
+    --navbar-bg: rgba(67, 97, 238, 0.9);
     --navbar-text: #ffffff;
-    --input-bg: #ffffff;
-    --input-border: #ced4da;
+    --input-bg: rgba(255, 255, 255, 0.8);
+    --input-border: rgba(206, 212, 218, 0.6);
+    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --button-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
 }
 
 [data-theme="dark"] {
-    --bg-color: #121212;
+    --bg-gradient-start: #121212;
+    --bg-gradient-end: #1f1f1f;
     --text-color: #e0e0e0;
-    --card-bg: #1e1e1e;
-    --border-color: #444;
-    --primary-color: #3d8bfd;
-    --hover-bg: #2c2c2c;
-    --active-bg: #2a3b47;
-    --navbar-bg: #1e88e5;
+    --card-bg: rgba(30, 30, 30, 0.7);
+    --border-color: rgba(68, 68, 68, 0.5);
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --hover-bg: rgba(44, 44, 44, 0.6);
+    --active-bg: rgba(42, 59, 71, 0.7);
+    --navbar-bg: rgba(25, 34, 56, 0.9);
     --navbar-text: #ffffff;
-    --input-bg: #2c2c2c;
-    --input-border: #555;
+    --input-bg: rgba(44, 44, 44, 0.6);
+    --input-border: rgba(85, 85, 85, 0.6);
+    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    --button-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
 }
 
 .login-container {
     max-width: 400px;
     margin: 100px auto;
     padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
     background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
 }
 
 .admin-container {
     max-width: 1200px;
     margin: 20px auto;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
     background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
 }
 
 .navbar {
     margin-bottom: 20px;
     background-color: var(--navbar-bg);
     padding: 15px 20px;
-    border-radius: 5px;
+    border-radius: 12px;
     color: var(--navbar-text);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
 }
 
 .nav-title {
     font-size: 1.5rem;
     font-weight: bold;
     margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .prompt-editor {
-    border-radius: 5px;
+    border-radius: 12px;
     border: 1px solid var(--input-border);
     min-height: 300px;
     width: 100%;
@@ -78,43 +103,46 @@ body {
     font-size: 14px;
     line-height: 1.6;
     resize: vertical;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,.075);
-    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.04);
+    transition: all 0.3s ease;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     overflow: auto;
     background-color: var(--input-bg);
     color: var(--text-color);
+    backdrop-filter: blur(5px);
 }
 
 .prompt-editor:focus {
     border-color: var(--primary-color);
     outline: 0;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
 }
 
 .history-item {
     cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    transition: background-color 0.2s;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
     border: 1px solid var(--border-color);
     position: relative;
     z-index: 1;
     background-color: var(--card-bg);
+    backdrop-filter: blur(5px);
 }
 
 .history-item:hover {
     background-color: var(--hover-bg);
     border-left: 3px solid var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
 }
 
 .history-item.active {
     background-color: var(--active-bg);
     border-left: 3px solid var(--primary-color);
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.15);
 }
 
 .history-item::after {
@@ -129,14 +157,17 @@ body {
 
 .flex-container {
     display: flex;
-    gap: 20px;
+    gap: 25px;
 }
 
 .prompt-container {
     flex: 3;
-    padding: 20px;
+    padding: 25px;
     background-color: var(--card-bg);
-    border-radius: 5px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
 }
 
 .prompt-container h4, .history-container h4 {
@@ -146,13 +177,19 @@ body {
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
 }
 
 .history-container {
     flex: 1;
     min-width: 300px;
-    border-left: 1px solid var(--border-color);
-    padding-left: 20px;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
 }
 
 /* Adicionando regras para o scroll no histórico */
@@ -161,6 +198,7 @@ body {
     overflow-y: auto;
     scrollbar-width: thin;
     padding-right: 5px;
+    margin-right: -5px;
 }
 
 #historyList::-webkit-scrollbar {
@@ -173,22 +211,24 @@ body {
 }
 
 #historyList::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background-color: rgba(193, 193, 193, 0.7);
     border-radius: 10px;
 }
 
 #historyList::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background-color: rgba(168, 168, 168, 0.9);
 }
 
 .metadata-badge {
     display: inline-block;
     background-color: var(--hover-bg);
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
     margin-right: 5px;
     font-size: 12px;
     color: var(--text-color);
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--border-color);
 }
 
 /* Novos estilos para o histórico de prompts */
@@ -205,7 +245,10 @@ body {
 
 .badge.bg-success {
     font-size: 11px;
-    padding: 2px 6px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background-color: rgba(25, 135, 84, 0.85) !important;
+    backdrop-filter: blur(5px);
 }
 
 .history-preview {
@@ -219,20 +262,38 @@ body {
 }
 
 #saveButton {
-    padding: 8px 20px;
+    padding: 10px 24px;
     font-weight: 500;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    border: none;
+    box-shadow: var(--button-shadow);
 }
 
 #saveButton:hover {
-    background-color: #0b5ed7;
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 97, 238, 0.35);
+}
+
+#saveButton:active {
+    transform: translateY(0);
+}
+
+.btn-outline-light {
+    transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+    transform: translateY(-2px);
 }
 
 /* Botão e Toggle para tema */
 .theme-switch-wrapper {
     display: flex;
     align-items: center;
-    margin-right: 10px;
+    margin-right: 15px;
 }
 
 .theme-switch {
@@ -247,14 +308,14 @@ body {
 }
 
 .slider {
-    background-color: #ccc;
+    background-color: rgba(204, 204, 204, 0.6);
     bottom: 0;
     cursor: pointer;
     left: 0;
     position: absolute;
     right: 0;
     top: 0;
-    transition: .4s;
+    transition: 0.4s;
     border-radius: 34px;
 }
 
@@ -265,13 +326,13 @@ body {
     height: 16px;
     left: 4px;
     position: absolute;
-    transition: .4s;
+    transition: 0.4s;
     width: 16px;
     border-radius: 50%;
 }
 
 input:checked + .slider {
-    background-color: #2196F3;
+    background-color: var(--primary-color);
 }
 
 input:checked + .slider:before {
@@ -279,82 +340,120 @@ input:checked + .slider:before {
 }
 
 .theme-switch-wrapper .icon {
-    margin: 0 5px;
+    color: var(--navbar-text);
+    padding: 0 5px;
     font-size: 14px;
 }
 
-.theme-switch-wrapper .sun-icon {
-    color: #FFD700;
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    border-radius: 8px;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
 }
 
-.theme-switch-wrapper .moon-icon {
-    color: #C4C4C4;
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
 }
 
-/* Responsividade para dispositivos menores */
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: var(--button-shadow);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 97, 238, 0.35);
+}
+
+.btn-outline-secondary {
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--hover-bg);
+    transform: translateY(-2px);
+}
+
+.support-email {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* Loading spinner */
+.spinner-border {
+    color: var(--primary-color) !important;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+}
+
+/* Responsividade */
 @media (max-width: 991px) {
     .flex-container {
         flex-direction: column;
     }
     
     .history-container {
-        border-left: none;
-        border-top: 1px solid var(--border-color);
-        padding-left: 0;
-        padding-top: 20px;
+        min-width: 100%;
+        padding: 20px;
         margin-top: 20px;
-        width: 100%;
+        border-left: none;
     }
     
     #historyList {
-        max-height: 400px;
+        max-height: 300px;
     }
 }
 
 @media (max-width: 576px) {
     .admin-container {
         padding: 15px;
+        margin: 10px;
     }
     
     .navbar {
-        padding: 10px 15px;
+        padding: 12px 15px;
+        flex-direction: column;
+        align-items: flex-start;
     }
     
     .nav-title {
-        font-size: 1.2rem;
+        margin-bottom: 10px;
     }
     
     #historyList {
-        max-height: 350px;
+        max-height: 250px;
     }
     
     .theme-switch-wrapper {
-        margin-right: 5px;
+        margin-bottom: 10px;
     }
-}
-
-.form-control, .form-select {
-    background-color: var(--input-bg);
-    color: var(--text-color);
-    border-color: var(--input-border);
-}
-
-.form-control:focus, .form-select:focus {
-    background-color: var(--input-bg);
-    color: var(--text-color);
-}
-
-.card {
-    background-color: var(--card-bg);
-    color: var(--text-color);
-}
-
-.support-email {
-    text-align: center;
-    color: var(--text-color);
-    opacity: 0.6;
-    font-size: 0.85rem;
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-    font-style: italic;
 } 
