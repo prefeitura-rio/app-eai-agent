@@ -25,7 +25,7 @@
         expandButton = document.getElementById('expandButton');
         supportEmail = document.querySelector('.support-email');
         
-        if (!editor || !overlay || !closeButton) {
+        if (!editor || !overlay || !closeButton || !expandButton) {
             console.error('Elementos necessários não encontrados');
             return;
         }
@@ -36,12 +36,10 @@
         
         // Remove o evento de duplo clique no editor para evitar conflitos
         // e adiciona apenas ao botão expandir
-        if (expandButton) {
-            expandButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                expandEditor();
-            });
-        }
+        expandButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            expandEditor(e);
+        });
         
         closeButton.addEventListener('click', function(e) {
             e.preventDefault();
@@ -75,6 +73,16 @@
             // Guarda a posição de scroll atual
             const scrollPosition = window.scrollY;
             
+            // Certifica que o overlay cobre toda a página
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            
+            // Oculta temporariamente o texto de suporte para não aparecer sobre o editor
+            if (supportEmail) {
+                supportEmail.style.visibility = 'hidden';
+                supportEmail.style.opacity = '0';
+            }
+            
             // Aplica classes ao overlay primeiro para criar efeito de fade
             overlay.classList.add('active');
             
@@ -85,6 +93,11 @@
                 
                 // Exibe o botão de fechar
                 closeButton.style.display = 'flex';
+                
+                // Ajusta posição do botão de fechar baseado no tamanho atual do editor
+                const editorRect = editor.getBoundingClientRect();
+                closeButton.style.top = (editorRect.top - 25) + 'px';
+                closeButton.style.right = (window.innerWidth - editorRect.right - 25) + 'px';
                 
                 // Desabilita o scroll do corpo da página
                 document.body.style.overflow = 'hidden';
@@ -121,6 +134,12 @@
                 
                 // Restaura o scroll do corpo da página
                 document.body.style.overflow = 'auto';
+                
+                // Restaura a visibilidade do texto de suporte
+                if (supportEmail) {
+                    supportEmail.style.visibility = 'visible';
+                    supportEmail.style.opacity = '0.8';
+                }
                 
                 // Atualiza estado
                 isExpanded = false;

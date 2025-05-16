@@ -125,10 +125,10 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 85%;
-    height: 80vh;
-    max-width: 1200px;
-    z-index: 10000;
+    width: 90%;
+    height: 85vh;
+    max-width: 1300px;
+    z-index: 10005;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
     resize: none;
     padding: 25px;
@@ -148,11 +148,13 @@ body {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.7);
-    z-index: 9999;
+    z-index: 10004;
     display: none;
     opacity: 0;
     transition: opacity 0.3s ease;
     backdrop-filter: blur(5px);
+    width: 100vw;
+    height: 100vh;
 }
 
 .editor-overlay.active {
@@ -163,8 +165,8 @@ body {
 /* Botão para fechar o editor expandido */
 .close-expanded-editor {
     position: fixed;
-    top: calc(50% - 40vh - 30px);
-    right: calc(50% - 42.5% - 30px);
+    top: calc(50% - 42.5vh - 30px);
+    right: calc(50% - 45% - 30px);
     background-color: var(--primary-color);
     border: 2px solid white;
     border-radius: 50%;
@@ -174,7 +176,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10001;
+    z-index: 10006;
     transition: all 0.2s ease;
     color: white;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
@@ -477,7 +479,7 @@ input:checked + .slider:before {
     text-align: center;
     margin-top: 25px;
     position: relative;
-    z-index: 10;
+    z-index: 1;
 }
 
 .support-email {
@@ -486,7 +488,7 @@ input:checked + .slider:before {
     color: var(--text-color);
     opacity: 0.8;
     position: relative;
-    z-index: 10;
+    z-index: 1;
     margin: 0;
 }
 
