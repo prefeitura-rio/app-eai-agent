@@ -331,6 +331,7 @@ class SystemPromptService:
                 agents_result = await self.update_all_agents_system_prompt(
                     new_prompt=default_prompt,
                     agent_type=agent_type,
+                    tags=[agent_type],
                     db=db,
                     prompt_id=new_prompt.prompt_id
                 )
