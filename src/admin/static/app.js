@@ -353,22 +353,19 @@ function renderHistory(prompts) {
         const isActive = prompt.is_active;
         const dateObj = new Date(prompt.created_at);
         
-        // Configuração para o fuso horário brasileiro (UTC-3)
+        // Ajustando para o fuso horário do Brasil (UTC-3)
+        const brazilDate = new Date(dateObj);
+        brazilDate.setHours(brazilDate.getHours() - 3);
+        
+        // Formatando data usando a data já ajustada para UTC-3
         const options = { 
             day: '2-digit', 
             month: '2-digit', 
             year: 'numeric' 
         };
+        const date = brazilDate.toLocaleDateString('pt-BR', options);
         
-        // Formatando data
-        const date = dateObj.toLocaleDateString('pt-BR', options);
-        
-        // Ajustando o horário do Brasil (subtraindo 3 horas)
-        const brazilDate = new Date(dateObj);
-        // Ajustando manualmente para UTC-3 (horário de Brasília)
-        brazilDate.setHours(brazilDate.getHours() - 3);
-        
-        // Obtendo horas e minutos
+        // Obtendo horas e minutos da data já ajustada
         const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
