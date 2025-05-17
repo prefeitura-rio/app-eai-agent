@@ -88,7 +88,7 @@ class SystemPromptService:
         results = {}
         
         try:
-            filter_tags = tags if tags else ["agentic_search"] if agent_type == "agentic_search" else []
+            filter_tags = tags if tags else (["agentic_search"] if agent_type == "agentic_search" else [])
             agents = await client.agents.list(tags=filter_tags)
             
             if not agents:
