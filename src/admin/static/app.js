@@ -355,26 +355,27 @@ function renderHistory(prompts) {
         
         // Configuração para o fuso horário brasileiro (UTC-3)
         const options = { 
-            timeZone: 'America/Sao_Paulo', 
             day: '2-digit', 
             month: '2-digit', 
             year: 'numeric' 
         };
         
-        // Formatando data com o fuso do Brasil
+        // Formatando data
         const date = dateObj.toLocaleDateString('pt-BR', options);
         
-        // Obtendo horas e minutos no fuso do Brasil (UTC-3)
-        // Primeiro criamos um formatter que inclui apenas hora/minuto
+        // Ajustando o horário do Brasil (subtraindo 3 horas)
+        const brazilDate = new Date(dateObj);
+        // Não precisamos mais ajustar manualmente porque usaremos o fuso horário local do navegador
+        
+        // Obtendo horas e minutos
         const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
-            timeZone: 'America/Sao_Paulo',
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
         });
         
         // E usamos para formatar a data
-        const timeStr = timeFormatter.format(dateObj);
+        const timeStr = timeFormatter.format(brazilDate);
         
         // Obter texto para preview - tentamos diferentes propriedades
         let previewText = '(Sem conteúdo)';
