@@ -47,6 +47,7 @@ class SystemPromptService:
         """
         Obtém o system prompt ativo do banco de dados de forma síncrona.
         Este método deve ser usado para criação de novos agentes.
+        Se não existir um prompt para o tipo de agente fornecido, cria automaticamente um padrão.
         
         Args:
             agent_type: Tipo do agente
@@ -60,9 +61,19 @@ class SystemPromptService:
                 if prompt:
                     return prompt.content
                 
-            raise ValueError(f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}")
+                # Se não existe um prompt ativo, tenta criar um padrão
+                logger.info(f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}. Criando um padrão...")
+                default_prompt = self._get_default_prompt(agent_type)
+                new_prompt = SystemPromptRepository.create_prompt(
+                    db=db,
+                    agent_type=agent_type,
+                    content=default_prompt,
+                    version=1,
+                    metadata={"author": "System", "reason": "Criado automaticamente"}
+                )
+                return new_prompt.content
         except Exception as e:
-            logger.error(f"Erro ao obter system prompt do banco: {str(e)}")
+            logger.error(f"Erro ao obter/criar system prompt do banco: {str(e)}")
             raise
             
     async def update_all_agents_system_prompt(self, 
@@ -324,7 +335,7 @@ class SystemPromptService:
                 agent_type=agent_type,
                 content=default_prompt,
                 version=1,
-                metadata={"source": "reset", "reset_by": "api"}
+                metadata={"author": "System", "reason": "Resetado automaticamente"}
             )
             
             if update_agents:

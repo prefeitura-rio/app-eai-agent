@@ -4,6 +4,7 @@ from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agenti
 from src.services.letta.system_prompt_service import system_prompt_service
 from src.services.letta.letta_service import letta_service
 import uuid
+from loguru import logger
 
 from letta_client import ContinueToolRule
 from src.config import env
@@ -43,5 +44,5 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
     )
     return agent
   except Exception as e:
-    print(f"Erro ao criar agente agentic_search: {str(e)}")
+    logger.error(f"Erro ao criar agente agentic_search: {str(e)}")
     raise
