@@ -365,7 +365,8 @@ function renderHistory(prompts) {
         
         // Ajustando o horário do Brasil (subtraindo 3 horas)
         const brazilDate = new Date(dateObj);
-        // Não precisamos mais ajustar manualmente porque usaremos o fuso horário local do navegador
+        // Ajustando manualmente para UTC-3 (horário de Brasília)
+        brazilDate.setHours(brazilDate.getHours() - 3);
         
         // Obtendo horas e minutos
         const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
