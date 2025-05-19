@@ -315,7 +315,7 @@ function proceedWithSave(agentType, newPrompt, author, reason) {
     apiRequest('POST', '/api/v1/system-prompt', payload)
         .then(response => {
             hideLoading();
-            showAlert('Prompt atualizado com sucesso!');
+            showAlert(response.message || 'Prompt atualizado com sucesso!');
             loadData(); // Recarregar dados
         })
         .catch(error => {
