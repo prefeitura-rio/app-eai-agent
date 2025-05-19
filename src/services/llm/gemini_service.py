@@ -23,7 +23,8 @@ class GeminiService:
         image: Optional[Union[str, Path, bytes]] = None,
         model: str = "gemini-2.0-flash",
         config: Optional[Dict[str, Any]] = None,
-        use_google_search: bool = False
+        use_google_search: bool = False,
+        response_format: str = "raw"
     ):
         """
         Gera conteúdo usando o modelo Gemini de forma assíncrona.
@@ -34,9 +35,10 @@ class GeminiService:
             model: Nome do modelo a ser usado (padrão: gemini-2.0-flash)
             config: Configurações adicionais para a geração de conteúdo (opcional)
             use_google_search: Ativar pesquisa Google para fundamentar respostas (padrão: False)
+            response_format: Formato de resposta (raw, text_only, text_and_links)
             
         Returns:
-            Resposta do modelo Gemini
+            Resposta do modelo Gemini no formato especificado
         """
         contents = []
         
@@ -87,7 +89,42 @@ class GeminiService:
             )
         )
         
-        return response
+        if response_format == "raw":
+            return response
+        elif response_format == "text_only":
+            return self._extract_text(response)
+        elif response_format == "text_and_links":
+            return self._extract_text_and_links(response)
+        else:
+            return response
+            
+    def _extract_text(self, response):
+        texto = None
+        if (response.get("candidates") and 
+            len(response["candidates"]) > 0 and 
+            response["candidates"][0].get("content") and 
+            response["candidates"][0]["content"].get("parts") and 
+            len(response["candidates"][0]["content"]["parts"]) > 0 and 
+            response["candidates"][0]["content"]["parts"][0].get("text")):
+            texto = response["candidates"][0]["content"]["parts"][0]["text"]
+        
+        return {"texto": texto}
+        
+    def _extract_text_and_links(self, response):
+        resultado = self._extract_text(response)
+        
+        links = []
+        if (response.get("groundingMetadata") and 
+            response["groundingMetadata"].get("groundingChunks")):
+            for chunk in response["groundingMetadata"]["groundingChunks"]:
+                if chunk.get("web") and chunk["web"].get("uri"):
+                    links.append({
+                        "uri": chunk["web"]["uri"],
+                        "title": chunk["web"].get("title")
+                    })
+        
+        resultado["links"] = links
+        return resultado
     
     def _get_mime_type(self, file_path: str) -> str:
         """Determina o tipo MIME com base na extensão do arquivo."""
