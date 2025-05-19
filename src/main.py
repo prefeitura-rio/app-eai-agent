@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 import os
+import logging
+import sys
 
 from src.api import router as api_router
 from src.admin import router as admin_router
@@ -16,14 +18,42 @@ from src.db import Base, engine
 
 Base.metadata.create_all(bind=engine)
 
-logger.add(
-    "logs/api_{time}.log",
-    rotation="1 day",
-    retention="1 day",
-    level="INFO",
-    backtrace=True,
-    diagnose=True,
+# Configurar intercepção do logging padrão Python para o Loguru
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        # Pega o nome do logger original
+        logger_opt = logger.opt(depth=6, exception=record.exc_info)
+        logger_opt.log(record.levelname, record.getMessage())
+
+# Configurar logging para toda a aplicação
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG)
+
+# Configurar loguru
+logger.configure(
+    handlers=[
+        {
+            "sink": sys.stdout,
+            "format": "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+            "level": "DEBUG",
+        },
+        {
+            "sink": "logs/api_{time}.log",
+            "rotation": "1 day",
+            "retention": "7 days",
+            "format": "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+            "level": "DEBUG",
+            "backtrace": True,
+            "diagnose": True,
+        }
+    ]
 )
+
+# Configurar loggers específicos para bibliotecas relevantes
+for _log in ["uvicorn", "uvicorn.error", "fastapi", "src.services.letta"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.DEBUG)
 
 app = FastAPI(
     title="Agentic Search API",
@@ -46,7 +76,7 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Erro não tratado: {str(exc)}")
+    logger.exception(f"Erro não tratado: {exc}")
     return JSONResponse(
         status_code=500,
         content={"detail": "Erro interno do servidor"},
