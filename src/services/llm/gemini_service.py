@@ -146,56 +146,52 @@ class GeminiService:
         
         links = []
         try:
-            if isinstance(response, dict):
-                if (response.get("groundingMetadata") and 
-                    response["groundingMetadata"].get("groundingChunks")):
-                    for chunk in response["groundingMetadata"]["groundingChunks"]:
-                        if chunk.get("web") and chunk["web"].get("uri"):
-                            links.append({
-                                "uri": chunk["web"]["uri"],
-                                "title": chunk["web"].get("title")
-                            })
-            elif hasattr(response, "candidates") and response.candidates:
-                if hasattr(response, "__dict__"):
-                    response_dict = response.__dict__
-                    if isinstance(response_dict, dict) and "candidates" in response_dict:
-                        candidate = response_dict["candidates"][0]
-                        if "groundingMetadata" in candidate and "groundingChunks" in candidate["groundingMetadata"]:
-                            for chunk in candidate["groundingMetadata"]["groundingChunks"]:
+            # Verificar se é um objeto GenerateContentResponse e acessar a estrutura correta
+            if hasattr(response, "candidates") and response.candidates:
+                if len(response.candidates) > 0:
+                    candidate = response.candidates[0]
+                    # Verificar se o candidate tem grounding_metadata 
+                    if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
+                        # Verificar se grounding_metadata tem grounding_chunks
+                        if hasattr(candidate.grounding_metadata, "grounding_chunks"):
+                            chunks = candidate.grounding_metadata.grounding_chunks
+                            if chunks:
+                                for chunk in chunks:
+                                    if hasattr(chunk, "web") and chunk.web:
+                                        if hasattr(chunk.web, "uri"):
+                                            links.append({
+                                                "uri": chunk.web.uri,
+                                                "title": chunk.web.title if hasattr(chunk.web, "title") else None
+                                            })
+            
+            # Verificar se é um dicionário com a estrutura mostrada no exemplo
+            elif isinstance(response, dict):
+                # Verificar se existe a estrutura response->candidates
+                if "response" in response and "candidates" in response["response"]:
+                    candidates = response["response"]["candidates"]
+                    if len(candidates) > 0 and "groundingMetadata" in candidates[0]:
+                        grounding = candidates[0]["groundingMetadata"]
+                        if "groundingChunks" in grounding:
+                            for chunk in grounding["groundingChunks"]:
                                 if "web" in chunk and "uri" in chunk["web"]:
                                     links.append({
                                         "uri": chunk["web"]["uri"],
                                         "title": chunk["web"].get("title")
                                     })
-            
-            if hasattr(response, "candidates") and len(response.candidates) > 0:
-                candidate = response.candidates[0]
-                if hasattr(candidate, "groundingMetadata") and candidate.groundingMetadata:
-                    if hasattr(candidate.groundingMetadata, "groundingChunks"):
-                        chunks = candidate.groundingMetadata.groundingChunks
-                        for chunk in chunks:
-                            if hasattr(chunk, "web") and chunk.web:
-                                if hasattr(chunk.web, "uri"):
-                                    links.append({
-                                        "uri": chunk.web.uri,
-                                        "title": chunk.web.title if hasattr(chunk.web, "title") else None
-                                    })
-            
-            if not links and isinstance(response, dict) and "response" in response:
-                response_inner = response["response"]
-                if "candidates" in response_inner and len(response_inner["candidates"]) > 0:
-                    candidate = response_inner["candidates"][0]
-                    if "groundingMetadata" in candidate and "groundingChunks" in candidate["groundingMetadata"]:
-                        for chunk in candidate["groundingMetadata"]["groundingChunks"]:
-                            if "web" in chunk and "uri" in chunk["web"]:
-                                links.append({
-                                    "uri": chunk["web"]["uri"],
-                                    "title": chunk["web"].get("title")
-                                })
+                # Verificar estrutura normal de dicionário
+                elif "groundingMetadata" in response and "groundingChunks" in response["groundingMetadata"]:
+                    for chunk in response["groundingMetadata"]["groundingChunks"]:
+                        if "web" in chunk and "uri" in chunk["web"]:
+                            links.append({
+                                "uri": chunk["web"]["uri"],
+                                "title": chunk["web"].get("title")
+                            })
             
             print(f"Links extraídos: {len(links)}")
         except Exception as e:
             print(f"Erro ao extrair links: {e}")
+            import traceback
+            traceback.print_exc()
         
         resultado["links"] = links
         return resultado
