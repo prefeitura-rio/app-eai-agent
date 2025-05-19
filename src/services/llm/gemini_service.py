@@ -99,29 +99,66 @@ class GeminiService:
             return response
             
     def _extract_text(self, response):
-        texto = None
-        if (response.get("candidates") and 
-            len(response["candidates"]) > 0 and 
-            response["candidates"][0].get("content") and 
-            response["candidates"][0]["content"].get("parts") and 
-            len(response["candidates"][0]["content"]["parts"]) > 0 and 
-            response["candidates"][0]["content"]["parts"][0].get("text")):
-            texto = response["candidates"][0]["content"]["parts"][0]["text"]
-        
-        return {"texto": texto}
+        """Extrai apenas o texto da resposta do Gemini"""
+        try:
+            # Tratando como objeto GenerateContentResponse
+            if hasattr(response, "candidates") and response.candidates:
+                candidates = response.candidates
+                if candidates and hasattr(candidates[0], "content"):
+                    content = candidates[0].content
+                    if hasattr(content, "parts") and content.parts:
+                        for part in content.parts:
+                            if hasattr(part, "text") and part.text:
+                                return {"texto": part.text}
+            
+            # Tratando como dicionário (formato alternativo)
+            if isinstance(response, dict):
+                if (response.get("candidates") and 
+                    len(response["candidates"]) > 0 and 
+                    response["candidates"][0].get("content") and 
+                    response["candidates"][0]["content"].get("parts") and 
+                    len(response["candidates"][0]["content"]["parts"]) > 0 and 
+                    response["candidates"][0]["content"]["parts"][0].get("text")):
+                    return {"texto": response["candidates"][0]["content"]["parts"][0]["text"]}
+            
+            return {"texto": None}
+        except Exception as e:
+            print(f"Erro ao extrair texto: {e}")
+            return {"texto": None}
         
     def _extract_text_and_links(self, response):
+        """Extrai o texto e os links das fontes da resposta do Gemini"""
+        # Extrair texto
         resultado = self._extract_text(response)
         
+        # Extrair links
         links = []
-        if (response.get("groundingMetadata") and 
-            response["groundingMetadata"].get("groundingChunks")):
-            for chunk in response["groundingMetadata"]["groundingChunks"]:
-                if chunk.get("web") and chunk["web"].get("uri"):
-                    links.append({
-                        "uri": chunk["web"]["uri"],
-                        "title": chunk["web"].get("title")
-                    })
+        try:
+            # Tratando como objeto GenerateContentResponse
+            if hasattr(response, "groundingMetadata") and response.groundingMetadata:
+                metadata = response.groundingMetadata
+                if hasattr(metadata, "groundingChunks") and metadata.groundingChunks:
+                    for chunk in metadata.groundingChunks:
+                        if hasattr(chunk, "web") and chunk.web:
+                            web = chunk.web
+                            if hasattr(web, "uri") and web.uri:
+                                links.append({
+                                    "uri": web.uri,
+                                    "title": web.title if hasattr(web, "title") else None
+                                })
+            
+            # Tratando como dicionário (formato alternativo)
+            elif isinstance(response, dict):
+                if (response.get("groundingMetadata") and 
+                    response["groundingMetadata"].get("groundingChunks")):
+                    for chunk in response["groundingMetadata"]["groundingChunks"]:
+                        if chunk.get("web") and chunk["web"].get("uri"):
+                            links.append({
+                                "uri": chunk["web"]["uri"],
+                                "title": chunk["web"].get("title")
+                            })
+        except Exception as e:
+            print(f"Erro ao extrair links: {e}")
         
         resultado["links"] = links
         return resultado
