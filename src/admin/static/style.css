@@ -595,6 +595,13 @@ input:disabled {
     opacity: 0.8;
 }
 
+/* Estilo para campos em modo de visualização de histórico */
+input.viewing-history {
+    border-left: 3px solid var(--primary-color);
+    background-color: var(--active-bg);
+    font-style: italic;
+}
+
 /* Estilo para o modal de confirmação */
 .modal-content {
     background-color: var(--card-bg);

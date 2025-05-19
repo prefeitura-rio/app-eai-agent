@@ -206,9 +206,9 @@ function handleSavePrompt() {
     const reasonModalInput = document.getElementById('modalReasonInput');
     const confirmSaveBtn = document.getElementById('confirmSaveBtn');
     
-    // Se já tiver valores nos campos, preencher no modal
-    authorModalInput.value = authorInput.value || '';
-    reasonModalInput.value = reasonInput.value || '';
+    // Sempre iniciar os campos vazios para forçar o preenchimento
+    authorModalInput.value = '';
+    reasonModalInput.value = '';
     
     // Mostrar o modal
     const modal = new bootstrap.Modal(modalElement);
@@ -382,6 +382,14 @@ function loadData() {
     authorInput.disabled = false;
     reasonInput.disabled = false;
     
+    // Remover classe visual de visualização
+    authorInput.classList.remove('viewing-history');
+    reasonInput.classList.remove('viewing-history');
+    
+    // Limpar campos de autor e motivo ao iniciar
+    authorInput.value = '';
+    reasonInput.value = '';
+    
     // Carregar dados em paralelo
     Promise.all([
         // Carregar prompt atual (pode falhar se não existir)
@@ -411,15 +419,8 @@ function loadData() {
         promptText.value = currentData.prompt || '';
         currentPromptId = currentData.prompt_id;
         
-        // Atualizar metadados iniciais
-        if (currentData.prompt_id) {
-            // Encontrar o prompt correspondente no histórico para obter metadados
-            const activePrompt = (historyData.prompts || []).find(p => p.prompt_id === currentData.prompt_id);
-            if (activePrompt && activePrompt.metadata) {
-                authorInput.value = activePrompt.metadata.author || '';
-                reasonInput.value = activePrompt.metadata.reason || '';
-            }
-        }
+        // Metadados iniciais são mantidos vazios para forçar preenchimento ao salvar
+        // Os campos já foram limpos no início da função loadData
         
         // Se for um prompt novo, mostramos mensagem de orientação
         if (currentData.is_new) {
@@ -572,11 +573,11 @@ function selectPromptById(promptId) {
         promptText.value = data.prompt || '';
         currentPromptId = promptId;
         
-        // Encontrar o prompt no array local para obter metadados adicionais
+        // Encontrar o prompt no array local para obter metadados adicionais (apenas para visualização)
         const localPrompt = promptsData.find(p => p.prompt_id === promptId);
         if (localPrompt && localPrompt.metadata) {
-            authorInput.value = localPrompt.metadata.author || '';
-            reasonInput.value = localPrompt.metadata.reason || '';
+            authorInput.value = localPrompt.metadata.author || '(Não informado)';
+            reasonInput.value = localPrompt.metadata.reason || '(Não informado)';
         }
         
         // Atualizar a classe ativa nos itens do histórico
@@ -595,8 +596,8 @@ function selectPromptById(promptId) {
             currentPromptId = promptId;
             
             if (localPrompt.metadata) {
-                authorInput.value = localPrompt.metadata.author || '';
-                reasonInput.value = localPrompt.metadata.reason || '';
+                authorInput.value = localPrompt.metadata.author || '(Não informado)';
+                reasonInput.value = localPrompt.metadata.reason || '(Não informado)';
             }
             
             updateActiveHistoryItem(promptId);
@@ -627,6 +628,10 @@ function updateActiveHistoryItem(promptId) {
     // Desabilitar edição dos campos de autor e motivo quando estiver visualizando histórico
     authorInput.disabled = true;
     reasonInput.disabled = true;
+    
+    // Adicionar classe visual para facilitar a percepção de que está em modo de visualização
+    authorInput.classList.add('viewing-history');
+    reasonInput.classList.add('viewing-history');
 }
 
 // Helper para fazer requisições API
