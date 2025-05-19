@@ -80,7 +80,7 @@ class LettaService:
         )
         
         try:
-            response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
+            response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
             
             if response:
                 agent_message_response = await process_stream(response)
@@ -125,7 +125,7 @@ class LettaService:
         
         try:
             logger.info("Chamando create_stream")
-            response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
+            response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
             logger.info("create_stream retornou com sucesso")
             
             if response:
