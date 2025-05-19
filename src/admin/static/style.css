@@ -581,4 +581,34 @@ body.editor-expanded .prompt-editor.expanded {
 
 body.editor-expanded .editor-overlay.active {
     display: block !important;
+}
+
+/* Estilo para campos obrigatórios */
+.form-label .text-danger {
+    font-weight: bold;
+}
+
+/* Estilo para campos desabilitados */
+input:disabled {
+    background-color: var(--hover-bg);
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Estilo para o modal de confirmação */
+.modal-content {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    box-shadow: var(--box-shadow);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
 } 

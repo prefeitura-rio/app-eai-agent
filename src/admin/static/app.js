@@ -21,6 +21,7 @@ let currentToken = localStorage.getItem('adminToken');
 let currentPromptId = null;
 let promptsData = []; // Array para armazenar todos os dados dos prompts
 let currentTheme = localStorage.getItem('theme') || 'light';
+let isHistoryItemView = false; // Nova variável para rastrear se estamos visualizando um item do histórico
 
 // Configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
@@ -186,13 +187,120 @@ function handleLogout() {
 }
 
 function handleSavePrompt() {
-    showLoading();
     const agentType = agentTypeSelect.value;
     const newPrompt = promptText.value;
+    
+    // Verificar se o prompt está vazio
+    if (!newPrompt.trim()) {
+        showAlert('O conteúdo do prompt não pode estar vazio', 'danger');
+        return;
+    }
+    
+    // Criar e mostrar modal de confirmação antes de salvar
+    const saveConfirmModal = createConfirmationModal();
+    document.body.appendChild(saveConfirmModal);
+    
+    // Obter referências aos elementos do modal
+    const modalElement = document.getElementById('saveConfirmModal');
+    const authorModalInput = document.getElementById('modalAuthorInput');
+    const reasonModalInput = document.getElementById('modalReasonInput');
+    const confirmSaveBtn = document.getElementById('confirmSaveBtn');
+    
+    // Se já tiver valores nos campos, preencher no modal
+    authorModalInput.value = authorInput.value || '';
+    reasonModalInput.value = reasonInput.value || '';
+    
+    // Mostrar o modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // Adicionar evento ao botão de confirmação
+    confirmSaveBtn.addEventListener('click', function() {
+        // Verificar se os campos obrigatórios foram preenchidos
+        if (!authorModalInput.value.trim()) {
+            document.getElementById('authorModalFeedback').classList.remove('d-none');
+            return;
+        } else {
+            document.getElementById('authorModalFeedback').classList.add('d-none');
+        }
+        
+        if (!reasonModalInput.value.trim()) {
+            document.getElementById('reasonModalFeedback').classList.remove('d-none');
+            return;
+        } else {
+            document.getElementById('reasonModalFeedback').classList.add('d-none');
+        }
+        
+        // Atualizar os valores dos inputs principais com os valores do modal
+        authorInput.value = authorModalInput.value.trim();
+        reasonInput.value = reasonModalInput.value.trim();
+        
+        // Fechar o modal
+        modal.hide();
+        
+        // Remover o modal do DOM depois que for fechado
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            saveConfirmModal.remove();
+            
+            // Continuar com o processo de salvamento
+            proceedWithSave(agentType, newPrompt, authorInput.value, reasonInput.value);
+        }, { once: true });
+    });
+}
+
+function createConfirmationModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal fade';
+    modalDiv.id = 'saveConfirmModal';
+    modalDiv.tabIndex = '-1';
+    modalDiv.setAttribute('aria-labelledby', 'saveConfirmModalLabel');
+    modalDiv.setAttribute('aria-hidden', 'true');
+    
+    modalDiv.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saveConfirmModalLabel">Confirmar alterações</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Preencha as informações abaixo para salvar as alterações:</p>
+                    
+                    <div class="mb-3">
+                        <label for="modalAuthorInput" class="form-label">Autor <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalAuthorInput" required>
+                        <div id="authorModalFeedback" class="invalid-feedback d-none">
+                            O nome do autor é obrigatório.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="modalReasonInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalReasonInput" required>
+                        <div id="reasonModalFeedback" class="invalid-feedback d-none">
+                            O motivo da atualização é obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmSaveBtn">Salvar alterações</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return modalDiv;
+}
+
+function proceedWithSave(agentType, newPrompt, author, reason) {
+    showLoading();
+    
     const metadata = {
-        author: authorInput.value,
-        reason: reasonInput.value
+        author: author,
+        reason: reason
     };
+    
     const updateAgents = updateAgentsCheckbox.checked;
     
     // Criar payload
@@ -268,6 +376,11 @@ function showCopyFeedback() {
 function loadData() {
     showLoading();
     const agentType = agentTypeSelect.value;
+    
+    // Resetar o estado de visualização de histórico
+    isHistoryItemView = false;
+    authorInput.disabled = false;
+    reasonInput.disabled = false;
     
     // Carregar dados em paralelo
     Promise.all([
@@ -507,6 +620,13 @@ function updateActiveHistoryItem(promptId) {
     if (activeItem) {
         activeItem.classList.add('active');
     }
+    
+    // Definir que estamos visualizando um item do histórico
+    isHistoryItemView = true;
+    
+    // Desabilitar edição dos campos de autor e motivo quando estiver visualizando histórico
+    authorInput.disabled = true;
+    reasonInput.disabled = true;
 }
 
 // Helper para fazer requisições API
