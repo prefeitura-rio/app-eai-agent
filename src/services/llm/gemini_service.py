@@ -91,15 +91,11 @@ class GeminiService:
         response_original = None
         
         try:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.client.models.generate_content(
+            response = await self.client.aio.models.generate_content(
                     model=model,
                     contents=contents,
                     config=generation_config
                 )
-            )
             
             response_original = response
             
