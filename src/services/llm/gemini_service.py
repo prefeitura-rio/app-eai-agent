@@ -75,9 +75,7 @@ class GeminiService:
             contents[0]["parts"][0]["text"] = enhanced_text
             
             google_search_tool = Tool(
-                google_search=GoogleSearch(
-                    disable_attribution=False,
-                )
+                google_search=GoogleSearch()
             )
             
             if generation_config.tools:
