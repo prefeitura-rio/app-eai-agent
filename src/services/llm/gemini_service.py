@@ -68,40 +68,67 @@ class GeminiService:
             generation_config = GenerateContentConfig()
         
         if use_google_search:
+            enhanced_text = text
+            if not enhanced_text.lower().startswith("pesquise sobre ") and not enhanced_text.lower().startswith("procure "):
+                enhanced_text = f"Pesquise informações detalhadas sobre: {text}"
+                
+            contents[0]["parts"][0]["text"] = enhanced_text
+            
             google_search_tool = Tool(
-                google_search=GoogleSearch()
+                google_search=GoogleSearch(
+                    disable_attribution=False,
+                )
             )
             
             if generation_config.tools:
                 generation_config.tools.append(google_search_tool)
             else:
                 generation_config.tools = [google_search_tool]
-                
+            
             generation_config.response_modalities = ["TEXT"]
+            
+            if isinstance(enhanced_text, str) and not "cite fontes" in enhanced_text.lower():
+                contents[0]["parts"][0]["text"] += " Cite fontes web relevantes."
         
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: self.client.models.generate_content(
-                model=model,
-                contents=contents,
-                config=generation_config
+        response_original = None
+        
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=generation_config
+                )
             )
-        )
-        
-        if response_format == "raw":
-            return response
-        elif response_format == "text_only":
-            return self._extract_text(response)
-        elif response_format == "text_and_links":
-            return self._extract_text_and_links(response)
-        else:
-            return response
+            
+            response_original = response
+            
+            if use_google_search and response_format == "text_and_links":
+                print(f"Debug: Tipo da resposta: {type(response)}")
+                if hasattr(response, "groundingMetadata"):
+                    print(f"Debug: groundingMetadata existe: {response.groundingMetadata}")
+                else:
+                    print("Debug: Sem groundingMetadata")
+            
+            if response_format == "raw":
+                return response
+            elif response_format == "text_only":
+                return self._extract_text(response)
+            elif response_format == "text_and_links":
+                return self._extract_text_and_links(response)
+            else:
+                return response
+        except Exception as e:
+            print(f"Erro ao gerar conteúdo: {e}")
+            if response_original:
+                print(f"Resposta original que causou erro: {response_original}")
+            raise
             
     def _extract_text(self, response):
         """Extrai apenas o texto da resposta do Gemini"""
         try:
-            # Tratando como objeto GenerateContentResponse
             if hasattr(response, "candidates") and response.candidates:
                 candidates = response.candidates
                 if candidates and hasattr(candidates[0], "content"):
@@ -110,17 +137,6 @@ class GeminiService:
                         for part in content.parts:
                             if hasattr(part, "text") and part.text:
                                 return {"texto": part.text}
-            
-            # Tratando como dicionário (formato alternativo)
-            if isinstance(response, dict):
-                if (response.get("candidates") and 
-                    len(response["candidates"]) > 0 and 
-                    response["candidates"][0].get("content") and 
-                    response["candidates"][0]["content"].get("parts") and 
-                    len(response["candidates"][0]["content"]["parts"]) > 0 and 
-                    response["candidates"][0]["content"]["parts"][0].get("text")):
-                    return {"texto": response["candidates"][0]["content"]["parts"][0]["text"]}
-            
             return {"texto": None}
         except Exception as e:
             print(f"Erro ao extrair texto: {e}")
@@ -128,27 +144,11 @@ class GeminiService:
         
     def _extract_text_and_links(self, response):
         """Extrai o texto e os links das fontes da resposta do Gemini"""
-        # Extrair texto
         resultado = self._extract_text(response)
         
-        # Extrair links
         links = []
         try:
-            # Tratando como objeto GenerateContentResponse
-            if hasattr(response, "groundingMetadata") and response.groundingMetadata:
-                metadata = response.groundingMetadata
-                if hasattr(metadata, "groundingChunks") and metadata.groundingChunks:
-                    for chunk in metadata.groundingChunks:
-                        if hasattr(chunk, "web") and chunk.web:
-                            web = chunk.web
-                            if hasattr(web, "uri") and web.uri:
-                                links.append({
-                                    "uri": web.uri,
-                                    "title": web.title if hasattr(web, "title") else None
-                                })
-            
-            # Tratando como dicionário (formato alternativo)
-            elif isinstance(response, dict):
+            if isinstance(response, dict):
                 if (response.get("groundingMetadata") and 
                     response["groundingMetadata"].get("groundingChunks")):
                     for chunk in response["groundingMetadata"]["groundingChunks"]:
@@ -157,6 +157,45 @@ class GeminiService:
                                 "uri": chunk["web"]["uri"],
                                 "title": chunk["web"].get("title")
                             })
+            elif hasattr(response, "candidates") and response.candidates:
+                if hasattr(response, "__dict__"):
+                    response_dict = response.__dict__
+                    if isinstance(response_dict, dict) and "candidates" in response_dict:
+                        candidate = response_dict["candidates"][0]
+                        if "groundingMetadata" in candidate and "groundingChunks" in candidate["groundingMetadata"]:
+                            for chunk in candidate["groundingMetadata"]["groundingChunks"]:
+                                if "web" in chunk and "uri" in chunk["web"]:
+                                    links.append({
+                                        "uri": chunk["web"]["uri"],
+                                        "title": chunk["web"].get("title")
+                                    })
+            
+            if hasattr(response, "candidates") and len(response.candidates) > 0:
+                candidate = response.candidates[0]
+                if hasattr(candidate, "groundingMetadata") and candidate.groundingMetadata:
+                    if hasattr(candidate.groundingMetadata, "groundingChunks"):
+                        chunks = candidate.groundingMetadata.groundingChunks
+                        for chunk in chunks:
+                            if hasattr(chunk, "web") and chunk.web:
+                                if hasattr(chunk.web, "uri"):
+                                    links.append({
+                                        "uri": chunk.web.uri,
+                                        "title": chunk.web.title if hasattr(chunk.web, "title") else None
+                                    })
+            
+            if not links and isinstance(response, dict) and "response" in response:
+                response_inner = response["response"]
+                if "candidates" in response_inner and len(response_inner["candidates"]) > 0:
+                    candidate = response_inner["candidates"][0]
+                    if "groundingMetadata" in candidate and "groundingChunks" in candidate["groundingMetadata"]:
+                        for chunk in candidate["groundingMetadata"]["groundingChunks"]:
+                            if "web" in chunk and "uri" in chunk["web"]:
+                                links.append({
+                                    "uri": chunk["web"]["uri"],
+                                    "title": chunk["web"].get("title")
+                                })
+            
+            print(f"Links extraídos: {len(links)}")
         except Exception as e:
             print(f"Erro ao extrair links: {e}")
         
