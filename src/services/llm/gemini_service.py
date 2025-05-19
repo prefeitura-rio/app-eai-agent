@@ -103,13 +103,6 @@ class GeminiService:
             
             response_original = response
             
-            if use_google_search and response_format == "text_and_links":
-                print(f"Debug: Tipo da resposta: {type(response)}")
-                if hasattr(response, "groundingMetadata"):
-                    print(f"Debug: groundingMetadata existe: {response.groundingMetadata}")
-                else:
-                    print("Debug: Sem groundingMetadata")
-            
             if response_format == "raw":
                 return response
             elif response_format == "text_only":
@@ -146,13 +139,10 @@ class GeminiService:
         
         links = []
         try:
-            # Verificar se é um objeto GenerateContentResponse e acessar a estrutura correta
             if hasattr(response, "candidates") and response.candidates:
                 if len(response.candidates) > 0:
                     candidate = response.candidates[0]
-                    # Verificar se o candidate tem grounding_metadata 
                     if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
-                        # Verificar se grounding_metadata tem grounding_chunks
                         if hasattr(candidate.grounding_metadata, "grounding_chunks"):
                             chunks = candidate.grounding_metadata.grounding_chunks
                             if chunks:
@@ -164,9 +154,7 @@ class GeminiService:
                                                 "title": chunk.web.title if hasattr(chunk.web, "title") else None
                                             })
             
-            # Verificar se é um dicionário com a estrutura mostrada no exemplo
             elif isinstance(response, dict):
-                # Verificar se existe a estrutura response->candidates
                 if "response" in response and "candidates" in response["response"]:
                     candidates = response["response"]["candidates"]
                     if len(candidates) > 0 and "groundingMetadata" in candidates[0]:
@@ -178,7 +166,6 @@ class GeminiService:
                                         "uri": chunk["web"]["uri"],
                                         "title": chunk["web"].get("title")
                                     })
-                # Verificar estrutura normal de dicionário
                 elif "groundingMetadata" in response and "groundingChunks" in response["groundingMetadata"]:
                     for chunk in response["groundingMetadata"]["groundingChunks"]:
                         if "web" in chunk and "uri" in chunk["web"]:
