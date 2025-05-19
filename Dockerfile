@@ -10,4 +10,4 @@ ADD . /app
 
 RUN uv sync
 
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80", "--proxy-headers", "--forwarded-allow-ips=*", "--workers", "4"]
+CMD ["uv", "run", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.main:app", "--bind", "0.0.0.0:80", "--workers", "1", "--threads", "4"]
