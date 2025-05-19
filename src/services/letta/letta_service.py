@@ -1,6 +1,8 @@
 import os
+import traceback
 from typing import List
 from letta_client import Letta, AsyncLetta
+from letta_client.types import MessageCreate, TextContent
 
 import src.config.env as env
 from src.services.letta.message_wrapper import process_stream
@@ -63,11 +65,13 @@ class LettaService:
             str: Resposta do agente
         """
         client = self.client_async
-            
-        letta_message = {
-            "role": "user",
-            "content": '[EVENTO] Este é um heartbeat automático temporizado (visível apenas para você). Use este evento para enviar uma mensagem, refletir e editar suas memórias, ou não fazer nada. Cabe a você! Considere, no entanto, que esta é uma oportunidade para você pensar por si mesmo - já que seu circuito não será ativado até o próximo heartbeat automático/temporizado ou evento de mensagem recebida.'
-        }
+        
+        message_content = '[EVENTO] Este é um heartbeat automático temporizado (visível apenas para você). Use este evento para enviar uma mensagem, refletir e editar suas memórias, ou não fazer nada. Cabe a você! Considere, no entanto, que esta é uma oportunidade para você pensar por si mesmo - já que seu circuito não será ativado até o próximo heartbeat automático/temporizado ou evento de mensagem recebida.'
+        
+        letta_message = MessageCreate(
+            role="user",
+            content=message_content
+        )
         
         try:
             response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
@@ -78,7 +82,8 @@ class LettaService:
             
             return ""
         except Exception as error:
-            print(f"Erro: {error}")
+            print(f"Erro detalhado: {error}")
+            print(traceback.format_exc())
             return 'Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde.'
 
 
@@ -96,15 +101,13 @@ class LettaService:
         """
         client = self.client_async
         
-        content = message_content
-        
-        letta_message = {
-            "role": "user",
-            "content": content
-        }
+        letta_message = MessageCreate(
+            role="user",
+            content=message_content
+        )
         
         if name:
-            letta_message["name"] = name
+            letta_message.name = name
         
         try:
             response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
@@ -115,7 +118,8 @@ class LettaService:
             
             return ""
         except Exception as error:
-            print(f"Erro: {error}")
+            print(f"Erro detalhado: {error}")
+            print(traceback.format_exc())
             return 'Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde.'
 
 letta_service = LettaService()
