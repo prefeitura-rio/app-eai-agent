@@ -29,20 +29,20 @@ body {
 [data-theme="dark"] {
     --bg-gradient-start: #121212;
     --bg-gradient-end: #1f1f1f;
-    --text-color: #e0e0e0;
-    --card-bg: rgba(30, 30, 30, 0.7);
-    --border-color: rgba(68, 68, 68, 0.5);
+    --text-color: #ffffff;
+    --card-bg: rgba(30, 30, 30, 0.85);
+    --border-color: rgba(75, 75, 75, 0.6);
     --primary-color: #4361ee;
     --primary-hover: #3a56d4;
-    --hover-bg: rgba(44, 44, 44, 0.6);
-    --active-bg: rgba(42, 59, 71, 0.7);
-    --navbar-bg: rgba(25, 34, 56, 0.9);
+    --hover-bg: rgba(50, 50, 50, 0.7);
+    --active-bg: rgba(45, 65, 85, 0.8);
+    --navbar-bg: rgba(25, 34, 56, 0.95);
     --navbar-text: #ffffff;
-    --input-bg: rgba(44, 44, 44, 0.6);
-    --input-border: rgba(85, 85, 85, 0.6);
-    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    --button-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
+    --input-bg: rgba(40, 40, 40, 0.8);
+    --input-border: rgba(90, 90, 90, 0.7);
+    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --button-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
 }
 
 .login-container {
@@ -103,7 +103,7 @@ body {
     font-size: 14px;
     line-height: 1.6;
     resize: vertical;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,.04);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.1);
     transition: all 0.3s ease;
     white-space: pre-wrap;
     overflow-wrap: break-word;
@@ -138,6 +138,7 @@ body {
     font-size: 16px !important;
     background-color: var(--card-bg) !important;
     border-radius: 16px !important;
+    backdrop-filter: blur(10px) !important;
 }
 
 /* Overlay para quando o editor estiver expandido */
@@ -149,7 +150,7 @@ body {
     bottom: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.75);
     z-index: 9998;
     display: none;
     opacity: 0;
@@ -216,19 +217,20 @@ body {
     z-index: 1;
     background-color: var(--card-bg);
     backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .history-item:hover {
     background-color: var(--hover-bg);
     border-left: 3px solid var(--primary-color);
     transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
 .history-item.active {
     background-color: var(--active-bg);
     border-left: 3px solid var(--primary-color);
-    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.15);
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
 }
 
 .history-item::after {
@@ -297,12 +299,12 @@ body {
 }
 
 #historyList::-webkit-scrollbar-thumb {
-    background-color: rgba(193, 193, 193, 0.7);
+    background-color: rgba(150, 150, 150, 0.8);
     border-radius: 10px;
 }
 
 #historyList::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(168, 168, 168, 0.9);
+    background-color: rgba(180, 180, 180, 0.9);
 }
 
 .metadata-badge {
@@ -315,6 +317,7 @@ body {
     color: var(--text-color);
     backdrop-filter: blur(5px);
     border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Novos estilos para o histórico de prompts */
@@ -324,7 +327,7 @@ body {
 }
 
 .history-date {
-    color: #6c757d;
+    color: #adb5bd;
     font-size: 12px;
     white-space: nowrap;
 }
@@ -345,6 +348,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    opacity: 0.9;
 }
 
 #saveButton {
@@ -618,4 +622,34 @@ input.viewing-history {
     color: #dc3545;
     font-size: 0.875rem;
     display: block;
+}
+
+/* Adicionando uma classe específica para o editor no modo escuro */
+[data-theme="dark"] .prompt-editor {
+    color: #f8f9fa;
+    background-color: rgba(35, 35, 35, 0.9);
+    border-color: rgba(90, 90, 90, 0.7);
+}
+
+[data-theme="dark"] .prompt-editor:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+}
+
+/* Corrigindo campos de autor e motivo no modo escuro */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] #author,
+[data-theme="dark"] #reason {
+    color: #f8f9fa;
+    background-color: rgba(35, 35, 35, 0.9);
+    border-color: rgba(90, 90, 90, 0.7);
+}
+
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] #author:focus,
+[data-theme="dark"] #reason:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
 } 
