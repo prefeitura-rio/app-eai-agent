@@ -62,7 +62,7 @@ class LettaService:
         Returns:
             str: Resposta do agente
         """
-        client = self.client
+        client = self.client_async
             
         letta_message = {
             "role": "user",
@@ -70,7 +70,7 @@ class LettaService:
         }
         
         try:
-            response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
+            response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
             
             if response:
                 agent_message_response = await process_stream(response)
@@ -94,7 +94,7 @@ class LettaService:
         Returns:
             str: Resposta do agente
         """
-        client = self.client
+        client = self.client_async
         
         content = message_content
         
@@ -107,7 +107,7 @@ class LettaService:
             letta_message["name"] = name
         
         try:
-            response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
+            response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
             
             if response:
                 agent_message_response = await process_stream(response)
