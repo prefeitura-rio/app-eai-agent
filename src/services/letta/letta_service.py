@@ -66,11 +66,11 @@ class LettaService:
         """
         client = self.client_async
         
-        message_content = '[EVENTO] Este é um heartbeat automático temporizado (visível apenas para você). Use este evento para enviar uma mensagem, refletir e editar suas memórias, ou não fazer nada. Cabe a você! Considere, no entanto, que esta é uma oportunidade para você pensar por si mesmo - já que seu circuito não será ativado até o próximo heartbeat automático/temporizado ou evento de mensagem recebida.'
+        message_text = '[EVENTO] Este é um heartbeat automático temporizado (visível apenas para você). Use este evento para enviar uma mensagem, refletir e editar suas memórias, ou não fazer nada. Cabe a você! Considere, no entanto, que esta é uma oportunidade para você pensar por si mesmo - já que seu circuito não será ativado até o próximo heartbeat automático/temporizado ou evento de mensagem recebida.'
         
         letta_message = MessageCreate(
             role="user",
-            content=message_content
+            content=[TextContent(text=message_text)]
         )
         
         try:
@@ -104,7 +104,7 @@ class LettaService:
         # Preparar os parâmetros para MessageCreate
         message_params = {
             "role": "user",
-            "content": message_content
+            "content": [TextContent(text=message_content)]
         }
         
         # Adicionar name apenas se fornecido
