@@ -8,7 +8,6 @@ from letta_client.types import MessageCreate, TextContent
 import src.config.env as env
 from src.services.letta.message_wrapper import process_stream
 
-# Configurar logger
 logger = logging.getLogger(__name__)
 
 class LettaService:
@@ -16,10 +15,8 @@ class LettaService:
         """Inicializa o cliente Letta com as configurações do ambiente."""
         self.token = env.LETTA_API_TOKEN
         self.base_url = env.LETTA_API_URL
-        logger.info(f"Inicializando LettaService com base_url: {self.base_url}")
         self.client = Letta(token=self.token, base_url=self.base_url)
         self.client_async = AsyncLetta(token=self.token, base_url=self.base_url)
-        logger.info("Cliente Letta inicializado com sucesso")
             
     def get_client(self):
         """Retorna a instância do cliente Letta."""
@@ -105,40 +102,27 @@ class LettaService:
         Returns:
             str: Resposta do agente
         """
-        logger.info(f"Enviando mensagem para o agente {agent_id}")
         client = self.client_async
         
-        # Preparar os parâmetros para MessageCreate
         message_params = {
             "role": "user",
             "content": [TextContent(text=message_content)]
         }
         
-        # Adicionar name apenas se fornecido
         if name:
             message_params["name"] = name
-            logger.info(f"Mensagem enviada por: {name}")
         
-        logger.info(f"Preparando mensagem: {message_params}")
         letta_message = MessageCreate(**message_params)
-        logger.info("MessageCreate criado com sucesso")
         
         try:
-            logger.info("Chamando create_stream")
             response = client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
-            logger.info("create_stream retornou com sucesso")
             
             if response:
-                logger.info("Processando stream de resposta")
                 agent_message_response = await process_stream(response)
-                logger.info(f"Stream processado, tamanho da resposta: {len(agent_message_response or '')}")
                 return agent_message_response or ""
             
-            logger.warning("Resposta vazia recebida do create_stream")
             return ""
         except Exception as error:
-            logger.error(f"Erro detalhado: {error}")
-            logger.error(traceback.format_exc())
             return 'Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde.'
 
 letta_service = LettaService()

@@ -18,17 +18,12 @@ from src.db import Base, engine
 
 Base.metadata.create_all(bind=engine)
 
-# Configurar intercepção do logging padrão Python para o Loguru
 class InterceptHandler(logging.Handler):
     def emit(self, record):
-        # Pega o nome do logger original
         logger_opt = logger.opt(depth=6, exception=record.exc_info)
         logger_opt.log(record.levelname, record.getMessage())
 
-# Configurar logging para toda a aplicação
 logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG)
-
-# Configurar loguru
 logger.configure(
     handlers=[
         {
@@ -48,7 +43,6 @@ logger.configure(
     ]
 )
 
-# Configurar loggers específicos para bibliotecas relevantes
 for _log in ["uvicorn", "uvicorn.error", "fastapi", "src.services.letta"]:
     _logger = logging.getLogger(_log)
     _logger.handlers = [InterceptHandler()]
