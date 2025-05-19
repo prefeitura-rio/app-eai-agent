@@ -23,31 +23,42 @@ class InterceptHandler(logging.Handler):
         logger_opt = logger.opt(depth=6, exception=record.exc_info)
         logger_opt.log(record.levelname, record.getMessage())
 
-logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG)
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
 logger.configure(
     handlers=[
         {
             "sink": sys.stdout,
             "format": "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-            "level": "DEBUG",
+            "level": "INFO",
         },
         {
             "sink": "logs/api_{time}.log",
             "rotation": "1 day",
             "retention": "7 days",
             "format": "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
-            "level": "DEBUG",
+            "level": "INFO",
             "backtrace": True,
             "diagnose": True,
         }
     ]
 )
 
-for _log in ["uvicorn", "uvicorn.error", "fastapi", "src.services.letta"]:
+for _log in ["uvicorn", "uvicorn.error", "fastapi"]:
     _logger = logging.getLogger(_log)
     _logger.handlers = [InterceptHandler()]
     _logger.propagate = False
-    _logger.setLevel(logging.DEBUG)
+    _logger.setLevel(logging.INFO)
+
+for _log in ["httpcore._trace", "httpx._client"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.WARNING)
+
+_logger = logging.getLogger("src.services.letta")
+_logger.handlers = [InterceptHandler()]
+_logger.propagate = False
+_logger.setLevel(logging.INFO)
 
 app = FastAPI(
     title="Agentic Search API",
