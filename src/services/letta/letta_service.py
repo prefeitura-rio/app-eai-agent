@@ -1,6 +1,6 @@
 import os
 import traceback
-from typing import List
+from typing import List, Optional
 from letta_client import Letta, AsyncLetta
 from letta_client.types import MessageCreate, TextContent
 
@@ -101,13 +101,17 @@ class LettaService:
         """
         client = self.client_async
         
-        letta_message = MessageCreate(
-            role="user",
-            content=message_content
-        )
+        # Preparar os parâmetros para MessageCreate
+        message_params = {
+            "role": "user",
+            "content": message_content
+        }
         
+        # Adicionar name apenas se fornecido
         if name:
-            letta_message.name = name
+            message_params["name"] = name
+        
+        letta_message = MessageCreate(**message_params)
         
         try:
             response = await client.agents.messages.create_stream(agent_id=agent_id, messages=[letta_message])
