@@ -341,3 +341,68 @@ OUTPUT FORMAT
 ```
 
 """
+
+ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT = """
+In this task, you will be presented with a user's query and a model's response. Your objective is to evaluate if the model's response directly and comprehensively answers what was asked in the user's query. The focus is on whether the core question, task, or information request presented by the user has been adequately and fully addressed.
+
+The 'label' field in your JSON output should be a single word: either "answered" or "unanswered."
+- "answered" indicates that the model's response directly addresses the primary question(s) or intent of the user's query in a complete manner. All significant aspects of the query are covered.
+- "unanswered" indicates that the model's response fails to address the core question, only partially addresses it, evades the question, or addresses a tangential or different topic. Significant aspects of the user's query are left unaddressed.
+
+Please carefully consider the query and the model's response before determining your evaluation.
+
+After analyzing the query and the model's response, you must write a detailed explanation of your reasoning to justify your chosen label. Avoid stating the final label at the beginning of your explanation. Your 'explanation' should meticulously detail how the model's response does or does not address the specific components and overall intent of the user's query. If 'unanswered,' specify what parts of the query were missed, inadequately addressed, or if the response was off-topic.
+
+[BEGIN DATA]
+Query: {query}
+Model Response: {model_response}
+[END DATA]
+Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+
+explanation: Provide your reasoning step by step, evaluating if the model's response fully and directly addresses all aspects and the core intent of the user's query.
+label: "answered" or "unanswered"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
+"""
+
+ENTITY_PRESENCE_LLM_JUDGE_PROMPT = """
+In this task, you will be presented with a user's query and a model's response. Your objective is to evaluate if the main entities (such as objects, people, specific places, organizations, or key concepts) mentioned in the user's query are also present or clearly addressed in the model's response.
+
+The 'label' field in your JSON output should be a single word: either "entities_present" or "entities_missing."
+- "entities_present" indicates that all identified main entities from the user's query are found or explicitly addressed in the model's response. The response acknowledges the key subjects of the query.
+- "entities_missing" indicates that one or more main entities from the user's query are not found or not clearly addressed in the model's response.
+
+Please carefully analyze the query to first identify its main entities. Then, scrutinize the model's response to see if these entities are included or directly referenced. Consider direct mentions, clear synonyms, or specific examples that satisfy the entity.
+
+After analyzing, you must write a detailed explanation. Your 'explanation' should:
+1. List the main entities you identified in the user's query.
+2. For each entity, state whether it was present/addressed in the model's response.
+3. Justify your final label based on this analysis.
+
+[BEGIN DATA]
+Query: {query}
+Model Response: {model_response}
+[END DATA]
+Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+
+explanation: First, list the main entities identified in the query. Then, for each entity, confirm its presence or absence in the model's response, leading to your overall judgment.
+label: "entities_present" or "entities_missing"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
+"""
