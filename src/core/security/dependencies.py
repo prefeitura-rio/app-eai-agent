@@ -5,9 +5,8 @@ from src.config import env
 
 security = HTTPBearer()
 
-async def validar_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+
+async def validar_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     if not token or token != env.AGENTIC_SEARCH_API_TOKEN:
         raise HTTPException(

@@ -12,6 +12,7 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 logger.info(f"Diretório de arquivos estáticos: {STATIC_DIR}")
 logger.info(f"Arquivo index.html: {os.path.join(STATIC_DIR, 'index.html')}")
 
+
 @router.get("/", response_class=HTMLResponse)
 async def get_admin_panel(request: Request):
     """
@@ -24,7 +25,8 @@ async def get_admin_panel(request: Request):
         return HTMLResponse(content=html_content)
     except Exception as e:
         logger.error(f"Erro ao carregar index.html: {str(e)}")
-        return HTMLResponse(content=f"""
+        return HTMLResponse(
+            content=f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -35,10 +37,13 @@ async def get_admin_panel(request: Request):
             <p>Detalhes: {str(e)}</p>
         </body>
         </html>
-        """)
+        """
+        )
+
 
 @router.get("/favicon.ico")
 async def get_favicon():
     return FileResponse(os.path.join(STATIC_DIR, "favicon.ico"))
 
-router.mount("/static", StaticFiles(directory=STATIC_DIR), name="admin_static") 
+
+router.mount("/static", StaticFiles(directory=STATIC_DIR), name="admin_static")
