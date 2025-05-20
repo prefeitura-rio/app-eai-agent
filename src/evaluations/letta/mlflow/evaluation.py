@@ -22,7 +22,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 for var in [
-    "MLFLOW_TRACKIN_URL",
+    "MLFLOW_TRACKING_URL",
     "MLFLOW_TRACKING_USERNAME",
     "MLFLOW_TRACKING_PASSWORD",
     "AGENTIC_SEARCH_URL",
