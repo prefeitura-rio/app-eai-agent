@@ -1,5 +1,6 @@
-import requests
+import httpx
 import os
+import asyncio
 
 
 import sys
@@ -29,7 +30,7 @@ for var in [
     assert os.environ.get(var), f"Environment variable {var} is not set"
 
 
-def get_response_from_agent(querry):
+async def get_response_from_agent(querry):
     url = os.getenv("AGENTIC_SEARCH_URL")
     payload = {
         "data": {
@@ -47,11 +48,10 @@ def get_response_from_agent(querry):
         "Content-Type": "application/json",
     }
 
-    response = requests.post(url, headers=headers, json=payload)
-
-    response.raise_for_status()
-
-    response_json = response.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        response_json = response.json()
 
     if response_json.get("status") != "success":
         logging.warning(f"status is not success: {response_json}")
@@ -61,10 +61,13 @@ def get_response_from_agent(querry):
         return response_json.get("message")
 
 
-if __name__ == "__main__":
-
+async def main():
     # querry = "Quero remover um sofa velho"
-    # message = get_response_from_agent(querry=querry)
+    # message = await get_response_from_agent(querry=querry)
     # print(message)
 
     print(CLARITY_LLM_JUDGE_PROMPT)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
