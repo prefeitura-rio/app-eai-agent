@@ -110,6 +110,7 @@ async def process_evaluation(eval_results: dict, judges: list) -> dict:
 
 
 async def main():
+
     eval_dataset = json.load(open(f"{current_dir}/eval_dataset.json", "r"))
     csv_save_path = f"{current_dir}/eval_results.csv"
 
@@ -118,12 +119,18 @@ async def main():
 
     judges = [
         "clarify",
-        "location",
-        "emergency",
-        "feedback",
-        "security",
-        "whatsapp",
+        "location_policy_compliance",
+        "emergency_handling_compliance",
+        "feedback_handling_compliance",
+        "security_privacy_compliance",
+        "whatsapp_formating",
+        "answer_completness",
+        "entity_presence",
         "gold_standart",
+        # "groundness",
+        # "tool_calling",
+        # "search_query_effectiveness",
+        # "search_result_coverage",
     ]
 
     # Process all evaluations concurrently

@@ -19,7 +19,20 @@ from src.evaluations.letta.agents.final_response import (
     FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
     WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT,
+    ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
+    ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
 )
+
+
+from src.evaluations.letta.agents.router import (
+    TOOL_CALLING_LLM_JUDGE_PROMPT,
+    SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
+)
+
+from src.evaluations.letta.agents.search_tools import (
+    SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
+)
+
 
 import logging
 
@@ -83,15 +96,21 @@ class Model:
 
     async def judge(self, judge_name: str, eval_results: dict):
 
+        logging.info(f"Evaluating {judge_name} judge")
         possible_judges = [
             "clarify",
-            "location",
-            "emergency",
-            "feedback",
-            "security",
-            "whatsapp",
+            "location_policy_compliance",
+            "emergency_handling_compliance",
+            "feedback_handling_compliance",
+            "security_privacy_compliance",
+            "whatsapp_formating",
+            "answer_completness",
+            "entity_presence",
             "gold_standart",
             "groundness",
+            "tool_calling",
+            "search_query_effectiveness",
+            "search_result_coverage",
         ]
 
         if judge_name not in possible_judges:
@@ -103,6 +122,9 @@ class Model:
 
         core_memory = eval_results.get("core_memory")
         search_tool_results = eval_results.get("search_tool_results")
+        search_tool_query = eval_results.get("search_tool_query")
+        tool_call = eval_results.get("tool_call")
+        tool_definitions = eval_results.get("tool_definitions")
 
         prompt_basic = textwrap.dedent(
             f"""
@@ -110,53 +132,90 @@ class Model:
                 Model Response: {letta_response}
             """
         )
-        prompt_gold_standart = textwrap.dedent(
-            f"""
-                Query: {query}
-                Model Response: {letta_response}
-                Ideal Response: {ideal_response}
-            """
-        )
-        prompt_groundness = textwrap.dedent(
-            f"""
-                Query: {query}
-                Model Response: {letta_response}
-                Core Memory: {core_memory}
-                Search Tool Results: {search_tool_results}
-            """
-        )
+
         judge_configs = {
             "clarify": {
                 "system_prompt": CLARITY_LLM_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
-            "location": {
+            "location_policy_compliance": {
                 "system_prompt": LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
-            "emergency": {
+            "emergency_handling_compliance": {
                 "system_prompt": EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
-            "feedback": {
+            "feedback_handling_compliance": {
                 "system_prompt": FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
-            "security": {
+            "security_privacy_compliance": {
                 "system_prompt": SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
-            "whatsapp": {
+            "whatsapp_formating": {
                 "system_prompt": WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT,
+                "prompt": prompt_basic,
+            },
+            "answer_completness": {
+                "system_prompt": ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
+                "prompt": prompt_basic,
+            },
+            "entity_presence": {
+                "system_prompt": ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
             "gold_standart": {
                 "system_prompt": GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
-                "prompt": prompt_gold_standart,
+                "prompt": textwrap.dedent(
+                    f"""
+                        Query: {query}
+                        Model Response: {letta_response}
+                        Ideal Response: {ideal_response}
+                    """
+                ),
             },
             "groundness": {
                 "system_prompt": GROUNDEDNESS_LLM_JUDGE_PROMPT,
-                "prompt": prompt_groundness,
+                "prompt": textwrap.dedent(
+                    f"""
+                        Query: {query}
+                        Model Response: {letta_response}
+                        Core Memory: {core_memory}
+                        Search Tool Results: {search_tool_results}
+                    """
+                ),
+            },
+            "tool_calling": {
+                "system_prompt": TOOL_CALLING_LLM_JUDGE_PROMPT,
+                "prompt": textwrap.dedent(
+                    f"""
+                    Question: {query}
+                    ************
+                    Tool Called: {tool_call}
+                    ************
+                    Tool Definitions: {tool_definitions}
+                    """
+                ),
+            },
+            "search_query_effectiveness": {
+                "system_prompt": SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
+                "prompt": textwrap.dedent(
+                    f"""
+                    User Query: {query}
+                    Search Tool Query: {search_tool_query}
+                    """
+                ),
+            },
+            "search_result_coverage": {
+                "system_prompt": SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
+                "prompt": textwrap.dedent(
+                    f"""
+                        User Query: {query}
+                        Search Results: {search_tool_results}
+                    """
+                ),
             },
         }
 
