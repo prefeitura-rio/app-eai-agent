@@ -40,7 +40,7 @@ class Model:
         self.model = model
         self.temperature = temperature
 
-    def generate_content(
+    async def generate_content(
         self,
         prompt,
         system_prompt=None,
@@ -61,7 +61,7 @@ class Model:
             ],
         )
 
-        response = client.models.generate_content(
+        response = await client.aio.models.generate_content(
             model=self.model,
             contents=contents,
             config=generate_content_config,
@@ -81,7 +81,7 @@ class Model:
 
         return output_text
 
-    def judge(self, judge_name: str, eval_results: dict):
+    async def judge(self, judge_name: str, eval_results: dict):
 
         possible_judges = [
             "clarify",
@@ -163,7 +163,7 @@ class Model:
         judge_config = judge_configs[judge_name]
 
         logging.info(f"Getting response from {judge_name} judge")
-        response = self.generate_content(
+        response = await self.generate_content(
             prompt=judge_config["prompt"],
             system_prompt=judge_config["system_prompt"],
         )

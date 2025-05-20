@@ -62,14 +62,24 @@ async def get_response_from_letta(query: str) -> dict:
         return response_json["message"]
 
 
-async def call_juges(eval_results: dict, judges: list) -> dict:
+async def call_judges(eval_results: dict, judges: list) -> dict:
+    """
+    Asynchronously call multiple judges to evaluate results.
+
+    Args:
+        eval_results: Dictionary containing the evaluation data
+        judges: List of judge names to evaluate
+
+    Returns:
+        List of judge results
+    """
     model = Model(model="gemini-2.5-flash-preview-04-17", temperature=0.1)
     logging.info("Getting response from judges")
-    judges_results = []
-    for judge_name in judges:
-        judges_result = model.judge(judge_name=judge_name, eval_results=eval_results)
-        judges_results.append(judges_result)
-    return judges_results
+    tasks = [
+        model.judge(judge_name=judge_name, eval_results=eval_results)
+        for judge_name in judges
+    ]
+    return await asyncio.gather(*tasks)
 
 
 def explode_dataframe(dataframe: pd.DataFrame, explode_col: str) -> pd.DataFrame:
@@ -96,11 +106,36 @@ def load_dataframe(final_results: list) -> pd.DataFrame:
     dataframe = explode_dataframe(dataframe=dataframe, explode_col="judges")
 
 
+async def process_evaluation(eval_results: dict, judges: list) -> dict:
+    """
+    Process a single evaluation case asynchronously.
+
+    Args:
+        eval_results: Dictionary containing the evaluation data
+        judges: List of judge names to evaluate the response
+
+    Returns:
+        Dictionary containing the processed evaluation results
+    """
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    eval_results = {"updated_at": now, **eval_results}
+
+    logging.info(
+        f"Getting response from letta api for query: {eval_results['query'][:50]}..."
+    )
+    letta_response = await get_response_from_letta(query=eval_results["query"])
+    eval_results["letta_response"] = letta_response
+
+    judges_results = await call_judges(eval_results=eval_results, judges=judges)
+    eval_results["judges"] = judges_results
+
+    return eval_results
+
+
 async def main():
-
     eval_dataset = json.load(open(f"{current_dir}/eval_dataset.json", "r"))
-
     csv_save_path = f"{current_dir}/eval_results.csv"
+
     if os.path.exists(csv_save_path):
         os.remove(csv_save_path)
 
@@ -114,31 +149,19 @@ async def main():
         "gold_standart",
     ]
 
-    final_results = []
-    for eval_results in eval_dataset:
-        # datetime in str format
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        datetime_dict = {"updated_at": now}
-        eval_results = {**datetime_dict, **eval_results}
+    # Process all evaluations concurrently
+    tasks = [process_evaluation(eval_results, judges) for eval_results in eval_dataset]
+    final_results = await asyncio.gather(*tasks)
 
-        logging.info("Getting response from letta api")
-        letta_response = await get_response_from_letta(query=eval_results["query"])
-        eval_results["letta_response"] = letta_response
+    # Save results to CSV
+    dataframe = pd.DataFrame(final_results)
+    dataframe.to_csv(
+        csv_save_path,
+        index=False,
+        sep=";",
+    )
 
-        judges_results = await call_juges(eval_results=eval_results, judges=judges)
-        eval_results["judges"] = judges_results
-
-        final_results.append(eval_results)
-
-        dataframe = pd.DataFrame([eval_results])
-        dataframe.to_csv(
-            csv_save_path,
-            index=False,
-            mode="a",
-            sep=";",
-            header=False if os.path.exists(csv_save_path) else True,
-        )
-
+    # Save results to JSON
     json.dump(
         json.loads(json.dumps(final_results)),
         open(f"{current_dir}/eval_results.json", "w"),
