@@ -27,6 +27,7 @@ for var in [
     "MLFLOW_TRACKING_PASSWORD",
     "AGENTIC_SEARCH_URL",
     "AGENTIC_SEARCH_TOKEN",
+    "GEMINI_API_KEY",
 ]:
     assert os.environ.get(var), f"Environment variable {var} is not set"
 
@@ -80,30 +81,6 @@ async def call_judges(eval_results: dict, judges: list) -> dict:
         for judge_name in judges
     ]
     return await asyncio.gather(*tasks)
-
-
-def explode_dataframe(dataframe: pd.DataFrame, explode_col: str) -> pd.DataFrame:
-    s = dataframe[explode_col].explode()
-    tmp = dataframe.drop(columns=explode_col)
-    out = (
-        pd.concat(
-            [
-                tmp,
-                pd.json_normalize(s, sep="_")
-                .set_axis(s.index)
-                .dropna()
-                .combine_first(tmp),
-            ]
-        )
-        .drop_duplicates()
-        .sort_index(kind="stable")
-    )
-    return out[out["judge"].notnull()]
-
-
-def load_dataframe(final_results: list) -> pd.DataFrame:
-    dataframe = pd.DataFrame(final_results)
-    dataframe = explode_dataframe(dataframe=dataframe, explode_col="judges")
 
 
 async def process_evaluation(eval_results: dict, judges: list) -> dict:
