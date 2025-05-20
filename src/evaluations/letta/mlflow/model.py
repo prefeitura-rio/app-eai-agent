@@ -97,11 +97,12 @@ class Model:
         if judge_name not in possible_judges:
             raise ValueError(f"Judge must be one of {possible_judges}")
 
-        query = eval_results.get("query")
-        letta_response = eval_results.get("letta_response")
+        query = eval_results["query"]
+        letta_response = eval_results["letta_response"]
+        ideal_response = eval_results["ideal_response"]
+
         core_memory = eval_results.get("core_memory")
         search_tool_results = eval_results.get("search_tool_results")
-        ideal_response = eval_results.get("ideal_response")
 
         prompt_basic = textwrap.dedent(
             f"""
@@ -166,8 +167,10 @@ class Model:
             prompt=judge_config["prompt"],
             system_prompt=judge_config["system_prompt"],
         )
-        judge_config["response"] = json.loads(response)
 
-        eval_results[judge_name] = judge_config
-
-        return eval_results
+        return {
+            "judge": judge_name,
+            "system_prompt": judge_config["system_prompt"],
+            "prompt": judge_config["prompt"],
+            "response": json.loads(response),
+        }
