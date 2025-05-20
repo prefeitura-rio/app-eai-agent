@@ -163,7 +163,7 @@ class Model:
         judge_config = judge_configs[judge_name]
 
         logging.info(f"Getting response from {judge_name} judge")
-        response = self.generate_content(
+        response = await self.generate_content(
             prompt=judge_config["prompt"],
             system_prompt=judge_config["system_prompt"],
         )
