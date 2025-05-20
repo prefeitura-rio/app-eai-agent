@@ -12,6 +12,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 def get_db():
     """
     Obtém uma sessão do banco de dados.
@@ -21,6 +22,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 @contextmanager
 def get_db_session():
@@ -35,4 +37,4 @@ def get_db_session():
         db.rollback()
         raise
     finally:
-        db.close() 
+        db.close()

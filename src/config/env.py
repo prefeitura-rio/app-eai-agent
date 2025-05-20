@@ -12,6 +12,8 @@ GEMINI_API_KEY = getenv_or_action("GEMINI_API_KEY")
 TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL")
 TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY")
 
-ISSUE_AGENT_ENABLE_SLEEPTIME = getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME").lower() == "false"
+ISSUE_AGENT_ENABLE_SLEEPTIME = (
+    getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME").lower() == "false"
+)
 
 PG_URI = getenv_or_action("PG_URI")

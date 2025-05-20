@@ -10,39 +10,39 @@ _env_cache: Dict[str, str] = {}
 
 def _load_dotenv() -> Dict[str, str]:
     """Carrega variáveis do arquivo .env na raiz do projeto.
-    
+
     Returns:
         Dict[str, str]: Dicionário com as variáveis do arquivo .env
     """
     global _env_cache
-    
+
     if _env_cache:
         return _env_cache
-    
-    env_path = Path('.env')
+
+    env_path = Path(".env")
     if not env_path.exists():
         return {}
-    
+
     env_vars = {}
-    with open(env_path, 'r') as f:
+    with open(env_path, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
-            
+
             # Processa linhas com formato KEY=VALUE
-            if '=' in line:
-                key, value = line.split('=', 1)
+            if "=" in line:
+                key, value = line.split("=", 1)
                 key = key.strip()
                 value = value.strip()
-                
+
                 # Remove aspas se existirem
                 if value and len(value) >= 2:
                     if (value[0] == value[-1] == '"') or (value[0] == value[-1] == "'"):
                         value = value[1:-1]
-                        
+
                 env_vars[key] = value
-    
+
     _env_cache = env_vars
     return env_vars
 
@@ -71,12 +71,12 @@ def getenv_or_action(
 
     # Tenta obter a variável do ambiente
     value = getenv(env_name, None)
-    
+
     # Se não encontrar, tenta obter do arquivo .env
     if value is None:
         env_vars = _load_dotenv()
         value = env_vars.get(env_name, default)
-    
+
     # Se ainda não encontrou, aplica a ação especificada
     if value is None:
         if action == "raise":

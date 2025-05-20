@@ -18,10 +18,12 @@ from src.db import Base, engine
 
 Base.metadata.create_all(bind=engine)
 
+
 class InterceptHandler(logging.Handler):
     def emit(self, record):
         logger_opt = logger.opt(depth=6, exception=record.exc_info)
         logger_opt.log(record.levelname, record.getMessage())
+
 
 logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
 logger.configure(
@@ -39,7 +41,7 @@ logger.configure(
             "level": "INFO",
             "backtrace": True,
             "diagnose": True,
-        }
+        },
     ]
 )
 
@@ -79,6 +81,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Erro não tratado: {exc}")
@@ -87,9 +90,11 @@ async def generic_exception_handler(request: Request, exc: Exception):
         content={"detail": "Erro interno do servidor"},
     )
 
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok", "timestamp": time.time()}
+
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -101,8 +106,13 @@ async def custom_swagger_ui_html():
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
     )
 
-admin_static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin/static")
-app.mount("/admin/static", StaticFiles(directory=admin_static_dir), name="admin_static_direct")
+
+admin_static_dir = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "admin/static"
+)
+app.mount(
+    "/admin/static", StaticFiles(directory=admin_static_dir), name="admin_static_direct"
+)
 
 app.include_router(api_router)
 app.include_router(admin_router)

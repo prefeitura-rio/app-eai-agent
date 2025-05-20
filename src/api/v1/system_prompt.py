@@ -13,16 +13,21 @@ from src.schemas.system_prompt_schema import (
     SystemPromptGetResponse,
     SystemPromptHistoryResponse,
     SystemPromptHistoryItem,
-    SystemPromptResetResponse
+    SystemPromptResetResponse,
 )
 
-router = APIRouter(prefix="/system-prompt", tags=["System Prompt"], dependencies=[Depends(validar_token)])
+router = APIRouter(
+    prefix="/system-prompt",
+    tags=["System Prompt"],
+    dependencies=[Depends(validar_token)],
+)
+
 
 @router.get("/agent-types", response_model=List[str])
 async def get_agent_types():
     """
     Obtém os tipos de agentes disponíveis baseados nas tags que contêm 'agentic'.
-    
+
     Returns:
         List[str]: Lista de tags de agentes
     """
@@ -32,21 +37,21 @@ async def get_agent_types():
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter tipos de agentes: {str(e)}"
+            detail=f"Erro ao obter tipos de agentes: {str(e)}",
         )
+
 
 @router.get("", response_model=SystemPromptGetResponse)
 async def get_system_prompt(
-    agent_type: str = "agentic_search",
-    db: Session = Depends(get_db)
+    agent_type: str = "agentic_search", db: Session = Depends(get_db)
 ):
     """
     Obtém o system prompt atual para o tipo de agente especificado.
-    
+
     Args:
         agent_type: Tipo do agente
         db: Sessão do banco de dados
-        
+
     Returns:
         SystemPromptGetResponse: Resposta contendo o system prompt atual
     """
@@ -54,11 +59,13 @@ async def get_system_prompt(
         if not agent_type or agent_type.strip() == "":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="É necessário especificar um tipo de agente válido"
+                detail="É necessário especificar um tipo de agente válido",
             )
-            
-        prompt_text = await system_prompt_service.get_current_system_prompt(agent_type, db)
-        
+
+        prompt_text = await system_prompt_service.get_current_system_prompt(
+            agent_type, db
+        )
+
         active_prompt = SystemPromptRepository.get_active_prompt(db, agent_type)
         if active_prompt:
             return SystemPromptGetResponse(
@@ -66,37 +73,30 @@ async def get_system_prompt(
                 agent_type=agent_type,
                 version=active_prompt.version,
                 prompt_id=active_prompt.prompt_id,
-                created_at=active_prompt.created_at
+                created_at=active_prompt.created_at,
             )
         else:
-            return SystemPromptGetResponse(
-                prompt=prompt_text,
-                agent_type=agent_type
-            )
+            return SystemPromptGetResponse(prompt=prompt_text, agent_type=agent_type)
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter system prompt: {str(e)}"
+            detail=f"Erro ao obter system prompt: {str(e)}",
         )
 
 
 @router.post("", response_model=SystemPromptUpdateResponse)
 async def update_system_prompt(
-    request: SystemPromptUpdateRequest = Body(...),
-    db: Session = Depends(get_db)
+    request: SystemPromptUpdateRequest = Body(...), db: Session = Depends(get_db)
 ):
     """
     Atualiza o system prompt e/ou em todos os agentes existentes.
-    
+
     Args:
         request: Dados para atualização do system prompt
         db: Sessão do banco de dados
-        
+
     Returns:
         SystemPromptUpdateResponse: Resposta contendo o resultado da operação
     """
@@ -107,33 +107,34 @@ async def update_system_prompt(
             update_agents=request.update_agents,
             tags=request.tags,
             metadata=request.metadata,
-            db=db
+            db=db,
         )
-        
+
         message = "System prompt atualizado com sucesso"
-        
+
         if request.update_agents:
-            updated_agents = sum(1 for success in result["agents_updated"].values() if success)
+            updated_agents = sum(
+                1 for success in result["agents_updated"].values() if success
+            )
             total_agents = len(result["agents_updated"])
-            
+
             if total_agents > 0:
-                message += f", {updated_agents}/{total_agents} agentes foram atualizados"
-        
+                message += (
+                    f", {updated_agents}/{total_agents} agentes foram atualizados"
+                )
+
         return SystemPromptUpdateResponse(
             success=result["success"],
             prompt_id=result.get("prompt_id"),
             agents_updated=result.get("agents_updated", {}),
-            message=message
+            message=message,
         )
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atualizar system prompt: {str(e)}"
+            detail=f"Erro ao atualizar system prompt: {str(e)}",
         )
 
 
@@ -141,96 +142,88 @@ async def update_system_prompt(
 async def get_system_prompt_history(
     agent_type: str = "agentic_search",
     limit: int = Query(10, ge=1, description="Limite de resultados"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Obtém o histórico de versões de system prompts para um tipo de agente.
-    
+
     Args:
         agent_type: Tipo do agente
         limit: Limite de resultados
         db: Sessão do banco de dados
-        
+
     Returns:
         SystemPromptHistoryResponse: Histórico de versões
     """
     try:
         history = await system_prompt_service.get_prompt_history(
-            agent_type=agent_type,
-            limit=limit,
-            db=db
+            agent_type=agent_type, limit=limit, db=db
         )
-        
-        prompts = [
-            SystemPromptHistoryItem(**item)
-            for item in history
-        ]
-        
-        return SystemPromptHistoryResponse(
-            agent_type=agent_type,
-            prompts=prompts
-        )
+
+        prompts = [SystemPromptHistoryItem(**item) for item in history]
+
+        return SystemPromptHistoryResponse(agent_type=agent_type, prompts=prompts)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter histórico de system prompts: {str(e)}"
+            detail=f"Erro ao obter histórico de system prompts: {str(e)}",
         )
 
 
 @router.get("/by-id/{prompt_id}", response_model=SystemPromptGetResponse)
-async def get_system_prompt_by_id(
-    prompt_id: str,
-    db: Session = Depends(get_db)
-):
+async def get_system_prompt_by_id(prompt_id: str, db: Session = Depends(get_db)):
     """
     Obtém um system prompt específico pelo ID.
-    
+
     Args:
         prompt_id: ID do system prompt
         db: Sessão do banco de dados
-        
+
     Returns:
         SystemPromptGetResponse: Resposta contendo o system prompt específico
     """
     try:
         prompt = SystemPromptRepository.get_prompt_by_id(db, prompt_id)
-        
+
         if not prompt:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"System prompt com ID {prompt_id} não encontrado"
+                detail=f"System prompt com ID {prompt_id} não encontrado",
             )
-            
+
         return SystemPromptGetResponse(
             prompt=prompt.content,
             agent_type=prompt.agent_type,
             version=prompt.version,
             prompt_id=prompt.prompt_id,
-            created_at=prompt.created_at
+            created_at=prompt.created_at,
         )
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter system prompt por ID: {str(e)}"
+            detail=f"Erro ao obter system prompt por ID: {str(e)}",
         )
+
 
 @router.delete("/reset", response_model=SystemPromptResetResponse)
 async def reset_system_prompt(
     agent_type: str = Query(..., description="Tipo do agente para resetar o prompt"),
-    update_agents: bool = Query(False, description="Atualizar também os agentes existentes"),
-    db: Session = Depends(get_db)
+    update_agents: bool = Query(
+        False, description="Atualizar também os agentes existentes"
+    ),
+    db: Session = Depends(get_db),
 ):
     """
     Remove todos os system prompts históricos para o tipo de agente especificado
     e restaura para o valor padrão.
-    
+
     Args:
         agent_type: Tipo do agente
         update_agents: Se verdadeiro, também atualiza os agentes existentes
         db: Sessão do banco de dados
-        
+
     Returns:
         SystemPromptResetResponse: Resposta contendo o resultado da operação
     """
@@ -238,37 +231,36 @@ async def reset_system_prompt(
         if not agent_type or agent_type.strip() == "":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="É necessário especificar um tipo de agente válido"
+                detail="É necessário especificar um tipo de agente válido",
             )
-            
+
         result = await system_prompt_service.reset_system_prompt(
-            agent_type=agent_type,
-            update_agents=update_agents,
-            db=db
+            agent_type=agent_type, update_agents=update_agents, db=db
         )
-        
+
         message = "System prompt resetado com sucesso"
-        
+
         if update_agents:
-            updated_agents = sum(1 for success in result["agents_updated"].values() if success)
+            updated_agents = sum(
+                1 for success in result["agents_updated"].values() if success
+            )
             total_agents = len(result["agents_updated"])
-            
+
             if total_agents > 0:
-                message += f", {updated_agents}/{total_agents} agentes foram atualizados"
-        
+                message += (
+                    f", {updated_agents}/{total_agents} agentes foram atualizados"
+                )
+
         return SystemPromptResetResponse(
             success=result["success"],
             agent_type=agent_type,
             agents_updated=result.get("agents_updated", {}),
-            message=message
+            message=message,
         )
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao resetar system prompt: {str(e)}"
-        ) 
+            detail=f"Erro ao resetar system prompt: {str(e)}",
+        )

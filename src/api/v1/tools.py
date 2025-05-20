@@ -11,6 +11,7 @@ router = APIRouter(
     dependencies=[Depends(validar_token)],
 )
 
+
 @router.get("/google_search", name="Busca Google")
 async def google_search_tool(
     query: str = Query(..., description="Texto da consulta"),
@@ -21,20 +22,21 @@ async def google_search_tool(
             query,
             model="gemini-2.0-flash",
             use_google_search=True,
-            response_format="text_and_links"
+            response_format="text_and_links",
         )
 
         if not response or response.get("texto") is None:
             raise HTTPException(
                 status_code=500, detail="Falha ao gerar resposta do Gemini"
             )
-            
+
         return response
     except Exception as e:
         logger.error(f"Erro ao gerar resposta do Gemini: {e}")
         raise HTTPException(
             status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
         )
+
 
 @router.get("/typesense_search", name="Busca Typesense")
 async def typesense_search_tool(
@@ -50,7 +52,8 @@ async def typesense_search_tool(
         raise HTTPException(
             status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
         )
-        
+
+
 @router.get("/final_summary", name="Resumo final")
 async def final_summary_tool(
     context: str = Query(..., description="Contexto da consulta"),
@@ -63,21 +66,15 @@ async def final_summary_tool(
         
         Contexto: {context}
         """
-        
+
         response = await gemini_service.generate_content(
-            prompt,
-            model="gemini-2.0-flash",
-            response_format="text_only"
+            prompt, model="gemini-2.0-flash", response_format="text_only"
         )
-        
+
         if not response or response.get("texto") is None:
-            raise HTTPException(
-                status_code=500, detail="Falha ao gerar resumo"
-            )
-            
-        return {
-            "resumo": response["texto"]
-        }
+            raise HTTPException(status_code=500, detail="Falha ao gerar resumo")
+
+        return {"resumo": response["texto"]}
     except Exception as e:
         logger.error(f"Erro: {e}")
         raise HTTPException(
