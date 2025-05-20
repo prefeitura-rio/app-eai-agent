@@ -102,7 +102,7 @@ _Informações e canais podem mudar. Confira sempre os canais oficiais da Centra
         eval_results = model.judge(judge_name=judge_name, eval_results=eval_results)
 
     json.dump(
-        eval_results,
+        json.loads(json.dumps(eval_results)),
         open(f"{current_dir}/eval_results.json", "w"),
         indent=4,
         ensure_ascii=False,

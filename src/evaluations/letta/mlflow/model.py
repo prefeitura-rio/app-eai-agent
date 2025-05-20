@@ -1,16 +1,14 @@
+import json
 import os
-from google import genai
-from google.genai import types
-
 import sys
+import textwrap
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir.split("src")[0])
 
-client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"),
-)
 
+from google import genai
+from google.genai import types
 
 from src.evaluations.letta.agents.final_response import (
     CLARITY_LLM_JUDGE_PROMPT,
@@ -26,6 +24,10 @@ from src.evaluations.letta.agents.final_response import (
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY"),
+)
 
 
 class Model:
@@ -53,8 +55,7 @@ class Model:
         ]
         generate_content_config = types.GenerateContentConfig(
             temperature=self.temperature,
-            # response_mime_type= "application/json",
-            response_mime_type="text/plain",  # "application/json"
+            response_mime_type="application/json",
             system_instruction=[
                 types.Part.from_text(text=system_prompt),
             ],
@@ -102,10 +103,27 @@ class Model:
         search_tool_results = eval_results.get("search_tool_results")
         ideal_response = eval_results.get("ideal_response")
 
-        prompt_basic = f"""
-            Query: {query}
-            Model Response: {letta_response}
-        """
+        prompt_basic = textwrap.dedent(
+            f"""
+                Query: {query}
+                Model Response: {letta_response}
+            """
+        )
+        prompt_gold_standart = textwrap.dedent(
+            f"""
+                Query: {query}
+                Model Response: {letta_response}
+                Ideal Response: {ideal_response}
+            """
+        )
+        prompt_groundness = textwrap.dedent(
+            f"""
+                Query: {query}
+                Model Response: {letta_response}
+                Core Memory: {core_memory}
+                Search Tool Results: {search_tool_results}
+            """
+        )
         judge_configs = {
             "clarify": {
                 "system_prompt": CLARITY_LLM_JUDGE_PROMPT,
@@ -133,20 +151,11 @@ class Model:
             },
             "gold_standart": {
                 "system_prompt": GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
-                "prompt": f"""
-                    Query: {query}
-                    Model Response: {letta_response}
-                    Ideal Response: {ideal_response}
-                    """,
+                "prompt": prompt_gold_standart,
             },
             "groundness": {
                 "system_prompt": GROUNDEDNESS_LLM_JUDGE_PROMPT,
-                "prompt": f"""
-                    Query: {query}
-                    Model Response: {letta_response}
-                    Core Memory: {core_memory}
-                    Search Tool Results: {search_tool_results}
-                """,
+                "prompt": prompt_groundness,
             },
         }
 
@@ -154,9 +163,11 @@ class Model:
 
         logging.info(f"Getting response from {judge_name} judge")
         response = self.generate_content(
-            prompt=judge_config["prompt"], system_prompt=judge_config["system_prompt"]
+            prompt=judge_config["prompt"],
+            system_prompt=judge_config["system_prompt"],
         )
-        judge_config["response"] = response
+        judge_config["response"] = json.loads(response)
+
         eval_results[judge_name] = judge_config
 
         return eval_results

@@ -21,8 +21,18 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step, evaluating the clarity of the answer based on the query.
-LABEL: "clear" or "unclear"
+explanation: Provide your reasoning step by step, evaluating the clarity of the answer based on the query.
+label: "clear" or "unclear"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT = """
@@ -46,8 +56,18 @@ Ideal Response: {ideal_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step, evaluating the model's response against the ideal response based on core topic coverage. Identify key topics in the ideal response and assess their presence in the model's response.
-LABEL: "different", "similar", or "equivalent"
+explanation: Provide your reasoning step by step, evaluating the model's response against the ideal response based on core topic coverage. Identify key topics in the ideal response and assess their presence in the model's response.
+label: "different", "similar", or "equivalent"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 GROUNDEDNESS_LLM_JUDGE_PROMPT = """
@@ -71,8 +91,18 @@ Search Tool Results: {search_tool_results}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step, evaluating if each part of the model's response is directly supported by the core memory or search tool results. Note any information present in the response that cannot be found in the provided context.
-LABEL: "based" or "unfounded"
+explanation: Provide your reasoning step by step, evaluating if each part of the model's response is directly supported by the core memory or search tool results. Note any information present in the response that cannot be found in the provided context.
+label: "based" or "unfounded"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT = """
@@ -111,8 +141,18 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step, meticulously comparing the model's response against each relevant instruction in the "Location Based Queries" system prompt section. Identify specific instructions that were followed or violated.
-LABEL: "compliant" or "non_compliant"
+explanation: Provide your reasoning step by step, meticulously comparing the model's response against each relevant instruction in the "Location Based Queries" system prompt section. Identify specific instructions that were followed or violated.
+label: "compliant" or "non_compliant"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT = """
@@ -144,8 +184,18 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step. First, assess if the query indicated an emergency. Then, meticulously compare the model's response against each instruction in the "Emergency Handling" system prompt section, noting specific adherence or violations.
-LABEL: "compliant" or "non_compliant"
+explanation: Provide your reasoning step by step. First, assess if the query indicated an emergency. Then, meticulously compare the model's response against each instruction in the "Emergency Handling" system prompt section, noting specific adherence or violations.
+label: "compliant" or "non_compliant"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT = """
@@ -181,8 +231,18 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step. First, determine if the user input is feedback about EAí or a complaint about services/City Hall. Then, meticulously compare the model's response against the relevant instructions in the "Handling User Feedback" system prompt section, noting specific adherence or violations.
-LABEL: "compliant" or "non_compliant"
+explanation: Provide your reasoning step by step. First, determine if the user input is feedback about EAí or a complaint about services/City Hall. Then, meticulously compare the model's response against the relevant instructions in the "Handling User Feedback" system prompt section, noting specific adherence or violations.
+label: "compliant" or "non_compliant"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT = """
@@ -212,8 +272,18 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step. Meticulously compare the model's response against each constraint in the "Security and Privacy Constraints" system prompt section (Personal Data, Location, Identification/Login). Identify specific adherence or violations.
-LABEL: "compliant" or "non_compliant"
+explanation: Provide your reasoning step by step. Meticulously compare the model's response against each constraint in the "Security and Privacy Constraints" system prompt section (Personal Data, Location, Identification/Login). Identify specific adherence or violations.
+label: "compliant" or "non_compliant"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
 
 WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT = """
@@ -258,6 +328,16 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-EXPLANATION: Provide your reasoning step by step. Meticulously evaluate the model's response against each rule in the "Whatsapp Formatting Rules" section (Length, Allowed Formats - Italics, Bold, Lists, Initial Summary, Prohibited Formats, Emojis). Identify specific adherence or violations.
-LABEL: "compliant_format" or "non_compliant_format"
+explanation: Provide your reasoning step by step. Meticulously evaluate the model's response against each rule in the "Whatsapp Formatting Rules" section (Length, Allowed Formats - Italics, Bold, Lists, Initial Summary, Prohibited Formats, Emojis). Identify specific adherence or violations.
+label: "compliant_format" or "non_compliant_format"
+
+OUTPUT FORMAT
+
+```
+{
+    'explanation':str,
+    'label':str
+}
+```
+
 """
