@@ -62,7 +62,7 @@ async def get_response_from_letta(query: str) -> dict:
         return response_json["message"]
 
 
-async def call_juges(eval_results: dict, judges: list) -> dict:
+async def call_judges(eval_results: dict, judges: list) -> dict:
     model = Model(model="gemini-2.5-flash-preview-04-17", temperature=0.1)
     logging.info("Getting response from judges")
     judges_results = []
@@ -125,7 +125,7 @@ async def main():
         letta_response = await get_response_from_letta(query=eval_results["query"])
         eval_results["letta_response"] = letta_response
 
-        judges_results = await call_juges(eval_results=eval_results, judges=judges)
+        judges_results = await call_judges(eval_results=eval_results, judges=judges)
         eval_results["judges"] = judges_results
 
         final_results.append(eval_results)
