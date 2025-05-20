@@ -2,7 +2,7 @@ import requests
 import os
 
 
-from src.services.letta.agents.evals.final_response import (
+from src.evaluations.letta.agents.final_response import (
     CLARITY_LLM_JUDGE_PROMPT,
     GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
     GROUNDEDNESS_LLM_JUDGE_PROMPT,
