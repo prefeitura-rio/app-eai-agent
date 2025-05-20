@@ -62,13 +62,26 @@ async def get_response_from_letta(query: str) -> dict:
         return response_json["message"]
 
 
-async def call_judges(eval_results: dict, judges: list) -> dict:
+async def call_judges(eval_results: dict, judges: list) -> list:
+    """
+    Asynchronously calls multiple judges to evaluate the model's response.
+
+    Args:
+        eval_results: A dictionary containing the query, model response, ideal response,
+                      and other relevant information for a single evaluation case.
+        judges: A list of judge names to be called.
+
+    Returns:
+        A list of results from all called judges.
+    """
     model = Model(model="gemini-2.5-flash-preview-04-17", temperature=0.1)
     logging.info("Getting response from judges")
-    judges_results = []
+    tasks = []
     for judge_name in judges:
-        judges_result = model.judge(judge_name=judge_name, eval_results=eval_results)
-        judges_results.append(judges_result)
+        task = model.judge(judge_name=judge_name, eval_results=eval_results)
+        tasks.append(task)
+
+    judges_results = await asyncio.gather(*tasks)
     return judges_results
 
 
