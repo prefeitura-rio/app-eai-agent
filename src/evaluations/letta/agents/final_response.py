@@ -17,7 +17,7 @@ criteria for clarity.
 
 [BEGIN DATA]
 Query: {query}
-Answer: {response}
+Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
@@ -65,9 +65,9 @@ After analyzing all provided data, you must write a detailed explanation of your
 
 [BEGIN DATA]
 Query: {query}
+Model Response: {model_response}
 Core Memory: {core_memory}
 Search Tool Results: {search_tool_results}
-Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
