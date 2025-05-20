@@ -98,45 +98,7 @@ def load_dataframe(final_results: list) -> pd.DataFrame:
 
 async def main():
 
-    eval_dataset = [
-        {
-            "query": "Quero remover um sofa velho",
-            "ideal_response": textwrap.dedent(
-                """
-                Para solicitar a remoção de móveis ou outros bens inservíveis pela Prefeitura do Rio, você deve entrar em contato com a Central 1746. A Comlurb é a responsável por este serviço gratuito.
-
-                Você pode fazer a solicitação pelos seguintes canais:
-                - *Portal 1746*: Acesse o site https://www.1746.rio/ e procure pelo serviço de \"Remoção de entulho e bens inservíveis\".
-                - *Aplicativo 1746 Rio*: Disponível para smartphone.
-                - *WhatsApp*: Salve o número (21) 3460-1746 e envie uma mensagem.
-                - *Telefone*: Ligue para 1746 (dentro do município do Rio) ou (21) 3460-1746 (para outras localidades).
-
-                O serviço atende a pedidos em todos os bairros do Rio. O prazo para atendimento pode ser de até 10 a 12 dias corridos ou úteis, dependendo da fonte da informação. O atendimento ocorre de segunda a sábado, das 7h às 22h.
-
-                Há limites para a quantidade de bens inservíveis removidos gratuitamente por residência. Para bens de grande peso ou volume, como sofás, a remoção é limitada a dois itens por residência.
-
-                _Informações e canais de contato podem mudar. Confira sempre os canais oficiais da Central 1746._
-                """
-            ),
-        },
-        {
-            "query": "Quero vacinar meu gatinho",
-            "ideal_response": textwrap.dedent(
-                """
-                Para vacinar seu gatinho, você pode solicitar o atendimento domiciliar para vacinação antirrábica se tiver dificuldade de locomoção ou possuir 10 ou mais animais. 🐱
-                *Como solicitar*:
-                - O serviço está disponível o ano todo, exceto durante a Campanha Anual de Vacinação Antirrábica (geralmente de agosto a novembro).
-                - Após a solicitação, a equipe entrará em contato para agendar a data da vacinação.
-
-                _Importante_: Fêmeas gestantes ou amamentando e filhotes menores de três meses não são vacinados. Os animais devem estar devidamente contidos na residência.
-
-                Para mais informações e agendamento, acesse: https://www.1746.rio/hc/pt-br/articles/10769393994267-Atendimento-domiciliar-para-vacina%C3%A7%C3%A3o-antirr%C3%A1bica-animal
-
-                Além disso, fique de olho na Campanha de Vacinação Antirrábica anual, que acontece em diversos postos pela cidade: https://www.1746.rio/hc/pt-br/articles/10769458450459-Campanha-de-vacina%C3%A7%C3%A3o-antirr%C3%A1bica-animal-2024 😉
-                """
-            ),
-        },
-    ]
+    eval_dataset = json.load(open(f"{current_dir}/eval_dataset.json", "r"))
 
     csv_save_path = f"{current_dir}/eval_results.csv"
     if os.path.exists(csv_save_path):
