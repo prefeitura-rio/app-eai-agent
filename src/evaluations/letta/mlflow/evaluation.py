@@ -1,11 +1,16 @@
-import requests
+import httpx
 import os
 import json
+import asyncio
+
 
 import sys
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir.split("src")[0])
+project_root = current_dir.split("src")[0]
+if project_root:  # Check if split found 'src'
+    sys.path.append(project_root)
+
 
 from src.evaluations.letta.mlflow.model import Model
 
@@ -24,7 +29,7 @@ for var in [
     assert os.environ.get(var), f"Environment variable {var} is not set"
 
 
-def get_response_from_agent(query):
+async def get_response_from_letta(query):
     url = os.getenv("AGENTIC_SEARCH_URL")
     payload = {
         "data": {
@@ -42,11 +47,10 @@ def get_response_from_agent(query):
         "Content-Type": "application/json",
     }
 
-    response = requests.post(url, headers=headers, json=payload)
-
-    response.raise_for_status()
-
-    response_json = response.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        response_json = response.json()
 
     if response_json.get("status") != "success":
         logging.warning(f"status is not success: {response_json}")
@@ -56,7 +60,7 @@ def get_response_from_agent(query):
         return response_json.get("message")
 
 
-if __name__ == "__main__":
+async def main():
     query = "Quero remover um sofa velho"
     ideal_response = """
 Para solicitar a remoção de móveis ou outros bens inservíveis pela Prefeitura do Rio, você deve entrar em contato com a Central 1746. A Comlurb é a responsável por este serviço gratuito.
@@ -75,7 +79,7 @@ _Informações e canais podem mudar. Confira sempre os canais oficiais da Centra
 """
 
     logging.info("Getting response from letta api")
-    letta_response = get_response_from_agent(query=query)
+    letta_response = await get_response_from_letta(query=query)
 
     eval_results = {
         "query": query,
@@ -83,7 +87,7 @@ _Informações e canais podem mudar. Confira sempre os canais oficiais da Centra
         "ideal_response": ideal_response,
     }
 
-    model = Model()
+    model = Model(model="gemini-2.5-flash-preview-04-17", temperature=0.1)
     logging.info("Getting response from judges")
     judges = [
         "clarify",
@@ -103,3 +107,7 @@ _Informações e canais podem mudar. Confira sempre os canais oficiais da Centra
         indent=4,
         ensure_ascii=False,
     )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

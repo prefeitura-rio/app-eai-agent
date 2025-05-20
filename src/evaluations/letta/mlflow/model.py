@@ -29,12 +29,19 @@ logging.basicConfig(level=logging.INFO)
 
 
 class Model:
+
+    def __init__(
+        self,
+        model="gemini-2.5-flash-preview-04-17",
+        temperature=0.1,
+    ) -> None:
+        self.model = model
+        self.temperature = temperature
+
     def generate_content(
         self,
         prompt,
         system_prompt=None,
-        temperature=0.1,
-        model="gemini-2.5-pro-preview-05-06",
     ):
         contents = [
             types.Content(
@@ -45,7 +52,7 @@ class Model:
             ),
         ]
         generate_content_config = types.GenerateContentConfig(
-            temperature=temperature,
+            temperature=self.temperature,
             # response_mime_type= "application/json",
             response_mime_type="text/plain",  # "application/json"
             system_instruction=[
@@ -54,7 +61,7 @@ class Model:
         )
 
         response = client.models.generate_content(
-            model=model,
+            model=self.model,
             contents=contents,
             config=generate_content_config,
         )
