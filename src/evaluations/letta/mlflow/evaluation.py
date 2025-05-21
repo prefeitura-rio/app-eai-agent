@@ -35,13 +35,9 @@ for var in [
 async def get_response_from_letta(query: str) -> dict:
     url = os.getenv("AGENTIC_SEARCH_URL")
     payload = {
-        "data": {
-            "message": query,
-            "name": "João da Silva",
-            "user_number": "5531999999999",
-        },
-        "metadata": {"origin": "sistema_externo", "timestamp": "2023-10-15T14:30:00Z"},
-        "type": "message",
+        "agent_id": "agent-23301e87-a554-4487-be6e-18f299af803a",
+        "message": query,
+        "name": "kkkkkkkk",
     }
     bearer_token = os.getenv("AGENTIC_SEARCH_TOKEN")
     headers = {
@@ -53,14 +49,8 @@ async def get_response_from_letta(query: str) -> dict:
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
-        response_json = response.json()
 
-    if response_json.get("status") != "success":
-        logging.warning(f"status is not success: {response_json}")
-    elif "message" not in response_json:
-        assert BaseException(f"No message in the response: {response_json}")
-    else:
-        return response_json["message"]
+    return response.json()
 
 
 async def call_judges(eval_results: dict, judges: list) -> dict:
@@ -100,11 +90,29 @@ async def process_evaluation(eval_results: dict, judges: list) -> dict:
     logging.info(
         f"Getting response from letta api for query: {eval_results['query'][:50]}..."
     )
-    letta_response = await get_response_from_letta(query=eval_results["query"])
-    eval_results["letta_response"] = letta_response
+    response = await get_response_from_letta(query=eval_results["query"])
+
+    eval_results["letta_response"] = response["assistant_messages"][0]["content"]
+    # eval_results["core_memory"] = core_memory
+    # eval_results["tool_definitions"] = tool_definitions
+
+    search_tool_results = [
+        {"name": tool_return.get("name"), "tool_return": tool_return["tool_return"]}
+        for tool_return in response["tool_return_messages"]
+    ]
+    eval_results["search_tool_results"] = (
+        json.dumps(search_tool_results) if search_tool_results else None
+    )
+    tool_call = [tool.get("tool_call") for tool in response["tool_call_messages"]]
+    eval_results["search_tool_query"] = json.dumps(tool_call) if tool_call else None
+    eval_results["tool_call"] = json.dumps(tool_call) if tool_call else None
 
     judges_results = await call_judges(eval_results=eval_results, judges=judges)
     eval_results["judges"] = judges_results
+
+    eval_results["letta_usage_statistics"] = response["letta_usage_statistics"]
+    eval_results["reasoning_messages"] = response["reasoning_messages"]
+    eval_results["letta_complete_response"] = response
 
     return eval_results
 
@@ -112,6 +120,7 @@ async def process_evaluation(eval_results: dict, judges: list) -> dict:
 async def main():
 
     eval_dataset = json.load(open(f"{current_dir}/eval_dataset.json", "r"))
+    eval_dataset = eval_dataset[:1]
     csv_save_path = f"{current_dir}/eval_results.csv"
 
     if os.path.exists(csv_save_path):
@@ -127,10 +136,10 @@ async def main():
         "answer_completness",
         "entity_presence",
         "gold_standart",
-        # "groundness",
-        # "tool_calling",
-        # "search_query_effectiveness",
-        # "search_result_coverage",
+        "groundness",
+        "tool_calling",
+        "search_query_effectiveness",
+        "search_result_coverage",
     ]
 
     # Process all evaluations concurrently

@@ -120,10 +120,11 @@ class Model:
         letta_response = eval_results["letta_response"]
         ideal_response = eval_results["ideal_response"]
 
+        search_tool_results = eval_results["search_tool_results"]
+        search_tool_query = eval_results["search_tool_query"]
+        tool_call = eval_results["tool_call"]
+
         core_memory = eval_results.get("core_memory")
-        search_tool_results = eval_results.get("search_tool_results")
-        search_tool_query = eval_results.get("search_tool_query")
-        tool_call = eval_results.get("tool_call")
         tool_definitions = eval_results.get("tool_definitions")
 
         prompt_basic = textwrap.dedent(
@@ -220,16 +221,36 @@ class Model:
         }
 
         judge_config = judge_configs[judge_name]
-
-        logging.info(f"Getting response from {judge_name} judge")
-        response = await self.generate_content(
-            prompt=judge_config["prompt"],
-            system_prompt=judge_config["system_prompt"],
-        )
-
-        return {
+        no_info_response = {
             "judge": judge_name,
-            "system_prompt": judge_config["system_prompt"],
-            "prompt": judge_config["prompt"],
-            "response": json.loads(response),
+            "system_prompt": None,
+            "prompt": None,
+            "response": None,
         }
+        if judge_name == "search_result_coverage" and not search_tool_results:
+            logging.warning(f"Judge {judge_name} does not have enough information!")
+            return no_info_response
+        elif judge_name == "search_query_effectiveness" and not search_tool_query:
+            logging.warning(f"Judge {judge_name} does not have enough information!")
+            return no_info_response
+        elif judge_name == "tool_calling" and (not tool_call or not tool_definitions):
+            logging.warning(f"Judge {judge_name} does not have enough information!")
+            return no_info_response
+        elif judge_name == "groundness" and (
+            not core_memory or not search_tool_results
+        ):
+            logging.warning(f"Judge {judge_name} does not have enough information!")
+            return no_info_response
+        else:
+            logging.info(f"Getting response from {judge_name} judge")
+            response = await self.generate_content(
+                prompt=judge_config["prompt"],
+                system_prompt=judge_config["system_prompt"],
+            )
+
+            return {
+                "judge": judge_name,
+                "system_prompt": judge_config["system_prompt"],
+                "prompt": judge_config["prompt"],
+                "response": json.loads(response),
+            }
