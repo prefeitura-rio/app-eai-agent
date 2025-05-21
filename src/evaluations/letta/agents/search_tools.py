@@ -20,14 +20,15 @@ Search Results: {search_results}
 Please analyze the data carefully and provide your explanation and label in the specified JSON format.
 
 explanation: First, identify the core information sought by the user_query. Then, review the title and summary of each search result to assess its potential relevance. Finally, judge if the collective search_results likely indicate that the full documents would cover the query's needs.
-label: "covers" or "uncovers"
+label: "covers":1 or "uncovers":0
 
 OUTPUT FORMAT
 
 ```
 {
     'explanation':str,
-    'label':str
+    'label':str,
+    'value':int
 }
 ```
 """

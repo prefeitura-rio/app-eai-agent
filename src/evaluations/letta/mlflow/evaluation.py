@@ -2,24 +2,30 @@ import httpx
 import os
 import json
 import asyncio
-import textwrap
 from datetime import datetime
+import shutil
+from pathlib import Path
 
 import sys
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = current_dir.split("src")[0]
-if project_root:  # Check if split found 'src'
-    sys.path.append(project_root)
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = CURRENT_DIR.split("src")[0]
+if PROJECT_ROOT:  # Check if split found 'src'
+    sys.path.append(PROJECT_ROOT)
 
+import mlflow.gemini
 import pandas as pd
+import mlflow
 
 from src.evaluations.letta.mlflow.model import Model
-
+from src.evaluations.letta.mlflow.utils import get_metrics
 
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
+ARTIFACTS_DIR = f"{CURRENT_DIR}/artifacts"
+DATA_DIR = f"{CURRENT_DIR}/data"
 
 for var in [
     "MLFLOW_TRACKING_URL",
@@ -33,11 +39,11 @@ for var in [
 
 
 async def get_response_from_letta(query: str) -> dict:
-    url = os.getenv("AGENTIC_SEARCH_URL")
+    url = os.getenv("AGENTIC_SEARCH_URL") + "/letta/test-message-raw"
     payload = {
         "agent_id": "agent-23301e87-a554-4487-be6e-18f299af803a",
         "message": query,
-        "name": "kkkkkkkk",
+        "name": "agent-23301e87-a554-4487-be6e-18f299af803a",
     }
     bearer_token = os.getenv("AGENTIC_SEARCH_TOKEN")
     headers = {
@@ -47,10 +53,19 @@ async def get_response_from_letta(query: str) -> dict:
     }
 
     async with httpx.AsyncClient() as client:
+
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
 
     return response.json()
+
+
+def get_system_prompt() -> str:
+    url = os.getenv("AGENTIC_SEARCH_URL") + "/system-prompt?agent_type=agentic_search"
+    bearer_token = os.getenv("AGENTIC_SEARCH_TOKEN")
+    headers = {"accept": "application/json", "Authorization": f"Bearer {bearer_token}"}
+    response = httpx.get(url, headers=headers)
+    return response.json()["prompt"]
 
 
 async def call_judges(eval_results: dict, judges: list) -> dict:
@@ -108,6 +123,7 @@ async def process_evaluation(eval_results: dict, judges: list) -> dict:
     eval_results["tool_call"] = json.dumps(tool_call) if tool_call else None
 
     judges_results = await call_judges(eval_results=eval_results, judges=judges)
+
     eval_results["judges"] = judges_results
 
     eval_results["letta_usage_statistics"] = response["letta_usage_statistics"]
@@ -117,14 +133,43 @@ async def process_evaluation(eval_results: dict, judges: list) -> dict:
     return eval_results
 
 
+def sync_mlflow_results(eval_results: dict):
+    prefix = "letta-judges"
+    tag = "test"
+    today = pd.Timestamp.now().strftime("%Y-%m-%d")
+    experiment_name = f"{prefix}-{today}-{tag}"
+
+    mlflow.set_tracking_uri(uri=os.getenv("MLFLOW_TRACKING_URL"))
+    mlflow.set_experiment(experiment_name)
+
+    metrics_df, metrics = get_metrics(eval_results=eval_results)
+    metrics_df.to_csv(f"{ARTIFACTS_DIR}/metrics_df.csv", index=False)
+
+    system_prompt = get_system_prompt()
+
+    with open(f"{ARTIFACTS_DIR}/system_prompt.md", "w") as f:
+        f.write(system_prompt)
+
+    with mlflow.start_run() as mlrun:
+        mlflow.gemini.autolog(log_traces=True, disable=False, silent=False)
+        for metric in metrics:
+            mlflow.log_metric(metric, metrics[metric])
+
+        mlflow.log_text(system_prompt, "system_prompt.md")
+        mlflow.log_artifact(f"{ARTIFACTS_DIR}/system_prompt.md")
+        mlflow.log_artifact(f"{ARTIFACTS_DIR}/metrics_df.csv")
+        mlflow.log_artifact(f"{ARTIFACTS_DIR}/eval_results.json")
+        mlflow.log_artifact(f"{ARTIFACTS_DIR}/eval_dataset.json")
+
+
 async def main():
+    if os.path.exists(ARTIFACTS_DIR):
+        shutil.rmtree(ARTIFACTS_DIR)
 
-    eval_dataset = json.load(open(f"{current_dir}/eval_dataset.json", "r"))
-    eval_dataset = eval_dataset[:1]
-    csv_save_path = f"{current_dir}/eval_results.csv"
+    Path(ARTIFACTS_DIR).mkdir(parents=True, exist_ok=True)
 
-    if os.path.exists(csv_save_path):
-        os.remove(csv_save_path)
+    eval_dataset = json.load(open(f"{DATA_DIR}/eval_dataset.json", "r"))
+    eval_dataset = eval_dataset[:2]
 
     judges = [
         "clarify",
@@ -146,21 +191,22 @@ async def main():
     tasks = [process_evaluation(eval_results, judges) for eval_results in eval_dataset]
     final_results = await asyncio.gather(*tasks)
 
-    # Save results to CSV
-    dataframe = pd.DataFrame(final_results)
-    dataframe.to_csv(
-        csv_save_path,
-        index=False,
-        sep=";",
-    )
-
-    # Save results to JSON
     json.dump(
         json.loads(json.dumps(final_results)),
-        open(f"{current_dir}/eval_results.json", "w"),
+        open(f"{ARTIFACTS_DIR}/eval_results.json", "w"),
         indent=4,
         ensure_ascii=False,
     )
+
+    json.dump(
+        json.loads(json.dumps(eval_dataset)),
+        open(f"{ARTIFACTS_DIR}/eval_dataset.json", "w"),
+        indent=4,
+        ensure_ascii=False,
+    )
+
+    logging.info("Syncing results to MLFlow")
+    sync_mlflow_results(eval_results=final_results)
 
 
 if __name__ == "__main__":

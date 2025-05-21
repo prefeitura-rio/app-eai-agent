@@ -79,14 +79,15 @@ Search Tool Query: {search_tool_query}
 Please analyze the data carefully and provide your explanation and label in the specified JSON format.
 
 explanation: Identify the user's core search intent. Evaluate if the search_tool_query effectively captures this intent for a search tool, noting strengths or weaknesses.
-label: "effective" or "innefective"
+label: "effective":1 or "innefective":0
 
 OUTPUT FORMAT
 
 ```
 {
     'explanation':str,
-    'label':str
+    'label':str,
+    'value':int
 }
 ```
 """

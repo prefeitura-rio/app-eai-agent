@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import textwrap
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir.split("src")[0])
@@ -52,6 +51,9 @@ class Model:
     ) -> None:
         self.model = model
         self.temperature = temperature
+
+    def dedent(self, text: str):
+        return "\n".join(line.strip() for line in text.split("\n"))
 
     async def generate_content(
         self,
@@ -127,8 +129,8 @@ class Model:
         core_memory = eval_results.get("core_memory")
         tool_definitions = eval_results.get("tool_definitions")
 
-        prompt_basic = textwrap.dedent(
-            f"""
+        prompt_basic = self.dedent(
+            f"""\
                 Query: {query}
                 Model Response: {letta_response}
             """
@@ -169,7 +171,7 @@ class Model:
             },
             "gold_standart": {
                 "system_prompt": GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
-                "prompt": textwrap.dedent(
+                "prompt": self.dedent(
                     f"""
                         Query: {query}
                         Model Response: {letta_response}
@@ -179,7 +181,7 @@ class Model:
             },
             "groundness": {
                 "system_prompt": GROUNDEDNESS_LLM_JUDGE_PROMPT,
-                "prompt": textwrap.dedent(
+                "prompt": self.dedent(
                     f"""
                         Query: {query}
                         Model Response: {letta_response}
@@ -190,28 +192,28 @@ class Model:
             },
             "tool_calling": {
                 "system_prompt": TOOL_CALLING_LLM_JUDGE_PROMPT,
-                "prompt": textwrap.dedent(
+                "prompt": self.dedent(
                     f"""
-                    Question: {query}
-                    ************
-                    Tool Called: {tool_call}
-                    ************
-                    Tool Definitions: {tool_definitions}
+                        Question: {query}
+                        ************
+                        Tool Called: {tool_call}
+                        ************
+                        Tool Definitions: {tool_definitions}
                     """
                 ),
             },
             "search_query_effectiveness": {
                 "system_prompt": SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
-                "prompt": textwrap.dedent(
+                "prompt": self.dedent(
                     f"""
-                    User Query: {query}
-                    Search Tool Query: {search_tool_query}
+                        User Query: {query}
+                        Search Tool Query: {search_tool_query}
                     """
                 ),
             },
             "search_result_coverage": {
                 "system_prompt": SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
-                "prompt": textwrap.dedent(
+                "prompt": self.dedent(
                     f"""
                         User Query: {query}
                         Search Results: {search_tool_results}
@@ -221,27 +223,21 @@ class Model:
         }
 
         judge_config = judge_configs[judge_name]
-        no_info_response = {
-            "judge": judge_name,
-            "system_prompt": None,
-            "prompt": None,
-            "response": None,
-        }
+
+        has_info = True
         if judge_name == "search_result_coverage" and not search_tool_results:
-            logging.warning(f"Judge {judge_name} does not have enough information!")
-            return no_info_response
+            has_info = False
         elif judge_name == "search_query_effectiveness" and not search_tool_query:
-            logging.warning(f"Judge {judge_name} does not have enough information!")
-            return no_info_response
+            has_info = False
         elif judge_name == "tool_calling" and (not tool_call or not tool_definitions):
-            logging.warning(f"Judge {judge_name} does not have enough information!")
-            return no_info_response
+            logging.warning(f"Judge does not have enough information: {judge_name} ")
+            has_info = False
         elif judge_name == "groundness" and (
             not core_memory or not search_tool_results
         ):
-            logging.warning(f"Judge {judge_name} does not have enough information!")
-            return no_info_response
-        else:
+            has_info = False
+
+        if has_info:
             logging.info(f"Getting response from {judge_name} judge")
             response = await self.generate_content(
                 prompt=judge_config["prompt"],
@@ -253,4 +249,16 @@ class Model:
                 "system_prompt": judge_config["system_prompt"],
                 "prompt": judge_config["prompt"],
                 "response": json.loads(response),
+            }
+        else:
+            logging.warning(f"Judge {judge_name} does not have enough information!")
+            return {
+                "judge": judge_name,
+                "system_prompt": None,
+                "prompt": "Not enough information to create a prompt",
+                "response": {
+                    "explanation": "Not enough information to judge",
+                    "label": None,
+                    "value": None,
+                },
             }
