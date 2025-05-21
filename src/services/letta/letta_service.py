@@ -6,7 +6,7 @@ from letta_client import Letta, AsyncLetta
 from letta_client.types import MessageCreate, TextContent
 
 import src.config.env as env
-from src.services.letta.message_wrapper import process_stream
+from src.services.letta.message_wrapper import process_stream, process_stream_raw
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +134,64 @@ class LettaService:
             return ""
         except Exception as error:
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
+
+
+    async def send_message_raw(
+        self, agent_id: str, message_content: str, name: str = None
+    ) -> dict:
+        """
+        Envia uma mensagem para o agente e recebe a resposta em formato bruto,
+        organizada por tipos de mensagens.
+
+        Args:
+            agent_id: ID do agente
+            message_content: Conteúdo da mensagem
+            name: Nome do remetente
+
+        Returns:
+            dict: Dicionário contendo todas as mensagens do stream organizadas por tipo
+        """
+        client = self.client_async
+
+        message_params = {
+            "role": "user",
+            "content": [TextContent(text=message_content)],
+        }
+
+        if name:
+            message_params["name"] = name
+
+        letta_message = MessageCreate(**message_params)
+
+        try:
+            response = client.agents.messages.create_stream(
+                agent_id=agent_id, messages=[letta_message]
+            )
+
+            if response:
+                return await process_stream_raw(response)
+
+            return {
+                "system_messages": [],
+                "user_messages": [],
+                "reasoning_messages": [],
+                "tool_call_messages": [],
+                "tool_return_messages": [],
+                "assistant_messages": [],
+                "letta_usage_statistics": []
+            }
+        except Exception as error:
+            logger.error(f"Erro ao enviar mensagem: {error}")
+            return {
+                "error": str(error),
+                "system_messages": [],
+                "user_messages": [],
+                "reasoning_messages": [],
+                "tool_call_messages": [],
+                "tool_return_messages": [],
+                "assistant_messages": [],
+                "letta_usage_statistics": []
+            }
 
 
 letta_service = LettaService()

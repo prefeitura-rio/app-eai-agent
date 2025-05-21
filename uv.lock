@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.13"
 
 [[package]]
@@ -61,9 +60,9 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.12.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
-    { name = "google-genai", specifier = ">=1.15.0" },
+    { name = "google-genai", specifier = ">=1.16.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
-    { name = "letta-client", specifier = ">=0.1.143" },
+    { name = "letta-client", specifier = ">=0.1.144" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "psycopg2-binary", specifier = ">=2.9.0" },
@@ -118,7 +117,7 @@ name = "click"
 version = "8.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "platform_system == 'Windows'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cd/0f/62ca20172d4f87d93cf89665fbaedcd560ac48b465bd1d92bfc7ea6b0a41/click-8.2.0.tar.gz", hash = "sha256:f5452aeddd9988eefa20f90f05ab66f17fce1ee2a36907fd30b05bbb5953814d", size = 235857 }
 wheels = [
@@ -164,7 +163,7 @@ wheels = [
 
 [[package]]
 name = "google-genai"
-version = "1.15.0"
+version = "1.16.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -175,9 +174,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/19/da5a085ce419c33b9e6ae308005efad9bfa1b10f59f449d075bba1f16a64/google_genai-1.15.0.tar.gz", hash = "sha256:118bb26960d6343cd64f1aeb5c2b02144a36ad06716d0d1eb1fa3e0904db51f1", size = 173452 }
+sdist = { url = "https://files.pythonhosted.org/packages/ca/1f/1a52736e87b4a22afef615de45e2f509fbfb55c09798620b0c3f394076ef/google_genai-1.16.1.tar.gz", hash = "sha256:4b4ed4ed781a9d61e5ce0fef1486dd3a5d7ff0a73bd76b9633d21e687ab998df", size = 194270 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/e2/acc99d36fd439fb2e558c7aebd049329dbfc08a094faf17d847d393e2810/google_genai-1.15.0-py3-none-any.whl", hash = "sha256:6d7f149cc735038b680722bed495004720514c234e2a445ab2f27967955071dd", size = 171278 },
+    { url = "https://files.pythonhosted.org/packages/bc/31/30caa8d4ae987e47c5250fb6680588733863fd5b39cacb03ba1977c29bde/google_genai-1.16.1-py3-none-any.whl", hash = "sha256:6ae5d24282244f577ca4f0d95c09f75ab29e556602c9d3531b70161e34cd2a39", size = 196327 },
 ]
 
 [[package]]
@@ -274,7 +273,7 @@ wheels = [
 
 [[package]]
 name = "letta-client"
-version = "0.1.143"
+version = "0.1.144"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -283,9 +282,9 @@ dependencies = [
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/ee/c046855a79ff14bc0c6f95f4a17360ced194372ceddabbe2fb939012c962/letta_client-0.1.143.tar.gz", hash = "sha256:bdff6a752145e1e2acc629c552afc433a20263f8723d8b1074d24b877cf71451", size = 107025 }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/c7/414b2289f88255a697e420f636a3db6dffa9edfe96f82d2ce93782f3f540/letta_client-0.1.144.tar.gz", hash = "sha256:e86e62cce3aff4bc1092988e3ef5c522d24212815146511d774fa566b19a0a9e", size = 107576 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/81/a1350825b0101e916681713bc077b91d1e5e5231d1e12c9aacb684266bfa/letta_client-0.1.143-py3-none-any.whl", hash = "sha256:814651c142063191726b4933d6ff10039f84e7a90dbe196e00ae9c997c40b9b1", size = 280925 },
+    { url = "https://files.pythonhosted.org/packages/2d/4d/ad463c7c4e59b4fa12346e922229829c742a2a61ffa43478703f0a529c1f/letta_client-0.1.144-py3-none-any.whl", hash = "sha256:7275f784a5eaf81a65fbe64d3ce0cef73087a55ecf43e3e169f815a8a91e18d5", size = 283314 },
 ]
 
 [[package]]
