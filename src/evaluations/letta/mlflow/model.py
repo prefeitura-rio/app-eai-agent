@@ -8,6 +8,10 @@ sys.path.append(current_dir.split("src")[0])
 
 from google import genai
 from google.genai import types
+import mlflow
+
+mlflow.gemini.autolog()
+
 
 from src.evaluations.letta.agents.final_response import (
     CLARITY_LLM_JUDGE_PROMPT,

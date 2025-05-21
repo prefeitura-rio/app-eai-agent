@@ -13,7 +13,6 @@ PROJECT_ROOT = CURRENT_DIR.split("src")[0]
 if PROJECT_ROOT:  # Check if split found 'src'
     sys.path.append(PROJECT_ROOT)
 
-import mlflow.gemini
 import pandas as pd
 import mlflow
 
