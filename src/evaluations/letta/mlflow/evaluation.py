@@ -112,7 +112,7 @@ async def process_evaluation(eval_results: dict, judges: list) -> dict:
 
     eval_results["letta_usage_statistics"] = response["letta_usage_statistics"]
     eval_results["reasoning_messages"] = response["reasoning_messages"]
-    eval_results["letta_complete_response"] = response
+    # eval_results["letta_complete_response"] = response
 
     return eval_results
 
