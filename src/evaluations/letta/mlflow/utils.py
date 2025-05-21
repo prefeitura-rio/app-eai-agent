@@ -1,4 +1,7 @@
 import pandas as pd
+import mlflow
+
+mlflow.gemini.autolog()
 
 
 def get_metrics(eval_results: dict) -> tuple[pd.DataFrame, dict]:

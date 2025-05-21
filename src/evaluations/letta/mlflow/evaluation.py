@@ -23,6 +23,7 @@ from src.evaluations.letta.mlflow.utils import get_metrics
 import logging
 
 logging.basicConfig(level=logging.INFO)
+mlflow.gemini.autolog()
 
 ARTIFACTS_DIR = f"{CURRENT_DIR}/artifacts"
 DATA_DIR = f"{CURRENT_DIR}/data"
@@ -137,7 +138,7 @@ def sync_mlflow_results(eval_results: dict):
     prefix = "letta-judges"
     tag = "test"
     today = pd.Timestamp.now().strftime("%Y-%m-%d")
-    experiment_name = f"{prefix}-{today}-{tag}"
+    experiment_name = f"{prefix}--{today}--{tag}"
 
     mlflow.set_tracking_uri(uri=os.getenv("MLFLOW_TRACKING_URL"))
     mlflow.set_experiment(experiment_name)
@@ -151,7 +152,7 @@ def sync_mlflow_results(eval_results: dict):
         f.write(system_prompt)
 
     with mlflow.start_run() as mlrun:
-        mlflow.gemini.autolog(log_traces=True, disable=False, silent=False)
+
         for metric in metrics:
             mlflow.log_metric(metric, metrics[metric])
 
