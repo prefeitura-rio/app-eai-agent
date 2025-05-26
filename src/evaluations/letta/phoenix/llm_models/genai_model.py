@@ -85,49 +85,49 @@ class GenAIModel(BaseModel):
             "stop_sequences": self.stop_sequences,
         }
 
-    # def _generate(self, prompt: Union[str, MultimodalPrompt], **kwargs: Dict[str, Any]) -> str:
-    #     kwargs.pop("instruction", None)
+    def _generate(self, prompt: Union[str, MultimodalPrompt], **kwargs: Dict[str, Any]) -> str:
+        kwargs.pop("instruction", None)
 
-    #     if isinstance(prompt, str):
-    #         prompt = MultimodalPrompt.from_string(prompt)
+        if isinstance(prompt, str):
+            prompt = MultimodalPrompt.from_string(prompt)
 
-    #     @self._rate_limiter.limit
-    #     def _rate_limited_completion(
-    #         prompt: MultimodalPrompt, generation_config: Dict[str, Any], **kwargs: Any
-    #     ) -> Any:
-    #         prompt_str = self._construct_prompt(prompt)
+        @self._rate_limiter.limit
+        def _rate_limited_completion(
+            prompt: MultimodalPrompt, generation_config: Dict[str, Any], **kwargs: Any
+        ) -> Any:
+            prompt_str = self._construct_prompt(prompt)
             
-    #         config = {
-    #             "temperature": generation_config.get("temperature", self.temperature),
-    #             "max_output_tokens": generation_config.get("max_output_tokens", self.max_tokens),
-    #             "top_p": generation_config.get("top_p", self.top_p),
-    #             "top_k": generation_config.get("top_k", self.top_k),
-    #         }
+            config = {
+                "temperature": generation_config.get("temperature", self.temperature),
+                "max_output_tokens": generation_config.get("max_output_tokens", self.max_tokens),
+                "top_p": generation_config.get("top_p", self.top_p),
+                "top_k": generation_config.get("top_k", self.top_k),
+            }
             
-    #         if generation_config.get("stop_sequences"):
-    #             config["stop_sequences"] = generation_config.get("stop_sequences")
+            if generation_config.get("stop_sequences"):
+                config["stop_sequences"] = generation_config.get("stop_sequences")
                 
-    #         # Usamos o event loop para executar de forma síncrona
-    #         import asyncio
+            # Usamos o event loop para executar de forma síncrona
+            import asyncio
             
-    #         # Metodo mais simples e seguro de executar código assíncrono em contexto síncrono
-    #         response = asyncio.run(gemini_service.generate_content(
-    #             text=prompt_str,
-    #             model=self.model,
-    #             config=config,
-    #             response_format="raw",
-    #             **{k: v for k, v in kwargs.items() if k not in ["generation_config"]}
-    #         ))
+            # Metodo mais simples e seguro de executar código assíncrono em contexto síncrono
+            response = asyncio.run(gemini_service.generate_content(
+                text=prompt_str,
+                model=self.model,
+                config=config,
+                response_format="raw",
+                **{k: v for k, v in kwargs.items() if k not in ["generation_config"]}
+            ))
             
-    #         return self._parse_response_candidates(response)
+            return self._parse_response_candidates(response)
 
-    #     response = _rate_limited_completion(
-    #         prompt=prompt,
-    #         generation_config=self.generation_config,
-    #         **kwargs,
-    #     )
+        response = _rate_limited_completion(
+            prompt=prompt,
+            generation_config=self.generation_config,
+            **kwargs,
+        )
 
-    #     return str(response)
+        return str(response)
 
     async def _async_generate(
         self, prompt: Union[str, MultimodalPrompt], **kwargs: Dict[str, Any]

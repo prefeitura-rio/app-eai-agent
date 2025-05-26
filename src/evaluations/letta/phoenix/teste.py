@@ -11,15 +11,47 @@ from phoenix.trace import SpanEvaluations
 
 from openinference.instrumentation import suppress_tracing
 
-from src.evaluations.letta.agents.final_response import CLARITY_LLM_JUDGE_PROMPT
+# Import the original prompt but create a modified version for Phoenix compatibility
+from src.evaluations.letta.agents.final_response import CLARITY_LLM_JUDGE_PROMPT as ORIGINAL_PROMPT
+
+# Create a modified version for Phoenix compatibility
+CLARITY_LLM_JUDGE_PROMPT = """
+In this task, you will be presented with a query and an answer. Your objective is to evaluate the clarity 
+of the answer in addressing the query. A clear response is one that is precise, coherent, and directly 
+addresses the query without introducing unnecessary complexity or ambiguity. An unclear response is one 
+that is vague, disorganized, or difficult to understand, even if it may be factually correct.
+
+Your response should be a single word: either "clear" or "unclear," and it should not include any other 
+text or characters. "clear" indicates that the answer is well-structured, easy to understand, and 
+appropriately addresses the query. "unclear" indicates that some part of the response could be better 
+structured or worded.
+Please carefully consider the query and answer before determining your response.
+
+After analyzing the query and the answer, you must write a detailed explanation of your reasoning to 
+justify why you chose either "clear" or "unclear." Your reasoning should include specific points about how the answer does or does not meet the 
+criteria for clarity.
+
+[BEGIN DATA]
+Query: {query}
+Model Response: {model_response}
+[END DATA]
+Please analyze the data carefully and provide your response.
+
+explanation: 
+label: 
+"""
+
 
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../')))
 from src.services.llm.gemini_service import gemini_service
+from src.config import env
+
+api_key = env.GEMINI_API_KEY
 
 phoenix_client = px.Client(endpoint="http://34.60.92.205:6006")
-model = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key="")
+model = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=api_key)
 
 
 query_questions = (
@@ -85,9 +117,9 @@ df_merged = pd.merge(questions, ai_response, on="context.trace_id", how="inner")
 
 with suppress_tracing():
     clarity_eval = llm_classify(
-        dataframe = df_merged,
-        template = CLARITY_LLM_JUDGE_PROMPT,
-        rails = ['clear', 'unclear'],
+        data=df_merged,
+        template=CLARITY_LLM_JUDGE_PROMPT,
+        rails=['clear', 'unclear'],
         model=model,
         provide_explanation=True
     )
