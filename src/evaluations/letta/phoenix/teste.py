@@ -11,10 +11,8 @@ from phoenix.trace import SpanEvaluations
 
 from openinference.instrumentation import suppress_tracing
 
-# Import the original prompt but create a modified version for Phoenix compatibility
 from src.evaluations.letta.agents.final_response import CLARITY_LLM_JUDGE_PROMPT as ORIGINAL_PROMPT
 
-# Create a modified version for Phoenix compatibility
 CLARITY_LLM_JUDGE_PROMPT = """
 In this task, you will be presented with a query and an answer. Your objective is to evaluate the clarity 
 of the answer in addressing the query. A clear response is one that is precise, coherent, and directly 
@@ -91,8 +89,8 @@ def extrair_valor(texto, label):
     match = re.search(rf"{label}\(value=(?P<quote>['\"])(.*?)(?P=quote)", texto, re.DOTALL)
     if match:
         texto_extraido = match.group(2)
-        texto_limpo = texto_extraido.replace('\\n', ' ').strip()  # <- repare nas duas barras
-        texto_limpo = re.sub(' +', ' ', texto_limpo)  # Remove espaços duplicados
+        texto_limpo = texto_extraido.replace('\\n', ' ').strip()  
+        texto_limpo = re.sub(' +', ' ', texto_limpo)
         return texto_limpo
     return None
 
