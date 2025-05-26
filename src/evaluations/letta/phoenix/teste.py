@@ -1,13 +1,17 @@
+import os
+import re
+import pandas as pd
 import phoenix as px
-from phoenix.evals import (
-    TOOL_CALLING_PROMPT_TEMPLATE, 
-    llm_classify,
-    GeminiModel
-)
+
+from phoenix.evals import llm_classify
+from phoenix.trace.dsl import SpanQuery
 from llm_models.genai_model import GenAIModel
 from google.oauth2 import service_account
 from phoenix.trace import SpanEvaluations
-from phoenix.trace.dsl import SpanQuery
+
+from openinference.instrumentation import suppress_tracing
+
+from src.evaluations.letta.agents.final_response import CLARITY_LLM_JUDGE_PROMPT
 
 import sys
 import os
@@ -15,24 +19,82 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from src.services.llm.gemini_service import gemini_service
 
 phoenix_client = px.Client(endpoint="http://34.60.92.205:6006")
+model = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key="")
 
-query = SpanQuery().where(
-    # Filter for the `LLM` span kind.
-    # The filter condition is a string of valid Python boolean expression.
-    "name =='Agent.step'",
-).select(
-    question="parameter.input_messages",
+
+query_questions = (
+    SpanQuery()
+    .where(
+        "name =='Agent.step'",
+    )
+    .select(query="parameter.input_messages", trace_id="trace_id")
 )
 
-tool_calls_df = phoenix_client.query_spans(query, 
-                                        project_name="default", 
-                                        timeout=None)
+questions = phoenix_client.query_spans(query_questions, project_name="default", timeout=None)
 
-tool_calls_df = tool_calls_df.dropna(subset=["tool_call"])
+query_tools = (
+    SpanQuery()
+    .where(
+        "name =='Agent._handle_ai_response'",
+    )
+    .select(tool_call="parameter.response_message", trace_id="trace_id")
+)
+
+tool_calls = phoenix_client.query_spans(query_tools, project_name="default", timeout=None)
+
+filter = tool_calls["tool_call"].str.contains("name='google_search'|name='typesense_search'", na=False)
+tool_calls = tool_calls[filter]
+tool_calls['tool_call'] = tool_calls['tool_call'].str.extract(r'tool_calls=\[(.*)\]')
+
+query_core_memory = SpanQuery().where(
+    "name =='ToolExecutionSandbox.run_local_dir_sandbox'",
+).select(
+    core_memory="parameter.agent_state",
+    trace_id="trace_id"
+)
+
+core_memory = phoenix_client.query_spans(query_core_memory, project_name="default", timeout=None)
+
+def extrair_valor(texto, label):
+    match = re.search(rf"{label}\(value=(?P<quote>['\"])(.*?)(?P=quote)", texto, re.DOTALL)
+    if match:
+        texto_extraido = match.group(2)
+        texto_limpo = texto_extraido.replace('\\n', ' ').strip()  # <- repare nas duas barras
+        texto_limpo = re.sub(' +', ' ', texto_limpo)  # Remove espaços duplicados
+        return texto_limpo
+    return None
+
+core_memory['persona_value'] = core_memory['core_memory'].apply(lambda x: extrair_valor(x, "Persona"))
+core_memory['human_value'] = core_memory['core_memory'].apply(lambda x: extrair_valor(x, "Human"))
+
+core_memory = core_memory.drop('core_memory', axis=1)
+
+query_ai_response = SpanQuery().where(
+    "name =='Agent._handle_ai_response'",
+).select(
+    model_response="parameter.response_message",
+    trace_id="trace_id"
+)
+
+ai_response = phoenix_client.query_spans(query_ai_response, project_name="default", timeout=None)
+ai_response['model_response'] = ai_response['model_response'].str.extract(r'"message":\s*"([^"]+)"')
 
 
+df_merged = pd.merge(questions, ai_response, on="context.trace_id", how="inner")
 
-model = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key="")
+
+with suppress_tracing():
+    clarity_eval = llm_classify(
+        dataframe = df_merged,
+        template = CLARITY_LLM_JUDGE_PROMPT,
+        rails = ['clear', 'unclear'],
+        model=model,
+        provide_explanation=True
+    )
+
+clarity_eval['score'] = clarity_eval.apply(lambda x: 1 if x['label'] == 'clear' else 0, axis=1)
+
+
 
 def print_object_structure(obj, prefix="\t", max_depth=3, current_depth=0):
     if current_depth > max_depth:
