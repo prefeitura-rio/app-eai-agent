@@ -1,3 +1,4 @@
+.cursor
 .venv
 __pycache__
 *.pyc
@@ -26,3 +27,5 @@ wheels/
 *.swo
 .DS_Store
 logs/
+
+scripts/*

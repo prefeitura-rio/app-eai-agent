@@ -1,0 +1,655 @@
+body {
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    min-height: 100vh;
+    background-attachment: fixed;
+}
+
+:root {
+    --bg-gradient-start: #f8f9fa;
+    --bg-gradient-end: #e9ecef;
+    --text-color: #212529;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --border-color: rgba(224, 224, 224, 0.5);
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --hover-bg: rgba(245, 245, 245, 0.6);
+    --active-bg: rgba(224, 247, 250, 0.7);
+    --navbar-bg: rgba(67, 97, 238, 0.9);
+    --navbar-text: #ffffff;
+    --input-bg: rgba(255, 255, 255, 0.8);
+    --input-border: rgba(206, 212, 218, 0.6);
+    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --button-shadow: 0 4px 15px rgba(67, 97, 238, 0.25);
+}
+
+[data-theme="dark"] {
+    --bg-gradient-start: #121212;
+    --bg-gradient-end: #1f1f1f;
+    --text-color: #ffffff;
+    --card-bg: rgba(30, 30, 30, 0.85);
+    --border-color: rgba(75, 75, 75, 0.6);
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --hover-bg: rgba(50, 50, 50, 0.7);
+    --active-bg: rgba(45, 65, 85, 0.8);
+    --navbar-bg: rgba(25, 34, 56, 0.95);
+    --navbar-text: #ffffff;
+    --input-bg: rgba(40, 40, 40, 0.8);
+    --input-border: rgba(90, 90, 90, 0.7);
+    --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --button-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+}
+
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+}
+
+.navbar {
+    margin-bottom: 20px;
+    background-color: var(--navbar-bg);
+    padding: 15px 20px;
+    border-radius: 12px;
+    color: var(--navbar-text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.nav-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.prompt-editor {
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    min-height: 300px;
+    width: 100%;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.1);
+    transition: all 0.3s ease;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    overflow: auto;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    backdrop-filter: blur(5px);
+    position: relative;
+    z-index: 1;
+}
+
+.position-relative {
+    position: relative;
+}
+
+/* Estilos para o editor expandido */
+.prompt-editor.expanded {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    height: 85vh !important;
+    max-width: 1300px !important;
+    z-index: 9999 !important;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5) !important;
+    resize: none !important;
+    padding: 25px !important;
+    margin: 0 !important;
+    border: 2px solid var(--primary-color) !important;
+    transition: all 0.3s ease !important;
+    font-size: 16px !important;
+    background-color: var(--card-bg) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+/* Overlay para quando o editor estiver expandido */
+.editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 9998;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+}
+
+.editor-overlay.active {
+    display: block;
+    opacity: 1;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+/* Botão para fechar o editor expandido */
+.close-expanded-editor {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--primary-color);
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    transition: all 0.2s ease;
+    color: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+}
+
+.close-expanded-editor:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-hover);
+}
+
+.close-expanded-editor i {
+    font-size: 1.6rem;
+}
+
+.prompt-editor:focus {
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.history-item {
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    position: relative;
+    z-index: 1;
+    background-color: var(--card-bg);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.history-item:hover {
+    background-color: var(--hover-bg);
+    border-left: 3px solid var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.history-item.active {
+    background-color: var(--active-bg);
+    border-left: 3px solid var(--primary-color);
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+}
+
+.history-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+}
+
+.flex-container {
+    display: flex;
+    gap: 25px;
+}
+
+.prompt-container {
+    flex: 3;
+    padding: 25px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+}
+
+.prompt-container h4, .history-container h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+.history-container {
+    flex: 1;
+    min-width: 300px;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+}
+
+/* Adicionando regras para o scroll no histórico */
+#historyList {
+    max-height: 500px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-right: 5px;
+    margin-right: -5px;
+}
+
+#historyList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#historyList::-webkit-scrollbar-track {
+    background: var(--hover-bg);
+    border-radius: 10px;
+}
+
+#historyList::-webkit-scrollbar-thumb {
+    background-color: rgba(150, 150, 150, 0.8);
+    border-radius: 10px;
+}
+
+#historyList::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(180, 180, 180, 0.9);
+}
+
+.metadata-badge {
+    display: inline-block;
+    background-color: var(--hover-bg);
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-right: 5px;
+    font-size: 12px;
+    color: var(--text-color);
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Novos estilos para o histórico de prompts */
+.history-version {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.history-date {
+    color: #adb5bd;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.badge.bg-success {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background-color: rgba(25, 135, 84, 0.85) !important;
+    backdrop-filter: blur(5px);
+}
+
+.history-preview {
+    color: var(--text-color);
+    font-size: 13px;
+    margin-top: 5px;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+}
+
+#saveButton {
+    padding: 10px 24px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    border: none;
+    box-shadow: var(--button-shadow);
+}
+
+#saveButton:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 97, 238, 0.35);
+}
+
+#saveButton:active {
+    transform: translateY(0);
+}
+
+.btn-outline-light {
+    transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+    transform: translateY(-2px);
+}
+
+/* Botão e Toggle para tema */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 24px;
+    position: relative;
+    width: 48px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: rgba(204, 204, 204, 0.6);
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    background-color: white;
+    bottom: 4px;
+    content: "";
+    height: 16px;
+    left: 4px;
+    position: absolute;
+    transition: 0.4s;
+    width: 16px;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.theme-switch-wrapper .icon {
+    color: var(--navbar-text);
+    padding: 0 5px;
+    font-size: 14px;
+}
+
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    border-radius: 8px;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: var(--button-shadow);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 97, 238, 0.35);
+}
+
+.btn-outline-secondary {
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--hover-bg);
+    transform: translateY(-2px);
+}
+
+.support-email-container {
+    width: 100%;
+    text-align: center;
+    margin-top: 25px;
+    position: relative;
+    z-index: 1;
+}
+
+.support-email {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-color);
+    opacity: 0.8;
+    position: relative;
+    z-index: 1;
+    margin: 0;
+}
+
+/* Ajuste global de z-index para garantir que o overlay fique por cima de tudo exceto o editor expandido e o botão fechar */
+#adminPanel {
+    position: relative;
+    z-index: 1;
+}
+
+#contentArea,
+.navbar,
+.support-email-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Loading spinner */
+.spinner-border {
+    color: var(--primary-color) !important;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+}
+
+/* Responsividade */
+@media (max-width: 991px) {
+    .flex-container {
+        flex-direction: column;
+    }
+    
+    .history-container {
+        min-width: 100%;
+        padding: 20px;
+        margin-top: 20px;
+        border-left: none;
+    }
+    
+    #historyList {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-container {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .navbar {
+        padding: 12px 15px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .nav-title {
+        margin-bottom: 10px;
+    }
+    
+    #historyList {
+        max-height: 250px;
+    }
+    
+    .theme-switch-wrapper {
+        margin-bottom: 10px;
+    }
+}
+
+/* Garantir que o corpo da página não tenha scroll enquanto o editor estiver expandido */
+body.editor-expanded {
+    overflow: hidden !important;
+    position: relative;
+}
+
+/* Ajustes para garantir visibilidade dos elementos expandidos */
+body.editor-expanded .close-expanded-editor,
+body.editor-expanded .prompt-editor.expanded {
+    display: flex !important;
+}
+
+body.editor-expanded .editor-overlay.active {
+    display: block !important;
+}
+
+/* Estilo para campos obrigatórios */
+.form-label .text-danger {
+    font-weight: bold;
+}
+
+/* Estilo para campos desabilitados */
+input:disabled {
+    background-color: var(--hover-bg);
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Estilo para campos em modo de visualização de histórico */
+input.viewing-history {
+    border-left: 3px solid var(--primary-color);
+    background-color: var(--active-bg);
+    font-style: italic;
+}
+
+/* Estilo para o modal de confirmação */
+.modal-content {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    box-shadow: var(--box-shadow);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+}
+
+/* Adicionando uma classe específica para o editor no modo escuro */
+[data-theme="dark"] .prompt-editor {
+    color: #f8f9fa;
+    background-color: rgba(35, 35, 35, 0.9);
+    border-color: rgba(90, 90, 90, 0.7);
+}
+
+[data-theme="dark"] .prompt-editor:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+}
+
+/* Corrigindo campos de autor e motivo no modo escuro */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] #author,
+[data-theme="dark"] #reason {
+    color: #f8f9fa;
+    background-color: rgba(35, 35, 35, 0.9);
+    border-color: rgba(90, 90, 90, 0.7);
+}
+
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] #author:focus,
+[data-theme="dark"] #reason:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+} 

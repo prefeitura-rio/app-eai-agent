@@ -4,20 +4,63 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 import os
+import logging
+import sys
 
 from src.api import router as api_router
+from src.admin import router as admin_router
 from src.core.middlewares.logging import LoggingMiddleware
+from src.core.middlewares.static_cache import NoCacheStaticFilesMiddleware
+from src.db import Base, engine
 
-logger.add(
-    "logs/api_{time}.log",
-    rotation="1 day",
-    retention="1 day",
-    level="INFO",
-    backtrace=True,
-    diagnose=True,
+Base.metadata.create_all(bind=engine)
+
+
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        logger_opt = logger.opt(depth=6, exception=record.exc_info)
+        logger_opt.log(record.levelname, record.getMessage())
+
+
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
+logger.configure(
+    handlers=[
+        {
+            "sink": sys.stdout,
+            "format": "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+            "level": "INFO",
+        },
+        {
+            "sink": "logs/api_{time}.log",
+            "rotation": "1 day",
+            "retention": "7 days",
+            "format": "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+            "level": "INFO",
+            "backtrace": True,
+            "diagnose": True,
+        },
+    ]
 )
+
+for _log in ["uvicorn", "uvicorn.error", "fastapi"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.INFO)
+
+for _log in ["httpcore._trace", "httpx._client"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.WARNING)
+
+_logger = logging.getLogger("src.services.letta")
+_logger.handlers = [InterceptHandler()]
+_logger.propagate = False
+_logger.setLevel(logging.INFO)
 
 app = FastAPI(
     title="Agentic Search API",
@@ -28,6 +71,7 @@ app = FastAPI(
 )
 
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(NoCacheStaticFilesMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,17 +81,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Erro não tratado: {str(exc)}")
+    logger.exception(f"Erro não tratado: {exc}")
     return JSONResponse(
         status_code=500,
         content={"detail": "Erro interno do servidor"},
     )
 
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok", "timestamp": time.time()}
+
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -59,4 +106,13 @@ async def custom_swagger_ui_html():
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
     )
 
+
+admin_static_dir = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "admin/static"
+)
+app.mount(
+    "/admin/static", StaticFiles(directory=admin_static_dir), name="admin_static_direct"
+)
+
 app.include_router(api_router)
+app.include_router(admin_router)
