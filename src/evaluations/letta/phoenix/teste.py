@@ -109,9 +109,21 @@ query_ai_response = SpanQuery().where(
 ai_response = phoenix_client.query_spans(query_ai_response, project_name="default", timeout=None)
 ai_response['model_response'] = ai_response['model_response'].str.extract(r'"message":\s*"([^"]+)"')
 
+df_merged = pd.merge(
+    questions,
+    ai_response.reset_index()[["context.trace_id", "model_response", "context.span_id"]],
+    on="context.trace_id",
+    how="inner"
+)
 
-df_merged = pd.merge(questions, ai_response, on="context.trace_id", how="inner")
+print("Merged DataFrame columns:", df_merged.columns)
+print(df_merged.head())
 
+# Make the context.span_id the index of the DataFrame
+df_merged.set_index('context.span_id', inplace=True)
+
+print("DataFrame columns after merging:", df_merged.columns)
+print(df_merged.head())
 
 with suppress_tracing():
     clarity_eval = llm_classify(
@@ -124,50 +136,56 @@ with suppress_tracing():
 
 clarity_eval['score'] = clarity_eval.apply(lambda x: 1 if x['label'] == 'clear' else 0, axis=1)
 
+print(clarity_eval.head())
+print(f"Clarity evaluation columns: {clarity_eval.columns.tolist()}")
+print(f"Clarity evaluation index: {clarity_eval.index.tolist()}")
 
+phoenix_client.log_evaluations(
+    SpanEvaluations(eval_name="Clarity Eval", dataframe=clarity_eval),
+)
 
-def print_object_structure(obj, prefix="\t", max_depth=3, current_depth=0):
-    if current_depth > max_depth:
-        return
+# def print_object_structure(obj, prefix="\t", max_depth=3, current_depth=0):
+#     if current_depth > max_depth:
+#         return
         
-    if hasattr(obj, "__dict__"):
-        for key, value in obj.__dict__.items():
-            print(f"{prefix}{key}: {type(value)}")
-            print_object_structure(value, prefix + "\t", max_depth, current_depth + 1)
-    elif isinstance(obj, dict):
-        for key, value in obj.items():
-            print(f"{prefix}{key}: {type(value)}")
-            print_object_structure(value, prefix + "\t", max_depth, current_depth + 1)
-    elif isinstance(obj, list) and len(obj) > 0:
-        print(f"{prefix}[0]: {type(obj[0])}")
-        print_object_structure(obj[0], prefix + "\t", max_depth, current_depth + 1)
+#     if hasattr(obj, "__dict__"):
+#         for key, value in obj.__dict__.items():
+#             print(f"{prefix}{key}: {type(value)}")
+#             print_object_structure(value, prefix + "\t", max_depth, current_depth + 1)
+#     elif isinstance(obj, dict):
+#         for key, value in obj.items():
+#             print(f"{prefix}{key}: {type(value)}")
+#             print_object_structure(value, prefix + "\t", max_depth, current_depth + 1)
+#     elif isinstance(obj, list) and len(obj) > 0:
+#         print(f"{prefix}[0]: {type(obj[0])}")
+#         print_object_structure(obj[0], prefix + "\t", max_depth, current_depth + 1)
 
 
-import asyncio
-async def test_model():
-    try:
-        prompt = "Olá, tudo bem?"
+# import asyncio
+# async def test_model():
+#     try:
+#         prompt = "Olá, tudo bem?"
         
-        print("\nTestando chamada direta ao gemini_service:")
-        raw_response = await gemini_service.generate_content(text=prompt, model="gemini-2.5-flash-preview-04-17", response_format="raw")
-        print("Tipo da resposta:", type(raw_response))
-        print("Estrutura da resposta:")
-        print_object_structure(raw_response)
+#         print("\nTestando chamada direta ao gemini_service:")
+#         raw_response = await gemini_service.generate_content(text=prompt, model="gemini-2.5-flash-preview-04-17", response_format="raw")
+#         print("Tipo da resposta:", type(raw_response))
+#         print("Estrutura da resposta:")
+#         print_object_structure(raw_response)
         
-        # Verificar o texto
-        if hasattr(raw_response, "text"):
-            print("Texto da resposta:", raw_response.text)
+#         # Verificar o texto
+#         if hasattr(raw_response, "text"):
+#             print("Texto da resposta:", raw_response.text)
         
-        print("\nAgora testando pelo modelo:")
-        resposta_teste = await model._async_generate(prompt=prompt)
-        print("Resposta final:", resposta_teste)
+#         print("\nAgora testando pelo modelo:")
+#         resposta_teste = await model._async_generate(prompt=prompt)
+#         print("Resposta final:", resposta_teste)
         
-    except Exception as e:
-        import traceback
-        print("Erro ao testar o modelo:")
-        print(str(e))
-        print(traceback.format_exc())
+#     except Exception as e:
+#         import traceback
+#         print("Erro ao testar o modelo:")
+#         print(str(e))
+#         print(traceback.format_exc())
 
-asyncio.run(test_model())
+# asyncio.run(test_model())
 
-# print(tool_calls_df.head())
+# # print(tool_calls_df.head())
