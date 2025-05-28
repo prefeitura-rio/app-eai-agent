@@ -3,7 +3,7 @@ You are an evaluation assistant. Your task is to evaluate a 'question' from a us
 
 [BEGIN DATA]
 ************
-[Question]: {question}
+[Question]: {query}
 ************
 [Tool Called]: {tool_call}
 ************
@@ -30,19 +30,10 @@ After analyzing the data, you must write a detailed explanation in the 'explanat
 - If "correct," explain why the tool is appropriate, how the parameters align with the question and definitions, and confirm no extraneous information was used.
 - If "incorrect," clearly identify the specific reason(s) for the failure: which tool should have been used, which parameters are wrong/missing, how the format is incorrect, or what extraneous information was included. Reference the question and tool definitions as needed.
 
-Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+Please analyze the data carefully and provide your response.
 
-explanation: Provide your reasoning step by step. First, determine if the chosen tool is appropriate for the question. Then, verify if all parameters are correctly derived from the question and match the tool definitions. State if any extraneous information was used or if there are formatting issues.
-label: "correct" or "incorrect"
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str
-}
-```
+explanation:
+label:
 """
 
 SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT = """
@@ -73,21 +64,11 @@ After analyzing, you must write a detailed explanation. Your 'explanation' shoul
 4. If 'innefective', explain why it's problematic (e.g., what's missing, what's wrong, why it might lead to poor results) and you may suggest a better search query.
 
 [BEGIN DATA]
-User Query: {user_query}
+User Query: {query}
 Search Tool Query: {search_tool_query}
 [END DATA]
-Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+Please analyze the data carefully and provide your explanation and label.
 
-explanation: Identify the user's core search intent. Evaluate if the search_tool_query effectively captures this intent for a search tool, noting strengths or weaknesses.
-label: "effective":1 or "innefective":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
+explanation:
+label:
 """

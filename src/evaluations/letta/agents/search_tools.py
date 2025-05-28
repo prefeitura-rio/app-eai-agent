@@ -14,7 +14,7 @@ After analyzing, you must write a detailed explanation. Your 'explanation' shoul
 4. If 'uncovers', explain why the results seem insufficient (e.g., off-topic, too general, missing specific details requested, only tangential relevance).
 
 [BEGIN DATA]
-User Query: {user_query}
+User Query: {query}
 Search Results: {search_results}
 [END DATA]
 Please analyze the data carefully and provide your explanation and label in the specified JSON format.

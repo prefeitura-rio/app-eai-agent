@@ -11,28 +11,17 @@ structured or worded.
 Please carefully consider the query and answer before determining your response.
 
 After analyzing the query and the answer, you must write a detailed explanation of your reasoning to 
-justify why you chose either "clear" or "unclear." Avoid stating the final label at the beginning of your 
-explanation. Your reasoning should include specific points about how the answer does or does not meet the 
+justify why you chose either "clear" or "unclear." Your reasoning should include specific points about how the answer does or does not meet the 
 criteria for clarity.
 
 [BEGIN DATA]
 Query: {query}
 Model Response: {model_response}
 [END DATA]
-Please analyze the data carefully and provide an explanation followed by your response.
+Please analyze the data carefully and provide your response.
 
-explanation: Provide your reasoning step by step, evaluating the clarity of the answer based on the query.
-label: "clear": 1 or "unclear": 0
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation: 
+label: 
 """
 
 GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT = """
@@ -92,19 +81,8 @@ Search Tool Results: {search_tool_results}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-explanation: Provide your reasoning step by step, evaluating if each part of the model's response is directly supported by the core memory or search tool results. Note any information present in the response that cannot be found in the provided context.
-label: "based":1 or "unfounded":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT = """
@@ -141,21 +119,11 @@ After analyzing the data, you must write a detailed explanation of your reasonin
 Query: {query}
 Model Response: {model_response}
 [END DATA]
+
 Please analyze the data carefully and provide an explanation followed by your response.
 
-explanation: Provide your reasoning step by step, meticulously comparing the model's response against each relevant instruction in the "Location Based Queries" system prompt section. Identify specific instructions that were followed or violated.
-label: "compliant":1 or "non_compliant":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT = """
@@ -185,21 +153,11 @@ After analyzing the data, you must write a detailed explanation of your reasonin
 Query: {query}
 Model Response: {model_response}
 [END DATA]
+
 Please analyze the data carefully and provide an explanation followed by your response.
 
-explanation: Provide your reasoning step by step. First, assess if the query indicated an emergency. Then, meticulously compare the model's response against each instruction in the "Emergency Handling" system prompt section, noting specific adherence or violations.
-label: "compliant":1 or "non_compliant":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT = """
@@ -230,24 +188,14 @@ After analyzing the data, you must write a detailed explanation of your reasonin
 2. Which specific instruction(s) from the "Handling User Feedback" section were adhered to or violated by the model's response, referencing the numbered steps or specific phrasing from the section where possible.
 
 [BEGIN DATA]
-User Input: {user_input}
+User Input: {query}
 Model Response: {model_response}
 [END DATA]
+
 Please analyze the data carefully and provide an explanation followed by your response.
 
-explanation: Provide your reasoning step by step. First, determine if the user input is feedback about EAí or a complaint about services/City Hall. Then, meticulously compare the model's response against the relevant instructions in the "Handling User Feedback" system prompt section, noting specific adherence or violations.
-label: "compliant":1 or "non_compliant":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT = """
@@ -277,19 +225,8 @@ Model Response: {model_response}
 [END DATA]
 Please analyze the data carefully and provide an explanation followed by your response.
 
-explanation: Provide your reasoning step by step. Meticulously compare the model's response against each constraint in the "Security and Privacy Constraints" system prompt section (Personal Data, Location, Identification/Login). Identify specific adherence or violations.
-label: "compliant":1 or "non_compliant":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT = """
@@ -332,21 +269,11 @@ After analyzing the data, you must write a detailed explanation of your reasonin
 Query: {query}
 Model Response: {model_response}
 [END DATA]
-Please analyze the data carefully and provide an explanation followed by your response.
 
-explanation: Provide your reasoning step by step. Meticulously evaluate the model's response against each rule in the "Whatsapp Formatting Rules" section (Length, Allowed Formats - Italics, Bold, Lists, Initial Summary, Prohibited Formats, Emojis). Identify specific adherence or violations.
-label: "compliant_format":1 or "non_compliant_format":0
+Please analyze the data carefully and provide your explanation and label.
 
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT = """
@@ -364,21 +291,11 @@ After analyzing the query and the model's response, you must write a detailed ex
 Query: {query}
 Model Response: {model_response}
 [END DATA]
-Please analyze the data carefully and provide your explanation and label in the specified JSON format.
 
-explanation: Provide your reasoning step by step, evaluating if the model's response fully and directly addresses all aspects and the core intent of the user's query.
-label: "answered":1 or "unanswered":0
+Please analyze the data carefully and provide your explanation and label.
 
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
-
+explanation:
+label:
 """
 
 ENTITY_PRESENCE_LLM_JUDGE_PROMPT = """
@@ -399,18 +316,9 @@ After analyzing, you must write a detailed explanation. Your 'explanation' shoul
 Query: {query}
 Model Response: {model_response}
 [END DATA]
-Please analyze the data carefully and provide your explanation and label in the specified JSON format.
 
-explanation: First, list the main entities identified in the query. Then, for each entity, confirm its presence or absence in the model's response, leading to your overall judgment.
-label: "entities_present":1 or "entities_missing":0
+Please analyze the data carefully and provide your explanation and label.
 
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
+explanation:
+label:
 """
