@@ -61,7 +61,7 @@ class LettaService:
             from src.services.letta.agents.agentic_search_agent import (
                 create_agentic_search_agent,
             )
-            return await create_agentic_search_agent(tags=tags, name=name)
+            return await create_agentic_search_agent(tags=tags, username=name)
         else:
             raise ValueError(f"Tipo de agente não suportado: {agent_type}")
 

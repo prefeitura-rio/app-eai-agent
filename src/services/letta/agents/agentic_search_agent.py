@@ -12,7 +12,7 @@ from letta_client import ContinueToolRule
 from src.config import env
 
 
-async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
+async def create_agentic_search_agent(tags: List[str] = None, username: str = None):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
@@ -23,7 +23,7 @@ async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
 
         agent = await client.agents.create(
             agent_type="memgpt_agent",
-            name=f"agentic_search_{name if name else str(uuid.uuid4())}",
+            name=f"agentic_search_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",
             description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
             context_window_limit=1048576,
             include_base_tools=True,
