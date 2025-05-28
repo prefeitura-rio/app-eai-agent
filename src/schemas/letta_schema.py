@@ -58,6 +58,9 @@ class RawMessageResponse(BaseModel):
     letta_usage_statistics: List[Dict[str, Any]] = Field(
         default_factory=list, description="Lista de estatísticas de uso do Letta"
     )
+    ordered: Optional[List[Dict[str, Any]]] = Field(
+        default_factory=list, description="Lista ordenada de mensagens conforme recebidas, cada item contendo 'type' e 'message'"
+    )
     error: Optional[str] = Field(None, description="Erro ocorrido durante o processamento, se houver")
 
     class Config:
@@ -69,6 +72,10 @@ class RawMessageResponse(BaseModel):
                 "tool_call_messages": [],
                 "tool_return_messages": [],
                 "assistant_messages": [{"role": "assistant", "content": "Olá! Como posso ajudar?"}],
-                "letta_usage_statistics": [{"tokens": {"prompt": 10, "completion": 8}}]
+                "letta_usage_statistics": [{"tokens": {"prompt": 10, "completion": 8}}],
+                "ordered": [
+                    {"type": "user_message", "message": {"role": "user", "content": "Olá"}},
+                    {"type": "assistant_message", "message": {"role": "assistant", "content": "Olá! Como posso ajudar?"}}
+                ]
             }
         }

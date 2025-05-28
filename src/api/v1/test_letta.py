@@ -65,6 +65,7 @@ async def test_send_message_raw(
     if "error" in response:
         formatted_response["error"] = response["error"]
     
+    grouped = response.get("grouped", {})
     for key in [
         "system_messages", 
         "user_messages", 
@@ -76,7 +77,15 @@ async def test_send_message_raw(
     ]:
         formatted_response[key] = [
             message.dict() if hasattr(message, "dict") else message
-            for message in response.get(key, [])
+            for message in grouped.get(key, [])
         ]
+    
+    formatted_response["ordered"] = [
+        {
+            "type": item["type"],
+            "message": item["message"].dict() if hasattr(item["message"], "dict") else item["message"]
+        }
+        for item in response.get("ordered", [])
+    ]
     
     return RawMessageResponse(**formatted_response)

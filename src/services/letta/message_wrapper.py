@@ -38,13 +38,13 @@ async def process_stream(response: typing.AsyncIterator[LettaStreamingResponse])
 
 async def process_stream_raw(response: typing.AsyncIterator[LettaStreamingResponse]) -> typing.Dict[str, typing.List]:
     """
-    Processa o stream de resposta do agente Letta, organizando todos os tipos de mensagens.
+    Processa o stream de resposta do agente Letta, organizando todos os tipos de mensagens e preservando a ordem de chegada.
 
     Args:
         response: Stream de resposta do agente
 
     Returns:
-        dict: Dicionário contendo listas de mensagens agrupadas por tipo
+        dict: Dicionário contendo listas de mensagens agrupadas por tipo e uma lista ordenada por chegada
     """
     from letta_client.types.system_message import SystemMessage
     from letta_client.types.user_message import UserMessage
@@ -53,7 +53,6 @@ async def process_stream_raw(response: typing.AsyncIterator[LettaStreamingRespon
     from letta_client.types.tool_return_message import ToolReturnMessage
     from letta_client.types.letta_usage_statistics import LettaUsageStatistics
     
-    # Inicializa o dicionário com uma lista vazia para cada tipo de mensagem
     result = {
         "system_messages": [],
         "user_messages": [],
@@ -63,25 +62,35 @@ async def process_stream_raw(response: typing.AsyncIterator[LettaStreamingRespon
         "assistant_messages": [],
         "letta_usage_statistics": []
     }
+    ordered_messages = []
     
     try:
         async for chunk in response:
-            # Classifica cada chunk de acordo com seu tipo
             if isinstance(chunk, SystemMessage):
                 result["system_messages"].append(chunk)
+                ordered_messages.append({"type": "system_message", "message": chunk})
             elif isinstance(chunk, UserMessage):
                 result["user_messages"].append(chunk)
+                ordered_messages.append({"type": "user_message", "message": chunk})
             elif isinstance(chunk, ReasoningMessage):
                 result["reasoning_messages"].append(chunk)
+                ordered_messages.append({"type": "reasoning_message", "message": chunk})
             elif isinstance(chunk, ToolCallMessage):
                 result["tool_call_messages"].append(chunk)
+                ordered_messages.append({"type": "tool_call_message", "message": chunk})
             elif isinstance(chunk, ToolReturnMessage):
                 result["tool_return_messages"].append(chunk)
+                ordered_messages.append({"type": "tool_return_message", "message": chunk})
             elif isinstance(chunk, AssistantMessage):
                 result["assistant_messages"].append(chunk)
+                ordered_messages.append({"type": "assistant_message", "message": chunk})
             elif isinstance(chunk, LettaUsageStatistics):
                 result["letta_usage_statistics"].append(chunk)
+                ordered_messages.append({"type": "letta_usage_statistics", "message": chunk})
     except Exception as e:
         print(f"Erro ao processar stream: {e}")
 
-    return result
+    return {
+        "grouped": result,
+        "ordered": ordered_messages
+    }
