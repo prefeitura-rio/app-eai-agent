@@ -22,7 +22,7 @@ async def processar_evento(evento: WebhookEvent):
 
                     if not agent_id:
                         agent = await letta_service.create_agent(
-                            agent_type="agentic_search", tags=[user_number]
+                            agent_type="agentic_search", tags=[user_number], name=nome if nome else None
                         )
                         agent_id = agent.id
 
