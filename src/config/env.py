@@ -3,7 +3,8 @@ from src.utils.infisical import getenv_or_action
 LETTA_API_URL = getenv_or_action("LETTA_API_URL")
 LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN")
 
-AGENTIC_SEARCH_API_TOKEN = getenv_or_action("AGENTIC_SEARCH_API_TOKEN")
+EAI_AGENT_URL = getenv_or_action("EAI_AGENT_URL")
+EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN")
 
 LLM_MODEL = getenv_or_action("LLM_MODEL")
 EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL")
