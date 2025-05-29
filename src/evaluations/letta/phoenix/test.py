@@ -1,9 +1,9 @@
 import os
 import sys
 import json
+
 import pandas as pd
 import phoenix as px
-
 from phoenix.trace.dsl import SpanQuery
 
 from src.evaluations.letta.agents.final_response import (
@@ -21,6 +21,7 @@ from src.evaluations.letta.agents.router import (
     SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
     TOOL_CALLING_LLM_JUDGE_PROMPT,
 )
+
 from src.evaluations.letta.phoenix.utils import (
     extrair_content,
     extrair_query,
@@ -30,61 +31,55 @@ from src.evaluations.letta.phoenix.utils import (
     eval,
 )
 
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
-)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../")))
 
 phoenix_client = px.Client(endpoint="http://34.60.92.205:6006")
 
-tool_definitions = get_system_prompt()
-tool_definitions = tool_definitions[tool_definitions.find("Available tools:\n") :]
 
-query_questions = (
-    SpanQuery()
-    .where(
-        "name =='Agent.step'",
+def fetch_questions() -> pd.DataFrame:
+    query = (
+        SpanQuery()
+        .where("name =='Agent.step'")
+        .select(query="parameter.input_messages", trace_id="trace_id")
     )
-    .select(query="parameter.input_messages", trace_id="trace_id")
-)
+    df = phoenix_client.query_spans(query, project_name="default", timeout=None)
+    df["query"] = df["query"].apply(extrair_content)
 
-questions = phoenix_client.query_spans(query_questions, project_name="default", timeout=None)
+    return df
 
-questions["query"] = questions["query"].apply(extrair_content)
 
-query_response = (
-    SpanQuery()
-    .where(
-        "name =='Agent._handle_ai_response'",
+def fetch_responses() -> tuple[pd.DataFrame, pd.DataFrame]:
+    query = (
+        SpanQuery()
+        .where("name =='Agent._handle_ai_response'")
+        .select(response_message="parameter.response_message", trace_id="trace_id")
     )
-    .select(response_message="parameter.response_message", trace_id="trace_id")
-)
 
-response_message = phoenix_client.query_spans(query_response, project_name="default", timeout=None)
+    df = phoenix_client.query_spans(query, project_name="default", timeout=None)
+    df[["tool_call", "model_response"]] = df["response_message"].apply(lambda x: pd.Series(parse_response(x)))
 
-response_message[["tool_call", "model_response"]] = response_message["response_message"].apply(lambda x: pd.Series(parse_response(x)))
+    model_response = df[(df["tool_call"] == "send_message")]
+    tools = df[df["tool_call"].isin(["google_search", "typesense_search"])]
+    tools["search_tool_query"] = tools["response_message"].apply(extrair_query)
 
-model_response = response_message[(response_message["tool_call"] == "send_message")]
-tools = response_message[(response_message["tool_call"] == "google_search") | (response_message["tool_call"] == "typesense_search")]
+    return model_response, tools
 
-tools["search_tool_query"] = tools["response_message"].apply(extrair_query)
 
-query_core_memory = (
-    SpanQuery()
-    .where(
-        "name =='ToolExecutionSandbox.run_local_dir_sandbox'",
+def fetch_core_memory() -> pd.DataFrame:
+    query = (
+        SpanQuery()
+        .where("name =='ToolExecutionSandbox.run_local_dir_sandbox'")
+        .select(core_memory="parameter.agent_state", trace_id="trace_id")
     )
-    .select(core_memory="parameter.agent_state", trace_id="trace_id")
-)
 
-core_memory = phoenix_client.query_spans(query_core_memory, project_name="default", timeout=None)
+    df = phoenix_client.query_spans(query, project_name="default", timeout=None)
+    df["persona_value"] = df["core_memory"].apply(lambda x: extrair_valor(x, "Persona"))
+    df["human_value"] = df["core_memory"].apply(lambda x: extrair_valor(x, "Human"))
 
-core_memory["persona_value"] = core_memory["core_memory"].apply(lambda x: extrair_valor(x, "Persona"))
-core_memory["human_value"] = core_memory["core_memory"].apply(lambda x: extrair_valor(x, "Human"))
-
-core_memory = core_memory.drop("core_memory", axis=1)
+    return df.drop(columns=["core_memory"])
 
 
-def main(df1, df2, column):
+def merge_by_trace(df1: pd.DataFrame, df2: pd.DataFrame, column: str) -> pd.DataFrame:
     df_merged = pd.merge(
         df1,
         df2.reset_index()[["context.trace_id", "context.span_id", column]],
@@ -104,41 +99,57 @@ def test_ideal_response():
     df = pd.DataFrame(data)
     print(df)
 
+def run_eval(df1: pd.DataFrame, df2: pd.DataFrame, column: str, prompt: str, rails: list[str], name: str):
+    df = merge_by_trace(df1, df2, column)
+    eval(df, prompt, rails, name)
+
 
 if __name__ == "__main__":
-    df = main(questions, model_response, "model_response")
+    tool_definitions = get_system_prompt()
+    tool_definitions = tool_definitions[tool_definitions.find("Available tools:\n") :]
+
+    questions = fetch_questions()
+    model_response, tools = fetch_responses()
+    core_memory = fetch_core_memory()
+
     rails_clarity = ["clear", "unclear"]
-    eval(df, CLARITY_LLM_JUDGE_PROMPT, rails_clarity, "Clarity Eval")
-
-    df = main(questions, tools, "tool_call")
     rails_tool_calling = ["correct", "incorrect"]
-    template = TOOL_CALLING_LLM_JUDGE_PROMPT.replace("{tool_definitions}", tool_definitions)
-    eval(df, template, rails_tool_calling, "Tool Calling")
-
-    df = main(questions, tools, "search_tool_query")
-    rails_search_query_eff = ["effective", "innefective"]
-    eval(df, SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT, rails_search_query_eff, "Search Query Effectiveness")
-
-    df = main(questions, model_response, "model_response")
+    rails_search_query_effectiveness = ["effective", "innefective"]
     rails_entity_presence = ["entities_present", "entities_missing"]
-    eval(df, ENTITY_PRESENCE_LLM_JUDGE_PROMPT, rails_entity_presence, "Entity Presence")
-
-    df = main(questions, model_response, "model_response")
     rails_answer_completeness = ["answered", "unanswered"]
-    eval(df, ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT, rails_answer_completeness, "Answer Completeness")
+    rails_security_privacy = ["compliant", "non_compliant"]
+    rails_feedback_handling = ["compliant", "non_compliant"]
+    rails_emergency_handling = ["compliant", "non_compliant"]
+    rails_location_policy = ["compliant", "non_compliant"]
+    rails_whatsapp_formatting = ["compliant_format", "non_compliant_format"]
 
-    df = main(questions, model_response, "model_response")
-    rails_security_privacy_compliance = ["compliant", "non_compliant"]
-    eval(df, SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT, rails_security_privacy_compliance, "Security Privacy Compliance")
+    # Clarity
+    run_eval(questions, model_response, "model_response", CLARITY_LLM_JUDGE_PROMPT, rails_clarity, "Clarity Eval")
 
-    df = main(questions, model_response, "model_response")
-    rails_feedback_handling_compliance = ["compliant", "non_compliant"]
-    eval(df, FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT, rails_feedback_handling_compliance, "Feedback Handling Compliance")
+    # Tool Calling
+    tool_prompt = TOOL_CALLING_LLM_JUDGE_PROMPT.replace("{tool_definitions}", tool_definitions)
+    run_eval(questions, tools, "tool_call", tool_prompt, rails_tool_calling, "Tool Calling")
 
-    df = main(questions, model_response, "model_response")
-    rails_emergency_handling_compliance = ["compliant", "non_compliant"]
-    eval(df, EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT, rails_emergency_handling_compliance, "Emergency Handling Compliance")
+    # Search Query Effectiveness
+    run_eval(questions, tools, "search_tool_query", SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT, rails_search_query_effectiveness, "Search Query Effectiveness")
 
-    df = main(questions, model_response, "model_response")
-    rails_location_policy_compliance = ["compliant", "non_compliant"]
-    eval(df, LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT, rails_location_policy_compliance, "Location Policy Compliance")
+    # Entity Presence
+    run_eval(questions, model_response, "model_response", ENTITY_PRESENCE_LLM_JUDGE_PROMPT, rails_entity_presence, "Entity Presence")
+
+    # Answer Completeness
+    run_eval(questions, model_response, "model_response", ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT, rails_answer_completeness, "Answer Completeness")
+
+    # Security and Privacy
+    run_eval(questions, model_response, "model_response", SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT, rails_security_privacy, "Security Privacy Compliance")
+
+    # Feedback Handling
+    run_eval(questions, model_response, "model_response", FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT, rails_feedback_handling, "Feedback Handling Compliance")
+
+    # Emergency Handling
+    run_eval(questions, model_response, "model_response", EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT, rails_emergency_handling, "Emergency Handling Compliance")
+
+    # Location Policy
+    run_eval(questions, model_response, "model_response", LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT, rails_location_policy, "Location Policy Compliance")
+
+    # WhatsApp Formatting Compliance
+    run_eval(questions, model_response, "model_response", WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT, rails_whatsapp_formatting, "WhatsApp Formatting Compliance")

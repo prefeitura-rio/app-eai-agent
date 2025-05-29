@@ -32,8 +32,8 @@ After analyzing the data, you must write a detailed explanation in the 'explanat
 
 Please analyze the data carefully and provide your response.
 
-explanation:
-label:
+explanation: Provide your reasoning step by step. First, determine if the chosen tool is appropriate for the question. Then, verify if all parameters are correctly derived from the question and match the tool definitions. State if any extraneous information was used or if there are formatting issues.
+label: "correct" or "incorrect"
 """
 
 SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT = """
@@ -67,8 +67,9 @@ After analyzing, you must write a detailed explanation. Your 'explanation' shoul
 User Query: {query}
 Search Tool Query: {search_tool_query}
 [END DATA]
+
 Please analyze the data carefully and provide your explanation and label.
 
-explanation:
-label:
+explanation: Identify the user's core search intent. Evaluate if the search_tool_query effectively captures this intent for a search tool, noting strengths or weaknesses.
+label: "effective" or "innefective"
 """
