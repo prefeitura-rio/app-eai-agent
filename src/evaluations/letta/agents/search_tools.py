@@ -17,18 +17,9 @@ After analyzing, you must write a detailed explanation. Your 'explanation' shoul
 User Query: {query}
 Search Results: {search_results}
 [END DATA]
-Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+
+Please analyze the data carefully and provide your explanation and label.
 
 explanation: First, identify the core information sought by the user_query. Then, review the title and summary of each search result to assess its potential relevance. Finally, judge if the collective search_results likely indicate that the full documents would cover the query's needs.
-label: "covers":1 or "uncovers":0
-
-OUTPUT FORMAT
-
-```
-{
-    'explanation':str,
-    'label':str,
-    'value':int
-}
-```
+label: "covers" or "uncovers"
 """
