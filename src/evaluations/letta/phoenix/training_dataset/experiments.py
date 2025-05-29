@@ -5,9 +5,16 @@ import phoenix as px
 import requests
 import httpx
 import asyncio
+import nest_asyncio # Import nest_asyncio
+
+nest_asyncio.apply() # Apply the patch
+
 import json
 
 from phoenix.evals import llm_classify
+from phoenix.experiments.types import Example
+from phoenix.experiments import run_experiment, evaluate_experiment
+from phoenix.experiments.evaluators import create_evaluator
 
 import sys
 import os
@@ -34,12 +41,13 @@ from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agenti
 
 EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMINI_API_KEY)
 api_key = env.GEMINI_API_KEY
+phoenix_client = px.Client(endpoint="http://34.60.92.205:6006")
 
-async def get_response_from_letta(query: str) -> dict:
+async def get_response_from_letta(example: Example) -> dict:
     url = env.EAI_AGENT_URL + "api/v1/letta/test-message-raw"
     payload = {
         "agent_id": "agent-45d877fa-4f50-4935-a18f-8a481291c950",
-        "message": query,
+        "message": example.input.get("pergunta"),
         "name": "Usuário Teste",
     }
     print(f"URL: {url}")
@@ -134,7 +142,7 @@ async def experiment_eval_clarity(input, output, expected) -> bool:
         return response.get('label') == rails_clarity[0]
     return response
 
-async def experiment_eval_gold_standart_similarity(input, output, expected) -> float:
+async def experiment_eval_gold_standart_similarity(input, output, expected) -> float | bool:
     rails_gold_standart_similarity = ["equivalent", "similar", "different"]
     gold_standart_similarity_mapping = {
         "equivalent": 1,
@@ -148,12 +156,12 @@ async def experiment_eval_gold_standart_similarity(input, output, expected) -> f
         rails=rails_gold_standart_similarity,
         expected=expected
     )
-    if isinstance(response, dict):
+    if not isinstance(response, bool):
         label = response.get('label')
         if isinstance(label, str) and label in gold_standart_similarity_mapping:
             return gold_standart_similarity_mapping[label]
-        return 0.0
-    return response
+        return False
+    return False
 
 async def experiment_eval_emergency_handling_compliance(input, output, expected) -> bool:
     rails_emergency_handling_compliance = ["compliant", "non_compliant"]
@@ -227,6 +235,7 @@ async def experiment_eval_whatsapp_formatting_compliance(input, output, expected
         return response.get('label') == rails_whatsapp_formatting_compliance[0]
     return response
 
+@create_evaluator(name="Groundness", kind="LLM")
 async def experiment_eval_groundedness(input, output, expected) -> bool:
     rails_groundedness = ["based", "unfounded"]
     response = await experiment_eval(
@@ -243,12 +252,24 @@ async def experiment_eval_groundedness(input, output, expected) -> bool:
 
 async def main():
     print("Iniciando a execução do script...")
-    response = await get_response_from_letta(query="qual serviço uso para solicitar uma poda de árvore?")
-    # print response as a formatted JSON
-    print(json.dumps(response["tool_return_messages"], indent=4, ensure_ascii=False))
-    # for key in response:
-    #     print(f"{key}")
-    # # print(response)
+    dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-05-27")
+    experiment = run_experiment(dataset,
+                            get_response_from_letta,
+                            evaluators=[experiment_eval_answer_completeness,
+                                        experiment_eval_gold_standart_similarity,
+                                        experiment_eval_clarity,
+                                        experiment_eval_groundedness,
+                                        experiment_eval_entity_presence,
+                                        experiment_eval_feedback_handling_compliance,
+                                        experiment_eval_emergency_handling_compliance,
+                                        experiment_eval_location_policy_compliance,
+                                        experiment_eval_security_privacy_compliance,
+                                        experiment_eval_whatsapp_formatting_compliance],
+                            experiment_name="Overall Final Response Experiment",
+                            experiment_description="Evaluating the final response of the agent with various evaluators.",
+                            #dry_run=True
+                            )
+    
 
 
 if __name__ == "__main__":
