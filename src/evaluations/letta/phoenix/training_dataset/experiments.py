@@ -11,6 +11,11 @@ nest_asyncio.apply() # Apply the patch
 
 import json
 
+# Configurar variáveis de ambiente para Phoenix
+os.environ["PHOENIX_HOST"] = "34.60.92.205"
+os.environ["PHOENIX_PORT"] = "6006"
+os.environ["PHOENIX_ENDPOINT"] = "http://34.60.92.205:6006"
+
 from phoenix.evals import llm_classify
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment, evaluate_experiment
@@ -43,7 +48,7 @@ EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMI
 api_key = env.GEMINI_API_KEY
 phoenix_client = px.Client(endpoint="http://34.60.92.205:6006")
 
-async def get_response_from_letta(example: Example) -> dict:
+def get_response_from_letta(example: Example) -> dict:
     url = env.EAI_AGENT_URL + "api/v1/letta/test-message-raw"
     payload = {
         "agent_id": "agent-45d877fa-4f50-4935-a18f-8a481291c950",
@@ -60,9 +65,8 @@ async def get_response_from_letta(example: Example) -> dict:
 
     print(f"Headers: {headers}")
 
-    async with httpx.AsyncClient(timeout=300) as client:
-
-        response = await client.post(url, headers=headers, json=payload)
+    with httpx.Client(timeout=300) as client:
+        response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
 
     return response.json()
@@ -88,7 +92,7 @@ def empty_agent_core_memory():
         core_memory.append(f"{mb['label']}: {mb['value']}")
     return "\n".join(core_memory)
 
-async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> bool | dict:
+def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> bool | dict:
     if output is None:
         return False
     df = pd.DataFrame({"query": [input.get("pergunta")], 
@@ -118,9 +122,9 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
 
     return response['label'] == rails[0]
 
-async def experiment_eval_answer_completeness(input, output, expected) -> bool:
+def experiment_eval_answer_completeness(input, output, expected) -> bool:
     rails_answer_completeness = ["complete", "incomplete"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
@@ -130,9 +134,9 @@ async def experiment_eval_answer_completeness(input, output, expected) -> bool:
         return response.get('label') == rails_answer_completeness[0]
     return response
 
-async def experiment_eval_clarity(input, output, expected) -> bool:
+def experiment_eval_clarity(input, output, expected) -> bool:
     rails_clarity = ["clear", "unclear"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=CLARITY_LLM_JUDGE_PROMPT,
@@ -142,14 +146,14 @@ async def experiment_eval_clarity(input, output, expected) -> bool:
         return response.get('label') == rails_clarity[0]
     return response
 
-async def experiment_eval_gold_standart_similarity(input, output, expected) -> float | bool:
+def experiment_eval_gold_standart_similarity(input, output, expected) -> float | bool:
     rails_gold_standart_similarity = ["equivalent", "similar", "different"]
     gold_standart_similarity_mapping = {
         "equivalent": 1,
         "similar": 0.5,
         "different": 0
     }
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
@@ -163,9 +167,9 @@ async def experiment_eval_gold_standart_similarity(input, output, expected) -> f
         return False
     return False
 
-async def experiment_eval_emergency_handling_compliance(input, output, expected) -> bool:
+def experiment_eval_emergency_handling_compliance(input, output, expected) -> bool:
     rails_emergency_handling_compliance = ["compliant", "non_compliant"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
@@ -175,9 +179,9 @@ async def experiment_eval_emergency_handling_compliance(input, output, expected)
         return response.get('label') == rails_emergency_handling_compliance[0]
     return response
 
-async def experiment_eval_entity_presence(input, output, expected) -> bool:
+def experiment_eval_entity_presence(input, output, expected) -> bool:
     rails_entity_presence = ["entities_present", "entities_missing"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
@@ -187,9 +191,9 @@ async def experiment_eval_entity_presence(input, output, expected) -> bool:
         return response.get('label') == rails_entity_presence[0]
     return response    
 
-async def experiment_eval_feedback_handling_compliance(input, output, expected) -> bool:
+def experiment_eval_feedback_handling_compliance(input, output, expected) -> bool:
     rails_feedback_handling_compliance = ["compliant", "non_compliant"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
@@ -199,9 +203,9 @@ async def experiment_eval_feedback_handling_compliance(input, output, expected) 
         return response.get('label') == rails_feedback_handling_compliance[0]
     return response
 
-async def experiment_eval_location_policy_compliance(input, output, expected) -> bool:
+def experiment_eval_location_policy_compliance(input, output, expected) -> bool:
     rails_location_policy_compliance = ["compliant", "non_compliant"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
@@ -211,9 +215,9 @@ async def experiment_eval_location_policy_compliance(input, output, expected) ->
         return response.get('label') == rails_location_policy_compliance[0]
     return response
 
-async def experiment_eval_security_privacy_compliance(input, output, expected) -> bool:
+def experiment_eval_security_privacy_compliance(input, output, expected) -> bool:
     rails_security_privacy_compliance = ["compliant", "non_compliant"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
@@ -223,9 +227,9 @@ async def experiment_eval_security_privacy_compliance(input, output, expected) -
         return response.get('label') == rails_security_privacy_compliance[0]
     return response
 
-async def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> bool:
+def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> bool:
     rails_whatsapp_formatting_compliance = ["compliant", "non_compliant"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT,
@@ -236,9 +240,9 @@ async def experiment_eval_whatsapp_formatting_compliance(input, output, expected
     return response
 
 @create_evaluator(name="Groundness", kind="LLM")
-async def experiment_eval_groundedness(input, output, expected) -> bool:
+def experiment_eval_groundedness(input, output, expected) -> bool:
     rails_groundedness = ["based", "unfounded"]
-    response = await experiment_eval(
+    response = experiment_eval(
         input=input,
         output=output,
         prompt=GROUNDEDNESS_LLM_JUDGE_PROMPT,
@@ -250,7 +254,7 @@ async def experiment_eval_groundedness(input, output, expected) -> bool:
         return response.get('label') == rails_groundedness[0]
     return response
 
-async def main():
+def main():
     print("Iniciando a execução do script...")
     dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-05-27")
     experiment = run_experiment(dataset,
@@ -273,4 +277,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
