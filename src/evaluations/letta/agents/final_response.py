@@ -46,15 +46,14 @@ Ideal Response: {ideal_response}
 Please analyze the data carefully and provide an explanation followed by your response.
 
 explanation: Provide your reasoning step by step, evaluating the model's response against the ideal response based on core topic coverage. Identify key topics in the ideal response and assess their presence in the model's response.
-label: "different":0, "similar":0.5, or "equivalent":1
+label: "different", "similar", or "equivalent"
 
 OUTPUT FORMAT
 
 ```
 {
     'explanation':str,
-    'label':str,
-    'value':float
+    'label':str
 }
 ```
 
