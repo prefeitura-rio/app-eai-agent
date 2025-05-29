@@ -21,6 +21,7 @@ from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
     GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
+    GROUNDEDNESS_LLM_JUDGE_PROMPT,
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
     FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
@@ -28,7 +29,8 @@ from src.evaluations.letta.agents.final_response import (
     SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
     WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT,
 )
-from llm_models.genai_model import GenAIModel
+from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
+from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agentic_search_memory_blocks
 
 EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMINI_API_KEY)
 api_key = env.GEMINI_API_KEY
@@ -50,7 +52,7 @@ async def get_response_from_letta(query: str) -> dict:
 
     print(f"Headers: {headers}")
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=300) as client:
 
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
@@ -60,7 +62,25 @@ async def get_response_from_letta(query: str) -> dict:
 def final_response(agent_stream: dict) -> dict:
     return agent_stream["assistant_messages"][-1]
 
-async def experiment_eval(input, output, prompt, rails, expected=None) -> bool | dict:
+def tool_returns(agent_stream: dict) -> str:
+    total_tool_return = []
+    for i, message in enumerate(agent_stream["tool_return_messages"]):
+        tool_name = message.get('name', 'Unknown')
+        tool_result = message.get('tool_return', '').replace('\n', '').replace('\r', '').strip()
+        total_tool_return.append(
+            f"Tool Return {i + 1}:\n"
+            f"Tool Name: {tool_name}\n"
+            f"Tool Result: {tool_result}\n"
+        )
+    return "\n".join(total_tool_return)
+
+def empty_agent_core_memory():
+    core_memory = []
+    for mb in get_agentic_search_memory_blocks():
+        core_memory.append(f"{mb['label']}: {mb['value']}")
+    return "\n".join(core_memory)
+
+async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> bool | dict:
     if output is None:
         return False
     df = pd.DataFrame({"query": [input.get("pergunta")], 
@@ -68,6 +88,14 @@ async def experiment_eval(input, output, prompt, rails, expected=None) -> bool |
     
     if expected:
         df["ideal_response"] = [expected.get("resposta_ideal")]
+
+    for k, val in kwargs.items():
+        if isinstance(val, str):
+            df[k] = [val]
+        elif isinstance(val, list):
+            df[k] = [", ".join(val)]
+        else:
+            df[k] = [val]
 
     response = llm_classify(
         data=df,
@@ -199,12 +227,28 @@ async def experiment_eval_whatsapp_formatting_compliance(input, output, expected
         return response.get('label') == rails_whatsapp_formatting_compliance[0]
     return response
 
+async def experiment_eval_groundedness(input, output, expected) -> bool:
+    rails_groundedness = ["based", "unfounded"]
+    response = await experiment_eval(
+        input=input,
+        output=output,
+        prompt=GROUNDEDNESS_LLM_JUDGE_PROMPT,
+        rails=rails_groundedness,
+        core_memory=empty_agent_core_memory(),
+        search_tool_results=tool_returns(output),
+    )
+    if isinstance(response, dict):
+        return response.get('label') == rails_groundedness[0]
+    return response
+
 async def main():
     print("Iniciando a execução do script...")
-    response = await get_response_from_letta(query="Como faço para pagar o iptu?")
+    response = await get_response_from_letta(query="qual serviço uso para solicitar uma poda de árvore?")
     # print response as a formatted JSON
-    print(json.dumps(response["assistant_messages"], indent=4, ensure_ascii=False))
-    # print(response)
+    print(json.dumps(response["tool_return_messages"], indent=4, ensure_ascii=False))
+    # for key in response:
+    #     print(f"{key}")
+    # # print(response)
 
 
 if __name__ == "__main__":
