@@ -4,7 +4,6 @@ import asyncio
 from pathlib import Path
 from google import genai
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
-import mlflow
 import src.config.env as env
 
 
@@ -13,7 +12,6 @@ class GeminiService:
         """Inicializa o cliente Gemini com as configurações do ambiente."""
         self.api_key = env.GEMINI_API_KEY
         self.client = genai.Client(api_key=self.api_key)
-        mlflow.gemini.autolog()
 
     def get_client(self):
         """Retorna a instância do cliente Gemini."""
