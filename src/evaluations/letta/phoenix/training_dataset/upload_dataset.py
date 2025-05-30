@@ -38,7 +38,7 @@ training_dataset = training_dataset.rename(
 
 now = datetime.now().strftime("%Y-%m-%d")
 # create a dataset consisting of input questions and expected outputs
-dataset = phoenix_client.upload_dataset(dataframe=training_dataset, 
+dataset = phoenix_client.upload_dataset(dataframe=training_dataset.sample(30), 
                                    dataset_name=f"Typesense_IA_Dataset-{now}", 
                                    input_keys=["pergunta", "titulo", "descricao", "informacoes_complementares", "prazo_esperado", "resumo_whatsapp", "orgao_gestor"], 
                                    output_keys=["resposta_ideal"])
