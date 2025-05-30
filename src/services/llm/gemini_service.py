@@ -4,7 +4,6 @@ import asyncio
 from pathlib import Path
 from google import genai
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
-
 import src.config.env as env
 
 
