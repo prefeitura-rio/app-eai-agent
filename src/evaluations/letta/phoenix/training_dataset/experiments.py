@@ -79,10 +79,10 @@ def get_response_from_letta(example: Example) -> dict:
         response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
 
-    print("Pergunta enviada:", example.input.get("pergunta"))
-    #print([key for key in response.json().keys()])
-    print(json.dumps(response.json()["tool_call_messages"], indent=4, ensure_ascii=False))
-    print("--" * 50)
+    # print("Pergunta enviada:", example.input.get("pergunta"))
+    # print([key for key in response.json().keys()])
+    # print(json.dumps(response.json()["tool_call_messages"], indent=4, ensure_ascii=False))
+    # print("--" * 50)
     return response.json()
 
 def final_response(agent_stream: dict) -> dict:
@@ -99,16 +99,6 @@ def tool_returns(agent_stream: dict) -> str:
             f"Tool Result: {tool_result}\n"
         )
     return "\n".join(total_tool_return)
-
-def tool_calls(agent_stream: dict) -> dict:
-    tool_calls = []
-    for i, message in enumerate(agent_stream["tool_calls_messages"]):
-        tool_name = message.get('name', 'Unknown')
-        tool_result = message.get('tool_return', '').replace('\n', '').replace('\r', '').strip()
-        tool_calls.append(
-            {)
-        )
-    return 
 
 def search_tool_returns_summary(agent_stream: dict) -> list[dict]:
     search_tool_returns = []
@@ -182,7 +172,7 @@ def experiment_eval_clarity(input, output, expected) -> bool:
         return response.get('label') == rails_clarity[0]
     return response
 
-@create_evaluator(name="Similaridade Resposta Ideal", kind="LLM")
+@create_evaluator(name="Similarity Ideal Response", kind="LLM")
 def experiment_eval_gold_standart_similarity(input, output, expected) -> float | bool:
     rails_gold_standart_similarity = ["equivalent", "similar", "different"]
     gold_standart_similarity_mapping = {
@@ -318,7 +308,8 @@ def experiment_eval_tool_calling(input, output, expected) -> float | bool:
     rails_tool_calling = ["correct", "incorrect"]
 
     results = []
-    for tool_call in output["tool_calls_messages"]:
+    for tool_call_details in output["tool_call_messages"]:
+        tool_call = tool_call_details.get('tool_call', {})
         if tool_call.get('name') in ('typesense_search', 'google_search'):
             response = experiment_eval(
                 input=input,
@@ -329,6 +320,31 @@ def experiment_eval_tool_calling(input, output, expected) -> float | bool:
             )
             if isinstance(response, dict):
                 result = int(response.get('label') == rails_tool_calling[0])
+            else:
+                result = int(response)
+            results.append(result)
+    if results:
+        return sum(results) / len(results)
+    return False
+
+@create_evaluator(name="Search Tool Abstractness", kind="LLM")
+def experiment_eval_search_query_effectiveness(input, output, expected) -> float | bool:
+    rails_search_query_effectiveness = ["effective", "innefective"]
+
+    results = []
+    for tool_call_details in output["tool_call_messages"]:
+        tool_call = tool_call_details.get('tool_call', {})
+        if tool_call.get('name') in ('typesense_search', 'google_search'):
+            tool_call_arguments = tool_call.get('arguments', '')
+            response = experiment_eval(
+                input=input,
+                output=output,
+                prompt=SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
+                rails=rails_search_query_effectiveness,
+                search_tool_query=extrair_query(tool_call_arguments),
+            )
+            if isinstance(response, dict):
+                result = int(response.get('label') == rails_search_query_effectiveness[0])
             else:
                 result = int(response)
             results.append(result)
@@ -350,7 +366,10 @@ def main():
                                         experiment_eval_emergency_handling_compliance,
                                         experiment_eval_location_policy_compliance,
                                         experiment_eval_security_privacy_compliance,
-                                        experiment_eval_whatsapp_formatting_compliance],
+                                        experiment_eval_whatsapp_formatting_compliance,
+                                        experiment_eval_search_result_coverage,
+                                        experiment_eval_tool_calling,
+                                        experiment_eval_search_query_effectiveness],
                             experiment_name="Overall Final Response Experiment",
                             experiment_description="Evaluating the final response of the agent with various evaluators.",
                             dry_run=True,
