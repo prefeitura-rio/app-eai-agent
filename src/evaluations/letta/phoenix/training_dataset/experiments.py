@@ -41,6 +41,16 @@ from src.evaluations.letta.agents.final_response import (
     SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
     WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT,
 )
+
+from src.evaluations.letta.agents.router import (
+    SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
+    TOOL_CALLING_LLM_JUDGE_PROMPT,
+)
+
+from src.evaluations.letta.agents.search_tools import (
+    SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT
+)
+
 from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
 from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agentic_search_memory_blocks
 
@@ -55,20 +65,19 @@ def get_response_from_letta(example: Example) -> dict:
         "message": example.input.get("pergunta"),
         "name": "Usuário Teste",
     }
-    print(f"URL: {url}")
     bearer_token = env.EAI_AGENT_TOKEN
     headers = {
         "accept": "application/json",
         "Authorization": f"Bearer {bearer_token}",
         "Content-Type": "application/json",
     }
-
-    print(f"Headers: {headers}")
-
     with httpx.Client(timeout=300) as client:
         response = client.post(url, headers=headers, json=payload)
         response.raise_for_status()
 
+    print("Pergunta enviada:", example.input.get("pergunta"))
+    print(json.dumps(response.json()["tool_return_messages"], indent=4, ensure_ascii=False))
+    print("--" * 50)
     return response.json()
 
 def final_response(agent_stream: dict) -> dict:
@@ -85,6 +94,16 @@ def tool_returns(agent_stream: dict) -> str:
             f"Tool Result: {tool_result}\n"
         )
     return "\n".join(total_tool_return)
+
+def search_tool_returns_summary(agent_stream: dict) -> list[dict]:
+    search_tool_returns = []
+    for message in agent_stream["tool_return_messages"]:
+        if message.get('name') == 'search_tool':
+            search_tool_returns.append({
+                "title": message.get('tool_return', {}).get('title', ''),
+                "summary": message.get('tool_return', {}).get('summary', '')
+            })
+    return search_tool_returns
 
 def empty_agent_core_memory():
     core_memory = []
@@ -122,6 +141,7 @@ def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> bo
 
     return response['label'] == rails[0]
 
+@create_evaluator(name="Answer Completeness", kind="LLM")
 def experiment_eval_answer_completeness(input, output, expected) -> bool:
     rails_answer_completeness = ["complete", "incomplete"]
     response = experiment_eval(
@@ -134,6 +154,7 @@ def experiment_eval_answer_completeness(input, output, expected) -> bool:
         return response.get('label') == rails_answer_completeness[0]
     return response
 
+@create_evaluator(name="Clarity", kind="LLM")
 def experiment_eval_clarity(input, output, expected) -> bool:
     rails_clarity = ["clear", "unclear"]
     response = experiment_eval(
@@ -146,6 +167,7 @@ def experiment_eval_clarity(input, output, expected) -> bool:
         return response.get('label') == rails_clarity[0]
     return response
 
+@create_evaluator(name="Similaridade Resposta Ideal", kind="LLM")
 def experiment_eval_gold_standart_similarity(input, output, expected) -> float | bool:
     rails_gold_standart_similarity = ["equivalent", "similar", "different"]
     gold_standart_similarity_mapping = {
@@ -167,6 +189,7 @@ def experiment_eval_gold_standart_similarity(input, output, expected) -> float |
         return False
     return False
 
+@create_evaluator(name="Emergency Handling", kind="LLM")
 def experiment_eval_emergency_handling_compliance(input, output, expected) -> bool:
     rails_emergency_handling_compliance = ["compliant", "non_compliant"]
     response = experiment_eval(
@@ -179,6 +202,7 @@ def experiment_eval_emergency_handling_compliance(input, output, expected) -> bo
         return response.get('label') == rails_emergency_handling_compliance[0]
     return response
 
+@create_evaluator(name="Entity Presence", kind="LLM")
 def experiment_eval_entity_presence(input, output, expected) -> bool:
     rails_entity_presence = ["entities_present", "entities_missing"]
     response = experiment_eval(
@@ -191,6 +215,7 @@ def experiment_eval_entity_presence(input, output, expected) -> bool:
         return response.get('label') == rails_entity_presence[0]
     return response    
 
+@create_evaluator(name="Feedback Handling", kind="LLM")
 def experiment_eval_feedback_handling_compliance(input, output, expected) -> bool:
     rails_feedback_handling_compliance = ["compliant", "non_compliant"]
     response = experiment_eval(
@@ -203,6 +228,7 @@ def experiment_eval_feedback_handling_compliance(input, output, expected) -> boo
         return response.get('label') == rails_feedback_handling_compliance[0]
     return response
 
+@create_evaluator(name="Location Policy", kind="LLM")
 def experiment_eval_location_policy_compliance(input, output, expected) -> bool:
     rails_location_policy_compliance = ["compliant", "non_compliant"]
     response = experiment_eval(
@@ -215,6 +241,7 @@ def experiment_eval_location_policy_compliance(input, output, expected) -> bool:
         return response.get('label') == rails_location_policy_compliance[0]
     return response
 
+@create_evaluator(name="Security and Privacy", kind="LLM")
 def experiment_eval_security_privacy_compliance(input, output, expected) -> bool:
     rails_security_privacy_compliance = ["compliant", "non_compliant"]
     response = experiment_eval(
@@ -227,6 +254,7 @@ def experiment_eval_security_privacy_compliance(input, output, expected) -> bool
         return response.get('label') == rails_security_privacy_compliance[0]
     return response
 
+@create_evaluator(name="Whatsapp Format", kind="LLM")
 def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> bool:
     rails_whatsapp_formatting_compliance = ["compliant", "non_compliant"]
     response = experiment_eval(
@@ -254,9 +282,23 @@ def experiment_eval_groundedness(input, output, expected) -> bool:
         return response.get('label') == rails_groundedness[0]
     return response
 
+@create_evaluator(name="Search Result Coverage", kind="LLM")
+def experiment_eval_search_result_coverage(input, output, expected) -> bool:
+    rails_search_result_coverage = ["covers", "uncovers"]
+    response = experiment_eval(
+        input=input,
+        output=output,
+        prompt=SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
+        rails=rails_search_result_coverage,
+        search_tool_results=tool_returns(output),
+    )
+    if isinstance(response, dict):
+        return response.get('label') == rails_search_result_coverage[0]
+    return response
+
 def main():
     print("Iniciando a execução do script...")
-    dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-05-27")
+    dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-05-29")
     experiment = run_experiment(dataset,
                             get_response_from_letta,
                             evaluators=[experiment_eval_answer_completeness,
@@ -271,10 +313,8 @@ def main():
                                         experiment_eval_whatsapp_formatting_compliance],
                             experiment_name="Overall Final Response Experiment",
                             experiment_description="Evaluating the final response of the agent with various evaluators.",
-                            #dry_run=True
+                            dry_run=True,
                             )
     
-
-
 if __name__ == "__main__":
     main()
