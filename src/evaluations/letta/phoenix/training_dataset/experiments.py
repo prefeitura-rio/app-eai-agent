@@ -53,6 +53,10 @@ from src.evaluations.letta.agents.search_tools import (
 
 from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
 from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agentic_search_memory_blocks
+from src.evaluations.letta.phoenix.utils import (
+    get_system_prompt,
+    extrair_query,
+)
 
 EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMINI_API_KEY)
 api_key = env.GEMINI_API_KEY
@@ -76,7 +80,8 @@ def get_response_from_letta(example: Example) -> dict:
         response.raise_for_status()
 
     print("Pergunta enviada:", example.input.get("pergunta"))
-    print(json.dumps(response.json()["tool_return_messages"], indent=4, ensure_ascii=False))
+    #print([key for key in response.json().keys()])
+    print(json.dumps(response.json()["tool_call_messages"], indent=4, ensure_ascii=False))
     print("--" * 50)
     return response.json()
 
@@ -94,6 +99,16 @@ def tool_returns(agent_stream: dict) -> str:
             f"Tool Result: {tool_result}\n"
         )
     return "\n".join(total_tool_return)
+
+def tool_calls(agent_stream: dict) -> dict:
+    tool_calls = []
+    for i, message in enumerate(agent_stream["tool_calls_messages"]):
+        tool_name = message.get('name', 'Unknown')
+        tool_result = message.get('tool_return', '').replace('\n', '').replace('\r', '').strip()
+        tool_calls.append(
+            {)
+        )
+    return 
 
 def search_tool_returns_summary(agent_stream: dict) -> list[dict]:
     search_tool_returns = []
@@ -295,6 +310,31 @@ def experiment_eval_search_result_coverage(input, output, expected) -> bool:
     if isinstance(response, dict):
         return response.get('label') == rails_search_result_coverage[0]
     return response
+
+@create_evaluator(name="Tool Calling", kind="LLM")
+def experiment_eval_tool_calling(input, output, expected) -> float | bool:
+    tool_definitions = get_system_prompt()
+    tool_definitions = tool_definitions[tool_definitions.find("Available tools:\n") :]
+    rails_tool_calling = ["correct", "incorrect"]
+
+    results = []
+    for tool_call in output["tool_calls_messages"]:
+        if tool_call.get('name') in ('typesense_search', 'google_search'):
+            response = experiment_eval(
+                input=input,
+                output=output,
+                prompt=TOOL_CALLING_LLM_JUDGE_PROMPT.replace("{tool_definitions}", tool_definitions),
+                rails=rails_tool_calling,
+                tool_call=tool_call,
+            )
+            if isinstance(response, dict):
+                result = int(response.get('label') == rails_tool_calling[0])
+            else:
+                result = int(response)
+            results.append(result)
+    if results:
+        return sum(results) / len(results)
+    return False
 
 def main():
     print("Iniciando a execução do script...")
