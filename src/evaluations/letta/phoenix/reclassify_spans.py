@@ -1,12 +1,11 @@
 """
-Phoenix Trace Processor - Processamento Eficiente de Spans com SpanQuery
+Phoenix Trace Processor - Processamento Eficiente de Spans
 
-Este script implementa um processador de traces do Phoenix que utiliza queries direcionadas
-para buscar e processar spans de forma eficiente, em vez de baixar datasets completos.
+Este script implementa um processador de traces do Phoenix que baixa todos os spans
+e os processa para classificação e upload.
 
 FUNCIONALIDADES PRINCIPAIS:
-- Busca spans específicos usando SpanQuery (Agent.step, Agent._handle_ai_response, etc.)
-- Extrai e processa dados de queries, respostas de modelos, ferramentas de busca e memória core
+- Baixa todos os spans do Phoenix em uma única operação
 - Classifica spans automaticamente baseado no tipo de operação (AGENT, LLM, TOOL, CHAIN)
 - Modifica IDs de trace e span para upload seguro no Phoenix (CONFIGURÁVEL!)
 
@@ -30,13 +29,12 @@ MOTIVOS PARA MODIFICAÇÃO DOS IDs:
 4. RELACIONAMENTOS: Mantém a estrutura pai-filho entre spans após modificação
 
 FLUXO DE PROCESSAMENTO:
-1. Buscar dados com queries direcionadas (fetch_questions, fetch_responses, etc.)
-2. Preparar DataFrames com colunas padronizadas
-3. Combinar todos os dados em um DataFrame único
-4. Filtrar por trace_id específico (se fornecido)
-5. Modificar IDs para compatibilidade com Phoenix (SE modify_ids=True)
-6. Limpar dados (remover None/NaN)
-7. Fazer upload para Phoenix
+1. Baixar todos os dados do Phoenix (download_command)
+2. Processar e classificar spans (process_command)
+3. Filtrar por trace_id específico (se fornecido)
+4. Modificar IDs para compatibilidade com Phoenix (SE modify_ids=True)
+5. Limpar dados (remover None/NaN)
+6. Fazer upload para Phoenix (upload_command)
 """
 
 import re
@@ -45,7 +43,6 @@ import pandas as pd
 import numpy as np
 import phoenix as px
 from typing import Optional, List, Any
-from phoenix.trace.dsl import SpanQuery
 
 
 class PhoenixTraceProcessor:
@@ -54,7 +51,7 @@ class PhoenixTraceProcessor:
 
     This class provides methods to classify spans according to OpenInference conventions,
     filter unwanted spans, and clean data structures by removing None values.
-    Uses efficient SpanQuery approach instead of downloading entire datasets.
+    Uses bulk data fetching approach for efficient processing.
 
     Note: Consider adding comprehensive unit tests to verify all processing methods
     work correctly across different trace scenarios and edge cases.
@@ -72,51 +69,6 @@ class PhoenixTraceProcessor:
         """
         self.phoenix_client = px.Client(endpoint=phoenix_endpoint)
         self.project_name = project_name
-
-    def extrair_valor(self, raw_text: str, label: str) -> Optional[str]:
-        """
-        Extracts value from raw text using regex pattern matching.
-
-        Args:
-            raw_text (str): Raw text to extract from
-            label (str): Label to search for (e.g., "Persona", "Human")
-
-        Returns:
-            Optional[str]: Extracted and cleaned text or None if not found
-
-        Note: Consider adding unit tests to verify extraction across different text formats.
-        """
-        if raw_text is None or pd.isna(raw_text):
-            return None
-
-        pattern = rf"{label}\(value=(?P<quote>['\"])(.*?)(?P=quote)"
-        match = re.search(pattern, raw_text, re.DOTALL)
-
-        if match:
-            texto = match.group(2)
-            texto = texto.replace("\\n", " ").strip()
-            texto = re.sub(" +", " ", texto)
-            return texto
-
-        return None
-
-    def extrair_query(self, raw_text: str) -> Optional[str]:
-        """
-        Extracts query from raw text using regex pattern matching.
-
-        Args:
-            raw_text (str): Raw text containing query information
-
-        Returns:
-            Optional[str]: Extracted query or None if not found
-
-        Note: Consider adding unit tests to verify query extraction.
-        """
-        if raw_text is None or pd.isna(raw_text):
-            return None
-
-        match = re.search(r'"query": "(.*?)"', raw_text)
-        return match.group(1) if match else None
 
     def parse_response(self, response: str) -> tuple[Optional[str], Optional[str]]:
         """
@@ -162,191 +114,6 @@ class PhoenixTraceProcessor:
         tool = tool_match.group(1) if tool_match else None
 
         return tool, message
-
-    def extrair_content(self, raw_text: str) -> Optional[str]:
-        """
-        Extracts content from raw text using regex pattern matching.
-
-        Args:
-            raw_text (str): Raw text to extract content from
-
-        Returns:
-            Optional[str]: Extracted content or None if not found
-
-        Note: Consider adding unit tests to verify content extraction.
-        """
-        if raw_text is None or pd.isna(raw_text):
-            return None
-
-        match = re.search(r"(?:content|text)='(.*?)'", raw_text)
-        return match.group(1) if match else None
-
-    def fetch_questions(self) -> pd.DataFrame:
-        """
-        Fetches question spans using SpanQuery.
-
-        Sempre faz reset_index para garantir que context.span_id seja coluna, nunca índice.
-
-        Returns:
-            pd.DataFrame: DataFrame contendo questions com as colunas necessárias.
-        """
-        query = (
-            SpanQuery()
-            .where("name =='Agent.step'")
-            .select(
-                "name",
-                "context.trace_id",
-                "context.span_id",
-                "parent_id",
-                "start_time",
-                "end_time",
-                "status_message",
-                "status_code",
-                "events",
-            )
-        )
-        df = self.phoenix_client.query_spans(query, project_name=self.project_name)
-        df = df.reset_index()
-
-        return df
-
-    def fetch_responses(self) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Fetches response spans and separates them em model responses e tools.
-
-        Sempre faz reset_index para garantir que context.span_id seja coluna, nunca índice.
-
-        Returns:
-            tuple[pd.DataFrame, pd.DataFrame]: Model responses e tool spans com as colunas necessárias
-        """
-        query = (
-            SpanQuery()
-            .where("name =='Agent._handle_ai_response'")
-            .select(
-                "name",
-                "context.trace_id",
-                "context.span_id",
-                "parent_id",
-                "start_time",
-                "end_time",
-                "status_message",
-                "status_code",
-                "events",
-                "parameter.response_message",  # Needed for tool classification
-            )
-        )
-
-        df = self.phoenix_client.query_spans(query, project_name=self.project_name)
-        df = df.reset_index()
-
-        if "parameter.response_message" in df.columns:
-            df[["tool_call", "model_response"]] = df[
-                "parameter.response_message"
-            ].apply(lambda x: pd.Series(self.parse_response(x)))
-        else:
-            df["tool_call"] = None
-            df["model_response"] = None
-
-        model_response = df[df["tool_call"] == "send_message"].copy()
-        tools = df[df["tool_call"].isin(["google_search", "typesense_search"])].copy()
-
-        columns_to_keep = [
-            "name",
-            "context.trace_id",
-            "context.span_id",
-            "parent_id",
-            "start_time",
-            "end_time",
-            "status_message",
-            "status_code",
-            "events",
-        ]
-
-        model_response = model_response[columns_to_keep]
-        tools = tools[columns_to_keep]
-
-        return model_response, tools
-
-    def fetch_core_memory(self) -> pd.DataFrame:
-        """
-        Fetches core memory spans using SpanQuery.
-
-        Sempre faz reset_index para garantir que context.span_id seja coluna, nunca índice.
-
-        Returns:
-            pd.DataFrame: DataFrame contendo core memory data com as colunas necessárias.
-        """
-        query = (
-            SpanQuery()
-            .where("name =='ToolExecutionSandbox.run_local_dir_sandbox'")
-            .select(
-                "name",
-                "context.trace_id",
-                "context.span_id",
-                "parent_id",
-                "start_time",
-                "end_time",
-                "status_message",
-                "status_code",
-                "events",
-            )
-        )
-
-        df = self.phoenix_client.query_spans(query, project_name=self.project_name)
-        return df.reset_index()
-
-    def _prepare_dataframe(
-        self, df: pd.DataFrame, name: str, span_kind: str, suffix: str
-    ) -> pd.DataFrame:
-        """
-        Prepares a DataFrame with standard columns for processing.
-
-        Args:
-            df (pd.DataFrame): DataFrame to prepare
-            name (str): Span name to assign
-            span_kind (str): Span kind to assign
-            suffix (str): Suffix for span ID generation
-
-        Returns:
-            pd.DataFrame: Prepared DataFrame with standard columns
-        """
-        if df.empty:
-            return df
-
-        prepared_df = df.copy()
-        prepared_df["name"] = name
-        prepared_df["span_kind"] = span_kind
-        prepared_df["attributes.openinference.span.kind"] = span_kind
-
-        return prepared_df
-
-    def fetch_search_tools(self) -> pd.DataFrame:
-        """
-        Fetches search tool spans using SpanQuery.
-
-        Sempre faz reset_index para garantir que context.span_id seja coluna, nunca índice.
-
-        Returns:
-            pd.DataFrame: DataFrame contendo search tool data com as colunas necessárias.
-        """
-        query = (
-            SpanQuery()
-            .where("name =='Agent._get_ai_reply'")
-            .select(
-                "name",
-                "context.trace_id",
-                "context.span_id",
-                "parent_id",
-                "start_time",
-                "end_time",
-                "status_message",
-                "status_code",
-                "events",
-            )
-        )
-
-        df = self.phoenix_client.query_spans(query, project_name=self.project_name)
-        return df.reset_index()
 
     def recursively_clean_nones(
         self,
@@ -492,134 +259,6 @@ class PhoenixTraceProcessor:
                     )
                 )
         return fake_spans
-
-    def fetch_all_data(self) -> dict:
-        """
-        Fetches all span data from Phoenix using SpanQuery approach.
-
-        Returns:
-            dict: Dictionary containing all fetched data with keys:
-                - questions: DataFrame with question spans
-                - model_responses: DataFrame with model response spans
-                - tools: DataFrame with tool spans
-                - core_memory: DataFrame with core memory spans
-                - search_tools: DataFrame with search tool spans
-        """
-        questions_df = self.fetch_questions()
-        model_responses_df, tools_df = self.fetch_responses()
-        core_memory_df = self.fetch_core_memory()
-        search_tools_df = self.fetch_search_tools()
-
-        return {
-            "questions": questions_df,
-            "model_responses": model_responses_df,
-            "tools": tools_df,
-            "core_memory": core_memory_df,
-            "search_tools": search_tools_df,
-        }
-
-    def process_data(
-        self,
-        raw_data: dict,
-        target_trace_id: Optional[str] = None,
-        modify_ids: bool = True,
-    ) -> pd.DataFrame:
-        """
-        Processes raw span data into a unified DataFrame ready for Phoenix upload.
-
-        Args:
-            raw_data (dict): Raw data dictionary from fetch_all_data()
-            target_trace_id (Optional[str]): Specific trace ID to process
-            modify_ids (bool): Whether to modify trace_id and span_id for Phoenix upload
-
-        Returns:
-            pd.DataFrame: Processed trace data with required columns
-        """
-        all_dfs = []
-
-        questions_prepared = self._prepare_dataframe(
-            raw_data["questions"], "Agent.step", "AGENT", "_q"
-        )
-        if not questions_prepared.empty:
-            all_dfs.append(questions_prepared)
-
-        model_responses_prepared = self._prepare_dataframe(
-            raw_data["model_responses"], "Agent._handle_ai_response", "LLM", "_mr"
-        )
-        if not model_responses_prepared.empty:
-            all_dfs.append(model_responses_prepared)
-
-        tools_prepared = self._prepare_dataframe(
-            raw_data["tools"], "Agent._handle_ai_response", "TOOL", "_t"
-        )
-        if not tools_prepared.empty:
-            all_dfs.append(tools_prepared)
-
-        core_memory_prepared = self._prepare_dataframe(
-            raw_data["core_memory"],
-            "ToolExecutionSandbox.run_local_dir_sandbox",
-            "CHAIN",
-            "_cm",
-        )
-        if not core_memory_prepared.empty:
-            all_dfs.append(core_memory_prepared)
-
-        search_tools_prepared = self._prepare_dataframe(
-            raw_data["search_tools"], "Agent._get_ai_reply", "AGENT", "_st"
-        )
-        if not search_tools_prepared.empty:
-            all_dfs.append(search_tools_prepared)
-
-        if not all_dfs:
-            return pd.DataFrame()
-
-        combined_df = pd.concat(all_dfs, ignore_index=True, sort=False)
-
-        if target_trace_id:
-            combined_df = combined_df[
-                combined_df["context.trace_id"] == target_trace_id
-            ]
-
-        if combined_df.empty:
-            return pd.DataFrame()
-
-        if modify_ids:
-            final_spans = self.create_fake_spans(combined_df)
-        else:
-            final_spans = combined_df
-
-        final_spans = self.clean_events_column(final_spans)
-
-        if target_trace_id:
-            agent_spans = final_spans[
-                final_spans["context.trace_id"] == target_trace_id
-            ].sort_values("start_time", ascending=False)
-        else:
-            agent_spans = final_spans.sort_values(
-                ["context.trace_id", "start_time"], ascending=[True, False]
-            )
-
-        agent_spans = self.clean_dataframe_nones(agent_spans, ["parent_id", "events"])
-
-        return agent_spans
-
-    def process_traces(
-        self,
-        target_trace_id: Optional[str] = None,
-        modify_ids: bool = True,
-    ) -> pd.DataFrame:
-        """
-        Complete trace processing pipeline using efficient SpanQuery approach.
-
-        Args:
-            target_trace_id (Optional[str]): Specific trace ID to process
-            modify_ids (bool): Whether to modify trace_id and span_id for Phoenix upload
-
-        Returns:
-            pd.DataFrame: Processed trace data with required columns
-        """
-        raw_data = self.fetch_all_data()
-        return self.process_data(raw_data, target_trace_id, modify_ids)
 
     def upload_traces(self, spans_df: pd.DataFrame) -> None:
         """
@@ -853,10 +492,8 @@ class PhoenixTraceProcessor:
 def main():
     processor = PhoenixTraceProcessor("http://34.60.92.205:6006")
 
-    # Command 1: Download all data into memory
     raw_data = processor.download_command()
 
-    # Command 2: Process the downloaded data
     processed_data = processor.process_command(raw_data, modify_ids=True)
 
     processed_data = processed_data[
