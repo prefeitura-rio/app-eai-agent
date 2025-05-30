@@ -394,7 +394,12 @@ class PhoenixTraceProcessor:
                 return "AGENT"
             elif name == "Agent._handle_ai_response":
                 # Check if it's a tool or LLM response
-                response_message = row.get("parameter.response_message", "")
+                # Extract response_message from attributes.parameter dict
+                param_dict = row.get("attributes.parameter", {})
+                response_message = ""
+                if isinstance(param_dict, dict):
+                    response_message = param_dict.get("response_message", "")
+
                 if (
                     response_message is not None
                     and not pd.isna(response_message)
@@ -503,6 +508,8 @@ def main():
             & (~processed_data["name"].str.startswith("POST"))
         )
     ]
+
+    processed_data = processed_data[~processed_data["name"].str.startswith("Session._")]
     processor.upload_command(processed_data)
 
 
