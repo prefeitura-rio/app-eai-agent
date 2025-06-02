@@ -6,7 +6,7 @@ from phoenix.trace import SpanEvaluations
 import phoenix as px
 
 from src.config import env
-from llm_models.genai_model import GenAIModel
+from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
 
 model = GenAIModel(
     model="gemini-2.5-flash-preview-04-17", 
@@ -61,7 +61,7 @@ def get_system_prompt() -> str:
     }
 
     try:
-        response = httpx.get(url, headers=headers, timeout=10)
+        response = httpx.get(url, headers=headers, timeout=50)
         response.raise_for_status()
         return response.json().get("prompt", "")
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
