@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../")))
 
@@ -27,6 +28,8 @@ EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMI
 
 
 def get_response_from_letta(example: Example) -> dict:
+    time.sleep(15)
+    
     url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
     payload = {
         "agent_id": "agent-45d877fa-4f50-4935-a18f-8a481291c950",
@@ -43,17 +46,27 @@ def get_response_from_letta(example: Example) -> dict:
         with httpx.Client(timeout=300) as client:
             response = client.post(url, headers=headers, json=payload)
             response.raise_for_status()
+            data = response.json()
+
+            if not data:
+                raise RuntimeError("Resposta vazia do agente.")
+            return data
         
-            return response.json()
     except httpx.HTTPStatusError as exc:
         raise RuntimeError(f"Erro na chamada para Letta: {exc.response.status_code} - {exc.response.text}") from exc
 
 
 def final_response(agent_stream: dict) -> dict:
+    if not agent_stream or "assistant_messages" not in agent_stream:
+        return {}
+    
     return agent_stream["assistant_messages"][-1]
 
 
 def tool_returns(agent_stream: dict) -> str:
+    if not agent_stream:
+        return ""
+     
     returns = [
         f"Tool Return {i + 1}:\n"
         f"Tool Name: {msg.get('name', 'Unknown')}\n"
@@ -65,6 +78,9 @@ def tool_returns(agent_stream: dict) -> str:
 
 
 def search_tool_returns_summary(agent_stream: dict) -> list[dict]:
+    if not agent_stream:
+        return []
+    
     search_tool_returns = [
         {
             "title": msg.get('tool_return', {}).get('title', ''),
