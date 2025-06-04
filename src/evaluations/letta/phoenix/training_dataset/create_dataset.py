@@ -191,9 +191,15 @@ def explode_dataframe(df, collection_name):
             print(f"Aviso: Falha ao parsear 'perguntas_geradas' na linha {index} ('{row.get('titulo', 'N/A')}'): {e}.")
             perguntas_list = []
 
-        respostas_list = row['lista_respostas_ideais']
-        if not isinstance(respostas_list, list):
-            print(f"Aviso: 'lista_respostas_ideais' na linha {index} não é uma lista. Conteúdo: {respostas_list}")
+        
+        try:
+            respostas_str = row['lista_respostas_ideais']
+            respostas_list = ast.literal_eval(respostas_str) if pd.notna(respostas_str) else []
+            if not isinstance(respostas_list, list):
+                print(f"Aviso: 'lista_respostas_ideais' na linha {index} não é uma lista. Conteúdo: {respostas_list}")
+                respostas_list = []
+        except (ValueError, SyntaxError):
+            print(f"Aviso: Falha ao parsear 'lista_respostas_ideais' na linha {index}.")
             respostas_list = []
 
         num_pares = min(len(perguntas_list), len(respostas_list))
@@ -201,19 +207,23 @@ def explode_dataframe(df, collection_name):
             print(f"Aviso: Número de perguntas ({len(perguntas_list)}) e respostas ({len(respostas_list)}) difere para o serviço '{row.get('titulo', 'N/A')}' (linha {index}). Usando {num_pares} pares.")
 
         for i in range(num_pares):
-            new_row = {col: row[col] for col in columns_to_replicate}
-            new_row['pergunta_individual'] = perguntas_list[i]
-            new_row['resposta_ideal_individual'] = respostas_list[i]
-            expanded_data_list.append(new_row)
+            new_expanded_row = {}
+            for col_name in columns_to_replicate:
+                new_expanded_row[col_name] = row[col_name]
+            
+            new_expanded_row['pergunta_individual'] = perguntas_list[i]
+            new_expanded_row['resposta_ideal_individual'] = respostas_list[i]
+            
+            expanded_data_list.append(new_expanded_row)
         
-        if not expanded_data_list:
-            print(f"Nenhuma linha foi gerada após a explosão para {collection_name}. Verifique os dados e logs.")
-            return pd.DataFrame()
-        
-        return pd.DataFrame(expanded_data_list)
+    if not expanded_data_list:
+        print(f"Nenhuma linha foi gerada após a explosão para {collection_name}. Verifique os dados e logs.")
+        return pd.DataFrame()
+    
+    return pd.DataFrame(expanded_data_list)
 
 
-def process_collection(collection_name, sample_size=None):
+def process_collection(collection_name):
     input_csv = f"perguntas_baseadas_no_{collection_name}.csv"
     output_csv = f"servicos_perguntas_respostas_{collection_name}.csv"
 
@@ -250,7 +260,7 @@ def process_collection(collection_name, sample_size=None):
 
 
 def merge_collections():
-    files = ["servicos_perguntas_respostas_1746.csv", "servicos_perguntas_respostas_carioca-digital.csv"]
+    files = ["servicos_perguntas_respostas_1746_2.csv", "servicos_perguntas_respostas_carioca-digital_2.csv"]
     dfs = []
 
     for file in files:
@@ -266,7 +276,7 @@ def merge_collections():
 
 
 def generate_questions_csv(collection_name):
-    export_collections_to_csv(collection)
+    # export_collections_to_csv(collection)
 
     drop_columns = ["embedding", "link_acesso", "ultima_atualizacao", "url", "tipo", "id_carioca_digital"] if collection_name == "carioca-digital" else ["embedding", "ultima_atualizacao", "url", "tipo"]
     df = pd.read_csv(f"exported_typesense_{collection_name}_data.csv", encoding="utf-8").drop(columns=drop_columns)
@@ -282,15 +292,3 @@ if __name__ == "__main__":
         process_collection(collection)
 
     merge_collections()
-
-
-
-# Lendo o CSV explodido para análise
-# df = pd.read_csv("servicos_perguntas_respostas_1746.csv", encoding="utf-8")
-# print(df.head(10))
-
-# mostre as primeiras 10 perguntas e respostas
-# for index, row in df.head(10).iterrows():
-#     print(f"Pergunta: {row['pergunta_individual']}")
-#     print(f"Resposta Ideal: {row['resposta_ideal_individual']}")
-#     print("-" * 40)
