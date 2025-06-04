@@ -1,37 +1,30 @@
-import os
 import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../")))
+
+from src.config import env
+from src.evaluations.letta.phoenix.training_dataset.evaluators import *
+from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
+from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agentic_search_memory_blocks
+
+os.environ["PHOENIX_HOST"] = env.PHOENIX_HOST
+os.environ["PHOENIX_PORT"] = env.PHOENIX_PORT
+os.environ["PHOENIX_ENDPOINT"] = env.PHOENIX_ENDPOINT
+
 import pandas as pd
 import httpx
 import phoenix as px
 import nest_asyncio
+nest_asyncio.apply()
 
 from phoenix.evals import llm_classify
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
 
-from src.config import env
-from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
-from src.evaluations.letta.phoenix.training_dataset.evaluators import experiment_eval_answer_completeness, experiment_eval_clarity, experiment_eval_emergency_handling_compliance, experiment_eval_entity_presence, experiment_eval_feedback_handling_compliance, experiment_eval_gold_standart_similarity, experiment_eval_groundedness, experiment_eval_location_policy_compliance, experiment_eval_search_query_effectiveness, experiment_eval_search_result_coverage, experiment_eval_security_privacy_compliance, experiment_eval_tool_calling, experiment_eval_whatsapp_formatting_compliance
-from src.services.letta.agents.memory_blocks.agentic_search_mb import get_agentic_search_memory_blocks
-
-nest_asyncio.apply()
-
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
-)
-
-PHOENIX_HOST = "34.60.92.205"
-PHOENIX_PORT = "6006"
-PHOENIX_ENDPOINT = f"http://{PHOENIX_HOST}:{PHOENIX_PORT}"
-
-os.environ.update({
-    "PHOENIX_HOST": PHOENIX_HOST,
-    "PHOENIX_PORT": str(PHOENIX_PORT),
-    "PHOENIX_ENDPOINT": PHOENIX_ENDPOINT
-})
-
-phoenix_client = px.Client(endpoint=PHOENIX_ENDPOINT)
+phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMINI_API_KEY)
+
 
 def get_response_from_letta(example: Example) -> dict:
     url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
