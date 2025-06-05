@@ -180,7 +180,7 @@ async def main():
         "whatsapp_formating",
         "answer_completness",
         "entity_presence",
-        "gold_standart",
+        "gold_standard",
         "groundness",
         "tool_calling",
         "search_query_effectiveness",

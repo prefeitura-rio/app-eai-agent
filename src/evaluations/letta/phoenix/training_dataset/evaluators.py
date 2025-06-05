@@ -1,10 +1,11 @@
+import pandas as pd
 from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
     FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
-    GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
+    GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
     GROUNDEDNESS_LLM_JUDGE_PROMPT,
     LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
     SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
@@ -42,7 +43,7 @@ def eval_binary(prompt, rails, input, output, extra_kwargs=None):
     )
     if isinstance(response, dict):
         return response.get("label") == rails[0]
-    return bool(response)
+    return response
 
 
 @create_evaluator(name="Answer Completeness", kind="LLM")
@@ -70,22 +71,26 @@ def experiment_eval_clarity(input, output, expected) -> bool:
 
 
 @create_evaluator(name="Similarity Ideal Response", kind="LLM")
-def experiment_eval_gold_standart_similarity(input, output, expected) -> float | bool:
-    rails_gold_standart_similarity = ["equivalent", "similar", "different"]
+def experiment_eval_gold_standard_similarity(input, output, expected) -> float | bool:
+    rails_gold_standard_similarity = ["equivalent", "similar", "different"]
     mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
 
     response = experiment_eval(
         input=input,
         output=output,
-        prompt=GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
-        rails=rails_gold_standart_similarity,
+        prompt=GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
+        rails=rails_gold_standard_similarity,
         expected=expected,
     )
 
     if not isinstance(response, bool):
         label = response.get("label")
-        return mapping.get(label, False)
-    
+
+        if isinstance(response, pd.Series):
+            label = label.iloc[0]
+        if isinstance(label, str) and label in mapping:
+            return mapping[label]
+
     return False
 
 
@@ -214,7 +219,7 @@ def experiment_eval_tool_calling(input, output, expected) -> float | bool:
             )
 
             label = response.get("label") if isinstance(response, dict) else None
-            result = int(label == rails_tool_calling[0]) if label else int(bool(response))
+            result = int(label == rails_tool_calling[0]) if label else int(response)
             results.append(result)
 
     return sum(results) / len(results) if results else False
@@ -224,21 +229,21 @@ def experiment_eval_tool_calling(input, output, expected) -> float | bool:
 def experiment_eval_search_query_effectiveness(input, output, expected) -> float | bool:
     rails_search_query_effectiveness = ["effective", "innefective"]
     results = []
+    if output:
+        for tool_call_details in output.get("tool_call_messages", []):
+            tool_call = tool_call_details.get("tool_call", {})
+            if tool_call.get("name") in ("typesense_search", "google_search"):
+                query = extrair_query(tool_call.get("arguments", ""))
+                response = experiment_eval(
+                    input=input,
+                    output=output,
+                    prompt=SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
+                    rails=rails_search_query_effectiveness,
+                    search_tool_query=query,
+                )
 
-    for tool_call_details in output.get("tool_call_messages", []):
-        tool_call = tool_call_details.get("tool_call", {})
-        if tool_call.get("name") in ("typesense_search", "google_search"):
-            query = extrair_query(tool_call.get("arguments", ""))
-            response = experiment_eval(
-                input=input,
-                output=output,
-                prompt=SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
-                rails=rails_search_query_effectiveness,
-                search_tool_query=query,
-            )
-
-            label = response.get("label") if isinstance(response, dict) else None
-            result = int(label == rails_search_query_effectiveness[0]) if label else int(bool(response))
-            results.append(result)
+                label = response.get("label") if isinstance(response, dict) else None
+                result = int(label == rails_search_query_effectiveness[0]) if label else int(response)
+                results.append(result)
 
     return sum(results) / len(results) if results else False
