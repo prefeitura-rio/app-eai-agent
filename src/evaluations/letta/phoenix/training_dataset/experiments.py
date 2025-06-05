@@ -136,6 +136,7 @@ def main():
     print("Iniciando a execução do script...")
 
     dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-05-29")
+    # dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-06-04")
     experiment = run_experiment(
         dataset,
         get_response_from_letta,
@@ -156,7 +157,7 @@ def main():
             ],
         experiment_name="Overall Final Response Experiment",  
         experiment_description="Evaluating final response of the agent with various evaluators.",
-        dry_run=False,
+        dry_run=True,
     )
     
 if __name__ == "__main__":
