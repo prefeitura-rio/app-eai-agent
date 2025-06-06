@@ -15,7 +15,7 @@ After analyzing, you must write a detailed explanation. Your 'explanation' shoul
 
 [BEGIN DATA]
 User Query: {query}
-Search Results: {search_results}
+Search Tool Results: {search_tool_results}
 [END DATA]
 
 Please analyze the data carefully and provide your explanation and label.
