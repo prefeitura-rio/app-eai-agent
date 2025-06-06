@@ -19,3 +19,11 @@ ISSUE_AGENT_ENABLE_SLEEPTIME = (
 )
 
 PG_URI = getenv_or_action("PG_URI")
+
+GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
+    "GCP_SERVICE_ACCOUNT_CREDENTIALS", action="raise"
+)
+GOOGLE_BIGQUERY_PAGE_SIZE = int(
+    getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100")
+)
+NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL", default="")

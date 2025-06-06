@@ -24,6 +24,9 @@ dependencies = [
     "arize-phoenix-evals>=0.20.6",
     "arize-phoenix==8.32.1",
     "nest-asyncio>=1.6.0",
+    "google-cloud-bigquery>=3.34.0",
+    "google-cloud-bigquery-storage>=2.32.0",
+    "google-auth>=2.40.1",
 ]
 
 [tool.taskipy.tasks]
@@ -33,3 +36,5 @@ db-init = "python -c \"from src.db import Base, engine; Base.metadata.create_all
 db-migrate = "alembic revision --autogenerate -m"
 db-upgrade = "alembic upgrade head"
 db-downgrade = "alembic downgrade"
+
+
