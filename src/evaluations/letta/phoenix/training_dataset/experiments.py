@@ -28,7 +28,7 @@ EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMI
 
 
 def get_response_from_letta(example: Example) -> dict:
-    time.sleep(15)
+    time.sleep(30)
     
     url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
     payload = {
@@ -43,7 +43,7 @@ def get_response_from_letta(example: Example) -> dict:
     }
 
     try:
-        with httpx.Client(timeout=300) as client:
+        with httpx.Client(timeout=500) as client:
             response = client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
@@ -99,7 +99,7 @@ def empty_agent_core_memory():
     return "\n".join(core_memory)
 
 
-def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> bool | dict:
+def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> tuple:
     if not output:
         return False
     
@@ -127,37 +127,39 @@ def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> bo
         provide_explanation=True
     )
 
-    if expected:
-        return response
+    eval = response.get('label') == rails[0]
+    explanation = response.get("explanation")
 
-    return response.get('label') == rails[0]
+    return (eval, explanation)
 
 def main():
     print("Iniciando a execução do script...")
 
-    dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-05-29")
-    # dataset = phoenix_client.get_dataset(name="Typesense_IA_Dataset-2025-06-04")
+    # dataset_name = "Typesense_IA_Dataset-2025-05-29"
+    dataset_name = "Typesense_IA_Dataset-2025-06-04"
+
+    dataset = phoenix_client.get_dataset(name=dataset_name)
     experiment = run_experiment(
         dataset,
         get_response_from_letta,
         evaluators=[
             experiment_eval_answer_completeness,
-            experiment_eval_gold_standart_similarity,
-            experiment_eval_clarity,
+            # experiment_eval_gold_standard_similarity,
+            # experiment_eval_clarity,
             experiment_eval_groundedness,
-            experiment_eval_entity_presence,
-            experiment_eval_feedback_handling_compliance,
-            experiment_eval_emergency_handling_compliance,
-            experiment_eval_location_policy_compliance,
-            experiment_eval_security_privacy_compliance,
-            experiment_eval_whatsapp_formatting_compliance,
+            # experiment_eval_entity_presence,
+            # experiment_eval_feedback_handling_compliance,
+            # experiment_eval_emergency_handling_compliance,
+            # experiment_eval_location_policy_compliance,
+            # experiment_eval_security_privacy_compliance,
+            # experiment_eval_whatsapp_formatting_compliance,
             experiment_eval_search_result_coverage,
-            experiment_eval_tool_calling,
-            experiment_eval_search_query_effectiveness
+            # experiment_eval_tool_calling,
+            # experiment_eval_search_query_effectiveness
             ],
         experiment_name="Overall Final Response Experiment",  
         experiment_description="Evaluating final response of the agent with various evaluators.",
-        dry_run=True,
+        dry_run=False,
     )
     
 if __name__ == "__main__":

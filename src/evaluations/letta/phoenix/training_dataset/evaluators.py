@@ -41,13 +41,12 @@ def eval_binary(prompt, rails, input, output, extra_kwargs=None):
         rails=rails,
         **extra_kwargs,
     )
-    if isinstance(response, dict):
-        return response.get("label") == rails[0]
+
     return response
 
 
 @create_evaluator(name="Answer Completeness", kind="LLM")
-def experiment_eval_answer_completeness(input, output, expected) -> bool:
+def experiment_eval_answer_completeness(input, output, expected) -> tuple:
     rails_answer_completeness = ["complete", "incomplete"]
 
     return eval_binary(
@@ -59,7 +58,7 @@ def experiment_eval_answer_completeness(input, output, expected) -> bool:
 
 
 @create_evaluator(name="Clarity", kind="LLM")
-def experiment_eval_clarity(input, output, expected) -> bool:
+def experiment_eval_clarity(input, output, expected) -> tuple:
     rails_clarity = ["clear", "unclear"]
 
     return eval_binary(
@@ -95,7 +94,7 @@ def experiment_eval_gold_standard_similarity(input, output, expected) -> float |
 
 
 @create_evaluator(name="Emergency Handling", kind="LLM")
-def experiment_eval_emergency_handling_compliance(input, output, expected) -> bool:
+def experiment_eval_emergency_handling_compliance(input, output, expected) -> tuple:
     rails_emergency_handling_compliance = ["compliant", "non_compliant"]
 
     return eval_binary(
@@ -107,7 +106,7 @@ def experiment_eval_emergency_handling_compliance(input, output, expected) -> bo
 
 
 @create_evaluator(name="Entity Presence", kind="LLM")
-def experiment_eval_entity_presence(input, output, expected) -> bool:
+def experiment_eval_entity_presence(input, output, expected) -> tuple:
     rails_entity_presence = ["entities_present", "entities_missing"]
 
     return eval_binary(
@@ -119,7 +118,7 @@ def experiment_eval_entity_presence(input, output, expected) -> bool:
 
 
 @create_evaluator(name="Feedback Handling", kind="LLM")
-def experiment_eval_feedback_handling_compliance(input, output, expected) -> bool:
+def experiment_eval_feedback_handling_compliance(input, output, expected) -> tuple:
     rails_feedback_handling_compliance = ["compliant", "non_compliant"]
 
     return eval_binary(
@@ -131,7 +130,7 @@ def experiment_eval_feedback_handling_compliance(input, output, expected) -> boo
 
 
 @create_evaluator(name="Location Policy", kind="LLM")
-def experiment_eval_location_policy_compliance(input, output, expected) -> bool:
+def experiment_eval_location_policy_compliance(input, output, expected) -> tuple:
     rails_location_policy_compliance = ["compliant", "non_compliant"]
 
     return eval_binary(
@@ -143,7 +142,7 @@ def experiment_eval_location_policy_compliance(input, output, expected) -> bool:
 
 
 @create_evaluator(name="Security and Privacy", kind="LLM")
-def experiment_eval_security_privacy_compliance(input, output, expected) -> bool:
+def experiment_eval_security_privacy_compliance(input, output, expected) -> tuple:
     rails_security_privacy_compliance = ["compliant", "non_compliant"]
 
     return eval_binary(
@@ -155,7 +154,7 @@ def experiment_eval_security_privacy_compliance(input, output, expected) -> bool
 
 
 @create_evaluator(name="Whatsapp Format", kind="LLM")
-def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> bool:
+def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> tuple:
     rails_whatsapp_formatting_compliance = ["compliant", "non_compliant"]
 
     return eval_binary(
@@ -167,7 +166,7 @@ def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> b
 
 
 @create_evaluator(name="Groundness", kind="LLM")
-def experiment_eval_groundedness(input, output, expected) -> bool:
+def experiment_eval_groundedness(input, output, expected) -> tuple:
     rails_groundedness = ["based", "unfounded"]
 
     return eval_binary(
@@ -183,7 +182,7 @@ def experiment_eval_groundedness(input, output, expected) -> bool:
 
 
 @create_evaluator(name="Search Result Coverage", kind="LLM")
-def experiment_eval_search_result_coverage(input, output, expected) -> bool:
+def experiment_eval_search_result_coverage(input, output, expected) -> tuple:
     rails_search_result_coverage = ["covers", "uncovers"]
 
     return eval_binary(
@@ -229,6 +228,7 @@ def experiment_eval_tool_calling(input, output, expected) -> float | bool:
 def experiment_eval_search_query_effectiveness(input, output, expected) -> float | bool:
     rails_search_query_effectiveness = ["effective", "innefective"]
     results = []
+
     if output:
         for tool_call_details in output.get("tool_call_messages", []):
             tool_call = tool_call_details.get("tool_call", {})
@@ -245,5 +245,5 @@ def experiment_eval_search_query_effectiveness(input, output, expected) -> float
                 label = response.get("label") if isinstance(response, dict) else None
                 result = int(label == rails_search_query_effectiveness[0]) if label else int(response)
                 results.append(result)
-
+    
     return sum(results) / len(results) if results else False
