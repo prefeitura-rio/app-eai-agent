@@ -57,11 +57,13 @@ label: "equivalent", "similar", or "different"
 """
 
 GROUNDEDNESS_LLM_JUDGE_PROMPT = """
-In this task, you will evaluate whether a model's response is fully grounded in the provided "core memory" and "search tool results".
+In this task, you will evaluate whether the model's response is factually grounded in the provided "core memory" and "search tool results".
 
 Definitions:
-- "based": Every factual claim in the model's response can be directly traced to, or reasonably inferred from, the core memory and/or the search tool results.
-- "unfounded": The model's response contains information that is not present in, and cannot reasonably be inferred from, the core memory or search results.
+- "based": All factual claims in the response are either explicitly stated in, or can be reasonably inferred from, the core memory and/or the search tool results. Minor rewording, paraphrasing, or summarization is allowed if the facts are preserved.
+- "unfounded": One or more factual claims in the response are not supported by, nor reasonably inferred from, any of the provided sources.
+
+You must check whether the model invents information, introduces unsupported claims, or misrepresents facts. If all key facts are compatible with the sources—even if not quoted verbatim—the response is "based".
 
 Your response must be a single word: "based" or "unfounded", with no other text.
 
@@ -80,7 +82,7 @@ Search Tool Results: {search_tool_results}
 
 Please analyze the data carefully and then provide:
 
-explanation: Your reasoning step by step about whether the response is fully grounded.
+explanation: A clear justification. Highlight any claims that are unsupported or, if "based", explain how the response aligns with the sources.
 label: "based" or "unfounded"
 """
 
@@ -264,18 +266,18 @@ label: "compliant_format" or "non_compliant_format"
 """
 
 ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT = """
-In this task, you will evaluate whether the model's response directly and fully answers the user's query.
+In this task, you will evaluate whether the model's response directly and sufficiently answers the user's question.
 
 You will categorize the model's response using one of two labels:
-- "answered": The response directly addresses the core question or intent of the query in a complete manner. All significant aspects are covered.
-- "unanswered": The response fails to address the core question, answers only partially, evades the question, or responds to something different. Significant parts are missing.
+- "answered": The response addresses the main point of the query clearly and provides a reasonably complete and useful answer. Minor omissions are acceptable if the user would still consider their question adequately addressed.
+- "unanswered": The response misses or avoids the core intent of the query, answers only vaguely or incorrectly, or leaves out key informations that prevents the user from being satisfied.
 
 Your response must be a single word: "answered" or "unanswered", with no other text.
 
 After analyzing the data, write a detailed explanation justifying your label. Your explanation should:
-1. Break down the main question(s) or intent in the query.
-2. Evaluate whether the response fully addresses each part.
-3. If labeled "unanswered", specify exactly which parts were missing, inadequately answered, or misunderstood.
+1. Identify the main point(s) or intent of the query.
+2. Analyze whether the response addresses them clearly and sufficiently.
+3. If labeled "unanswered", explain exactly what was missing or unclear.
 
 [BEGIN DATA]
 Query: {query}
@@ -284,7 +286,7 @@ Model Response: {model_response}
 
 Please analyze the data carefully and then provide:
 
-explanation: Your reasoning step by step, identifying whether the model's response fully addresses all core aspects of the query.
+explanation: Your reasoning step by step, identifying whether the model's response meets the user's needs.
 label: "answered" or "unanswered"
 """
 
