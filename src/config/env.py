@@ -26,4 +26,4 @@ GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
 GOOGLE_BIGQUERY_PAGE_SIZE = int(
     getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100")
 )
-NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL", default="")
+NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
