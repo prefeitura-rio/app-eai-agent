@@ -66,6 +66,7 @@ app = FastAPI(
     title="Agentic Search API",
     description="API que gerencia os fluxos e ferramentas dos agentes de IA da Prefeitura do Rio de Janeiro",
     version="0.1.0",
+    servers=[{"url": "https://services.staging.app.dados.rio/eai-agent/", "description": "Staging"}],
     docs_url=None,
     redoc_url=None,
 )
