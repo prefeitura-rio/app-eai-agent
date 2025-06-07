@@ -13,7 +13,8 @@ router = APIRouter(
     dependencies=[Depends(validar_token)],
 )
 
-@router.get("/equipaments", name="Equipamentos")
+
+@router.get("/equipments", name="Equipamentos")
 async def get_equipaments(
     address: str = Query(..., description="Endereço"),
 ):
@@ -32,7 +33,7 @@ async def get_equipaments(
         )
 
 
-@router.get("/equipaments_category", name="Categoria dos Equipamentos")
+@router.get("/equipments_category", name="Categoria dos Equipamentos")
 async def get_category():
     try:
         response = await get_category_equipments()
