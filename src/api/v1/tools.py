@@ -5,6 +5,7 @@ from src.core.security.dependencies import validar_token
 from src.services.letta.agents.tools.typesense_search import typesense_search
 from src.services.llm.gemini_service import GeminiService
 
+
 router = APIRouter(
     prefix="/letta/tools",
     tags=["Letta Tools"],
