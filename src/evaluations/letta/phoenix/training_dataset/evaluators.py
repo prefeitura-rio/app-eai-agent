@@ -1,4 +1,6 @@
 import pandas as pd
+import asyncio
+from typing import Tuple, Dict, Any, Optional, Union
 from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
@@ -21,20 +23,25 @@ from src.evaluations.letta.agents.search_tools import (
     SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
 )
 
-from src.evaluations.letta.phoenix.training_dataset.experiments import (
-    empty_agent_core_memory,
-    experiment_eval,
-    tool_returns,
-)
-
-from src.evaluations.letta.phoenix.utils import extrair_query, get_system_prompt
-
 from phoenix.experiments.evaluators import create_evaluator
 
+def _get_experiment_functions():
+    from src.evaluations.letta.phoenix.training_dataset.experiments import (
+        empty_agent_core_memory,
+        experiment_eval,
+        tool_returns,
+    )
+    return empty_agent_core_memory, experiment_eval, tool_returns
 
-def eval_binary(prompt, rails, input, output, extra_kwargs=None):
+
+async def eval_binary(prompt: str, rails: list, input: Dict[str, Any], 
+                      output: Dict[str, Any], extra_kwargs: Optional[Dict[str, Any]] = None) -> Tuple[bool, str]:
+    """Função auxiliar assíncrona para realizar avaliações binárias"""
     extra_kwargs = extra_kwargs or {}
-    response = experiment_eval(
+    
+    _, experiment_eval, _ = _get_experiment_functions()
+    
+    response = await experiment_eval(
         input=input,
         output=output,
         prompt=prompt,
@@ -46,10 +53,13 @@ def eval_binary(prompt, rails, input, output, extra_kwargs=None):
 
 
 @create_evaluator(name="Answer Completeness", kind="LLM")
-def experiment_eval_answer_completeness(input, output, expected) -> tuple:
+async def experiment_eval_answer_completeness(input: Dict[str, Any], 
+                                             output: Dict[str, Any], 
+                                             expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia se a resposta está completa"""
     rails_answer_completeness = ["complete", "incomplete"]
 
-    return eval_binary(
+    return await eval_binary(
         ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
         rails_answer_completeness,
         input,
@@ -58,10 +68,13 @@ def experiment_eval_answer_completeness(input, output, expected) -> tuple:
 
 
 @create_evaluator(name="Clarity", kind="LLM")
-def experiment_eval_clarity(input, output, expected) -> tuple:
+async def experiment_eval_clarity(input: Dict[str, Any], 
+                                 output: Dict[str, Any], 
+                                 expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a clareza da resposta"""
     rails_clarity = ["clear", "unclear"]
 
-    return eval_binary(
+    return await eval_binary(
         CLARITY_LLM_JUDGE_PROMPT,
         rails_clarity,
         input,
@@ -70,11 +83,16 @@ def experiment_eval_clarity(input, output, expected) -> tuple:
 
 
 @create_evaluator(name="Similarity Ideal Response", kind="LLM")
-def experiment_eval_gold_standard_similarity(input, output, expected) -> float | bool:
+async def experiment_eval_gold_standard_similarity(input: Dict[str, Any], 
+                                                  output: Dict[str, Any], 
+                                                  expected: Dict[str, Any]) -> Union[float, bool, Tuple[bool, str]]:
+    """Avalia a similaridade com a resposta ideal"""
     rails_gold_standard_similarity = ["equivalent", "similar", "different"]
     mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
 
-    response = experiment_eval(
+    _, experiment_eval, _ = _get_experiment_functions()
+
+    response = await experiment_eval(
         input=input,
         output=output,
         prompt=GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
@@ -82,22 +100,27 @@ def experiment_eval_gold_standard_similarity(input, output, expected) -> float |
         expected=expected,
     )
 
-    if not isinstance(response, bool):
-        label = response.get("label")
-
-        if isinstance(response, pd.Series):
-            label = label.iloc[0]
-        if isinstance(label, str) and label in mapping:
-            return mapping[label]
-
-    return False
+    if isinstance(response, tuple) and len(response) >= 1:
+        result, explanation = response
+        if isinstance(result, bool) and not result:
+            return result, explanation
+    
+    label = response[0] if isinstance(response, tuple) else response
+    
+    if isinstance(label, str) and label in mapping:
+        return mapping[label], "Avaliação de similaridade concluída"
+    
+    return False, "Não foi possível determinar a similaridade"
 
 
 @create_evaluator(name="Emergency Handling", kind="LLM")
-def experiment_eval_emergency_handling_compliance(input, output, expected) -> tuple:
+async def experiment_eval_emergency_handling_compliance(input: Dict[str, Any], 
+                                                       output: Dict[str, Any], 
+                                                       expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a conformidade com o tratamento de emergências"""
     rails_emergency_handling_compliance = ["compliant", "non_compliant"]
 
-    return eval_binary(
+    return await eval_binary(
         EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
         rails_emergency_handling_compliance,
         input,
@@ -106,10 +129,13 @@ def experiment_eval_emergency_handling_compliance(input, output, expected) -> tu
 
 
 @create_evaluator(name="Entity Presence", kind="LLM")
-def experiment_eval_entity_presence(input, output, expected) -> tuple:
+async def experiment_eval_entity_presence(input: Dict[str, Any], 
+                                         output: Dict[str, Any], 
+                                         expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a presença de entidades na resposta"""
     rails_entity_presence = ["entities_present", "entities_missing"]
 
-    return eval_binary(
+    return await eval_binary(
         ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
         rails_entity_presence,
         input,
@@ -118,10 +144,13 @@ def experiment_eval_entity_presence(input, output, expected) -> tuple:
 
 
 @create_evaluator(name="Feedback Handling", kind="LLM")
-def experiment_eval_feedback_handling_compliance(input, output, expected) -> tuple:
+async def experiment_eval_feedback_handling_compliance(input: Dict[str, Any], 
+                                                      output: Dict[str, Any], 
+                                                      expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a conformidade com o tratamento de feedback"""
     rails_feedback_handling_compliance = ["compliant", "non_compliant"]
 
-    return eval_binary(
+    return await eval_binary(
         FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
         rails_feedback_handling_compliance,
         input,
@@ -130,10 +159,13 @@ def experiment_eval_feedback_handling_compliance(input, output, expected) -> tup
 
 
 @create_evaluator(name="Location Policy", kind="LLM")
-def experiment_eval_location_policy_compliance(input, output, expected) -> tuple:
+async def experiment_eval_location_policy_compliance(input: Dict[str, Any], 
+                                                    output: Dict[str, Any], 
+                                                    expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a conformidade com políticas de localização"""
     rails_location_policy_compliance = ["compliant", "non_compliant"]
 
-    return eval_binary(
+    return await eval_binary(
         LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
         rails_location_policy_compliance,
         input,
@@ -142,10 +174,13 @@ def experiment_eval_location_policy_compliance(input, output, expected) -> tuple
 
 
 @create_evaluator(name="Security and Privacy", kind="LLM")
-def experiment_eval_security_privacy_compliance(input, output, expected) -> tuple:
+async def experiment_eval_security_privacy_compliance(input: Dict[str, Any], 
+                                                     output: Dict[str, Any], 
+                                                     expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a conformidade com segurança e privacidade"""
     rails_security_privacy_compliance = ["compliant", "non_compliant"]
 
-    return eval_binary(
+    return await eval_binary(
         SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
         rails_security_privacy_compliance,
         input,
@@ -154,10 +189,13 @@ def experiment_eval_security_privacy_compliance(input, output, expected) -> tupl
 
 
 @create_evaluator(name="Whatsapp Format", kind="LLM")
-def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> tuple:
+async def experiment_eval_whatsapp_formatting_compliance(input: Dict[str, Any], 
+                                                        output: Dict[str, Any], 
+                                                        expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a conformidade com formatação do WhatsApp"""
     rails_whatsapp_formatting_compliance = ["compliant", "non_compliant"]
 
-    return eval_binary(
+    return await eval_binary(
         WHATSAPP_FORMATTING_COMPLIANCE_JUDGE_PROMPT,
         rails_whatsapp_formatting_compliance,
         input,
@@ -166,10 +204,15 @@ def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> t
 
 
 @create_evaluator(name="Groundness", kind="LLM")
-def experiment_eval_groundedness(input, output, expected) -> tuple:
+async def experiment_eval_groundedness(input: Dict[str, Any], 
+                                      output: Dict[str, Any], 
+                                      expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a fundamentação da resposta nos dados disponíveis"""
     rails_groundedness = ["based", "unfounded"]
 
-    return eval_binary(
+    empty_agent_core_memory, _, tool_returns = _get_experiment_functions()
+
+    return await eval_binary(
         GROUNDEDNESS_LLM_JUDGE_PROMPT,
         rails_groundedness,
         input,
@@ -182,10 +225,15 @@ def experiment_eval_groundedness(input, output, expected) -> tuple:
 
 
 @create_evaluator(name="Search Result Coverage", kind="LLM")
-def experiment_eval_search_result_coverage(input, output, expected) -> tuple:
+async def experiment_eval_search_result_coverage(input: Dict[str, Any], 
+                                               output: Dict[str, Any], 
+                                               expected: Dict[str, Any]) -> Tuple[bool, str]:
+    """Avalia a cobertura dos resultados de busca na resposta"""
     rails_search_result_coverage = ["covers", "uncovers"]
 
-    return eval_binary(
+    _, _, tool_returns = _get_experiment_functions()
+
+    return await eval_binary(
         SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
         rails_search_result_coverage,
         input,
@@ -197,17 +245,24 @@ def experiment_eval_search_result_coverage(input, output, expected) -> tuple:
 
 
 @create_evaluator(name="Tool Calling", kind="LLM")
-def experiment_eval_tool_calling(input, output, expected) -> float | bool:
+async def experiment_eval_tool_calling(input: Dict[str, Any], 
+                                      output: Dict[str, Any], 
+                                      expected: Dict[str, Any]) -> Union[float, bool, Tuple[bool, str]]:
+    """Avalia a eficácia da chamada de ferramentas"""
+    from src.evaluations.letta.phoenix.utils import get_system_prompt
+    
     tool_definitions = get_system_prompt()
     tool_definitions = tool_definitions[tool_definitions.find("Available tools:\n") :]
 
     rails_tool_calling = ["correct", "incorrect"]
     results = []
 
+    _, experiment_eval, _ = _get_experiment_functions()
+
     for tool_call_details in output.get("tool_call_messages", []):
         tool_call = tool_call_details.get("tool_call", {})
         if tool_call.get("name") in ("typesense_search", "google_search"):
-            response = experiment_eval(
+            response = await experiment_eval(
                 input=input,
                 output=output,
                 prompt=TOOL_CALLING_LLM_JUDGE_PROMPT.replace(
@@ -217,24 +272,39 @@ def experiment_eval_tool_calling(input, output, expected) -> float | bool:
                 tool_call=tool_call,
             )
 
-            label = response.get("label") if isinstance(response, dict) else None
-            result = int(label == rails_tool_calling[0]) if label else int(response)
+            if isinstance(response, tuple) and len(response) >= 1:
+                label = response[0]
+                result = 1 if label is True or label == rails_tool_calling[0] else 0
+            else:
+                result = 0
+                
             results.append(result)
 
-    return sum(results) / len(results) if results else False
+    if not results:
+        return False, "Nenhuma chamada de ferramenta para avaliar"
+    
+    avg_result = sum(results) / len(results)
+    return avg_result, f"Média de eficácia: {avg_result:.2f}"
 
 
 @create_evaluator(name="Search Tool Abstractness", kind="LLM")
-def experiment_eval_search_query_effectiveness(input, output, expected) -> float | bool:
+async def experiment_eval_search_query_effectiveness(input: Dict[str, Any], 
+                                                   output: Dict[str, Any], 
+                                                   expected: Dict[str, Any]) -> Union[float, bool, Tuple[bool, str]]:
+    """Avalia a eficácia das consultas de busca"""
+    from src.evaluations.letta.phoenix.utils import extrair_query
+    
     rails_search_query_effectiveness = ["effective", "innefective"]
     results = []
+
+    _, experiment_eval, _ = _get_experiment_functions()
 
     if output:
         for tool_call_details in output.get("tool_call_messages", []):
             tool_call = tool_call_details.get("tool_call", {})
             if tool_call.get("name") in ("typesense_search", "google_search"):
                 query = extrair_query(tool_call.get("arguments", ""))
-                response = experiment_eval(
+                response = await experiment_eval(
                     input=input,
                     output=output,
                     prompt=SEARCH_QUERY_EFFECTIVENESS_LLM_JUDGE_PROMPT,
@@ -242,8 +312,16 @@ def experiment_eval_search_query_effectiveness(input, output, expected) -> float
                     search_tool_query=query,
                 )
 
-                label = response.get("label") if isinstance(response, dict) else None
-                result = int(label == rails_search_query_effectiveness[0]) if label else int(response)
+                if isinstance(response, tuple) and len(response) >= 1:
+                    label = response[0]
+                    result = 1 if label is True or label == rails_search_query_effectiveness[0] else 0
+                else:
+                    result = 0
+                    
                 results.append(result)
     
-    return sum(results) / len(results) if results else False
+    if not results:
+        return False, "Nenhuma consulta de busca para avaliar"
+    
+    avg_result = sum(results) / len(results)
+    return avg_result, f"Média de eficácia: {avg_result:.2f}"
