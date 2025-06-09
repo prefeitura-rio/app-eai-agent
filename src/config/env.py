@@ -20,6 +20,10 @@ ISSUE_AGENT_ENABLE_SLEEPTIME = (
 
 PG_URI = getenv_or_action("PG_URI")
 
+PHOENIX_HOST = getenv_or_action("PHOENIX_HOST")
+PHOENIX_PORT = getenv_or_action("PHOENIX_PORT")
+PHOENIX_ENDPOINT = getenv_or_action("PHOENIX_ENDPOINT")
+
 GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
     "GCP_SERVICE_ACCOUNT_CREDENTIALS", action="raise"
 )
