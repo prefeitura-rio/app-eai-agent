@@ -16,8 +16,8 @@ os.environ["PHOENIX_ENDPOINT"] = env.PHOENIX_ENDPOINT
 import pandas as pd
 import httpx
 import phoenix as px
-# import nest_asyncio
-# nest_asyncio.apply()
+import nest_asyncio
+nest_asyncio.apply()
 import asyncio
 
 from phoenix.evals import llm_classify
@@ -32,7 +32,7 @@ async def get_response_from_letta(example: Example) -> dict:
     
     url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
     payload = {
-        "agent_id": "agent-45d877fa-4f50-4935-a18f-8a481291c950",
+        "agent_id": "agent-8a86f0e0-0d78-4646-9c8a-9de5af4ac83b",
         "message": example.input.get("pergunta"),
         "name": "Usuário Teste",
     }
@@ -43,7 +43,7 @@ async def get_response_from_letta(example: Example) -> dict:
     }
 
     try:
-        with httpx.Client(timeout=500) as client:
+        with httpx.Client(timeout=300) as client:
             response = client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
@@ -137,9 +137,10 @@ async def main():
     print("Iniciando a execução do script...")
 
     # dataset_name = "Typesense_IA_Dataset-2025-05-29"
-    dataset_name = "Typesense_IA_Dataset-2025-06-04"
+    dataset_name = "perguntas_claras"
 
     dataset = phoenix_client.get_dataset(name=dataset_name)
+    # print(dataset.as_dataframe().head(10))
     experiment = run_experiment(
         dataset,
         get_response_from_letta,
@@ -158,10 +159,10 @@ async def main():
             # experiment_eval_tool_calling,
             # experiment_eval_search_query_effectiveness
             ],
-        experiment_name="Concurrency Test - Final Response Evaluation",  
+        experiment_name="Concurrency Test - Final Response Evaluation - 2",  
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
-        concurrency=30,
+        concurrency=dataset.as_dataframe().head(10).shape[0],
     )
     
 if __name__ == "__main__":
