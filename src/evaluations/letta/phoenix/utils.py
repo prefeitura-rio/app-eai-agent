@@ -49,11 +49,11 @@ def extrair_content(raw_text: str):
     match = re.search(r"(?:content|text)='(.*?)'", raw_text)
     return match.group(1) if match else None
 
-def extrair_query(raw_text: str):
+async def extrair_query(raw_text: str):
     match = re.search(r'"query": "(.*?)"', raw_text)
     return match.group(1) if match else None
 
-def get_system_prompt() -> str:
+async def get_system_prompt() -> str:
     url = f"{env.EAI_AGENT_URL}/system-prompt?agent_type=agentic_search"
     headers = {
         "accept": "application/json", 
