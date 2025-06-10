@@ -312,7 +312,7 @@ function proceedWithSave(agentType, newPrompt, author, reason) {
     };
     
     // Enviar requisição
-    apiRequest('POST', '/api/v1/system-prompt', payload)
+    apiRequest('POST', '/eai-agent/api/v1/system-prompt', payload)
         .then(response => {
             hideLoading();
             showAlert(response.message || 'Prompt atualizado com sucesso!');
@@ -393,7 +393,7 @@ function loadData() {
     // Carregar dados em paralelo
     Promise.all([
         // Carregar prompt atual (pode falhar se não existir)
-        apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}`)
+        apiRequest('GET', `/eai-agent/api/v1/system-prompt?agent_type=${agentType}`)
             .catch(error => {
                 // Se for erro de "não encontrado", retornamos um objeto vazio
                 if (error.message && error.message.includes('Nenhum system prompt encontrado')) {
@@ -403,7 +403,7 @@ function loadData() {
                 throw error; // Para outros erros, propagamos
             }),
         // Carregar histórico (pode estar vazio)
-        apiRequest('GET', `/api/v1/system-prompt/history?agent_type=${agentType}`)
+        apiRequest('GET', `/eai-agent/api/v1/system-prompt/history?agent_type=${agentType}`)
             .catch(error => {
                 // Se falhar, retornamos lista vazia
                 console.warn('Erro ao carregar histórico:', error);
