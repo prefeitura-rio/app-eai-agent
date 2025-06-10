@@ -24,10 +24,10 @@ PHOENIX_HOST = getenv_or_action("PHOENIX_HOST")
 PHOENIX_PORT = getenv_or_action("PHOENIX_PORT")
 PHOENIX_ENDPOINT = getenv_or_action("PHOENIX_ENDPOINT")
 
-# GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
-#     "GCP_SERVICE_ACCOUNT_CREDENTIALS", action="raise"
-# )
-# GOOGLE_BIGQUERY_PAGE_SIZE = int(
-#     getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100")
-# )
-# NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
+GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
+    "GCP_SERVICE_ACCOUNT_CREDENTIALS", action="raise"
+)
+GOOGLE_BIGQUERY_PAGE_SIZE = int(
+    getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100")
+)
+NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
