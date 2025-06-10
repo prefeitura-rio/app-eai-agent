@@ -3,7 +3,9 @@ function loadAgentTypes() {
     const token = localStorage.getItem('adminToken');
     if (!token) return;
     
-    axios.get('/api/v1/system-prompt/agent-types', {
+    const API_BASE_URL = 'https://services.staging.app.dados.rio/eai-agent';
+    
+    axios.get(`${API_BASE_URL}/api/v1/system-prompt/agent-types`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => {

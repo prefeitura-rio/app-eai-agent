@@ -152,13 +152,14 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const loginForm = document.getElementById('loginForm');
+            const API_BASE_URL = 'https://services.staging.app.dados.rio/eai-agent';
             
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const token = document.getElementById('token').value;
                 
                 // Validar token
-                axios.get('/api/v1/system-prompt', {
+                axios.get(`${API_BASE_URL}/api/v1/system-prompt`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
                 .then(response => {

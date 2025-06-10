@@ -23,6 +23,9 @@ let promptsData = []; // Array para armazenar todos os dados dos prompts
 let currentTheme = localStorage.getItem('theme') || 'light';
 let isHistoryItemView = false; // Nova variável para rastrear se estamos visualizando um item do histórico
 
+// API base URL - ajustar de acordo com o ambiente
+const API_BASE_URL = 'https://services.staging.app.dados.rio/eai-agent';
+
 // Configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM carregado, inicializando painel admin');
@@ -152,7 +155,7 @@ function handleLogin(e) {
     }
     
     // Testar token fazendo uma requisição de verificação
-    fetch('/api/v1/system-prompt/history?agent_type=agentic_search', {
+    fetch(`${API_BASE_URL}/api/v1/system-prompt/history?agent_type=agentic_search`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => {
@@ -312,7 +315,7 @@ function proceedWithSave(agentType, newPrompt, author, reason) {
     };
     
     // Enviar requisição
-    apiRequest('POST', '/eai-agent/api/v1/system-prompt', payload)
+    apiRequest('POST', `${API_BASE_URL}/api/v1/system-prompt`, payload)
         .then(response => {
             hideLoading();
             showAlert(response.message || 'Prompt atualizado com sucesso!');
@@ -393,7 +396,7 @@ function loadData() {
     // Carregar dados em paralelo
     Promise.all([
         // Carregar prompt atual (pode falhar se não existir)
-        apiRequest('GET', `/eai-agent/api/v1/system-prompt?agent_type=${agentType}`)
+        apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt?agent_type=${agentType}`)
             .catch(error => {
                 // Se for erro de "não encontrado", retornamos um objeto vazio
                 if (error.message && error.message.includes('Nenhum system prompt encontrado')) {
@@ -403,7 +406,7 @@ function loadData() {
                 throw error; // Para outros erros, propagamos
             }),
         // Carregar histórico (pode estar vazio)
-        apiRequest('GET', `/eai-agent/api/v1/system-prompt/history?agent_type=${agentType}`)
+        apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt/history?agent_type=${agentType}`)
             .catch(error => {
                 // Se falhar, retornamos lista vazia
                 console.warn('Erro ao carregar histórico:', error);
@@ -548,7 +551,7 @@ function selectPromptById(promptId) {
     showLoading();
     
     // Usar o novo endpoint para buscar o prompt pelo ID
-    const url = `/api/v1/system-prompt/by-id/${promptId}`;
+    const url = `${API_BASE_URL}/api/v1/system-prompt/by-id/${promptId}`;
     console.log('Buscando conteúdo completo na URL:', url);
     
     // Fazer requisição diretamente, sem passar por funções intermediárias
