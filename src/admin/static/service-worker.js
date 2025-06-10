@@ -1,48 +1,52 @@
 /**
- * Service Worker para controle de cache
+ * Service Worker para cache de arquivos estáticos
  * 
- * Este service worker facilita o gerenciamento de cache dos recursos estáticos,
- * garantindo que o navegador sempre carregue a versão mais recente.
+ * Este service worker gerencia o cache de recursos estáticos para
+ * melhorar o desempenho e permitir o uso offline.
  */
 
-// Nome do cache
-const CACHE_NAME = 'admin-static-cache-v1';
+const CACHE_NAME = 'admin-panel-cache-v1';
+const CACHE_WHITELIST = [CACHE_NAME];
 
-// Lista de recursos que serão cacheados
-const STATIC_RESOURCES = [
-  '/admin/static/style.css',
-  '/admin/static/app.js',
-  '/admin/static/agent-types.js',
-  '/admin/static/favicon.ico'
+// Recursos a serem cacheados inicialmente
+const INITIAL_CACHED_RESOURCES = [
+  '/eai-agent/admin/static/app.js',
+  '/eai-agent/admin/static/agent-types.js',
+  '/eai-agent/admin/static/editor-expander.js',
+  '/eai-agent/admin/static/style.css',
+  '/eai-agent/admin/static/cache-buster.js'
 ];
 
-// Instalação do service worker
+// Instalação do Service Worker
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Cache aberto');
-        // Adiciona timestamp para forçar download de recursos atualizados
-        const urlsWithTimestamp = STATIC_RESOURCES.map(url => {
-          return url + '?v=' + new Date().getTime();
-        });
-        return cache.addAll(urlsWithTimestamp);
+        return cache.addAll(INITIAL_CACHED_RESOURCES);
+      })
+      .then(() => {
+        // Força a ativação imediata, sem esperar pela atualização da página
+        return self.skipWaiting();
       })
   );
 });
 
-// Ativação do service worker
+// Ativação do Service Worker
 self.addEventListener('activate', event => {
-  // Limpa caches antigos
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          // Remove caches antigos que não estão na whitelist
+          if (CACHE_WHITELIST.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      // Assume o controle de todas as páginas abertas
+      return self.clients.claim();
     })
   );
 });
