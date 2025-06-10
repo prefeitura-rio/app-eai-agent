@@ -21,15 +21,20 @@ nest_asyncio.apply()
 import asyncio
 
 from phoenix.evals import llm_classify
+from phoenix.evals.models import OpenAIModel
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
 
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
-EVAL_MODEL = GenAIModel(model="gemini-2.5-flash-preview-04-17", api_key=env.GEMINI_API_KEY)
 
+EVAL_MODEL = OpenAIModel(
+    api_key=env.OPENAI_API_KEY,
+    azure_endpoint=env.OPENAI_URL,
+    api_version="2024-02-15-preview",
+    model="gpt-4.1",
+)
 
-async def get_response_from_letta(example: Example) -> dict:
-    
+async def get_response_from_letta(example: Example) -> dict:  
     url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
     payload = {
         "agent_id": "agent-8a86f0e0-0d78-4646-9c8a-9de5af4ac83b",
@@ -54,6 +59,31 @@ async def get_response_from_letta(example: Example) -> dict:
         
     except httpx.HTTPStatusError as exc:
         raise RuntimeError(f"Erro na chamada para Letta: {exc.response.status_code} - {exc.response.text}") from exc
+
+async def get_response_from_gpt(example: Example) -> dict:
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": env.OPENAI_API_KEY
+    }
+    
+    payload = {
+        "messages": [
+            {
+                "role": "user", 
+                "content": example.input.get("pergunta"),
+            }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 256
+    }
+
+    url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
 
 def final_response(agent_stream: dict) -> dict:
@@ -105,7 +135,7 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
     
     df = pd.DataFrame({
         "query": [input.get("pergunta")], 
-        "model_response": [final_response(output).get("content", "")],
+        "model_response": [output],
     })
     
     if expected:
@@ -159,7 +189,7 @@ async def main():
             # experiment_eval_tool_calling,
             # experiment_eval_search_query_effectiveness
             ],
-        experiment_name="Concurrency Test - Final Response Evaluation - 2",  
+        experiment_name="Letta Responses and GPT-4.1 Eval",  
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=dataset.as_dataframe().head(10).shape[0],
