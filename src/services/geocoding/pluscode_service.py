@@ -48,7 +48,7 @@ async def get_pluscode_equipments(address):
                 eq.ativo,
                 eq.aberto_ao_publico,
                 eq.horario_funcionamento,
-                eq.update_at
+                eq.updated_at
             FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
         WHERE t.plus8 = "{plus8}"
     """
