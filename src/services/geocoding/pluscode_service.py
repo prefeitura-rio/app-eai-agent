@@ -35,6 +35,7 @@ async def get_pluscode_equipments(address):
             eq.plus11,
             t.categoria,
             eq.secretaria_responsavel,
+            CAST(eq.distancia_metros AS INT64) as distancia_metros,
             eq.nome_oficial,
             eq.nome_popular,
             eq.endereco.logradouro,
