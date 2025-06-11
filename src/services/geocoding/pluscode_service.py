@@ -33,12 +33,18 @@ async def get_pluscode_equipments(address):
             eq.plus8,
             eq.plus10,
             eq.plus11,
+            CAST(eq.distancia_metros AS INT64) as distancia_metros,
             t.categoria,
             eq.secretaria_responsavel,
             eq.nome_oficial,
             eq.nome_popular,
-            eq.endereco,
-            eq.bairro,
+            eq.endereco.logradouro,
+            eq.endereco.numero,
+            eq.endereco.complemento,
+            COALESCE(eq.bairro.bairro, eq.endereco.bairro) as bairro,
+            eq.bairro.regiao_planejamento,
+            eq.bairro.regiao_administrativa,
+            eq.bairro.subprefeitura,
             eq.contato,
             eq.ativo,
             eq.aberto_ao_publico,
@@ -46,6 +52,7 @@ async def get_pluscode_equipments(address):
             eq.updated_at
         FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
         WHERE t.plus8 = "{plus8}"
+        ORDER BY eq.secretaria_responsavel, t.categoria, eq.distancia_metros
     """
     data = get_bigquery_result(query=query)
     return data
@@ -62,7 +69,7 @@ async def get_category_equipments():
     categories = []
     for d in data:
         categories.append(d["categoria"])
-
+    categories.sort()
     return categories
 
 
