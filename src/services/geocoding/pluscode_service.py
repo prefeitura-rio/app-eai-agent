@@ -40,7 +40,7 @@ async def get_pluscode_equipments(address):
                 eq.endereco.logradouro,
                 eq.endereco.numero,
                 eq.endereco.complemento,
-                COALESCE(eq.bairro.bairro, eq.endereco.bairro_raw) as bairro,
+                COALESCE(eq.bairro.bairro, eq.endereco.bairro) as bairro,
                 eq.bairro.nome_regiao_planejamento,
                 eq.bairro.nome_regiao_administrativa,
                 eq.bairro.subprefeitura,
