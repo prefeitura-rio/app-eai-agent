@@ -19,20 +19,19 @@ import phoenix as px
 import nest_asyncio
 nest_asyncio.apply()
 import asyncio
+import google.generativeai as genai
+
 
 from phoenix.evals import llm_classify
 from phoenix.evals.models import OpenAIModel
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
 
+
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
-EVAL_MODEL = OpenAIModel(
-    api_key=env.OPENAI_API_KEY,
-    azure_endpoint=env.OPENAI_URL,
-    api_version="2024-02-15-preview",
-    model="gpt-4.1",
-)
+EVAL_MODEL = GenAIModel(model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY)
+# EVAL_MODEL = OpenAIModel(api_key=env.OPENAI_API_KEY, azure_endpoint=env.OPENAI_URL, api_version="2024-02-15-preview", model="gpt-4.1")
 
 async def get_response_from_letta(example: Example) -> dict:  
     url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
@@ -84,6 +83,20 @@ async def get_response_from_gpt(example: Example) -> dict:
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
+
+
+
+async def get_response_from_gemini(example: Example) -> str:
+    genai.configure(api_key=env.GEMINI_API_KEY)
+
+    model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+    loop = asyncio.get_event_loop()
+
+    def _run_blocking():
+        response = model.generate_content(example.input.get("pergunta"))
+        return response.text
+
+    return await loop.run_in_executor(None, _run_blocking)
 
 
 def final_response(agent_stream: dict) -> dict:
@@ -168,9 +181,8 @@ async def main():
 
     # dataset_name = "Typesense_IA_Dataset-2025-05-29"
     dataset_name = "perguntas_claras"
-
     dataset = phoenix_client.get_dataset(name=dataset_name)
-    # print(dataset.as_dataframe().head(10))
+
     experiment = run_experiment(
         dataset,
         get_response_from_letta,
@@ -189,7 +201,7 @@ async def main():
             # experiment_eval_tool_calling,
             # experiment_eval_search_query_effectiveness
             ],
-        experiment_name="Letta Responses and GPT-4.1 Eval",  
+        experiment_name="Letta Responses",  
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=dataset.as_dataframe().head(10).shape[0],
