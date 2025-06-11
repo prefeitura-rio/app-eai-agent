@@ -52,6 +52,7 @@ async def get_pluscode_equipments(address):
             eq.updated_at
         FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
         WHERE t.plus8 = "{plus8}"
+        ORDER BY eq.secretaria_responsavel, t.categoria, eq.distancia_metros
     """
     data = get_bigquery_result(query=query)
     return data
@@ -68,7 +69,7 @@ async def get_category_equipments():
     categories = []
     for d in data:
         categories.append(d["categoria"])
-
+    categories.sort()
     return categories
 
 
