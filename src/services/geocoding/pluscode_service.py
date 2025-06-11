@@ -29,22 +29,27 @@ def get_bigquery_result(query: str):
 async def get_pluscode_equipments(address):
     plus8 = geocode_address_to_plus8(address=address)
     query = f"""
-        SELECT
-            eq.plus8,
-            eq.plus10,
-            eq.plus11,
-            t.categoria,
-            eq.secretaria_responsavel,
-            eq.nome_oficial,
-            eq.nome_popular,
-            eq.endereco,
-            eq.bairro,
-            eq.contato,
-            eq.ativo,
-            eq.aberto_ao_publico,
-            eq.horario_funcionamento,
-            eq.updated_at
-        FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
+            SELECT
+                eq.plus8,
+                eq.plus10,
+                eq.plus11,
+                t.categoria,
+                eq.secretaria_responsavel,
+                eq.nome_oficial,
+                eq.nome_popular,
+                eq.endereco.logradouro,
+                eq.endereco.numero,
+                eq.endereco.complemento,
+                COALESCE(eq.bairro.bairro, eq.endereco.bairro_raw) as bairro,
+                eq.bairro.nome_regiao_planejamento,
+                eq.bairro.nome_regiao_administrativa,
+                eq.bairro.subprefeitura,
+                eq.contato,
+                eq.ativo,
+                eq.aberto_ao_publico,
+                eq.horario_funcionamento,
+                eq.update_at
+            FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
         WHERE t.plus8 = "{plus8}"
     """
     data = get_bigquery_result(query=query)
