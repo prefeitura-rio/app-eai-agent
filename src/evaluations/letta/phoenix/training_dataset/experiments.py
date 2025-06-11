@@ -184,7 +184,7 @@ async def main():
             # experiment_eval_emergency_handling_compliance,
             # experiment_eval_location_policy_compliance,
             # experiment_eval_security_privacy_compliance,
-            # experiment_eval_whatsapp_formatting_compliance,
+            experiment_eval_whatsapp_formatting_compliance,
             experiment_eval_search_result_coverage,
             # experiment_eval_tool_calling,
             # experiment_eval_search_query_effectiveness

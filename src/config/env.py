@@ -9,6 +9,7 @@ EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN")
 LLM_MODEL = getenv_or_action("LLM_MODEL")
 EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL")
 GEMINI_API_KEY = getenv_or_action("GEMINI_API_KEY")
+GEMINI_EVAL_MODEL = getenv_or_action("GEMINI_EVAL_MODEL", default="gemini-2.5-pro-preview-06-05")
 
 TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL")
 TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY")
@@ -31,3 +32,6 @@ GOOGLE_BIGQUERY_PAGE_SIZE = int(
     getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100")
 )
 NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
+
+OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY")
+OPENAI_URL = getenv_or_action("OPENAI_URL")
