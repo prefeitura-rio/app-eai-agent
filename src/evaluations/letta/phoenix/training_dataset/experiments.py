@@ -148,7 +148,7 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
     
     df = pd.DataFrame({
         "query": [input.get("pergunta")], 
-        "model_response": [output],
+        "model_response": [final_response(output).get("content", "")],
     })
     
     if expected:
