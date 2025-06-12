@@ -28,6 +28,8 @@ dependencies = [
     "google-cloud-bigquery-storage>=2.32.0",
     "google-auth>=2.40.1",
     "python-dotenv>=1.1.0",
+    "typesense>=1.1.1",
+    "google-generativeai>=0.8.5",
 ]
 
 [tool.taskipy.tasks]
