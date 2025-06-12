@@ -314,3 +314,35 @@ Please analyze the data carefully and then provide:
 explanation: List the main entities from the query, verify their presence or absence in the response, and explain your reasoning step by step.
 label: "entities_present" or "entities_missing"
 """
+
+GOOD_RESPONSE_STANDARDS_LLM_JUDGE_PROMPT = """
+In this task, you will be presented with a user's query and a model's response. Your objective is to evaluate if the model's response meets specific standards for a helpful answer, particularly in the context of providing information about City Hall services.
+
+The response is considered to meet the standards if it fulfills BOTH of the following criteria:
+1.  **Relevant URL:** The response includes a URL that directs the user to an official City Hall service page or resource that is most likely to help with their query.
+2.  **Step List for Service Request:** The response provides a clear, step-by-step list outlining the necessary information or actions required to request or utilize the most likely relevant City Hall service mentioned or linked.
+
+The 'label' field in your JSON output should be a single word: either "meets_standards" or "lacks_standards."
+- "meets_standards" indicates that the model's response includes BOTH a relevant City Hall service URL AND a clear step-by-step list for the service.
+- "lacks_standards" indicates that the model's response is missing one or both of these elements (either the relevant URL is absent/irrelevant, or the step-by-step list is absent/insufficient/unclear, or both are missing).
+
+Please carefully analyze the user's query to understand their need and then scrutinize the model's response for these two specific components.
+
+After analyzing, you must write a detailed explanation in the 'explanation' field of your JSON output. This explanation should justify your chosen label by detailing:
+1.  **URL Presence and Relevance:**
+    *   State whether a URL to a City Hall service was provided.
+    *   If provided, assess its relevance to the user's query. Is it the most appropriate service?
+2.  **Step List Presence and Adequacy:**
+    *   State whether a step-by-step list for requesting the service was provided.
+    *   If provided, assess its clarity and completeness. Does it outline the necessary information or actions?
+3.  **Overall Judgment:** Conclude whether both standards were met. If "lacks_standards," specify which standard(s) were not met and why.
+
+[BEGIN DATA]
+User Query: {query}
+Model Response: {model_response}
+[END DATA]
+Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+
+explanation: Assess the response against two standards: 1. Presence and relevance of a City Hall service URL. 2. Presence and adequacy of a step-by-step list for requesting that service. Conclude if both standards are met.
+label: "meets_standards" or "lacks_standards"
+"""
