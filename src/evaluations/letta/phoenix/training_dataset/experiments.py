@@ -19,22 +19,24 @@ import phoenix as px
 import nest_asyncio
 nest_asyncio.apply()
 import asyncio
-import google.generativeai as genai
-
+from src.services.llm.gemini_service import GeminiService
 
 from phoenix.evals import llm_classify
 from phoenix.evals.models import OpenAIModel
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
+import pprint
 
 
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
-EVAL_MODEL = GenAIModel(model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY)
+GEMINI_COMPLETO = GeminiService()
+
+EVAL_MODEL = GenAIModel(model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, temperature=0, max_tokens=100000)
 # EVAL_MODEL = OpenAIModel(api_key=env.OPENAI_API_KEY, azure_endpoint=env.OPENAI_URL, api_version="2024-02-15-preview", model="gpt-4.1")
 
 async def get_response_from_letta(example: Example) -> dict:  
-    url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
+    url = f"{env.EAI_AGENT_URL}letta/test-message-raw"
     payload = {
         "agent_id": "agent-8a86f0e0-0d78-4646-9c8a-9de5af4ac83b",
         "message": example.input.get("pergunta"),
@@ -51,7 +53,7 @@ async def get_response_from_letta(example: Example) -> dict:
             response = client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
-
+            
             if not data:
                 raise RuntimeError("Resposta vazia do agente.")
             return data
@@ -72,7 +74,7 @@ async def get_response_from_gpt(example: Example) -> dict:
                 "content": example.input.get("pergunta"),
             }
         ],
-        "temperature": 0.7,
+        "temperature": 0.8,
         "max_tokens": 256
     }
 
@@ -87,16 +89,23 @@ async def get_response_from_gpt(example: Example) -> dict:
 
 
 async def get_response_from_gemini(example: Example) -> str:
-    genai.configure(api_key=env.GEMINI_API_KEY)
+    # genai.configure(api_key=env.GEMINI_API_KEY)
 
-    model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
-    loop = asyncio.get_event_loop()
 
-    def _run_blocking():
-        response = model.generate_content(example.input.get("pergunta"))
-        return response.text
+    # model = genai.GenerativeModel("models/gemini-2.5-pro-preview-06-05")
+    # loop = asyncio.get_event_loop()
 
-    return await loop.run_in_executor(None, _run_blocking)
+    # def _run_blocking():
+    #     response = model.generate_content(example.input.get("pergunta"))
+    #     return response.text
+
+    response = await GEMINI_COMPLETO.generate_content(
+            str(example.input.get("pergunta")),
+            model="gemini-2.5-pro-preview-06-05",
+            use_google_search=True,
+            response_format="text_only",
+        )
+    return response.get("texto")
 
 
 def final_response(agent_stream: dict) -> dict:
@@ -149,6 +158,7 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
     df = pd.DataFrame({
         "query": [input.get("pergunta")], 
         "model_response": [final_response(output).get("content", "")],
+        # "model_response": [output], # Gemini e GPT
     })
     
     if expected:
@@ -173,6 +183,14 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
     eval = response.get('label') == rails[0]
     explanation = response.get("explanation")
 
+    # print(f"Query: {input.get('pergunta')}")
+    # print(f"Model Response: {response}")
+    # print(f"Label: {response.get('label')}")
+    # pd.set_option('display.max_colwidth', None)
+    # # print the explanation, no matter the length
+    # print(f"Explanation: {explanation}")
+    # print("---"*20)
+
     return (eval, explanation)
     
 
@@ -180,7 +198,7 @@ async def main():
     print("Iniciando a execução do script...")
 
     # dataset_name = "Typesense_IA_Dataset-2025-05-29"
-    dataset_name = "perguntas_claras"
+    dataset_name = "GPT_Dataset-2025-06-12"
     dataset = phoenix_client.get_dataset(name=dataset_name)
 
     experiment = run_experiment(
@@ -199,12 +217,13 @@ async def main():
             experiment_eval_whatsapp_formatting_compliance,
             experiment_eval_search_result_coverage,
             # experiment_eval_tool_calling,
-            # experiment_eval_search_query_effectiveness
+            # experiment_eval_search_query_effectiveness,
+            experiment_eval_good_response_standards,
             ],
-        experiment_name="Letta Responses",  
+        experiment_name="Letta - Prompts fixed", 
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
-        concurrency=dataset.as_dataframe().head(10).shape[0],
+        concurrency=dataset.as_dataframe().shape[0],
     )
     
 if __name__ == "__main__":
