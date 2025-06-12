@@ -188,7 +188,7 @@ async def experiment_eval_groundedness(input, output, expected) -> tuple | bool:
         output,
         extra_kwargs={
             "core_memory": empty_agent_core_memory(),
-            "search_tool_results": tool_returns(output),
+            "search_tool_results": "Resposta GPT",#tool_returns(output),
         },
     )
 
@@ -203,7 +203,7 @@ async def experiment_eval_search_result_coverage(input, output, expected) -> tup
         input,
         output,
         extra_kwargs={
-            "search_tool_results": tool_returns(output),
+            "search_tool_results": "Resposta GPT",#tool_returns(output),
         },
     )
 

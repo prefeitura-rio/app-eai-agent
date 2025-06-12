@@ -17,7 +17,6 @@ import pandas as pd
 import httpx
 import phoenix as px
 import nest_asyncio
-nest_asyncio.apply()
 import asyncio
 from src.services.llm.gemini_service import GeminiService
 
@@ -157,8 +156,8 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
     
     df = pd.DataFrame({
         "query": [input.get("pergunta")], 
-        "model_response": [final_response(output).get("content", "")],
-        # "model_response": [output], # Gemini e GPT
+        # "model_response": [final_response(output).get("content", "")],
+        "model_response": [output], # Gemini e GPT
     })
     
     if expected:
@@ -203,7 +202,8 @@ async def main():
 
     experiment = run_experiment(
         dataset,
-        get_response_from_letta,
+        # get_response_from_letta,
+        get_response_from_gpt,
         evaluators=[
             experiment_eval_answer_completeness,
             # experiment_eval_gold_standard_similarity,
@@ -220,11 +220,15 @@ async def main():
             # experiment_eval_search_query_effectiveness,
             experiment_eval_good_response_standards,
             ],
-        experiment_name="Letta - Prompts fixed", 
+        experiment_name="GPT - Prompts fixed", 
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=dataset.as_dataframe().shape[0],
     )
     
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    nest_asyncio.apply()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
