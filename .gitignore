@@ -30,3 +30,6 @@ wheels/
 logs/
 
 scripts/*
+
+datasets/*
+datasets
