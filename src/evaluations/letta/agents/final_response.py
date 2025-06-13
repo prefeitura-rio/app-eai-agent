@@ -316,13 +316,13 @@ label: "entities_present" or "entities_missing"
 """
 
 GOOD_RESPONSE_STANDARDS_LLM_JUDGE_PROMPT = """
-In this task, you will be presented with a user's query and a model's response. Your objective is to evaluate if the model's response meets specific standards for a helpful answer, particularly in the context of providing information about City Hall services.
+You will evaluate whether a model's response to a user's query meets two specific standards for a high-quality answer in the context of City Hall services.
 
-The response is considered to meet the standards if it fulfills BOTH of the following criteria:
-1.  **Relevant URL:** The response includes a URL that directs the user to an official City Hall service page or resource that is most likely to help with their query.
-2.  **Step List for Service Request:** The response provides a clear, step-by-step list outlining the necessary information or actions required to request or utilize the most likely relevant City Hall service mentioned or linked.
+The response is considered to meet the standards only if it satisfies BOTH of the following criteria:
+1.  **Relevant Official URL:** The response includes a valid URL that points directly to an official City Hall service or resource page that addresses the user's query.
+2.  **Step-by-Step Instructions:** The response provides a clear and complete step-by-step list describing how the user can request or use the service mentioned or linked.
 
-The 'label' field in your JSON output should be a single word: either "meets_standards" or "lacks_standards."
+The 'label' field in your output should be a single word: either "meets_standards" or "lacks_standards", with no other text.
 - "meets_standards" indicates that the model's response includes BOTH a relevant City Hall service URL AND a clear step-by-step list for the service.
 - "lacks_standards" indicates that the model's response is missing one or both of these elements (either the relevant URL is absent/irrelevant, or the step-by-step list is absent/insufficient/unclear, or both are missing).
 
@@ -336,6 +336,10 @@ After analyzing, you must write a detailed explanation in the 'explanation' fiel
     *   State whether a step-by-step list for requesting the service was provided.
     *   If provided, assess its clarity and completeness. Does it outline the necessary information or actions?
 3.  **Overall Judgment:** Conclude whether both standards were met. If "lacks_standards," specify which standard(s) were not met and why.
+
+Notes:
+- If either the URL or the step list is missing, incorrect, or unclear, the label must be "lacks_standards".
+- Do not consider general helpfulness or tone; focus only on the two defined standards.
 
 [BEGIN DATA]
 User Query: {query}
