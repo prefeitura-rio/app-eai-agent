@@ -31,8 +31,8 @@ phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 GEMINI_COMPLETO = GeminiService()
 
-EVAL_MODEL = GenAIModel(model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, temperature=0, max_tokens=100000)
-# EVAL_MODEL = OpenAIModel(api_key=env.OPENAI_API_KEY, azure_endpoint=env.OPENAI_URL, api_version="2024-02-15-preview", model="gpt-4.1")
+# EVAL_MODEL = GenAIModel(model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY) #, temperature=0, max_tokens=100000)
+EVAL_MODEL = OpenAIModel(api_key=env.OPENAI_API_KEY, azure_endpoint=env.OPENAI_URL, api_version="2024-02-15-preview", model="gpt-4.1")
 
 async def get_response_from_letta(example: Example) -> dict:  
     url = f"{env.EAI_AGENT_URL}letta/test-message-raw"
@@ -74,12 +74,12 @@ async def get_response_from_gpt(example: Example) -> dict:
             }
         ],
         "temperature": 0.8,
-        "max_tokens": 256
+        "max_tokens": 10000
     }
 
     url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
@@ -100,7 +100,7 @@ async def get_response_from_gemini(example: Example) -> str:
 
     response = await GEMINI_COMPLETO.generate_content(
             str(example.input.get("pergunta")),
-            model="gemini-2.5-pro-preview-06-05",
+            model="gemini-2.5-pro-preview-06-05",  #"gemini-2.5-flash-preview-05-20",
             use_google_search=True,
             response_format="text_only",
         )
@@ -149,15 +149,17 @@ def empty_agent_core_memory():
 
     return "\n".join(core_memory)
 
-
 async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs) -> tuple| bool:
     if not output:
         return False
     
+####################
+######### ALTERAR ESSA LINHA ANTES DE RODAR O EXPERIMENTO
+####################
     df = pd.DataFrame({
         "query": [input.get("pergunta")], 
-        # "model_response": [final_response(output).get("content", "")],
-        "model_response": [output], # Gemini e GPT
+        "model_response": [final_response(output).get("content", "")], # Letta
+        # "model_response": [str(output)], # Gemini e GPT
     })
     
     if expected:
@@ -171,24 +173,42 @@ async def experiment_eval(input, output, prompt, rails, expected=None, **kwargs)
         else:
             df[k] = [val]
 
+    # print(f"Input query: {input.get('pergunta')}")
+    # print(f"Output response: {output}")
+
     response = llm_classify(
         data=df,
         template=prompt,
         rails=rails,
         model=EVAL_MODEL,
-        provide_explanation=True
+        provide_explanation=True,
+        run_sync = False,
     )
 
-    eval = response.get('label') == rails[0]
-    explanation = response.get("explanation")
+    label = response.get('label')
+    if hasattr(label, 'iloc'):
+        # If it's a pandas Series, get the first value
+        label = label.iloc[0]
+        eval = bool(label == rails[0])
+    else:
+        # If it's a scalar value
+        eval = bool(label == rails[0])
+    
+    explanation = response.get('explanation')
+    if hasattr(explanation, 'iloc'):
+        # If it's a pandas Series, get the first value
+        explanation = str(explanation.iloc[0])
+    else:
+        # If it's a scalar value
+        explanation = str(explanation)
 
-    # print(f"Query: {input.get('pergunta')}")
-    # print(f"Model Response: {response}")
-    # print(f"Label: {response.get('label')}")
-    # pd.set_option('display.max_colwidth', None)
-    # # print the explanation, no matter the length
-    # print(f"Explanation: {explanation}")
-    # print("---"*20)
+    print(f"Query: {input.get('pergunta')}")
+    print(f"Model Response: {response}")
+    print(f"Label: {label}")
+    pd.set_option('display.max_colwidth', None)
+    # print the explanation, no matter the length
+    print(f"Explanation: {explanation}")
+    print("---"*20)
 
     return (eval, explanation)
     
@@ -202,28 +222,29 @@ async def main():
 
     experiment = run_experiment(
         dataset,
-        # get_response_from_letta,
-        get_response_from_gpt,
+        get_response_from_letta,
+        # get_response_from_gemini,
+        # get_response_from_gpt,
         evaluators=[
             experiment_eval_answer_completeness,
             # experiment_eval_gold_standard_similarity,
             # experiment_eval_clarity,
-            experiment_eval_groundedness,
+            # experiment_eval_groundedness,
             # experiment_eval_entity_presence,
             # experiment_eval_feedback_handling_compliance,
             # experiment_eval_emergency_handling_compliance,
             # experiment_eval_location_policy_compliance,
             # experiment_eval_security_privacy_compliance,
             experiment_eval_whatsapp_formatting_compliance,
-            experiment_eval_search_result_coverage,
+            # experiment_eval_search_result_coverage,
             # experiment_eval_tool_calling,
             # experiment_eval_search_query_effectiveness,
             experiment_eval_good_response_standards,
             ],
-        experiment_name="GPT - Prompts fixed", 
+        experiment_name="Letta - GPT 4.1 Avaliando", 
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
-        concurrency=dataset.as_dataframe().shape[0],
+        concurrency=25,
     )
     
 if __name__ == "__main__":
@@ -232,3 +253,4 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
+    
