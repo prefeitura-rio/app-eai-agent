@@ -10,6 +10,8 @@ from phoenix.evals.utils import printif
 import sys
 import os
 
+import src.config.env as env
+
 # Adicionar o diretório raiz do projeto ao path para permitir importações absolutas
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../')))
 from src.services.llm.gemini_service import gemini_service
@@ -43,9 +45,9 @@ class GenAIModel(BaseModel):
 
     default_concurrency: int = 5
 
-    model: str = "gemini-2.0-flash"
+    model: str = env.GEMINI_EVAL_MODEL
     temperature: float = 0.0
-    max_tokens: int = 1024
+    max_tokens: int = 100000
     top_p: float = 1
     top_k: int = 32
     stop_sequences: List[str] = field(default_factory=list)
