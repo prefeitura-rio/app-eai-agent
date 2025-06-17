@@ -39,8 +39,8 @@ async def google_search_tool(
         )
 
 
-@router.get("/typesense_search", name="Busca Typesense")
-async def typesense_search_tool(
+@router.get("/public_services_grounded_search", name="Busca Serviços Públicos")
+async def public_services_grounded_search_tool(
     query: str = Query(..., description="Texto da consulta"),
 ):
     try:
