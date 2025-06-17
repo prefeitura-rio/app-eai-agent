@@ -5,6 +5,8 @@
  * a maior parte da tela, melhorando a visualização de prompts longos.
  */
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("Inicializando editor-expander");
+    
     const expandButton = document.getElementById('expandButton');
     const closeButton = document.getElementById('closeExpandedEditor');
     const editorOverlay = document.getElementById('editorOverlay');
@@ -18,6 +20,22 @@ document.addEventListener('DOMContentLoaded', function() {
         promptEditor: !!promptEditor
     });
     
+    // Garantir que o promptEditor seja visível
+    if (promptEditor) {
+        console.log("Garantindo que o promptEditor seja visível");
+        promptEditor.style.display = 'block';
+        // Verificar se o editor está visível após estilização
+        setTimeout(() => {
+            const computedStyle = window.getComputedStyle(promptEditor);
+            console.log("Estado do promptEditor:", {
+                display: computedStyle.display,
+                visibility: computedStyle.visibility,
+                height: computedStyle.height,
+                width: computedStyle.width
+            });
+        }, 500);
+    }
+    
     if (expandButton && closeButton && editorOverlay && promptEditor) {
         // Função para expandir o editor
         expandButton.addEventListener('click', function(e) {
@@ -29,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.add('editor-expanded');
             editorOverlay.classList.add('active');
             
-            // Aplicar estilos de expansão
+            // Aplicar estilos de expansão de forma mais agressiva
             promptEditor.classList.add('expanded');
             promptEditor.style.position = 'fixed';
             promptEditor.style.top = '50%';
@@ -43,27 +61,37 @@ document.addEventListener('DOMContentLoaded', function() {
             promptEditor.style.boxShadow = 'var(--glass-shadow)';
             promptEditor.style.backgroundColor = 'var(--card-bg)';
             promptEditor.style.backdropFilter = 'blur(10px)';
+            promptEditor.style.display = 'block !important';
+            promptEditor.style.visibility = 'visible !important';
             
             // Mostrando o overlay e o botão de fechar
             editorOverlay.style.display = 'block';
             closeButton.style.display = 'flex';
             
-            // Salvar a posição atual do cursor após a expansão
+            // Verificação visual após expansão
             setTimeout(() => {
+                console.log("Estado após expansão:", {
+                    bodyClass: document.body.classList.contains('editor-expanded'),
+                    overlayDisplay: window.getComputedStyle(editorOverlay).display,
+                    editorPosition: window.getComputedStyle(promptEditor).position,
+                    editorZIndex: window.getComputedStyle(promptEditor).zIndex
+                });
+                
+                // Forçar visibilidade novamente se necessário
+                if (window.getComputedStyle(promptEditor).display === 'none') {
+                    console.log("Forçando visibilidade do editor");
+                    promptEditor.style.display = 'block';
+                    promptEditor.style.visibility = 'visible';
+                }
+                
+                // Devolver o foco ao editor
                 promptEditor.focus();
-                const startPos = promptEditor.selectionStart;
-                const endPos = promptEditor.selectionEnd;
-                promptEditor.setSelectionRange(startPos, endPos);
             }, 100);
         });
         
         // Função para fechar o editor expandido
         function closeExpandedEditor() {
             console.log("Fechando editor expandido");
-            
-            // Salvar a posição atual do cursor
-            const startPos = promptEditor.selectionStart;
-            const endPos = promptEditor.selectionEnd;
             
             // Remover estilos de expansão
             document.body.classList.remove('editor-expanded');
@@ -87,10 +115,20 @@ document.addEventListener('DOMContentLoaded', function() {
             editorOverlay.style.display = 'none';
             closeButton.style.display = 'none';
             
-            // Devolver o foco ao editor e restaurar a posição do cursor após contração
+            // Verificação após contração
             setTimeout(() => {
+                console.log("Estado após contração:", {
+                    editorDisplay: window.getComputedStyle(promptEditor).display,
+                    editorVisibility: window.getComputedStyle(promptEditor).visibility
+                });
+                
+                // Garantir que o editor ainda esteja visível
+                if (window.getComputedStyle(promptEditor).display === 'none') {
+                    promptEditor.style.display = 'block';
+                }
+                
+                // Devolver o foco ao editor
                 promptEditor.focus();
-                promptEditor.setSelectionRange(startPos, endPos);
             }, 100);
         }
         
@@ -112,6 +150,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Adicionar efeito de animação ao expandir/contrair
         promptEditor.style.transition = 'all 0.3s ease-in-out';
+        
+        // Verificação adicional após carregamento da página
+        window.addEventListener('load', function() {
+            console.log("Página carregada, verificando estado do editor");
+            const computedStyle = window.getComputedStyle(promptEditor);
+            console.log("Estado final do editor:", {
+                display: computedStyle.display,
+                visibility: computedStyle.visibility
+            });
+            
+            // Garantir que o editor esteja visível
+            if (computedStyle.display === 'none') {
+                promptEditor.style.display = 'block';
+            }
+        });
     } else {
         console.error("Alguns elementos necessários não foram encontrados para o editor-expander");
     }

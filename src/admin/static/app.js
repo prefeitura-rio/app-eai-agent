@@ -76,6 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             console.log('Iniciando carregamento de dados após tipos de agentes carregados');
             loadData();
+            // Garantir que a interface esteja corretamente exibida
+            showPromptInterface();
         }, 100);
     });
     
@@ -88,7 +90,108 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('Elemento historyList não encontrado no DOM');
     }
+    
+    // Verificar se o prompt editor está visível em múltiplos momentos
+    checkPromptDisplay();
+    
+    // Executar um callback após a renderização do DOM
+    requestAnimationFrame(() => {
+        checkPromptDisplay();
+    });
+    
+    // Inicializar interface após carregamento completo
+    window.addEventListener('load', function() {
+        console.log('Evento window.load disparado');
+        checkPromptDisplay();
+        initializeUIState();
+    });
 });
+
+// Nova função de verificação e correção da interface
+function checkPromptDisplay() {
+    if (!promptText) {
+        console.error('Elemento promptText não encontrado');
+        return;
+    }
+    
+    const computedStyle = window.getComputedStyle(promptText);
+    console.log('Estado atual do promptText:', {
+        display: computedStyle.display,
+        visibility: computedStyle.visibility,
+        height: computedStyle.height,
+        opacity: computedStyle.opacity
+    });
+    
+    // Corrigir se estiver oculto
+    if (computedStyle.display === 'none') {
+        console.log('Corrigindo display do promptText');
+        promptText.style.display = 'block';
+    }
+    
+    if (computedStyle.visibility === 'hidden') {
+        console.log('Corrigindo visibility do promptText');
+        promptText.style.visibility = 'visible';
+    }
+    
+    // Verificar contentArea
+    if (contentArea) {
+        console.log('Estado do contentArea:', contentArea.classList.contains('d-none') ? 'oculto' : 'visível');
+    }
+    
+    // Verificar prompt-section
+    const promptSection = document.querySelector('.prompt-section');
+    if (promptSection) {
+        const promptSectionStyle = window.getComputedStyle(promptSection);
+        console.log('Estado da prompt-section:', {
+            display: promptSectionStyle.display,
+            visibility: promptSectionStyle.visibility
+        });
+        
+        if (promptSectionStyle.display === 'none') {
+            console.log('Corrigindo display da prompt-section');
+            promptSection.style.display = 'block';
+        }
+    } else {
+        console.error('Elemento prompt-section não encontrado');
+    }
+}
+
+// Função para mostrar a interface do prompt explicitamente
+function showPromptInterface() {
+    console.log('Executando showPromptInterface');
+    
+    // Mostrar contentArea
+    if (contentArea && contentArea.classList.contains('d-none')) {
+        console.log('Removendo classe d-none do contentArea');
+        contentArea.classList.remove('d-none');
+    }
+    
+    // Garantir que a seção do prompt esteja visível
+    const promptSection = document.querySelector('.prompt-section');
+    if (promptSection) {
+        console.log('Garantindo visibilidade da prompt-section');
+        promptSection.style.display = 'block';
+        promptSection.style.visibility = 'visible';
+    }
+    
+    // Garantir que o editor esteja visível
+    if (promptText) {
+        console.log('Garantindo visibilidade do promptText');
+        promptText.style.display = 'block';
+        promptText.style.visibility = 'visible';
+        promptText.style.opacity = '1';
+    }
+}
+
+// Função para inicializar o estado da UI
+function initializeUIState() {
+    console.log('Inicializando estado da UI');
+    
+    // Se o contentArea estiver visível, garantir que todos seus elementos estejam visíveis
+    if (contentArea && !contentArea.classList.contains('d-none')) {
+        showPromptInterface();
+    }
+}
 
 // Funções de tema
 function initTheme() {
@@ -131,6 +234,9 @@ function showLoading() {
 function hideLoading() {
     loadingIndicator.classList.add('d-none');
     contentArea.classList.remove('d-none');
+    
+    // Garantir que prompt seja visível após carregar dados
+    setTimeout(showPromptInterface, 100);
 }
 
 function showAlert(message, type = 'success') {
