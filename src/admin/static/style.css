@@ -144,7 +144,8 @@ body {
 
 .prompt-editor {
     width: 100%;
-    min-height: 350px;
+    min-height: 500px;
+    height: calc(70vh - 200px);
     padding: 15px;
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -160,6 +161,7 @@ body {
     display: block !important;
     position: relative;
     z-index: 1;
+    box-shadow: var(--glass-shadow);
 }
 
 .prompt-editor:focus {
@@ -316,61 +318,122 @@ input:checked + .slider:before {
     .nav-title {
         margin-bottom: 10px;
     }
+    
+    .prompt-editor {
+        min-height: 350px;
+        height: calc(60vh - 150px);
+    }
 }
 
-/* Suporte para editor expandido */
-.editor-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+@media (max-width: 576px) {
+    .admin-container {
+        padding: 0;
+        margin: 10px;
+    }
+    
+    .navbar {
+        padding: 12px 15px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .nav-title {
+        margin-bottom: 10px;
+    }
+    
+    .prompt-editor {
+        min-height: 250px;
+        height: calc(50vh - 100px);
+        font-size: 12px;
+    }
+    
+    .theme-switch-wrapper {
+        margin-bottom: 10px;
+    }
+}
+
+/* Estilo para campos obrigatórios */
+.form-label .text-danger {
+    font-weight: bold;
+}
+
+/* Estilo para campos desabilitados */
+input:disabled {
+    background-color: rgba(245, 245, 245, 0.2) !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Estilo para o modal de confirmação */
+.modal-content {
+    background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    box-shadow: var(--glass-shadow);
+    border-radius: 15px;
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+}
+
+/* Adicionando uma classe específica para o editor no modo escuro */
+[data-theme="dark"] .prompt-editor {
+    color: #f8f9fa;
+    background-color: rgba(35, 35, 35, 0.5);
+    border-color: rgba(90, 90, 90, 0.7);
+}
+
+[data-theme="dark"] .prompt-editor:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+}
+
+/* Corrigindo campos de autor e motivo no modo escuro */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] #author,
+[data-theme="dark"] #reason {
+    color: #f8f9fa;
+    background-color: rgba(35, 35, 35, 0.5);
+    border-color: rgba(90, 90, 90, 0.7);
+}
+
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] #author:focus,
+[data-theme="dark"] #reason:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+}
+
+/* Classe para painéis selecionados */
+.glass-card:focus-within {
+    box-shadow: 0 10px 45px rgba(0, 123, 255, 0.15);
+    border-color: var(--primary-color);
+}
+
+/* Estilo para a seleção do tipo de agente */
+#agentType {
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 1000;
-}
-
-.editor-overlay.active {
-    display: block !important;
-}
-
-textarea.prompt-editor.expanded {
-    background-color: var(--card-bg) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border-radius: 15px !important;
-    border: 1px solid var(--border-color) !important;
-    z-index: 1001 !important;
-    box-shadow: var(--glass-shadow) !important;
-    min-height: 80vh !important;
-}
-
-.close-expanded-editor {
-    display: none;
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1002;
-    background-color: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: #fff;
-    font-size: 24px;
-    cursor: pointer;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    padding: 10px;
     transition: all 0.3s ease;
 }
 
-.close-expanded-editor:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    transform: rotate(90deg);
+#agentType:focus {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+    border-color: var(--primary-color);
 }
 
 /* Estilo para o email de suporte */
@@ -501,103 +564,4 @@ textarea.prompt-editor.expanded {
     .theme-switch-wrapper {
         margin-bottom: 10px;
     }
-}
-
-/* Garantir que o corpo da página não tenha scroll enquanto o editor estiver expandido */
-body.editor-expanded {
-    overflow: hidden !important;
-    position: relative;
-}
-
-/* Estilo para campos obrigatórios */
-.form-label .text-danger {
-    font-weight: bold;
-}
-
-/* Estilo para campos desabilitados */
-input:disabled {
-    background-color: rgba(245, 245, 245, 0.2) !important;
-    cursor: not-allowed;
-    opacity: 0.8;
-}
-
-/* Estilo para o modal de confirmação */
-.modal-content {
-    background-color: var(--card-bg);
-    backdrop-filter: blur(10px);
-    border-color: var(--border-color);
-    color: var(--text-color);
-    box-shadow: var(--glass-shadow);
-    border-radius: 15px;
-}
-
-.modal-header, .modal-footer {
-    border-color: var(--border-color);
-}
-
-.invalid-feedback {
-    color: #dc3545;
-    font-size: 0.875rem;
-    display: block;
-}
-
-/* Adicionando uma classe específica para o editor no modo escuro */
-[data-theme="dark"] .prompt-editor {
-    color: #f8f9fa;
-    background-color: rgba(35, 35, 35, 0.5);
-    border-color: rgba(90, 90, 90, 0.7);
-}
-
-[data-theme="dark"] .prompt-editor:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
-}
-
-/* Corrigindo campos de autor e motivo no modo escuro */
-[data-theme="dark"] input[type="text"],
-[data-theme="dark"] input[type="password"],
-[data-theme="dark"] #author,
-[data-theme="dark"] #reason {
-    color: #f8f9fa;
-    background-color: rgba(35, 35, 35, 0.5);
-    border-color: rgba(90, 90, 90, 0.7);
-}
-
-[data-theme="dark"] input[type="text"]:focus,
-[data-theme="dark"] input[type="password"]:focus,
-[data-theme="dark"] #author:focus,
-[data-theme="dark"] #reason:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
-}
-
-/* Classe para painéis selecionados */
-.glass-card:focus-within {
-    box-shadow: 0 10px 45px rgba(0, 123, 255, 0.15);
-    border-color: var(--primary-color);
-}
-
-/* Estilo para a seleção do tipo de agente */
-#agentType {
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    backdrop-filter: blur(5px);
-    padding: 10px;
-    transition: all 0.3s ease;
-}
-
-#agentType:focus {
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
-    border-color: var(--primary-color);
-}
-
-/* Regras para garantir visibilidade dos elementos quando o editor estiver expandido */
-body.editor-expanded .close-expanded-editor {
-    display: flex !important;
-}
-
-body.editor-expanded .editor-overlay.active {
-    display: block !important;
 } 
