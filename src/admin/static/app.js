@@ -682,4 +682,38 @@ function apiRequest(method, url, data = null) {
             
             return response.json();
         });
-} 
+}
+
+// Função para garantir que a interface do prompt seja exibida corretamente
+function checkPromptInterface() {
+    const contentArea = document.getElementById('contentArea');
+    const promptSection = document.querySelector('.prompt-section');
+    
+    if (contentArea && promptSection) {
+        console.log("Verificando interface do prompt");
+        if (contentArea.classList.contains('d-none')) {
+            console.log("contentArea está oculto, pode ser a causa do problema");
+        }
+        
+        // Verificar visibilidade da seção
+        const promptSectionStyle = window.getComputedStyle(promptSection);
+        if (promptSectionStyle.display === 'none' || promptSectionStyle.visibility === 'hidden') {
+            console.log("prompt-section está oculto, tentando corrigir");
+            promptSection.style.display = 'block';
+            promptSection.style.visibility = 'visible';
+        }
+    } else {
+        console.error("Elementos da interface não encontrados");
+    }
+}
+
+// Verificar a interface quando os tipos de agentes forem carregados
+document.addEventListener('agentTypesReady', function() {
+    // Aguardar um momento para garantir que a interface seja carregada
+    setTimeout(checkPromptInterface, 1000);
+});
+
+// Verificar novamente quando a página for totalmente carregada
+window.addEventListener('load', function() {
+    setTimeout(checkPromptInterface, 1500);
+}); 

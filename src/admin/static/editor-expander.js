@@ -10,41 +10,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const editorOverlay = document.getElementById('editorOverlay');
     const promptEditor = document.getElementById('promptText');
     
+    // Debug para verificar se encontrou os elementos
+    console.log("Elementos encontrados:", {
+        expandButton: !!expandButton,
+        closeButton: !!closeButton,
+        editorOverlay: !!editorOverlay,
+        promptEditor: !!promptEditor
+    });
+    
     if (expandButton && closeButton && editorOverlay && promptEditor) {
         // Função para expandir o editor
-        expandButton.addEventListener('click', function() {
+        expandButton.addEventListener('click', function(e) {
+            console.log("Botão expandir clicado");
+            e.preventDefault();
+            e.stopPropagation();
+            
             // Adicionar classes necessárias
             document.body.classList.add('editor-expanded');
             editorOverlay.classList.add('active');
-            promptEditor.classList.add('expanded');
-            
-            // Salvar a posição atual do cursor
-            const startPos = promptEditor.selectionStart;
-            const endPos = promptEditor.selectionEnd;
             
             // Aplicar estilos de expansão
+            promptEditor.classList.add('expanded');
             promptEditor.style.position = 'fixed';
             promptEditor.style.top = '50%';
             promptEditor.style.left = '50%';
             promptEditor.style.transform = 'translate(-50%, -50%)';
-            promptEditor.style.width = '80%';
-            promptEditor.style.height = '70%';
+            promptEditor.style.width = '90%';
+            promptEditor.style.height = '80%';
             promptEditor.style.zIndex = '1001';
             promptEditor.style.fontSize = '16px';
             promptEditor.style.padding = '20px';
-            promptEditor.style.boxShadow = '0 0 30px rgba(0, 0, 0, 0.3)';
+            promptEditor.style.boxShadow = 'var(--glass-shadow)';
+            promptEditor.style.backgroundColor = 'var(--card-bg)';
+            promptEditor.style.backdropFilter = 'blur(10px)';
             
             // Mostrando o overlay e o botão de fechar
             editorOverlay.style.display = 'block';
             closeButton.style.display = 'flex';
             
-            // Devolver o foco ao editor e restaurar a posição do cursor
-            promptEditor.focus();
-            promptEditor.setSelectionRange(startPos, endPos);
+            // Salvar a posição atual do cursor após a expansão
+            setTimeout(() => {
+                promptEditor.focus();
+                const startPos = promptEditor.selectionStart;
+                const endPos = promptEditor.selectionEnd;
+                promptEditor.setSelectionRange(startPos, endPos);
+            }, 100);
         });
         
         // Função para fechar o editor expandido
         function closeExpandedEditor() {
+            console.log("Fechando editor expandido");
+            
             // Salvar a posição atual do cursor
             const startPos = promptEditor.selectionStart;
             const endPos = promptEditor.selectionEnd;
@@ -64,18 +80,27 @@ document.addEventListener('DOMContentLoaded', function() {
             promptEditor.style.fontSize = '';
             promptEditor.style.padding = '';
             promptEditor.style.boxShadow = '';
+            promptEditor.style.backgroundColor = '';
+            promptEditor.style.backdropFilter = '';
             
             // Ocultando o overlay e o botão de fechar
-            editorOverlay.style.display = '';
-            closeButton.style.display = '';
+            editorOverlay.style.display = 'none';
+            closeButton.style.display = 'none';
             
-            // Devolver o foco ao editor e restaurar a posição do cursor
-            promptEditor.focus();
-            promptEditor.setSelectionRange(startPos, endPos);
+            // Devolver o foco ao editor e restaurar a posição do cursor após contração
+            setTimeout(() => {
+                promptEditor.focus();
+                promptEditor.setSelectionRange(startPos, endPos);
+            }, 100);
         }
         
         // Atribuir manipuladores de eventos para fechar o editor
-        closeButton.addEventListener('click', closeExpandedEditor);
+        closeButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeExpandedEditor();
+        });
+        
         editorOverlay.addEventListener('click', closeExpandedEditor);
         
         // Fechar com a tecla ESC
@@ -87,5 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Adicionar efeito de animação ao expandir/contrair
         promptEditor.style.transition = 'all 0.3s ease-in-out';
+    } else {
+        console.error("Alguns elementos necessários não foram encontrados para o editor-expander");
     }
 }); 
