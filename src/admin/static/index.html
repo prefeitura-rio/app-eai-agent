@@ -73,7 +73,7 @@
             
             <div id="alertArea"></div>
             
-            <div class="mb-4">
+            <div class="mb-4 px-4 pt-3">
                 <label for="agentType" class="form-label">Tipo de Agente</label>
                 <select id="agentType" class="form-select">
                     <option value="">Carregando...</option>
@@ -86,52 +86,61 @@
                 </div>
             </div>
             
-            <div id="contentArea" class="flex-container d-none">
-                <div class="prompt-container">
-                    <h4><i class="bi bi-pencil-square me-2"></i>Editor de System Prompt</h4>
-                    <div class="mb-3 mt-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label for="promptText" class="form-label mb-0">Conteúdo do Prompt</label>
-                            <div>
-                                <button id="expandButton" class="btn btn-sm btn-outline-secondary me-2" title="Expandir editor">
-                                    <i class="bi bi-arrows-fullscreen"></i>
-                                </button>
-                                <button id="copyButton" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-clipboard me-1"></i>Copiar
-                                </button>
+            <div id="contentArea" class="content-layout d-none">
+                <div class="prompt-section">
+                    <div class="card glass-card prompt-card">
+                        <div class="card-body">
+                            <h4 class="section-title"><i class="bi bi-pencil-square me-2"></i>Editor de System Prompt</h4>
+                            
+                            <div class="mb-3 mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="promptText" class="form-label mb-0">Conteúdo do Prompt</label>
+                                    <div>
+                                        <button id="expandButton" class="btn btn-sm btn-glass me-2" title="Expandir editor">
+                                            <i class="bi bi-arrows-fullscreen"></i>
+                                        </button>
+                                        <button id="copyButton" class="btn btn-sm btn-glass">
+                                            <i class="bi bi-clipboard me-1"></i>Copiar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="position-relative">
+                                    <textarea id="promptText" class="prompt-editor" required></textarea>
+                                </div>
                             </div>
-                        </div>
-                        <div class="position-relative">
-                            <textarea id="promptText" class="prompt-editor" required></textarea>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="author" class="form-label"><i class="bi bi-person me-1"></i>Autor</label>
+                                    <input type="text" class="form-control glass-input" id="author">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="reason" class="form-label"><i class="bi bi-info-circle me-1"></i>Motivo da Atualização</label>
+                                    <input type="text" class="form-control glass-input" id="reason">
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="updateAgents" checked>
+                                <label class="form-check-label" for="updateAgents">
+                                    Atualizar agentes existentes
+                                </label>
+                            </div>
+                            
+                            <button id="saveButton" class="btn btn-primary btn-glass">
+                                <i class="bi bi-save me-1"></i>Salvar Alterações
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="author" class="form-label"><i class="bi bi-person me-1"></i>Autor</label>
-                            <input type="text" class="form-control" id="author">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="reason" class="form-label"><i class="bi bi-info-circle me-1"></i>Motivo da Atualização</label>
-                            <input type="text" class="form-control" id="reason">
-                        </div>
-                    </div>
-                    
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="updateAgents" checked>
-                        <label class="form-check-label" for="updateAgents">
-                            Atualizar agentes existentes
-                        </label>
-                    </div>
-                    
-                    <button id="saveButton" class="btn btn-primary">
-                        <i class="bi bi-save me-1"></i>Salvar Alterações
-                    </button>
                 </div>
                 
-                <div class="history-container">
-                    <h4><i class="bi bi-clock-history me-2"></i>Histórico de Prompts</h4>
-                    <div id="historyList" class="list-group mt-3"></div>
+                <div class="history-section mt-4">
+                    <div class="card glass-card">
+                        <div class="card-body">
+                            <h4 class="section-title"><i class="bi bi-clock-history me-2"></i>Histórico de Prompts</h4>
+                            <div id="historyList" class="list-group mt-3"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             

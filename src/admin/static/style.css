@@ -5,6 +5,7 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
     min-height: 100vh;
     background-attachment: fixed;
+    background-image: var(--bg-gradient);
 }
 
 :root {
@@ -12,17 +13,19 @@ body {
     --secondary-color: #42a5f5;
     --accent-color: #0091ea;
     --background-color: #f8f9fa;
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     --text-color: #333;
-    --border-color: #e0e0e0;
-    --active-item-bg: #e3f2fd;
-    --hover-item-bg: #f5f5f5;
-    --alert-success-bg: #d4edda;
-    --alert-danger-bg: #f8d7da;
-    --alert-info-bg: #d1ecf1;
-    --alert-warning-bg: #fff3cd;
-    --card-bg: #fff;
-    --navbar-bg: #1976d2;
+    --border-color: rgba(224, 224, 224, 0.5);
+    --active-item-bg: rgba(227, 242, 253, 0.7);
+    --hover-item-bg: rgba(245, 245, 245, 0.6);
+    --alert-success-bg: rgba(212, 237, 218, 0.7);
+    --alert-danger-bg: rgba(248, 215, 218, 0.7);
+    --alert-info-bg: rgba(209, 236, 241, 0.7);
+    --alert-warning-bg: rgba(255, 243, 205, 0.7);
+    --card-bg: rgba(255, 255, 255, 0.7);
+    --navbar-bg: rgba(25, 118, 210, 0.9);
     --navbar-text: #fff;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
 }
 
 [data-theme="dark"] {
@@ -30,94 +33,152 @@ body {
     --secondary-color: #2196f3;
     --accent-color: #0288d1;
     --background-color: #121212;
+    --bg-gradient: linear-gradient(135deg, #1f1f1f 0%, #0a0a0a 100%);
     --text-color: #e0e0e0;
-    --border-color: #424242;
-    --active-item-bg: #1e3a5f;
-    --hover-item-bg: #2c2c2c;
-    --alert-success-bg: #1b4332;
-    --alert-danger-bg: #5c1a1b;
-    --alert-info-bg: #1a3c5c;
-    --alert-warning-bg: #5c4b1a;
-    --card-bg: #1e1e1e;
-    --navbar-bg: #0d47a1;
+    --border-color: rgba(66, 66, 66, 0.5);
+    --active-item-bg: rgba(30, 58, 95, 0.7);
+    --hover-item-bg: rgba(44, 44, 44, 0.6);
+    --alert-success-bg: rgba(27, 67, 50, 0.7);
+    --alert-danger-bg: rgba(92, 26, 27, 0.7);
+    --alert-info-bg: rgba(26, 60, 92, 0.7);
+    --alert-warning-bg: rgba(92, 75, 26, 0.7);
+    --card-bg: rgba(30, 30, 30, 0.7);
+    --navbar-bg: rgba(13, 71, 161, 0.9);
     --navbar-text: #e0e0e0;
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Componentes com efeito de vidro */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--glass-shadow);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+}
+
+.glass-input {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid var(--border-color) !important;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.btn-glass {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(5px);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.btn-glass:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    color: var(--text-color);
 }
 
 .login-container,
 .admin-container {
     max-width: 1200px;
     margin: 0 auto;
-    background-color: var(--card-bg);
+    background-color: transparent;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .navbar {
     background-color: var(--navbar-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: var(--navbar-text);
-    padding: 1rem;
-    border-radius: 8px 8px 0 0;
+    padding: 1.2rem;
+    border-radius: 15px 15px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
 }
 
 .nav-title {
     font-size: 1.5rem;
     margin: 0;
+    font-weight: 600;
 }
 
-.flex-container {
+.content-layout {
     display: flex;
-    gap: 20px;
-    padding: 20px;
+    flex-direction: column;
+    padding: 0 1.5rem 1.5rem;
 }
 
-.prompt-container {
-    flex: 2;
+.prompt-section {
+    width: 100%;
 }
 
-.history-container {
-    flex: 1;
-    border-left: 1px solid var(--border-color);
-    padding-left: 20px;
+.history-section {
+    width: 100%;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.prompt-card {
+    margin-bottom: 0;
 }
 
 .prompt-editor {
     width: 100%;
-    min-height: 300px;
-    padding: 10px;
+    min-height: 350px;
+    padding: 15px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 10px;
     font-family: monospace;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
     resize: vertical;
-    background-color: var(--card-bg);
+    background-color: rgba(255, 255, 255, 0.1);
     color: var(--text-color);
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
 .prompt-editor:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
 
 .history-item {
-    padding: 12px;
+    padding: 15px;
     margin-bottom: 10px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    background-color: var(--card-bg);
+    transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
 .history-item:hover {
     background-color: var(--hover-item-bg);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .history-item.active {
@@ -126,17 +187,17 @@ body {
 }
 
 .history-version {
-    font-weight: bold;
+    font-weight: 600;
     color: var(--primary-color);
 }
 
 .history-date {
     font-size: 0.85rem;
-    color: #777;
+    color: rgba(119, 119, 119, 0.8);
 }
 
 .history-preview {
-    margin-top: 5px;
+    margin-top: 8px;
     font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
@@ -146,11 +207,12 @@ body {
 .metadata-badge {
     display: inline-block;
     background-color: var(--hover-item-bg);
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
     font-size: 0.85rem;
     margin-right: 5px;
     margin-bottom: 5px;
+    backdrop-filter: blur(5px);
 }
 
 /* Estilização para campos em modo de visualização */
@@ -164,11 +226,16 @@ body {
 .btn-primary {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 /* Estilo para o toggle de tema */
@@ -191,7 +258,7 @@ body {
 }
 
 .slider {
-    background-color: #ccc;
+    background-color: rgba(204, 204, 204, 0.5);
     bottom: 0;
     cursor: pointer;
     left: 0;
@@ -200,6 +267,7 @@ body {
     top: 0;
     transition: .4s;
     border-radius: 34px;
+    backdrop-filter: blur(5px);
 }
 
 .slider:before {
@@ -212,6 +280,7 @@ body {
     transition: .4s;
     width: 16px;
     border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .slider {
@@ -229,16 +298,9 @@ input:checked + .slider:before {
 
 /* Responsividade para telas menores */
 @media (max-width: 768px) {
-    .flex-container {
-        flex-direction: column;
-    }
-    
-    .history-container {
-        border-left: none;
-        border-top: 1px solid var(--border-color);
-        padding-left: 0;
-        padding-top: 20px;
-        margin-top: 20px;
+    .prompt-section,
+    .history-section {
+        width: 100%;
     }
     
     .navbar {
@@ -260,6 +322,7 @@ input:checked + .slider:before {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
     z-index: 1000;
 }
 
@@ -272,9 +335,10 @@ input:checked + .slider:before {
     height: 80%;
     z-index: 1001;
     background-color: var(--card-bg);
-    border-radius: 8px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    box-shadow: var(--glass-shadow);
     padding: 20px;
+    backdrop-filter: blur(10px);
 }
 
 .close-expanded-editor {
@@ -283,20 +347,36 @@ input:checked + .slider:before {
     top: 20px;
     right: 20px;
     z-index: 1002;
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.2);
     border: none;
     color: #fff;
     font-size: 24px;
     cursor: pointer;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.close-expanded-editor:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
 }
 
 /* Estilo para o email de suporte */
 .support-email-container {
     text-align: center;
     margin-top: 20px;
-    padding: 10px;
+    padding: 15px;
     font-size: 0.85rem;
-    color: #777;
+    color: rgba(119, 119, 119, 0.8);
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    border-radius: 0 0 15px 15px;
 }
 
 .support-email {
@@ -305,7 +385,7 @@ input:checked + .slider:before {
 
 /* Adicionando regras para o scroll no histórico */
 #historyList {
-    max-height: 500px;
+    max-height: 400px;
     overflow-y: auto;
     scrollbar-width: thin;
     padding-right: 5px;
@@ -317,17 +397,17 @@ input:checked + .slider:before {
 }
 
 #historyList::-webkit-scrollbar-track {
-    background: var(--hover-bg);
+    background: rgba(245, 245, 245, 0.2);
     border-radius: 10px;
 }
 
 #historyList::-webkit-scrollbar-thumb {
-    background-color: rgba(150, 150, 150, 0.8);
+    background-color: rgba(150, 150, 150, 0.5);
     border-radius: 10px;
 }
 
 #historyList::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(180, 180, 180, 0.9);
+    background-color: rgba(180, 180, 180, 0.6);
 }
 
 .badge.bg-success {
@@ -340,6 +420,7 @@ input:checked + .slider:before {
 
 .btn-outline-light {
     transition: all 0.3s ease;
+    border-radius: 8px;
 }
 
 .btn-outline-light:hover {
@@ -355,19 +436,35 @@ input:checked + .slider:before {
 .alert {
     border-radius: 12px;
     backdrop-filter: blur(5px);
+    border: 1px solid transparent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Formulário de login */
+.login-container {
+    max-width: 450px;
+    background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+    transform: translateY(0);
+    transition: all 0.5s ease;
+}
+
+.login-container:hover {
+    transform: translateY(-10px);
 }
 
 /* Responsividade */
 @media (max-width: 991px) {
-    .flex-container {
+    .content-layout {
         flex-direction: column;
     }
     
-    .history-container {
+    .history-section {
         min-width: 100%;
-        padding: 20px;
         margin-top: 20px;
-        border-left: none;
     }
     
     #historyList {
@@ -377,7 +474,7 @@ input:checked + .slider:before {
 
 @media (max-width: 576px) {
     .admin-container {
-        padding: 15px;
+        padding: 0;
         margin: 10px;
     }
     
@@ -423,7 +520,7 @@ body.editor-expanded .editor-overlay.active {
 
 /* Estilo para campos desabilitados */
 input:disabled {
-    background-color: var(--hover-bg);
+    background-color: rgba(245, 245, 245, 0.2) !important;
     cursor: not-allowed;
     opacity: 0.8;
 }
@@ -431,9 +528,11 @@ input:disabled {
 /* Estilo para o modal de confirmação */
 .modal-content {
     background-color: var(--card-bg);
+    backdrop-filter: blur(10px);
     border-color: var(--border-color);
     color: var(--text-color);
-    box-shadow: var(--box-shadow);
+    box-shadow: var(--glass-shadow);
+    border-radius: 15px;
 }
 
 .modal-header, .modal-footer {
@@ -449,7 +548,7 @@ input:disabled {
 /* Adicionando uma classe específica para o editor no modo escuro */
 [data-theme="dark"] .prompt-editor {
     color: #f8f9fa;
-    background-color: rgba(35, 35, 35, 0.9);
+    background-color: rgba(35, 35, 35, 0.5);
     border-color: rgba(90, 90, 90, 0.7);
 }
 
@@ -464,7 +563,7 @@ input:disabled {
 [data-theme="dark"] #author,
 [data-theme="dark"] #reason {
     color: #f8f9fa;
-    background-color: rgba(35, 35, 35, 0.9);
+    background-color: rgba(35, 35, 35, 0.5);
     border-color: rgba(90, 90, 90, 0.7);
 }
 
@@ -474,4 +573,26 @@ input:disabled {
 [data-theme="dark"] #reason:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+}
+
+/* Classe para painéis selecionados */
+.glass-card:focus-within {
+    box-shadow: 0 10px 45px rgba(0, 123, 255, 0.15);
+    border-color: var(--primary-color);
+}
+
+/* Estilo para a seleção do tipo de agente */
+#agentType {
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    backdrop-filter: blur(5px);
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+#agentType:focus {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+    border-color: var(--primary-color);
 } 
