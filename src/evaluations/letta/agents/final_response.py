@@ -228,21 +228,26 @@ In this task, you will evaluate whether the model's response complies with the "
 
 Definition of WhatsApp Formatting Compliance:
 - The model must:
-    1. Keep responses concise (ideally <650 characters per balloon). Split into short paragraphs or lists only if absolutely necessary.
+    1. Keep responses concise (ideally under 650 characters per balloon). Split into short paragraphs or lists only if absolutely necessary.
     2. Use only allowed WhatsApp-native formats:
         - Italics: `_italic text_` (for light emphasis).
-        - Bold: `*bold text*` (single asterisk, attached, for critical info only; never entire sentences for style).
+        - Bold: `*bold text*` — used sparingly for:
+            - key actions (e.g., *agendar atendimento*),
+            - names of channels or platforms (e.g., *WhatsApp*, *portal*, *aplicativo 1746 Rio*),
+            - critical info (e.g., deadlines or required documents).
+            Avoid using bold for entire sentences or purely stylistic reasons.
         - Bulleted lists: `- Item`.
         - Numbered lists: `1. Item`.
     3. Avoid initial summaries unless the response is complex and benefits from a short bolded summary.
-    4. **Strictly avoid** all prohibited formats:
-        - Markdown (`[]()`, `#`, `>`, `---`, code blocks).
+    4. **Strictly avoid** the following prohibited formats:
+        - Markdown (`[]()`, `#`, `>`, `---`).
         - Strikethrough (`~~`).
         - Monospace (`` ` ``).
+        - Code blocks.
     5. Emoji use:
         - Max 1 per block.
-        - Only if relevant and subtle.
-        - Never in emergencies or complaints.
+        - Only if contextually relevant and subtle.
+        - Never in emergencies, complaints, or official alerts.
 
 You will categorize the model's response using one of two labels:
 - "compliant_format": The response fully follows all WhatsApp formatting rules.
@@ -251,7 +256,7 @@ You will categorize the model's response using one of two labels:
 Your response must be a single word: "compliant_format" or "non_compliant_format", with no other text.
 
 After analyzing the data, write a detailed explanation justifying your label. Your explanation must cover:
-- Whether the response adheres to rules for length, allowed formats, prohibited formats, and emoji usage.
+- Whether the response adheres to rules for length, allowed formats (italics, bold, lists), prohibited formats, and emoji usage.
 - If "non_compliant_format", identify exactly which rule(s) were violated, including examples where possible.
 
 [BEGIN DATA]
@@ -316,37 +321,41 @@ label: "entities_present" or "entities_missing"
 """
 
 GOOD_RESPONSE_STANDARDS_LLM_JUDGE_PROMPT = """
-You will evaluate whether a model's response to a user's query meets two specific standards for a high-quality answer in the context of City Hall services.
+You are tasked with evaluating whether a model's response to a user's query meets two core standards for high-quality answers related to City Hall services.
 
-The response is considered to meet the standards only if it satisfies BOTH of the following criteria:
-1.  **Relevant Official URL:** The response includes a valid URL that points directly to an official City Hall service or resource page that addresses the user's query.
-2.  **Step-by-Step Instructions:** The response provides a clear and complete step-by-step list describing how the user can request or use the service mentioned or linked.
+A response meets the standards if it satisfies BOTH of the following criteria **when appropriate based on the user's question**:
+1. **Relevant Official URL:**
+    The response must include a valid URL that points directly to an official City Hall webpage or service that is relevant to the user's query. This link should ideally be clickable, but a plain-text valid URL is acceptable as long as it is correct and usable.
+2. **Step-by-Step Instructions (when appropriate):**
+    If the user's query implies that they want to know *how to request, use or access a specific service**, the response must provide a clear and logically ordered step-by-step guide.
+    However, if the user is only asking for general information (e.g., what the service is or what channels exist), a step-by-step list is **not required**, and its absence should not be penalized.
 
 The 'label' field in your output should be a single word: either "meets_standards" or "lacks_standards", with no other text.
-- "meets_standards" indicates that the model's response includes BOTH a relevant City Hall service URL AND a clear step-by-step list for the service.
-- "lacks_standards" indicates that the model's response is missing one or both of these elements (either the relevant URL is absent/irrelevant, or the step-by-step list is absent/insufficient/unclear, or both are missing).
+- "meets_standards": The response includes a relevant official City Hall URL and (when applicable) provides clear and complete step-by-step instructions.
+- "lacks_standards": The response is missing a relevant URL, or omits necessary step-by-step instructions based on the user's intent, or both.
 
-Please carefully analyze the user's query to understand their need and then scrutinize the model's response for these two specific components.
-
-After analyzing, you must write a detailed explanation in the 'explanation' field of your JSON output. This explanation should justify your chosen label by detailing:
-1.  **URL Presence and Relevance:**
-    *   State whether a URL to a City Hall service was provided.
-    *   If provided, assess its relevance to the user's query. Is it the most appropriate service?
-2.  **Step List Presence and Adequacy:**
-    *   State whether a step-by-step list for requesting the service was provided.
-    *   If provided, assess its clarity and completeness. Does it outline the necessary information or actions?
-3.  **Overall Judgment:** Conclude whether both standards were met. If "lacks_standards," specify which standard(s) were not met and why.
+After analyzing, you must write a detailed explanation in the 'explanation' field of your output. This explanation should justify your chosen label by detailing:
+1. **URL Presence and Relevance:**
+    - Was a URL provided?
+    - If yes, does it point to a valid and appropriate official City Hall resource for the user's query?
+2. **Step-by-Step Presence and Adequacy:**
+    - Did the user's question imply a need to know *how* to use or request a service?
+    - If yes, does the response provide clear and sufficient steps?
+    - If no, state that a step list was not needed given the user's intent.
+3. **Overall Judgment:**
+    - Clearly justify your label. If `"lacks_standards"`, specify whether it failed on the URL, the steps, or both, and *why* that matters for the user's question.
 
 Notes:
-- If either the URL or the step list is missing, incorrect, or unclear, the label must be "lacks_standards".
-- Do not consider general helpfulness or tone; focus only on the two defined standards.
+- Do **not** require a step-by-step guide if the question only seeks general information.
+- Do **not** penalize plain-text URLs unless they are incorrect or unclear.
+- Do **not** evaluate for tone, length, or general helpfulness. Only the two defined standards.
 
 [BEGIN DATA]
 User Query: {query}
 Model Response: {model_response}
 [END DATA]
-Please analyze the data carefully and provide your explanation and label in the specified JSON format.
+Please analyze the data carefully and then provide:
 
-explanation: Assess the response against two standards: 1. Presence and relevance of a City Hall service URL. 2. Presence and adequacy of a step-by-step list for requesting that service. Conclude if both standards are met.
+explanation: Assess the response against the two standards.
 label: "meets_standards" or "lacks_standards"
 """

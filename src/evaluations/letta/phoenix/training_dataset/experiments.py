@@ -35,7 +35,7 @@ GEMINI_COMPLETO = GeminiService()
 EVAL_MODEL = OpenAIModel(api_key=env.OPENAI_API_KEY, azure_endpoint=env.OPENAI_URL, api_version="2024-02-15-preview", model="gpt-4.1")
 
 async def get_response_from_letta(example: Example) -> dict:  
-    url = f"{env.EAI_AGENT_URL}letta/test-message-raw"
+    url = f"{env.EAI_AGENT_URL}/letta/test-message-raw"
     payload = {
         "agent_id": "agent-8a86f0e0-0d78-4646-9c8a-9de5af4ac83b",
         "message": example.input.get("pergunta"),
@@ -77,7 +77,7 @@ async def get_response_from_gpt(example: Example) -> dict:
         "max_tokens": 10000
     }
 
-    url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
+    url = f"{env.OPENAI_URL}/openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
 
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(url, headers=headers, json=payload)
@@ -217,7 +217,8 @@ async def main():
     print("Iniciando a execução do script...")
 
     # dataset_name = "Typesense_IA_Dataset-2025-05-29"
-    dataset_name = "GPT_Dataset-2025-06-12"
+    # dataset_name = "GPT_Dataset-2025-06-12"
+    dataset_name = "teste_100_exemplos"
     dataset = phoenix_client.get_dataset(name=dataset_name)
 
     experiment = run_experiment(
@@ -229,14 +230,14 @@ async def main():
             experiment_eval_answer_completeness,
             # experiment_eval_gold_standard_similarity,
             # experiment_eval_clarity,
-            # experiment_eval_groundedness,
+            experiment_eval_groundedness,
             # experiment_eval_entity_presence,
             # experiment_eval_feedback_handling_compliance,
             # experiment_eval_emergency_handling_compliance,
             # experiment_eval_location_policy_compliance,
             # experiment_eval_security_privacy_compliance,
             experiment_eval_whatsapp_formatting_compliance,
-            # experiment_eval_search_result_coverage,
+            experiment_eval_search_result_coverage,
             # experiment_eval_tool_calling,
             # experiment_eval_search_query_effectiveness,
             experiment_eval_good_response_standards,
