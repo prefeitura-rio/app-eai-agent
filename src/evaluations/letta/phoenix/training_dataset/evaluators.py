@@ -267,7 +267,10 @@ async def experiment_eval_tool_calling(input, output, expected) -> float | bool:
 
     for tool_call_details in output.get("tool_call_messages", []):
         tool_call = tool_call_details.get("tool_call", {})
-        if tool_call.get("name") in ("public_services_grounded_search", "google_search"):
+        if tool_call.get("name") in (
+            "public_services_grounded_search",
+            "google_search",
+        ):
             response = await experiment_eval(
                 input=input,
                 output=output,
@@ -295,7 +298,10 @@ async def experiment_eval_search_query_effectiveness(
     if output:
         for tool_call_details in output.get("tool_call_messages", []):
             tool_call = tool_call_details.get("tool_call", {})
-            if tool_call.get("name") in ("public_services_grounded_search", "google_search"):
+            if tool_call.get("name") in (
+                "public_services_grounded_search",
+                "google_search",
+            ):
                 query = await extrair_query(tool_call.get("arguments", ""))
                 response = await experiment_eval(
                     input=input,
@@ -315,44 +321,49 @@ async def experiment_eval_search_query_effectiveness(
 
     return sum(results) / len(results) if results else False
 
+
 @create_evaluator(name="Golden Link in Tool Calling")
 async def experiment_eval_golden_link_in_tool_calling(input, output, **kwargs) -> bool:
     if not output or "agent_output" not in output:
         return False
-    
+
     metadata = output.get("metadata", {})
     golden_link = metadata.get("Golden links", "")
 
     links = await get_redirect_links(output)
     if links and golden_link:
-        response = any(golden_link in item["url"] for item in links)
+        response = golden_link in links
     else:
         response = False
     import json
-    print('--------------------------------------------------------------')
+
+    print("--------------------------------------------------------------")
     print(json.dumps(links, ensure_ascii=False, indent=4))
     print(golden_link)
-    print('--------------------------------------------------------------')
+    print("--------------------------------------------------------------")
 
     return response
+
 
 @create_evaluator(name="Golden Link in Answer")
 async def experiment_eval_golden_link_in_answer(input, output, **kwargs) -> bool:
     if not output or "agent_output" not in output:
         return False
-    
+
     metadata = output.get("metadata", {})
     golden_link = metadata.get("Golden links", "")
 
-    padrao_url = r'(https?://[^\s)]+|\b(?:[a-zA-Z0-9-]+\.)+(?:rio|br|com|org|net)\b)'
-    links = re.findall(padrao_url, [final_response(output["agent_output"]).get("content", "")])
+    padrao_url = r"(https?://[^\s)]+|\b(?:[a-zA-Z0-9-]+\.)+(?:rio|br|com|org|net)\b)"
+    links = re.findall(
+        padrao_url, [final_response(output["agent_output"]).get("content", "")]
+    )
 
     async with httpx.AsyncClient(
         follow_redirects=True, timeout=2, verify=False
     ) as session:
         tasks = [process_link(session, link) for link in links]
         results = await asyncio.gather(*tasks)
-    
+
     response = golden_link in results
 
     return response

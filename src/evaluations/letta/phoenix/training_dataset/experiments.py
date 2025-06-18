@@ -175,7 +175,9 @@ async def processar_batch(exemplos: List[Example], inicio_batch: int) -> Dict[st
     tarefas_respostas = []
 
     for exemplo, agent_id in agentes_validos:
-        pergunta = exemplo.input.get("Mensagem WhatsApp Simulada") ### trocar p pergunta depois
+        pergunta = exemplo.input.get(
+            "Mensagem WhatsApp Simulada"
+        )  ### trocar p pergunta depois
         tarefa = obter_resposta_letta(agent_id, pergunta)
         tarefas_respostas.append(tarefa)
 
@@ -286,6 +288,7 @@ def empty_agent_core_memory():
 
     return "\n".join(core_memory)
 
+
 async def resolve_redirect_url(url: str) -> str:
     """
     Resolve um link do Vertex para seu destino real.
@@ -296,6 +299,7 @@ async def resolve_redirect_url(url: str) -> str:
             return str(response.url)
     except Exception as e:
         return ""
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -321,31 +325,40 @@ async def get_redirect_links(model_response):
     links_para_processar = []
     model_response = model_response.get("agent_output", {}).get("grouped", {})
     for tool_calling in model_response.get("tool_return_messages", []):
-        stdout = tool_calling.get("stdout", "")[-1]
-        start_index = stdout.find("{")
-        end_index = stdout.rfind("}") + 1
-        dict_string = stdout[start_index:end_index]
-        try:
-            data = ast.literal_eval(dict_string)
-            links_para_processar = data.get("links", [])
-            if not links_para_processar:
-                links_para_processar = [item['url'] for item in data['result'] if 'url' in item and item['url']]
-        except (ValueError, SyntaxError) as e:
-            print(f"Error parsing the string: {e}")
-
+        if "stdout" in tool_calling:
+            stdout = tool_calling.get("stdout", "")[-1]
+            start_index = stdout.find("{")
+            end_index = stdout.rfind("}") + 1
+            dict_string = stdout[start_index:end_index]
+            try:
+                data = ast.literal_eval(dict_string)
+                links_para_processar = data.get("links", [])
+                if not links_para_processar:
+                    links_para_processar = [
+                        item["url"]
+                        for item in data["result"]
+                        if "url" in item and item["url"]
+                    ]
+            except (ValueError, SyntaxError) as e:
+                print(f"Error parsing the string: {e}")
+        else:
+            return []
     async with httpx.AsyncClient(
         follow_redirects=True, timeout=2, verify=False
     ) as session:
         tasks = [process_link(session, link) for link in links_para_processar]
         await asyncio.gather(*tasks)
-    return links_para_processar
+
+    redirect_links = list(set([link.get("url") for link in links_para_processar]))
+    return redirect_links
+
 
 async def experiment_eval(
     input, output, prompt, rails, expected=None, **kwargs
 ) -> tuple | bool:
     if not output or "agent_output" not in output:
         return False
-    
+
     agent_output = output["agent_output"]
     metadata = output.get("metadata", {})
     golden_link = metadata.get("Golden links", "")
@@ -397,6 +410,7 @@ async def experiment_eval(
     print("---" * 20)
 
     return (eval_result, explanation)
+
 
 async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
     """
