@@ -109,21 +109,21 @@ async def get_category_equipments():
         order by eq.secretaria_responsavel, eq.categoria
     """
     data = get_bigquery_result(query=query)
-    categories = []
+    categories = {}
     for d in data:
-        categories.append(
-            {
-                "secretaria_responsavel": d["secretaria_responsavel"],
-                "categoria": d["categoria"],
-            }
-        )
-    categories.sort()
+
+        if d["secretaria_responsavel"] not in categories:
+            categories[d["secretaria_responsavel"]] = []
+        categories[d["secretaria_responsavel"]].append(d["categoria"])
+
     return categories
 
 
 # if __name__ == "__main__":
-#     cat = asyncio.run(get_category_equipments())
-#     data = asyncio.run(get_pluscode_equipments(address="Avenida Presidente Vargas, 1"))
+# import asyncio
 
-#     print(cat)
-#     print(data)
+# cat = asyncio.run(get_category_equipments())
+# data = asyncio.run(get_pluscode_equipments(address="Avenida Presidente Vargas, 1"))
+
+# print(cat)
+# print(data)
