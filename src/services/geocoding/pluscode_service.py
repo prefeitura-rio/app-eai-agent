@@ -29,30 +29,54 @@ def get_bigquery_result(query: str):
 async def get_pluscode_equipments(address):
     plus8 = geocode_address_to_plus8(address=address)
     query = f"""
-        SELECT
-            eq.plus8,
-            eq.plus10,
-            eq.plus11,
-            CAST(eq.distancia_metros AS INT64) as distancia_metros,
-            t.categoria,
-            eq.secretaria_responsavel,
-            eq.nome_oficial,
-            eq.nome_popular,
-            eq.endereco.logradouro,
-            eq.endereco.numero,
-            eq.endereco.complemento,
-            COALESCE(eq.bairro.bairro, eq.endereco.bairro) as bairro,
-            eq.bairro.regiao_planejamento,
-            eq.bairro.regiao_administrativa,
-            eq.bairro.subprefeitura,
-            eq.contato,
-            eq.ativo,
-            eq.aberto_ao_publico,
-            eq.horario_funcionamento,
-            eq.updated_at
-        FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
-        WHERE t.plus8 = "{plus8}"
-        ORDER BY eq.secretaria_responsavel, t.categoria, eq.distancia_metros
+        with
+        equipamentos as (
+            select
+                t.plus8 as plus8_grid,
+                eq.plus8,
+                eq.plus10,
+                eq.plus11,
+                cast(eq.distancia_metros as int64) as distancia_metros,
+                t.secretaria_responsavel,
+                t.categoria,
+                eq.tipo_equipamento,
+                eq.nome_oficial,
+                eq.nome_popular,
+                eq.endereco.logradouro,
+                eq.endereco.numero,
+                eq.endereco.complemento,
+                coalesce(eq.bairro.bairro, eq.endereco.bairro) as bairro,
+                eq.bairro.regiao_planejamento,
+                eq.bairro.regiao_administrativa,
+                eq.bairro.subprefeitura,
+                eq.contato,
+                eq.ativo,
+                eq.aberto_ao_publico,
+                eq.horario_funcionamento,
+                eq.updated_at,
+            from `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
+            where t.plus8 = "{plus8}"
+            qualify
+                row_number() over (
+                    partition by t.plus8, t.secretaria_responsavel, t.categoria
+                    order by cast(eq.distancia_metros as int64)
+                )
+                = 1
+        ),
+
+        controle as (
+            select distinct
+                concat(trim(secretaria_responsavel), "__", trim(tipo)) tipo_controle,
+            from `rj-iplanrio.plus_codes.controle_tipos_equipamentos`
+            where use = '0'
+        )
+
+        select *
+        from equipamentos eq
+        where
+            concat(eq.secretaria_responsavel, "__", eq.categoria)
+            not in (select tipo_controle from controle)
+        order by eq.secretaria_responsavel, eq.categoria, eq.distancia_metros
     """
     data = get_bigquery_result(query=query)
     return data
@@ -60,15 +84,39 @@ async def get_pluscode_equipments(address):
 
 async def get_category_equipments():
     query = f"""
-        SELECT
-            DISTINCT categoria
-        FROM `rj-iplanrio.plus_codes.codes`
-        WHERE categoria IS NOT NULL
+        with
+            equipamentos as (
+                SELECT
+                    DISTINCT 
+                    secretaria_responsavel,
+                    categoria
+                FROM `rj-iplanrio.plus_codes.codes`
+                WHERE categoria IS NOT NULL
+            ),
+
+            controle as (
+                select distinct
+                    concat(trim(secretaria_responsavel), "__", trim(tipo)) tipo_controle,
+                from `rj-iplanrio.plus_codes.controle_tipos_equipamentos`
+                where use = '0'
+            )
+
+        select *
+        from equipamentos eq
+        where
+            concat(eq.secretaria_responsavel, "__", eq.categoria)
+            not in (select tipo_controle from controle)
+        order by eq.secretaria_responsavel, eq.categoria
     """
     data = get_bigquery_result(query=query)
     categories = []
     for d in data:
-        categories.append(d["categoria"])
+        categories.append(
+            {
+                "secretaria_responsavel": d["secretaria_responsavel"],
+                "categoria": d["categoria"],
+            }
+        )
     categories.sort()
     return categories
 
