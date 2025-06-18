@@ -64,7 +64,16 @@ class LettaService:
             return await create_agentic_search_agent(tags=tags, username=name)
         else:
             raise ValueError(f"Tipo de agente não suportado: {agent_type}")
-
+        
+    async def delete_agent(
+        self, agent_id: str
+    ):
+        """Deleta um agente de acordo com o ID passado."""
+        if agent_id:
+            return await self.client_async.agents.delete(agent_id)
+        else:
+            raise ValueError(f"ID do agente não suportado: {agent_id}")
+    
     async def send_timer_message(self, agent_id: str) -> str:
         """
         Envia uma mensagem de timer para o agente.

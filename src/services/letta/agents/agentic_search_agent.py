@@ -30,7 +30,7 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
             include_base_tool_rules=False,
             tools=[
                 "google_search",
-                "typesense_search",
+                "public_services_grounded_search",
             ],
             tool_rules=[
                 ContinueToolRule(tool_name="conversation_search"),
@@ -39,7 +39,7 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
                 ContinueToolRule(tool_name="archival_memory_search"),
                 ContinueToolRule(tool_name="archival_memory_insert"),
                 ContinueToolRule(tool_name="google_search"),
-                ContinueToolRule(tool_name="typesense_search"),
+                ContinueToolRule(tool_name="public_services_grounded_search"),
             ],
             tags=["agentic_search"] + (tags if tags else []),
             model=env.LLM_MODEL,
