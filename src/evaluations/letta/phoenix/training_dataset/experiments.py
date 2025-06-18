@@ -1,3 +1,5 @@
+import json
+import re
 import sys
 import os
 import time
@@ -32,6 +34,9 @@ from phoenix.evals.models import OpenAIModel
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
 import logging
+
+import urllib3
+import ast
 
 ## NOTE: MANDEI A IA COMENTAR O CÓDIGO PARA QUALQUER UM ENTENDA O QUE ESTÁ ACONTECENDO AQUI.
 ## NOTE: MANDEI A IA COMENTAR O CÓDIGO PARA QUALQUER UM ENTENDA O QUE ESTÁ ACONTECENDO AQUI.
@@ -120,7 +125,7 @@ async def obter_resposta_letta(
         dict: Resposta do agente em formato bruto
     """
     try:
-        resposta = await letta_service.send_message(
+        resposta = await letta_service.send_message_raw(
             agent_id=agent_id, message_content=pergunta, name=nome_usuario
         )
         return resposta
@@ -170,7 +175,7 @@ async def processar_batch(exemplos: List[Example], inicio_batch: int) -> Dict[st
     tarefas_respostas = []
 
     for exemplo, agent_id in agentes_validos:
-        pergunta = exemplo.input.get("pergunta")
+        pergunta = exemplo.input.get("Mensagem WhatsApp Simulada") ### trocar p pergunta depois
         tarefa = obter_resposta_letta(agent_id, pergunta)
         tarefas_respostas.append(tarefa)
 
@@ -281,17 +286,75 @@ def empty_agent_core_memory():
 
     return "\n".join(core_memory)
 
+async def resolve_redirect_url(url: str) -> str:
+    """
+    Resolve um link do Vertex para seu destino real.
+    """
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
+            response = await client.head(url)
+            return str(response.url)
+    except Exception as e:
+        return ""
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+async def process_link(session, link: dict):
+    uri = link.get("uri")
+    try:
+        response = await session.head(uri)
+        response.raise_for_status()
+        final_url = str(response.url)
+        link["url"] = final_url
+        link["error"] = None
+
+    except Exception as e:
+        if "http" in str(e):
+            link["url"] = "http" + str(e).split("'\n")[0].split("http")[-1]
+        else:
+            link["url"] = None
+        link["error"] = str(e)
+
+
+async def get_redirect_links(model_response):
+    links_para_processar = []
+    model_response = model_response.get("agent_output", {}).get("grouped", {})
+    for tool_calling in model_response.get("tool_return_messages", []):
+        stdout = tool_calling.get("stdout", "")[-1]
+        start_index = stdout.find("{")
+        end_index = stdout.rfind("}") + 1
+        dict_string = stdout[start_index:end_index]
+        try:
+            data = ast.literal_eval(dict_string)
+            links_para_processar = data.get("links", [])
+            if not links_para_processar:
+                links_para_processar = [item['url'] for item in data['result'] if 'url' in item and item['url']]
+        except (ValueError, SyntaxError) as e:
+            print(f"Error parsing the string: {e}")
+
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=2, verify=False
+    ) as session:
+        tasks = [process_link(session, link) for link in links_para_processar]
+        await asyncio.gather(*tasks)
+    return links_para_processar
 
 async def experiment_eval(
     input, output, prompt, rails, expected=None, **kwargs
 ) -> tuple | bool:
-    if not output:
+    if not output or "agent_output" not in output:
         return False
+    
+    agent_output = output["agent_output"]
+    metadata = output.get("metadata", {})
+    golden_link = metadata.get("Golden links", "")
 
     df = pd.DataFrame(
         {
             "query": [input.get("pergunta")],
-            "model_response": [final_response(output).get("content", "")],  # Letta
+            "model_response": [final_response(agent_output).get("content", "")],
+            "golden_link": [golden_link],
         }
     )
 
@@ -335,7 +398,6 @@ async def experiment_eval(
 
     return (eval_result, explanation)
 
-
 async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
     """
     Executa a avaliação Phoenix usando as respostas já coletadas.
@@ -348,23 +410,26 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
 
     # Criar uma função personalizada para o Phoenix que retorna as respostas já coletadas
     async def get_cached_responses(example: Example) -> dict:
-        return respostas_coletadas.get(example.id, {})
+        return {
+            "agent_output": respostas_coletadas.get(example.id, {}),
+            "metadata": example.metadata,
+        }
 
     # Executar o experimento Phoenix usando as respostas em cache
     experiment = run_experiment(
         dataset,
         get_cached_responses,
         evaluators=[
-            experiment_eval_answer_completeness,
-            experiment_eval_groundedness,
-            experiment_eval_whatsapp_formatting_compliance,
-            experiment_eval_search_result_coverage,
-            experiment_eval_good_response_standards,
-            experiment_eval_golden_links_appear_final_answ,
-            experiment_eval_golden_links_appear_tool_calling,
+            # experiment_eval_answer_completeness,
+            # experiment_eval_groundedness,
+            # experiment_eval_whatsapp_formatting_compliance,
+            # experiment_eval_search_result_coverage,
+            # experiment_eval_good_response_standards,
+            experiment_eval_golden_link_in_tool_calling,
+            # experiment_eval_golden_link_in_answer
         ],
         ##TODO: ALTERAR O NOME DO EXPERIMENTO
-        experiment_name="Letta - GPT 4.1 Avaliando (Refatorado)",
+        experiment_name="Letta - Verificando golden links",
         ## -----------------------------------
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
@@ -380,7 +445,7 @@ async def main():
     logger.info("Iniciando a execução do script...")
 
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
-    dataset_name = "teste_100_exemplos"
+    dataset_name = "Golden Dataset - Small Sample"
     logger.info(f"Carregando dataset: {dataset_name}")
     dataset = phoenix_client.get_dataset(name=dataset_name)
 

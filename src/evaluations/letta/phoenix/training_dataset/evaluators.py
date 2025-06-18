@@ -1,3 +1,6 @@
+import asyncio
+import re
+import httpx
 import pandas as pd
 from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
@@ -25,6 +28,9 @@ from src.evaluations.letta.agents.search_tools import (
 from src.evaluations.letta.phoenix.training_dataset.experiments import (
     empty_agent_core_memory,
     experiment_eval,
+    final_response,
+    get_redirect_links,
+    process_link,
     tool_returns,
 )
 
@@ -308,3 +314,45 @@ async def experiment_eval_search_query_effectiveness(
                 results.append(result)
 
     return sum(results) / len(results) if results else False
+
+@create_evaluator(name="Golden Link in Tool Calling")
+async def experiment_eval_golden_link_in_tool_calling(input, output, **kwargs) -> bool:
+    if not output or "agent_output" not in output:
+        return False
+    
+    metadata = output.get("metadata", {})
+    golden_link = metadata.get("Golden links", "")
+
+    links = await get_redirect_links(output)
+    if links and golden_link:
+        response = any(golden_link in item["url"] for item in links)
+    else:
+        response = False
+    import json
+    print('--------------------------------------------------------------')
+    print(json.dumps(links, ensure_ascii=False, indent=4))
+    print(golden_link)
+    print('--------------------------------------------------------------')
+
+    return response
+
+@create_evaluator(name="Golden Link in Answer")
+async def experiment_eval_golden_link_in_answer(input, output, **kwargs) -> bool:
+    if not output or "agent_output" not in output:
+        return False
+    
+    metadata = output.get("metadata", {})
+    golden_link = metadata.get("Golden links", "")
+
+    padrao_url = r'(https?://[^\s)]+|\b(?:[a-zA-Z0-9-]+\.)+(?:rio|br|com|org|net)\b)'
+    links = re.findall(padrao_url, [final_response(output["agent_output"]).get("content", "")])
+
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=2, verify=False
+    ) as session:
+        tasks = [process_link(session, link) for link in links]
+        results = await asyncio.gather(*tasks)
+    
+    response = golden_link in results
+
+    return response
