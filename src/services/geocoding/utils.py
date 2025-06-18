@@ -61,7 +61,12 @@ def get_bigquery_client() -> bigquery.Client:
     Returns:
         bigquery.Client: The BigQuery client.
     """
-    credentials = get_gcp_credentials()
+    credentials = get_gcp_credentials(
+        scopes=[
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/cloud-platform",
+        ]
+    )
     return bigquery.Client(credentials=credentials, project=credentials.project_id)
 
 
