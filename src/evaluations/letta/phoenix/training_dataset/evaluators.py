@@ -218,7 +218,7 @@ async def experiment_eval_tool_calling(input, output, expected) -> float | bool:
 
     for tool_call_details in output.get("tool_call_messages", []):
         tool_call = tool_call_details.get("tool_call", {})
-        if tool_call.get("name") in ("typesense_search", "google_search"):
+        if tool_call.get("name") in ("public_services_grounded_search", "google_search"):
             response = await experiment_eval(
                 input=input,
                 output=output,
@@ -244,7 +244,7 @@ async def experiment_eval_search_query_effectiveness(input, output, expected) ->
     if output:
         for tool_call_details in output.get("tool_call_messages", []):
             tool_call = tool_call_details.get("tool_call", {})
-            if tool_call.get("name") in ("typesense_search", "google_search"):
+            if tool_call.get("name") in ("public_services_grounded_search", "google_search"):
                 query = await extrair_query(tool_call.get("arguments", ""))
                 response = await experiment_eval(
                     input=input,
