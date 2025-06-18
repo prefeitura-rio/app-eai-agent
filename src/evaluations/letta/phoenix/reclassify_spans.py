@@ -407,7 +407,7 @@ class PhoenixTraceProcessor:
                     and response_message.strip()
                 ):
                     tool_call, _ = self.parse_response(response_message)
-                    if tool_call in ["google_search", "typesense_search"]:
+                    if tool_call in ["google_search", "typesense_search", "public_services_grounded_search"]:
                         return "TOOL"
                     elif tool_call == "send_message":
                         return "LLM"
