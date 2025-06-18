@@ -47,7 +47,9 @@ async def eval_binary(prompt, rails, input, output, extra_kwargs=None):
 
 
 @create_evaluator(name="Padrões de Boa Resposta", kind="LLM")
-async def experiment_eval_good_response_standards(input, output, expected) -> tuple | bool:
+async def experiment_eval_good_response_standards(
+    input, output, expected
+) -> tuple | bool:
     rails_answer_completeness = ["meets_standards", "lacks_standards"]
 
     return await eval_binary(
@@ -56,6 +58,7 @@ async def experiment_eval_good_response_standards(input, output, expected) -> tu
         input,
         output,
     )
+
 
 @create_evaluator(name="Completude", kind="LLM")
 async def experiment_eval_answer_completeness(input, output, expected) -> tuple | bool:
@@ -82,7 +85,9 @@ async def experiment_eval_clarity(input, output, expected) -> tuple | bool:
 
 
 @create_evaluator(name="Similaridade com Resposta Ideal", kind="LLM")
-async def experiment_eval_gold_standard_similarity(input, output, expected) -> float | bool:
+async def experiment_eval_gold_standard_similarity(
+    input, output, expected
+) -> float | bool:
     rails_gold_standard_similarity = ["equivalent", "similar", "different"]
     mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
 
@@ -106,7 +111,9 @@ async def experiment_eval_gold_standard_similarity(input, output, expected) -> f
 
 
 @create_evaluator(name="Lidar com Emergências", kind="LLM")
-async def experiment_eval_emergency_handling_compliance(input, output, expected) -> tuple | bool:
+async def experiment_eval_emergency_handling_compliance(
+    input, output, expected
+) -> tuple | bool:
     rails_emergency_handling_compliance = ["compliant", "non_compliant"]
 
     return await eval_binary(
@@ -130,7 +137,9 @@ async def experiment_eval_entity_presence(input, output, expected) -> tuple | bo
 
 
 @create_evaluator(name="Lidar com Feedback", kind="LLM")
-async def experiment_eval_feedback_handling_compliance(input, output, expected) -> tuple | bool:
+async def experiment_eval_feedback_handling_compliance(
+    input, output, expected
+) -> tuple | bool:
     rails_feedback_handling_compliance = ["compliant", "non_compliant"]
 
     return await eval_binary(
@@ -142,7 +151,9 @@ async def experiment_eval_feedback_handling_compliance(input, output, expected) 
 
 
 @create_evaluator(name="Política de Localização", kind="LLM")
-async def experiment_eval_location_policy_compliance(input, output, expected) -> tuple | bool:
+async def experiment_eval_location_policy_compliance(
+    input, output, expected
+) -> tuple | bool:
     rails_location_policy_compliance = ["compliant", "non_compliant"]
 
     return await eval_binary(
@@ -154,7 +165,9 @@ async def experiment_eval_location_policy_compliance(input, output, expected) ->
 
 
 @create_evaluator(name="Segurança e Privacidade", kind="LLM")
-async def experiment_eval_security_privacy_compliance(input, output, expected) -> tuple | bool:
+async def experiment_eval_security_privacy_compliance(
+    input, output, expected
+) -> tuple | bool:
     rails_security_privacy_compliance = ["compliant", "non_compliant"]
 
     return await eval_binary(
@@ -166,7 +179,9 @@ async def experiment_eval_security_privacy_compliance(input, output, expected) -
 
 
 @create_evaluator(name="Formato WhatsApp", kind="LLM")
-async def experiment_eval_whatsapp_formatting_compliance(input, output, expected) -> tuple | bool:
+async def experiment_eval_whatsapp_formatting_compliance(
+    input, output, expected
+) -> tuple | bool:
     rails_whatsapp_formatting_compliance = ["compliant_format", "non_compliant_format"]
 
     return await eval_binary(
@@ -194,7 +209,9 @@ async def experiment_eval_groundedness(input, output, expected) -> tuple | bool:
 
 
 @create_evaluator(name="Cobertura dos Resultados da Busca", kind="LLM")
-async def experiment_eval_search_result_coverage(input, output, expected) -> tuple | bool:
+async def experiment_eval_search_result_coverage(
+    input, output, expected
+) -> tuple | bool:
     rails_search_result_coverage = ["covers", "uncovers"]
 
     return await eval_binary(
@@ -206,6 +223,32 @@ async def experiment_eval_search_result_coverage(input, output, expected) -> tup
             "search_tool_results": tool_returns(output),
         },
     )
+
+
+@create_evaluator(name="Golden Link Aparece na Resposta Final", kind="LLM")
+async def experiment_eval_golden_links_appear_final_answ(
+    input, output, expected
+) -> tuple | bool:
+
+    if input in output:
+        response = True
+    else:
+        response = False
+
+    return response
+
+
+@create_evaluator(name="Golden Link Aparece no Tool Calling", kind="LLM")
+async def experiment_eval_golden_links_appear_tool_calling(
+    input, output, expected
+) -> tuple | bool:
+
+    if input in output:
+        response = True
+    else:
+        response = False
+
+    return response
 
 
 @create_evaluator(name="Tool Calling", kind="LLM")
@@ -237,7 +280,9 @@ async def experiment_eval_tool_calling(input, output, expected) -> float | bool:
 
 
 @create_evaluator(name="Simplificação da Busca", kind="LLM")
-async def experiment_eval_search_query_effectiveness(input, output, expected) -> float | bool:
+async def experiment_eval_search_query_effectiveness(
+    input, output, expected
+) -> float | bool:
     rails_search_query_effectiveness = ["effective", "innefective"]
     results = []
 
@@ -255,7 +300,11 @@ async def experiment_eval_search_query_effectiveness(input, output, expected) ->
                 )
 
                 label = response.get("label") if isinstance(response, dict) else None
-                result = int(label == rails_search_query_effectiveness[0]) if label else int(response)
+                result = (
+                    int(label == rails_search_query_effectiveness[0])
+                    if label
+                    else int(response)
+                )
                 results.append(result)
-    
+
     return sum(results) / len(results) if results else False
