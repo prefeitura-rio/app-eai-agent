@@ -326,81 +326,108 @@ async def experiment_eval_search_query_effectiveness(
     return sum(results) / len(results) if results else False
 
 
-@create_evaluator(name="Golden Link in Tool Calling")
+@create_evaluator(name="Golden Link in Tool Calling v2")
 async def experiment_eval_golden_link_in_tool_calling(input, output, **kwargs) -> bool:
-    if not output or "agent_output" not in output:
+    """
+    Returns True iff the agent output ultimately resolves to at least one of the
+    golden links listed in metadata["Golden links"].
+
+    Matching rules
+    -------------
+    • Scheme (http/https) is ignored.  
+    • 'www.' prefix is ignored.  
+    • Trailing slashes are ignored.  
+    • If the golden link has a path, the path must match *exactly*.  
+      If the golden link is only a domain, any path on that domain passes.
+
+    Anything weaker than this (e.g. naive substring checks) is useless for grading.
+    """
+
+    #####################
+    # 1. Sanity checks  #
+    #####################
+    if not (output and "agent_output" in output):
         return False
 
-    metadata = output.get("metadata", {})
-    golden_field = metadata.get("Golden links", "")
+    golden_field = output.get("metadata", {}).get("Golden links", "")
+    golden_links = _parse_golden(golden_field)         # → list[str]
+    if not golden_links:
+        return False
 
-    def parse_golden(val):
-        if not val:
-            return []
-        if isinstance(val, list):
-            return val
-        if isinstance(val, str):
-            v = val.strip()
-            try:
-                parsed = ast.literal_eval(v)
-                if isinstance(parsed, list):
-                    return [str(x) for x in parsed]
-            except Exception:
-                pass
-            sep = "," if "," in v else " "
-            return [s.strip() for s in v.split(sep) if s.strip() and "http" in s]
+    ##############################
+    # 2. Resolve answer links    #
+    ##############################
+    answer_links = await get_redirect_links(output)    # provided helper
+    if not answer_links:
+        return False
+
+    ##################################
+    # 3. Normalise for fair compare  #
+    ##################################
+    gold_norm  = [_norm_url(u) for u in golden_links]
+    links_norm = {_norm_url(u) for u in answer_links}
+
+    ###########################################################
+    # 4. Exact-enough comparison (see docstring for the rules) #
+    ###########################################################
+    def match(gold: str, link: str) -> bool:
+        g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
+        l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
+
+        if g_dom != l_dom:                        # different site → fail fast
+            return False
+
+        if g_path:                                # golden has a path → must match
+            return g_path == l_path
+        return True                               # golden is bare domain → any path ok
+
+    return any(match(g, l) for g in gold_norm for l in links_norm)
+
+
+# ---------------------------------------------------------------------------
+# Helper functions – keep them private to avoid namespace pollution
+# ---------------------------------------------------------------------------
+
+def _parse_golden(raw) -> list[str]:
+    """Turn metadata['Golden links'] into a clean list."""
+    if not raw:
         return []
+    if isinstance(raw, list):
+        return [str(x) for x in raw if "http" in str(x)]
+    if isinstance(raw, str):
+        raw = raw.strip()
+        # Try to read a Python-style list first
+        try:
+            import ast
+            parsed = ast.literal_eval(raw)
+            if isinstance(parsed, list):
+                return [str(x) for x in parsed if "http" in str(x)]
+        except Exception:
+            pass
+        # Fallback: split on comma or whitespace
+        sep = "," if "," in raw else None
+        return [s for s in raw.split(sep) if "http" in s]
+    return []
 
-    golden_links_list = parse_golden(golden_field)
-    if not golden_links_list:
-        return False
 
-    def norm(url: str) -> str:
-        if not isinstance(url, str):
-            return ""
+def _norm_url(url: str) -> str:
+    """Lower-case, drop scheme, drop www., strip trailing slash and `:~:text=` fragments."""
+    from urllib.parse import urlparse, unquote
 
-        url = url.strip()
-        if not url:
-            return ""
+    if not url:
+        return ""
 
-        parsed = urlparse(url)
-        netloc = parsed.netloc.lower()
-        path = unquote(parsed.path).lower().rstrip("/")
+    if not url.startswith(("http://", "https://")):
+        url = "http://" + url                       # makes urlparse happy
 
-        if ":~:text=" in path:
-            path = path.split(":~:text=")[0]
+    parsed = urlparse(url)
+    domain = parsed.netloc.lower().lstrip("www.")
+    path   = unquote(parsed.path).rstrip("/").lower()
 
-        return f"{netloc}{path}"
+    if ":~:text=" in path:                         # Strip scroll-to-text fragments
+        path = path.split(":~:text=")[0]
 
-    links = await get_redirect_links(output)
-    links_norm = {norm(u) for u in links}
-
-    response = any(norm(g) in links_norm or any(norm(g) in l or l in norm(g) for l in links_norm) for g in golden_links_list)
-
-    example_id = output.get("metadata", {}).get("id") or output.get("metadata", {}).get("example_id") or "<sem_id>"
-
-    pergunta = (
-        input.get("pergunta")
-        if isinstance(input, dict)
-        else None
-    )
-    if isinstance(input, dict) and pergunta is None:
-        pergunta = (
-            input.get("pergunta_individual")
-            or input.get("Mensagem WhatsApp Simulada")
-            or next(iter(input.values()), "")
-        )
-
-    print("==============================================================")
-    print(f"example_id: {example_id}")
-    if pergunta:
-        print(f"pergunta: {pergunta}")
-    print("links_resolvidos:")
-    print(json.dumps(links, ensure_ascii=False, indent=2))
-    print(f"golden_links: {golden_links_list}")
-    print("==============================================================")
-
-    return response
+    return f"{domain}{path}"
 
 
 @create_evaluator(name="Golden Link in Answer")
