@@ -38,6 +38,10 @@ from src.evaluations.letta.phoenix.utils import extrair_query, get_system_prompt
 
 from phoenix.experiments.evaluators import create_evaluator
 
+import ast
+from urllib.parse import urlparse, unquote
+import json
+
 
 async def eval_binary(prompt, rails, input, output, extra_kwargs=None):
     extra_kwargs = extra_kwargs or {}
@@ -328,19 +332,73 @@ async def experiment_eval_golden_link_in_tool_calling(input, output, **kwargs) -
         return False
 
     metadata = output.get("metadata", {})
-    golden_link = metadata.get("Golden links", "")
+    golden_field = metadata.get("Golden links", "")
+
+    def parse_golden(val):
+        if not val:
+            return []
+        if isinstance(val, list):
+            return val
+        if isinstance(val, str):
+            v = val.strip()
+            try:
+                parsed = ast.literal_eval(v)
+                if isinstance(parsed, list):
+                    return [str(x) for x in parsed]
+            except Exception:
+                pass
+            sep = "," if "," in v else " "
+            return [s.strip() for s in v.split(sep) if s.strip() and "http" in s]
+        return []
+
+    golden_links_list = parse_golden(golden_field)
+    if not golden_links_list:
+        return False
+
+    def norm(url: str) -> str:
+        if not isinstance(url, str):
+            return ""
+
+        url = url.strip()
+        if not url:
+            return ""
+
+        parsed = urlparse(url)
+        netloc = parsed.netloc.lower()
+        path = unquote(parsed.path).lower().rstrip("/")
+
+        if ":~:text=" in path:
+            path = path.split(":~:text=")[0]
+
+        return f"{netloc}{path}"
 
     links = await get_redirect_links(output)
-    if links and golden_link:
-        response = golden_link in links
-    else:
-        response = False
-    import json
+    links_norm = {norm(u) for u in links}
 
-    print("--------------------------------------------------------------")
-    print(json.dumps(links, ensure_ascii=False, indent=4))
-    print(golden_link)
-    print("--------------------------------------------------------------")
+    response = any(norm(g) in links_norm or any(norm(g) in l or l in norm(g) for l in links_norm) for g in golden_links_list)
+
+    example_id = output.get("metadata", {}).get("id") or output.get("metadata", {}).get("example_id") or "<sem_id>"
+
+    pergunta = (
+        input.get("pergunta")
+        if isinstance(input, dict)
+        else None
+    )
+    if isinstance(input, dict) and pergunta is None:
+        pergunta = (
+            input.get("pergunta_individual")
+            or input.get("Mensagem WhatsApp Simulada")
+            or next(iter(input.values()), "")
+        )
+
+    print("==============================================================")
+    print(f"example_id: {example_id}")
+    if pergunta:
+        print(f"pergunta: {pergunta}")
+    print("links_resolvidos:")
+    print(json.dumps(links, ensure_ascii=False, indent=2))
+    print(f"golden_links: {golden_links_list}")
+    print("==============================================================")
 
     return response
 

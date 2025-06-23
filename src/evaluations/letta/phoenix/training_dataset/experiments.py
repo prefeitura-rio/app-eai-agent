@@ -63,7 +63,7 @@ EVAL_MODEL = OpenAIModel(
 )
 
 # Tamanho do batch para criação de agentes
-BATCH_SIZE = 10
+BATCH_SIZE = 18
 
 # Cache para armazenar as respostas coletadas
 respostas_coletadas = {}
@@ -175,9 +175,15 @@ async def processar_batch(exemplos: List[Example], inicio_batch: int) -> Dict[st
     tarefas_respostas = []
 
     for exemplo, agent_id in agentes_validos:
-        pergunta = exemplo.input.get(
-            "Mensagem WhatsApp Simulada"
-        )  ### trocar p pergunta depois
+        # Recupera a pergunta presente no input do exemplo.
+        pergunta = (
+            exemplo.input.get("pergunta")
+            or exemplo.input.get("pergunta_individual")
+            or exemplo.input.get("Mensagem WhatsApp Simulada")
+            or next(iter(exemplo.input.values()), "")
+        )
+        if not isinstance(pergunta, str):
+            pergunta = str(pergunta)
         tarefa = obter_resposta_letta(agent_id, pergunta)
         tarefas_respostas.append(tarefa)
 
@@ -307,50 +313,150 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 async def process_link(session, link: dict):
     uri = link.get("uri")
     try:
-        response = await session.head(uri)
+        # primeiro tenta HEAD
+        response = await session.head(uri, follow_redirects=True)
         response.raise_for_status()
-        final_url = str(response.url)
-        link["url"] = final_url
+        link["url"] = str(response.url)
         link["error"] = None
-
-    except Exception as e:
-        if "http" in str(e):
-            link["url"] = "http" + str(e).split("'\n")[0].split("http")[-1]
-        else:
-            link["url"] = None
-        link["error"] = str(e)
+    except Exception:
+        try:
+            # fallback GET (alguns endpoints Vertex não aceitam HEAD)
+            response = await session.get(uri, follow_redirects=True)
+            response.raise_for_status()
+            link["url"] = str(response.url)
+            link["error"] = None
+        except Exception as e:
+            if "http" in str(e):
+                link["url"] = "http" + str(e).split("'\n")[0].split("http")[-1]
+            else:
+                link["url"] = None
+            link["error"] = str(e)
 
 
 async def get_redirect_links(model_response):
-    links_para_processar = []
-    model_response = model_response.get("agent_output", {}).get("grouped", {})
-    for tool_calling in model_response.get("tool_return_messages", []):
-        if "stdout" in tool_calling:
-            stdout = tool_calling.get("stdout", "")[-1]
-            start_index = stdout.find("{")
-            end_index = stdout.rfind("}") + 1
-            dict_string = stdout[start_index:end_index]
+    # A estrutura esperada é output -> agent_output -> grouped -> tool_return_messages
+    grouped = model_response.get("agent_output", {}).get("grouped", {})
+    tool_msgs = grouped.get("tool_return_messages", [])
+
+    # Coleciona URIs em uma lista simples de strings
+    links_para_processar: list[str] = []
+
+    # Nomes das ferramentas de busca cujos retornos realmente contêm links de interesse.
+    SEARCH_TOOL_NAMES = {
+        "search_tool",
+        "public_services_grounded_search",
+        "google_search",
+        "typesense_search",
+    }
+
+    def _extract_urls(raw_list):
+        """Converte listas heterogêneas (str ou dict) em lista de strings de URL."""
+        urls = []
+        if isinstance(raw_list, list):
+            for item in raw_list:
+                if isinstance(item, str):
+                    urls.append(item)
+                elif isinstance(item, dict):
+                    url_val = item.get("url") or item.get("uri")
+                    if isinstance(url_val, str):
+                        urls.append(url_val)
+        return urls
+
+    for msg in tool_msgs:
+        # Se houver campo "name", usa-o para filtrar; caso contrário, assume que pode conter links.
+        tool_name = msg.get("name")
+        if tool_name and tool_name not in SEARCH_TOOL_NAMES:
+            continue
+
+        # 1) Se já existe um dicionário estruturado em "tool_return", é o caminho mais simples.
+        tool_return = msg.get("tool_return")
+        if isinstance(tool_return, dict):
+            # Pode vir como {"links": [...]} ou {"result": [{"url": ...}, ...]}
+            if tool_return.get("links"):
+                links_para_processar.extend(_extract_urls(tool_return["links"]))
+            elif tool_return.get("result"):
+                links_para_processar.extend([
+                    item["url"]
+                    for item in tool_return["result"]
+                    if item.get("url")
+                ])
+            # Continue para próximo msg, não precisamos examinar stdout.
+            continue
+
+        # 1.b) tool_return como lista de urls/dicts
+        if isinstance(tool_return, list):
+            links_para_processar.extend(_extract_urls(tool_return))
+            continue
+
+        # 2) Fallback: tenta extrair JSON a partir de stdout (string ou lista de strings)
+        stdout = msg.get("stdout", "")
+        # Se for lista, pega cada item; se for string, coloca em lista com um item
+        stdout_list = stdout if isinstance(stdout, list) else [stdout]
+
+        for std in stdout_list:
+            if not std:
+                continue
             try:
-                data = ast.literal_eval(dict_string)
-                links_para_processar = data.get("links", [])
-                if not links_para_processar:
-                    links_para_processar = [
+                start_index = std.find("{")
+                end_index = std.rfind("}") + 1
+                if start_index == -1 or end_index == 0:
+                    continue  # não há JSON
+                data = ast.literal_eval(std[start_index:end_index])
+                if data.get("links"):
+                    links_para_processar.extend(_extract_urls(data["links"]))
+                elif data.get("result"):
+                    links_para_processar.extend([
                         item["url"]
                         for item in data["result"]
-                        if "url" in item and item["url"]
-                    ]
-            except (ValueError, SyntaxError) as e:
-                print(f"Error parsing the string: {e}")
-        else:
-            return []
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=2, verify=False
-    ) as session:
-        tasks = [process_link(session, link) for link in links_para_processar]
-        await asyncio.gather(*tasks)
+                        if item.get("url")
+                    ])
+            except (ValueError, SyntaxError):
+                continue  # ignora stdout não-parseável
 
-    redirect_links = list(set([link.get("url") for link in links_para_processar]))
-    return redirect_links
+    # Filtra links permitidos e remove ruído comum
+    ALLOWED_PREFIXES = (
+        "https://carioca.rio/servicos/",
+        "https://www.1746.rio/hc/pt-br/articles/",
+        "https://assistenciasocial.prefeitura.rio/",
+        "https://prefeitura.rio/",
+    )
+
+    EXCLUDE_KEYWORDS = (
+        "termo-de-uso",
+        "privacidade",
+        "faq",
+        "politica",
+        "termo de uso",
+    )
+
+    def allowed(u: str) -> bool:
+        if not u:
+            return False
+        if not any(u.startswith(p) for p in ALLOWED_PREFIXES):
+            return False
+        lowered = u.lower()
+        return not any(k in lowered for k in EXCLUDE_KEYWORDS)
+
+    unique_links = list({uri for uri in links_para_processar if isinstance(uri, str) and allowed(uri)})
+
+    # Limita a análise aos primeiros 10 links para evitar ruído excessivo
+    unique_links = unique_links[:10]
+
+    # Converte em dicts para reutilizar process_link
+    link_dicts = [{"uri": uri} for uri in unique_links]
+
+    # Resolve redirecionamentos em paralelo
+    async with httpx.AsyncClient(follow_redirects=True, timeout=2, verify=False) as session:
+        await asyncio.gather(*(process_link(session, link) for link in link_dicts))
+
+    # Retorna somente URLs finais (link["url"]) ou o próprio uri caso não haja redirect
+    final_urls = []
+    for link in link_dicts:
+        if link.get("url"):
+            final_urls.append(link["url"])
+        elif link.get("uri"):
+            final_urls.append(link["uri"])
+    return final_urls
 
 
 async def experiment_eval(
