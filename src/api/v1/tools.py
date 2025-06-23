@@ -31,28 +31,8 @@ async def google_search_tool(
                 status_code=500, detail="Falha ao gerar resposta do Gemini"
             )
 
-        # Filtra links permitidos e limita a 10 resultados relevantes
-        # Permitimos apenas domínios oficiais de interesse
-        ALLOWED_PREFIXES = (
-            "https://carioca.rio/servicos/",
-            "https://www.1746.rio/hc/pt-br/articles/",
-            "https://assistenciasocial.prefeitura.rio/",
-            "https://prefeitura.rio/",
-        )
-
-        EXCLUDE_KEYWORDS = ("termo-de-uso", "privacidade", "faq", "politica")
-
-        def allowed(u: str) -> bool:
-            if not u:
-                return False
-            if not any(u.startswith(p) for p in ALLOWED_PREFIXES):
-                return False
-            lowered = u.lower()
-            return not any(k in lowered for k in EXCLUDE_KEYWORDS)
-
         links = response.get("links", [])
-        links_filtrados = [l for l in links if allowed(l.get("uri"))][:10]
-        response["links"] = links_filtrados
+        response["links"] = links
 
         return response
     except Exception as e:
