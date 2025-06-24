@@ -38,7 +38,7 @@ async def get_agent_config(
             tools=cfg.get("tools"),
             model_name=cfg.get("model_name"),
             embedding_name=cfg.get("embedding_name"),
-            created_at=active_cfg.created_at if active_cfg else None,
+            created_at=active_cfg.created_at.isoformat() if active_cfg and active_cfg.created_at else None,
         )
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
@@ -130,7 +130,7 @@ async def get_agent_config_by_id(config_id: str, db: Session = Depends(get_db)):
             tools=cfg.tools,
             model_name=cfg.model_name,
             embedding_name=cfg.embedding_name,
-            created_at=cfg.created_at,
+            created_at=cfg.created_at.isoformat() if cfg.created_at else None,
         )
     except HTTPException:
         raise

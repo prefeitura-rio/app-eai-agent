@@ -38,11 +38,43 @@ class AgentConfigService:
             cfg = AgentConfigRepository.get_active_config(db, agent_type)
             if cfg:
                 return self._model_to_dict(cfg)
+
+            # cria usando a mesma sessão fornecida
+            logger.info(
+                f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão (sessão existente)..."
+            )
+            default_cfg = self._default_config(agent_type)
+            new_cfg = AgentConfigRepository.create_config(
+                db=db,
+                agent_type=agent_type,
+                memory_blocks=default_cfg["memory_blocks"],
+                tools=default_cfg["tools"],
+                model_name=default_cfg["model_name"],
+                embedding_name=default_cfg["embedding_name"],
+                metadata={"author": "System", "reason": "Criada automaticamente"},
+            )
+            return self._model_to_dict(new_cfg)
+
+        # Caso não tenha sido fornecida db, usar nova sessão
         with get_db_session() as session:
             cfg = AgentConfigRepository.get_active_config(session, agent_type)
             if cfg:
                 return self._model_to_dict(cfg)
-        raise ValueError(f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}")
+
+            logger.info(
+                f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão..."
+            )
+            default_cfg = self._default_config(agent_type)
+            new_cfg = AgentConfigRepository.create_config(
+                db=session,
+                agent_type=agent_type,
+                memory_blocks=default_cfg["memory_blocks"],
+                tools=default_cfg["tools"],
+                model_name=default_cfg["model_name"],
+                embedding_name=default_cfg["embedding_name"],
+                metadata={"author": "System", "reason": "Criada automaticamente"},
+            )
+            return self._model_to_dict(new_cfg)
 
     def get_active_config_from_db(self, agent_type: str = "agentic_search") -> Dict[str, Any]:
         try:
@@ -137,22 +169,12 @@ class AgentConfigService:
             logger.info(f"Nenhum agente encontrado com as tags: {filter_tags}")
             return results
 
+        # Obter IDs das ferramentas
         available_tools = await client.tools.list()
-        tool_ids = [tool.id for tool in available_tools if tool.name in new_cfg_values.get("tools")]
-        
+        tool_ids = [tool.id for tool in available_tools if tool.name in (new_cfg_values.get("tools") or [])]
+
         for agent in agents:
             try:
-                memory_blocks = await client.blocks.list(agent_id=agent.id)
-                memory_blocks_ids = [block.id for block in memory_blocks if block.name in new_cfg_values.get("memory_blocks")]
-                
-                for memory_block_id in memory_blocks_ids:
-                  await client.blocks.modify(
-                    block_id=memory_block_id,
-                    name=new_cfg_values.get("memory_blocks")[memory_block_id]["name"],
-                    value=new_cfg_values.get("memory_blocks")[memory_block_id]["value"],
-                    limit=new_cfg_values.get("memory_blocks")[memory_block_id]["limit"],
-                  )
-                
                 await client.agents.modify(
                     agent_id=agent.id,
                     tool_ids=tool_ids,
