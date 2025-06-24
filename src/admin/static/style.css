@@ -9,9 +9,11 @@ body {
 }
 
 :root {
-    --primary-color: #005eb8;
-    --secondary-color: #42a5f5;
-    --accent-color: #0091ea;
+    --primary-color: #6db8ff;
+    --secondary-color: #4a7597;
+    --accent-color: #019eff;
+    --warning-color: #ff9800;
+    --danger-color: #e53935;
     --background-color: #f8f9fa;
     --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     --text-color: #333;
@@ -32,6 +34,8 @@ body {
     --primary-color: #64b5f6;
     --secondary-color: #2196f3;
     --accent-color: #0288d1;
+    --warning-color: #ffa726;
+    --danger-color: #ef5350;
     --background-color: #121212;
     --bg-gradient: linear-gradient(135deg, #1f1f1f 0%, #0a0a0a 100%);
     --text-color: #e0e0e0;
@@ -564,4 +568,37 @@ input:disabled {
     .theme-switch-wrapper {
         margin-bottom: 10px;
     }
+}
+
+/* Botões outline customizados */
+.btn-outline-warning {
+    color: var(--warning-color);
+    border-color: var(--warning-color);
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    background-color: transparent;
+}
+
+.btn-outline-warning:hover {
+    background-color: var(--warning-color);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-danger {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    background-color: transparent;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--danger-color);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 } 

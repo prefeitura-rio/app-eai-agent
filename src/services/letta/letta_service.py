@@ -73,6 +73,14 @@ class LettaService:
             return await self.client_async.agents.delete(agent_id)
         else:
             raise ValueError(f"ID do agente não suportado: {agent_id}")
+        
+    async def deletar_agentes_teste(self):
+        """Deleta todos os agentes de teste."""
+        agents = await self.client_async.agents.list()
+        for agent in agents:
+            if hasattr(agent, "tags") and agent.tags:
+                if any("test" in tag.lower() for tag in agent.tags):
+                    await self.client_async.agents.delete(agent.id)
     
     async def send_timer_message(self, agent_id: str) -> str:
         """

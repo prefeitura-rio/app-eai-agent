@@ -30,6 +30,7 @@ const updateAgentsCfgCheckbox = document.getElementById('updateAgentsCfg');
 const saveConfigButton = document.getElementById('saveConfigButton');
 const configHistoryList = document.getElementById('configHistoryList');
 const resetAllButton = document.getElementById('resetAllButton');
+const deleteTestsBtn = document.getElementById('deleteTestsBtn');
 
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
@@ -132,6 +133,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (resetAllButton) {
         resetAllButton.addEventListener('click', handleResetAll);
+    }
+
+    if (deleteTestsBtn) {
+        deleteTestsBtn.addEventListener('click', handleDeleteTestAgents);
     }
 });
 
@@ -993,5 +998,24 @@ function handleResetAll() {
                 currentTab = 'prompt';
                 switchTab('prompt');
             }
+        });
+}
+
+// ---------------------- DELETE TEST AGENTS ----------------------
+function handleDeleteTestAgents() {
+    if (!confirm('Remover TODOS os agentes com tag "test"?')) {
+        return;
+    }
+
+    showLoading();
+
+    apiRequest('DELETE', `${API_BASE_URL}/api/v1/agents/tests`)
+        .then(resp => {
+            hideLoading();
+            showAlert(resp.message || 'Agentes de teste removidos');
+        })
+        .catch(err => {
+            hideLoading();
+            showAlert(err.message || 'Erro ao remover agentes de teste', 'danger');
         });
 } 
