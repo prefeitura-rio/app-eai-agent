@@ -10,6 +10,7 @@ from loguru import logger
 
 from letta_client import ContinueToolRule
 from src.config import env
+from src.services.letta.agent_config_service import agent_config_service
 
 
 async def create_agentic_search_agent(tags: List[str] = None, username: str = None):
@@ -17,9 +18,23 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
     try:
         client = letta_service.get_client_async()
 
+        # Obtém system prompt e configuração ativa do banco de dados
         system_prompt = system_prompt_service.get_active_system_prompt_from_db(
             agent_type="agentic_search"
         )
+
+        agent_cfg = agent_config_service.get_active_config_from_db(
+            agent_type="agentic_search"
+        )
+
+        # Extrai valores ou aplica fallback
+        memory_blocks = agent_cfg.get("memory_blocks") if agent_cfg else get_agentic_search_memory_blocks()
+        tools = agent_cfg.get("tools") if agent_cfg else [
+            "google_search",
+            "public_services_grounded_search",
+        ]
+        model_name = agent_cfg.get("model_name") if agent_cfg else env.LLM_MODEL
+        embedding_name = agent_cfg.get("embedding_name") if agent_cfg else env.EMBEDDING_MODEL
 
         agent = await client.agents.create(
             agent_type="memgpt_agent",
@@ -28,10 +43,7 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
             context_window_limit=20000,
             include_base_tools=True,
             include_base_tool_rules=False,
-            tools=[
-                "google_search",
-                "public_services_grounded_search",
-            ],
+            tools=tools,
             tool_rules=[
                 ContinueToolRule(tool_name="conversation_search"),
                 ContinueToolRule(tool_name="core_memory_append"),
@@ -42,10 +54,10 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
                 ContinueToolRule(tool_name="public_services_grounded_search"),
             ],
             tags=["agentic_search"] + (tags if tags else []),
-            model=env.LLM_MODEL,
-            embedding=env.EMBEDDING_MODEL,
+            model=model_name,
+            embedding=embedding_name,
             system=system_prompt,
-            memory_blocks=get_agentic_search_memory_blocks(),
+            memory_blocks=memory_blocks,
         )
         return agent
     except Exception as e:

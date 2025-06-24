@@ -16,12 +16,33 @@ const logoutBtn = document.getElementById('logoutBtn');
 const errorMsg = document.getElementById('errorMsg');
 const themeToggle = document.getElementById('themeToggle');
 
+// Novos elementos DOM para Configuração
+const tabPrompt = document.getElementById('tabPrompt');
+const tabConfig = document.getElementById('tabConfig');
+
+const memoryBlocksText = document.getElementById('memoryBlocks');
+const toolsInput = document.getElementById('tools');
+const modelNameInput = document.getElementById('modelName');
+const embeddingNameInput = document.getElementById('embeddingName');
+const authorCfgInput = document.getElementById('authorCfg');
+const reasonCfgInput = document.getElementById('reasonCfg');
+const updateAgentsCfgCheckbox = document.getElementById('updateAgentsCfg');
+const saveConfigButton = document.getElementById('saveConfigButton');
+const configHistoryList = document.getElementById('configHistoryList');
+const resetAllButton = document.getElementById('resetAllButton');
+const deleteTestsBtn = document.getElementById('deleteTestsBtn');
+
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
 let currentPromptId = null;
 let promptsData = []; // Array para armazenar todos os dados dos prompts
 let currentTheme = localStorage.getItem('theme') || 'light';
 let isHistoryItemView = false; // Nova variável para rastrear se estamos visualizando um item do histórico
+
+// Variável para tab atual: 'prompt' ou 'config'
+let currentTab = 'prompt';
+let currentConfigId = null;
+let configsData = [];
 
 // API base URL - ajustar de acordo com o ambiente
 const API_BASE_URL = 'https://services.staging.app.dados.rio/eai-agent';
@@ -32,6 +53,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar tema
     initTheme();
+    
+    // Ajusta interface inicial com base na aba corrente
+    updateTabUI();
     
     // Verificar se já existe um token salvo
     if (currentToken) {
@@ -95,6 +119,25 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('load', function() {
         setTimeout(checkPromptInterface, 500);
     });
+
+    // Eventos das abas
+    if (tabPrompt && tabConfig) {
+        tabPrompt.addEventListener('click', () => switchTab('prompt'));
+        tabConfig.addEventListener('click', () => switchTab('config'));
+    }
+
+    // Listener botão salvar config
+    if (saveConfigButton) {
+        saveConfigButton.addEventListener('click', handleSaveConfig);
+    }
+
+    if (resetAllButton) {
+        resetAllButton.addEventListener('click', handleResetAll);
+    }
+
+    if (deleteTestsBtn) {
+        deleteTestsBtn.addEventListener('click', handleDeleteTestAgents);
+    }
 });
 
 // Funções de tema
@@ -138,6 +181,9 @@ function showLoading() {
 function hideLoading() {
     loadingIndicator.classList.add('d-none');
     contentArea.classList.remove('d-none');
+
+    // Garante que a interface certa seja exibida após carregar
+    updateTabUI();
 }
 
 function showAlert(message, type = 'success') {
@@ -384,6 +430,11 @@ function showCopyFeedback() {
 
 // Funções de dados
 function loadData() {
+    // Redireciona para função adequada de acordo com aba
+    if (currentTab === 'config') {
+        return loadConfigData();
+    }
+
     showLoading();
     const agentType = agentTypeSelect.value;
     
@@ -718,4 +769,352 @@ document.addEventListener('agentTypesReady', function() {
 // Verificar novamente quando a página for totalmente carregada
 window.addEventListener('load', function() {
     setTimeout(checkPromptInterface, 1500);
-}); 
+});
+
+// ------------------- Funções de Tabs -------------------
+function switchTab(tab) {
+    if (currentTab === tab) return;
+    currentTab = tab;
+    updateTabUI();
+    loadData();
+}
+
+function updateTabUI() {
+    const promptSection = document.querySelector('.prompt-section');
+    const historySection = document.querySelector('.history-section');
+    const configSection = document.querySelector('.config-section');
+    const configHistorySection = document.querySelector('.config-history-section');
+
+    if (currentTab === 'prompt') {
+        tabPrompt.classList.add('active');
+        tabConfig.classList.remove('active');
+
+        promptSection?.classList.remove('d-none');
+        historySection?.classList.remove('d-none');
+        configSection?.classList.add('d-none');
+        configHistorySection?.classList.add('d-none');
+    } else {
+        tabPrompt.classList.remove('active');
+        tabConfig.classList.add('active');
+
+        promptSection?.classList.add('d-none');
+        historySection?.classList.add('d-none');
+        configSection?.classList.remove('d-none');
+        configHistorySection?.classList.remove('d-none');
+    }
+}
+
+// ---------------------- CONFIG FUNCTIONS ----------------------
+function loadConfigData() {
+    showLoading();
+
+    const agentType = agentTypeSelect.value;
+
+    // Limpar campos
+    authorCfgInput.value = '';
+    reasonCfgInput.value = '';
+    isHistoryItemView = false;
+
+    Promise.all([
+        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config?agent_type=${agentType}`)
+            .catch(err => ({ memory_blocks: '', tools: [], model_name: '', embedding_name: '' })),
+        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config/history?agent_type=${agentType}`)
+            .catch(() => ({ configs: [] })),
+    ])
+        .then(([currentCfg, historyCfg]) => {
+            // Preencher campos
+            memoryBlocksText.value = JSON.stringify(currentCfg.memory_blocks || [], null, 2);
+            toolsInput.value = (currentCfg.tools || []).join(', ');
+            modelNameInput.value = currentCfg.model_name || '';
+            embeddingNameInput.value = currentCfg.embedding_name || '';
+
+            currentConfigId = currentCfg.config_id;
+
+            // Armazenar e renderizar histórico
+            configsData = historyCfg.configs || [];
+
+            renderConfigHistory(configsData);
+
+            hideLoading();
+        })
+        .catch(err => {
+            hideLoading();
+            showAlert('Erro ao carregar configurações: ' + (err.message || 'Erro desconhecido'), 'danger');
+        });
+}
+
+function handleSaveConfig() {
+    const agentType = agentTypeSelect.value;
+
+    // Validar JSON dos memory blocks antes de prosseguir
+    let memoryBlocksValue = memoryBlocksText.value.trim();
+    let memoryBlocksArray = null;
+    if (memoryBlocksValue) {
+        try {
+            memoryBlocksArray = JSON.parse(memoryBlocksValue);
+        } catch (e) {
+            showAlert('Memory blocks devem ser JSON válido.', 'danger');
+            return;
+        }
+    }
+
+    // Criar e mostrar modal de confirmação antes de salvar
+    const saveConfirmModal = createConfigConfirmationModal();
+    document.body.appendChild(saveConfirmModal);
+    
+    // Obter referências aos elementos do modal
+    const modalElement = document.getElementById('saveConfigConfirmModal');
+    const authorModalInput = document.getElementById('modalAuthorConfigInput');
+    const reasonModalInput = document.getElementById('modalReasonConfigInput');
+    const confirmSaveBtn = document.getElementById('confirmSaveConfigBtn');
+    
+    // Sempre iniciar os campos vazios para forçar o preenchimento
+    authorModalInput.value = '';
+    reasonModalInput.value = '';
+    
+    // Mostrar o modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // Adicionar evento ao botão de confirmação
+    confirmSaveBtn.addEventListener('click', function() {
+        // Verificar se os campos obrigatórios foram preenchidos
+        if (!authorModalInput.value.trim()) {
+            document.getElementById('authorConfigModalFeedback').classList.remove('d-none');
+            return;
+        } else {
+            document.getElementById('authorConfigModalFeedback').classList.add('d-none');
+        }
+        
+        if (!reasonModalInput.value.trim()) {
+            document.getElementById('reasonConfigModalFeedback').classList.remove('d-none');
+            return;
+        } else {
+            document.getElementById('reasonConfigModalFeedback').classList.add('d-none');
+        }
+        
+        // Atualizar os valores dos inputs principais com os valores do modal
+        authorCfgInput.value = authorModalInput.value.trim();
+        reasonCfgInput.value = reasonModalInput.value.trim();
+        
+        // Fechar o modal
+        modal.hide();
+        
+        // Remover o modal do DOM depois que for fechado
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            saveConfirmModal.remove();
+            
+            // Continuar com o processo de salvamento
+            proceedWithConfigSave(agentType, memoryBlocksArray, authorCfgInput.value, reasonCfgInput.value);
+        }, { once: true });
+    });
+}
+
+function createConfigConfirmationModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal fade';
+    modalDiv.id = 'saveConfigConfirmModal';
+    modalDiv.tabIndex = '-1';
+    modalDiv.setAttribute('aria-labelledby', 'saveConfigConfirmModalLabel');
+    modalDiv.setAttribute('aria-hidden', 'true');
+    
+    modalDiv.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saveConfigConfirmModalLabel">Confirmar alterações da configuração</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Preencha as informações abaixo para salvar as alterações da configuração:</p>
+                    
+                    <div class="mb-3">
+                        <label for="modalAuthorConfigInput" class="form-label">Autor <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalAuthorConfigInput" required>
+                        <div id="authorConfigModalFeedback" class="invalid-feedback d-none">
+                            O nome do autor é obrigatório.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="modalReasonConfigInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalReasonConfigInput" required>
+                        <div id="reasonConfigModalFeedback" class="invalid-feedback d-none">
+                            O motivo da atualização é obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmSaveConfigBtn">Salvar configuração</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return modalDiv;
+}
+
+function proceedWithConfigSave(agentType, memoryBlocksArray, author, reason) {
+    showLoading();
+    
+    const payload = {
+        agent_type: agentType,
+        memory_blocks: memoryBlocksArray,
+        tools: toolsInput.value.split(',').map(t => t.trim()).filter(Boolean),
+        model_name: modelNameInput.value.trim() || null,
+        embedding_name: embeddingNameInput.value.trim() || null,
+        update_agents: updateAgentsCfgCheckbox.checked,
+        metadata: {
+            author: author,
+            reason: reason,
+        },
+    };
+
+    apiRequest('POST', `${API_BASE_URL}/api/v1/agent-config`, payload)
+        .then(response => {
+            hideLoading();
+            showAlert(response.message || 'Configuração salva com sucesso!');
+            loadConfigData();
+        })
+        .catch(err => {
+            hideLoading();
+            showAlert(err.message || 'Erro ao salvar configuração', 'danger');
+        });
+}
+
+function renderConfigHistory(configs) {
+    if (!configHistoryList) return;
+    configHistoryList.innerHTML = '';
+
+    if (configs.length === 0) {
+        configHistoryList.innerHTML = '<div class="text-muted p-3">Nenhum histórico disponível</div>';
+        return;
+    }
+
+    configs.forEach(cfg => {
+        const dateObj = new Date(cfg.created_at);
+        const brazilDate = new Date(dateObj);
+        brazilDate.setHours(brazilDate.getHours() - 3);
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        const date = brazilDate.toLocaleDateString('pt-BR', options);
+        const timeStr = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(brazilDate);
+
+        const item = document.createElement('div');
+        item.className = `history-item ${cfg.config_id === currentConfigId ? 'active' : ''}`;
+        item.dataset.configId = cfg.config_id;
+        item.dataset.version = cfg.version;
+
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="history-version">v${cfg.version}</span>
+                <span class="history-date">${date} ${timeStr}</span>
+            </div>
+            <div class="my-2">
+                ${cfg.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
+                ${cfg.metadata && cfg.metadata.author ? `<span class="metadata-badge">Autor: ${cfg.metadata.author}</span>` : ''}
+                ${cfg.metadata && cfg.metadata.reason ? `<span class="metadata-badge">${cfg.metadata.reason}</span>` : ''}
+            </div>
+            <div class="history-preview" title="Tools: ${(cfg.tools || []).join(', ')}">
+                Tools: ${(cfg.tools || []).join(', ').substring(0, 80)}
+            </div>
+        `;
+
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            selectConfigById(cfg.config_id);
+        });
+
+        configHistoryList.appendChild(item);
+    });
+}
+
+function selectConfigById(configId) {
+    if (!configId) return;
+    showLoading();
+    const url = `${API_BASE_URL}/api/v1/agent-config/by-id/${configId}`;
+
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error(`Erro ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            memoryBlocksText.value = JSON.stringify(data.memory_blocks || [], null, 2);
+            toolsInput.value = (data.tools || []).join(', ');
+            modelNameInput.value = data.model_name || '';
+            embeddingNameInput.value = data.embedding_name || '';
+
+            currentConfigId = configId;
+
+            updateActiveConfigHistoryItem(configId);
+            hideLoading();
+        })
+        .catch(err => {
+            hideLoading();
+            showAlert('Erro ao buscar configuração: ' + err.message, 'danger');
+        });
+}
+
+function updateActiveConfigHistoryItem(configId) {
+    const items = configHistoryList.querySelectorAll('.history-item');
+    items.forEach(i => i.classList.remove('active'));
+    const activeItem = configHistoryList.querySelector(`.history-item[data-config-id="${configId}"]`);
+    activeItem?.classList.add('active');
+}
+
+// ---------------------- RESET ALL ----------------------
+function handleResetAll() {
+    const agentType = agentTypeSelect.value;
+
+    if (!confirm('Tem certeza que deseja resetar System Prompt E Configuração do Agente para o padrão? Esta ação criará novas versões e não pode ser desfeita.')) {
+        return;
+    }
+
+    showLoading();
+
+    const updateAgents = updateAgentsCfgCheckbox.checked;
+
+    const req1 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/system-prompt/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
+    const req2 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/agent-config/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
+
+    Promise.allSettled([req1, req2])
+        .then(results => {
+            hideLoading();
+            const err = results.find(r => r.status === 'rejected');
+            if (err) {
+                showAlert('Erro ao resetar: ' + err.reason, 'danger');
+            } else {
+                showAlert('System Prompt e Configurações resetados com sucesso!');
+                // Recarregar dados
+                currentTab = 'prompt';
+                switchTab('prompt');
+            }
+        });
+}
+
+// ---------------------- DELETE TEST AGENTS ----------------------
+function handleDeleteTestAgents() {
+    if (!confirm('Remover TODOS os agentes com tag "test"?')) {
+        return;
+    }
+
+    showLoading();
+
+    apiRequest('DELETE', `${API_BASE_URL}/api/v1/agents/tests`)
+        .then(resp => {
+            hideLoading();
+            showAlert(resp.message || 'Agentes de teste removidos');
+        })
+        .catch(err => {
+            hideLoading();
+            showAlert(err.message || 'Erro ao remover agentes de teste', 'danger');
+        });
+} 
