@@ -122,13 +122,13 @@ body {
 
 .prompt-section {
     width: 100%;
-    display: block !important;
+    display: block;
     margin-bottom: 2rem;
 }
 
 .history-section {
     width: 100%;
-    display: block !important;
+    display: block;
 }
 
 .section-title {
