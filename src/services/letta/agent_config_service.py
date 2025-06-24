@@ -160,7 +160,6 @@ class AgentConfigService:
                 
                 for memory_block in new_cfg_values.get("memory_blocks"):
                   memory_block = await client.blocks.create(
-                    agent_id=agent.id,
                     name=memory_block["label"],
                     value=memory_block["value"],
                     limit=memory_block["limit"],
