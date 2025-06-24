@@ -140,4 +140,42 @@ async def get_agent_config_by_id(config_id: str, db: Session = Depends(get_db)):
             detail=f"Erro ao obter configuração por ID: {str(e)}",
         )
 
-# Endpoint de reset ainda não implementado para simplificar. 
+
+@router.delete("/reset", response_model=AgentConfigResetResponse)
+async def reset_agent_config(
+    agent_type: str = Query(..., description="Tipo do agente para resetar config"),
+    update_agents: bool = Query(False, description="Atualizar também os agentes existentes"),
+    db: Session = Depends(get_db),
+):
+    """Remove todas as configs e restaura padrão."""
+    try:
+        if not agent_type or agent_type.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="É necessário especificar um tipo de agente válido",
+            )
+
+        result = await agent_config_service.reset_agent_config(
+            agent_type=agent_type, update_agents=update_agents, db=db
+        )
+
+        message = "Configuração resetada com sucesso"
+        if update_agents:
+            upd = sum(1 for s in result["agents_updated"].values() if s)
+            total = len(result["agents_updated"])
+            if total > 0:
+                message += f", {upd}/{total} agentes foram atualizados"
+
+        return AgentConfigResetResponse(
+            success=result["success"],
+            agent_type=agent_type,
+            agents_updated=result.get("agents_updated", {}),
+            message=message,
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao resetar configuração: {str(e)}",
+        ) 

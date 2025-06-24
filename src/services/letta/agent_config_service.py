@@ -232,5 +232,53 @@ class AgentConfigService:
             "metadata": cfg.config_metadata,
         }
 
+    # ------------------------ Reset ------------------------
+    async def reset_agent_config(
+        self, agent_type: str, update_agents: bool = False, db: Session = None
+    ) -> Dict[str, Any]:
+        """Reseta a configuração: remove histórico e recria padrão."""
+
+        result: Dict[str, Any] = {"success": True, "agents_updated": {}}
+
+        if db is None:
+            with get_db_session() as session:
+                db = session
+
+        try:
+            # Apaga histórico
+            AgentConfigRepository.delete_configs_by_agent_type(db, agent_type)
+            db.commit()
+
+            default_cfg = self._default_config(agent_type)
+            new_cfg = AgentConfigRepository.create_config(
+                db=db,
+                agent_type=agent_type,
+                memory_blocks=default_cfg["memory_blocks"],
+                tools=default_cfg["tools"],
+                model_name=default_cfg["model_name"],
+                embedding_name=default_cfg["embedding_name"],
+                version=1,
+                metadata={"author": "System", "reason": "Resetado automaticamente"},
+            )
+
+            if update_agents:
+                agents_result = await self._update_all_agents(
+                    new_cfg_values=default_cfg,
+                    agent_type=agent_type,
+                    tags=[agent_type],
+                    db=db,
+                    config_id=new_cfg.config_id,
+                )
+                result["agents_updated"] = agents_result
+                if agents_result and not all(agents_result.values()):
+                    result["success"] = False
+
+            return result
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Erro ao resetar configuração: {str(e)}")
+            result["success"] = False
+            return result
+
 
 agent_config_service = AgentConfigService() 

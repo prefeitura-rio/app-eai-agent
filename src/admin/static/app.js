@@ -29,6 +29,7 @@ const reasonCfgInput = document.getElementById('reasonCfg');
 const updateAgentsCfgCheckbox = document.getElementById('updateAgentsCfg');
 const saveConfigButton = document.getElementById('saveConfigButton');
 const configHistoryList = document.getElementById('configHistoryList');
+const resetAllButton = document.getElementById('resetAllButton');
 
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
@@ -127,6 +128,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Listener botão salvar config
     if (saveConfigButton) {
         saveConfigButton.addEventListener('click', handleSaveConfig);
+    }
+
+    if (resetAllButton) {
+        resetAllButton.addEventListener('click', handleResetAll);
     }
 });
 
@@ -959,4 +964,34 @@ function updateActiveConfigHistoryItem(configId) {
     items.forEach(i => i.classList.remove('active'));
     const activeItem = configHistoryList.querySelector(`.history-item[data-config-id="${configId}"]`);
     activeItem?.classList.add('active');
+}
+
+// ---------------------- RESET ALL ----------------------
+function handleResetAll() {
+    const agentType = agentTypeSelect.value;
+
+    if (!confirm('Tem certeza que deseja resetar System Prompt E Configuração do Agente para o padrão? Esta ação criará novas versões e não pode ser desfeita.')) {
+        return;
+    }
+
+    showLoading();
+
+    const updateAgents = updateAgentsCfgCheckbox.checked;
+
+    const req1 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/system-prompt/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
+    const req2 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/agent-config/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
+
+    Promise.allSettled([req1, req2])
+        .then(results => {
+            hideLoading();
+            const err = results.find(r => r.status === 'rejected');
+            if (err) {
+                showAlert('Erro ao resetar: ' + err.reason, 'danger');
+            } else {
+                showAlert('System Prompt e Configurações resetados com sucesso!');
+                // Recarregar dados
+                currentTab = 'prompt';
+                switchTab('prompt');
+            }
+        });
 } 
