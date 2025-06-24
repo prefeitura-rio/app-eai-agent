@@ -79,6 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         console.log('Clique detectado em:', e.target);
         
+        // Não interceptar cliques em editores/inputs para permitir seleção de texto
+        if (e.target.matches('.prompt-editor, #memoryBlocks, #tools, input[type="text"], textarea') || 
+            e.target.closest('.prompt-editor, #memoryBlocks, #tools')) {
+            return; // Permitir comportamento padrão
+        }
+        
         // Procurar pelo elemento .history-item mais próximo
         const historyItem = e.target.closest('.history-item');
         if (historyItem && historyItem.dataset.promptId) {
