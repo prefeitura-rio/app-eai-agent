@@ -846,6 +846,7 @@ function loadConfigData() {
 function handleSaveConfig() {
     const agentType = agentTypeSelect.value;
 
+    // Validar JSON dos memory blocks antes de prosseguir
     let memoryBlocksValue = memoryBlocksText.value.trim();
     let memoryBlocksArray = null;
     if (memoryBlocksValue) {
@@ -857,6 +858,106 @@ function handleSaveConfig() {
         }
     }
 
+    // Criar e mostrar modal de confirmação antes de salvar
+    const saveConfirmModal = createConfigConfirmationModal();
+    document.body.appendChild(saveConfirmModal);
+    
+    // Obter referências aos elementos do modal
+    const modalElement = document.getElementById('saveConfigConfirmModal');
+    const authorModalInput = document.getElementById('modalAuthorConfigInput');
+    const reasonModalInput = document.getElementById('modalReasonConfigInput');
+    const confirmSaveBtn = document.getElementById('confirmSaveConfigBtn');
+    
+    // Sempre iniciar os campos vazios para forçar o preenchimento
+    authorModalInput.value = '';
+    reasonModalInput.value = '';
+    
+    // Mostrar o modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // Adicionar evento ao botão de confirmação
+    confirmSaveBtn.addEventListener('click', function() {
+        // Verificar se os campos obrigatórios foram preenchidos
+        if (!authorModalInput.value.trim()) {
+            document.getElementById('authorConfigModalFeedback').classList.remove('d-none');
+            return;
+        } else {
+            document.getElementById('authorConfigModalFeedback').classList.add('d-none');
+        }
+        
+        if (!reasonModalInput.value.trim()) {
+            document.getElementById('reasonConfigModalFeedback').classList.remove('d-none');
+            return;
+        } else {
+            document.getElementById('reasonConfigModalFeedback').classList.add('d-none');
+        }
+        
+        // Atualizar os valores dos inputs principais com os valores do modal
+        authorCfgInput.value = authorModalInput.value.trim();
+        reasonCfgInput.value = reasonModalInput.value.trim();
+        
+        // Fechar o modal
+        modal.hide();
+        
+        // Remover o modal do DOM depois que for fechado
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            saveConfirmModal.remove();
+            
+            // Continuar com o processo de salvamento
+            proceedWithConfigSave(agentType, memoryBlocksArray, authorCfgInput.value, reasonCfgInput.value);
+        }, { once: true });
+    });
+}
+
+function createConfigConfirmationModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal fade';
+    modalDiv.id = 'saveConfigConfirmModal';
+    modalDiv.tabIndex = '-1';
+    modalDiv.setAttribute('aria-labelledby', 'saveConfigConfirmModalLabel');
+    modalDiv.setAttribute('aria-hidden', 'true');
+    
+    modalDiv.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saveConfigConfirmModalLabel">Confirmar alterações da configuração</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Preencha as informações abaixo para salvar as alterações da configuração:</p>
+                    
+                    <div class="mb-3">
+                        <label for="modalAuthorConfigInput" class="form-label">Autor <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalAuthorConfigInput" required>
+                        <div id="authorConfigModalFeedback" class="invalid-feedback d-none">
+                            O nome do autor é obrigatório.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="modalReasonConfigInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalReasonConfigInput" required>
+                        <div id="reasonConfigModalFeedback" class="invalid-feedback d-none">
+                            O motivo da atualização é obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmSaveConfigBtn">Salvar configuração</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return modalDiv;
+}
+
+function proceedWithConfigSave(agentType, memoryBlocksArray, author, reason) {
+    showLoading();
+    
     const payload = {
         agent_type: agentType,
         memory_blocks: memoryBlocksArray,
@@ -865,12 +966,10 @@ function handleSaveConfig() {
         embedding_name: embeddingNameInput.value.trim() || null,
         update_agents: updateAgentsCfgCheckbox.checked,
         metadata: {
-            author: authorCfgInput.value.trim(),
-            reason: reasonCfgInput.value.trim(),
+            author: author,
+            reason: reason,
         },
     };
-
-    showLoading();
 
     apiRequest('POST', `${API_BASE_URL}/api/v1/agent-config`, payload)
         .then(response => {
