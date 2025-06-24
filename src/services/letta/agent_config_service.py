@@ -124,8 +124,6 @@ class AgentConfigService:
                 new_cfg_values=new_cfg_values,
                 agent_type=agent_type,
                 tags=tags,
-                db=db,
-                config_id=cfg.config_id,
             )
             result["agents_updated"] = agents_result
             if agents_result and not all(agents_result.values()):
@@ -261,8 +259,6 @@ class AgentConfigService:
                     new_cfg_values=default_cfg,
                     agent_type=agent_type,
                     tags=[agent_type],
-                    db=db,
-                    config_id=new_cfg.config_id,
                 )
                 result["agents_updated"] = agents_result
                 if agents_result and not all(agents_result.values()):
