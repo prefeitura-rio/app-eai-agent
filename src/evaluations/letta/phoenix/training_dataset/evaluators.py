@@ -1,5 +1,6 @@
 import asyncio
 import re
+from typing import List, Union
 import httpx
 import pandas as pd
 from src.evaluations.letta.agents.final_response import (
@@ -37,7 +38,6 @@ from src.evaluations.letta.phoenix.training_dataset.experiments import (
 from src.evaluations.letta.phoenix.utils import extrair_query, get_system_prompt
 
 from phoenix.experiments.evaluators import create_evaluator
-
 import ast
 from urllib.parse import urlparse, unquote
 import json
@@ -326,27 +326,24 @@ async def experiment_eval_search_query_effectiveness(
     return sum(results) / len(results) if results else False
 
 
-@create_evaluator(name="Golden Link in Tool Calling v2")
-async def experiment_eval_golden_link_in_tool_calling(input, output, **kwargs) -> bool:
+@create_evaluator(name="Golden Link in Tool Calling v3")
+async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple | List:
     """
-    Returns True iff the agent output ultimately resolves to at least one of the
+    Returns True if the agent output ultimately resolves to at least one of the
     golden links listed in metadata["Golden links"].
 
-    Matching rules
-    -------------
-    • Scheme (http/https) is ignored.  
-    • 'www.' prefix is ignored.  
-    • Trailing slashes are ignored.  
-    • If the golden link has a path, the path must match *exactly*.  
-      If the golden link is only a domain, any path on that domain passes.
+    Now supports Letta (Vertex), Gemini, and GPT outputs.
 
-    Anything weaker than this (e.g. naive substring checks) is useless for grading.
+    Matching rules
+    - Scheme (http/https) is ignored.  
+    - 'www.' prefix is ignored.  
+    - Trailing slashes are ignored.  
+    - If the golden link has a path, the path must match exactly.  
+    - If the golden link is only a domain, any path on that domain passes.
     """
 
-    #####################
-    # 1. Sanity checks  #
-    #####################
-    if not (output and "agent_output" in output):
+    # Sanity checks
+    if not output:
         return False
 
     golden_field = output.get("metadata", {}).get("Golden links", "")
@@ -354,34 +351,104 @@ async def experiment_eval_golden_link_in_tool_calling(input, output, **kwargs) -
     if not golden_links:
         return False
 
-    ##############################
-    # 2. Resolve answer links    #
-    ##############################
-    answer_links = await get_redirect_links(output)    # provided helper
+    # Resolve answer links
+    answer_links: list[str] = []
+    link_dicts = []
+    
+    if "links" in output["agent_output"]:
+        for link in output["agent_output"]["links"]:
+            uri = link.get("uri") or link.get("url")
+            link_dicts.append({"uri": uri})
+
+        async with httpx.AsyncClient(follow_redirects=True, timeout=2, verify=False) as session:
+            await asyncio.gather(*(process_link(session, link) for link in link_dicts))
+
+        final_urls = []
+        for link in link_dicts:
+            if link.get("url"):
+                final_urls.append(link["url"])
+        
+        answer_links = final_urls
+    else:
+        letta_links = await get_redirect_links(output)    # provided helper
+        answer_links.extend(letta_links)
+
     if not answer_links:
         return False
 
-    ##################################
-    # 3. Normalise for fair compare  #
-    ##################################
+    # Normalize for fair compare
     gold_norm  = [_norm_url(u) for u in golden_links]
     links_norm = {_norm_url(u) for u in answer_links}
 
-    ###########################################################
-    # 4. Exact-enough comparison (see docstring for the rules) #
-    ###########################################################
+    # Exact-enough comparison (see docstring for the rules)
     def match(gold: str, link: str) -> bool:
         g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
         l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
+        
+        return g_dom == l_dom and (not g_path or g_path == l_path)
 
-        if g_dom != l_dom:                        # different site → fail fast
-            return False
+    response = any(match(g, l) for g in gold_norm for l in links_norm)
 
-        if g_path:                                # golden has a path → must match
-            return g_path == l_path
-        return True                               # golden is bare domain → any path ok
+    explanation = (
+        f"Golden links: {gold_norm}\n"
+        f"Answer links: {links_norm}\n"
+        f"Match found: {response}"
+    )
 
-    return any(match(g, l) for g in gold_norm for l in links_norm)
+    return (response, explanation)
+
+
+async def get_redirect_links2(data: Union[dict, List[str]]) -> List[str]:
+    """
+    Extrai e resolve redirecionamentos de links Vertex (ou qualquer outro).
+    Aceita:
+      - dict com formato Vertex (ex: {agent_output: {links: [...]}})
+      - lista simples de strings com URLs
+    Retorna uma lista de links finais (resolvidos), sem duplicatas.
+    """
+    # 1. Extrair lista de links crus
+    if isinstance(data, dict):
+        links_raw = (
+            data.get("agent_output", {})
+                .get("links", [])
+        )
+        urls = [l.get("uri") or l.get("url") for l in links_raw if isinstance(l, dict)]
+    elif isinstance(data, list):
+        urls = data
+    else:
+        return []
+
+    urls = [u for u in urls if isinstance(u, str)]
+
+    # 2. Resolver redirecionamentos (com fallback HEAD → GET)
+    resolved = set()
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=5.0) as client:
+        tasks = []
+        for url in urls:
+            tasks.append(_resolve_url(client, url))
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for r in responses:
+        if isinstance(r, str):
+            resolved.add(r)
+
+    return list(resolved)
+
+
+async def _resolve_url(client: httpx.AsyncClient, url: str) -> Union[str, None]:
+    """Resolve redirecionamento para uma única URL com fallback GET."""
+    try:
+        resp = await client.head(url)
+        resp.raise_for_status()
+        return str(resp.url)
+    except Exception:
+        try:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return str(resp.url)
+        except Exception:
+            return None
 
 
 # ---------------------------------------------------------------------------
@@ -393,7 +460,7 @@ def _parse_golden(raw) -> list[str]:
     if not raw:
         return []
     if isinstance(raw, list):
-        return [str(x) for x in raw if "http" in str(x)]
+        return [str(x).strip() for x in raw if "http" in str(x)]
     if isinstance(raw, str):
         raw = raw.strip()
         # Try to read a Python-style list first
@@ -401,12 +468,12 @@ def _parse_golden(raw) -> list[str]:
             import ast
             parsed = ast.literal_eval(raw)
             if isinstance(parsed, list):
-                return [str(x) for x in parsed if "http" in str(x)]
+                return [str(x).strip() for x in parsed if "http" in str(x)]
         except Exception:
             pass
         # Fallback: split on comma or whitespace
         sep = "," if "," in raw else None
-        return [s for s in raw.split(sep) if "http" in s]
+        return [s.strip() for s in raw.split(sep) if "http" in s]
     return []
 
 
@@ -438,6 +505,7 @@ async def experiment_eval_golden_link_in_answer(input, output, **kwargs) -> bool
     metadata = output.get("metadata", {})
     golden_link = metadata.get("Golden links", "")
 
+    # pattern=r"[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
     padrao_url = r"(https?://[^\s)]+|\b(?:[a-zA-Z0-9-]+\.)+(?:rio|br|com|org|net)\b)"
     links = re.findall(
         padrao_url, [final_response(output["agent_output"]).get("content", "")]

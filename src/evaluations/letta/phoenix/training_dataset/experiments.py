@@ -5,7 +5,7 @@ import os
 import time
 import asyncio
 import uuid
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Literal
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
@@ -54,7 +54,12 @@ phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 GEMINI_COMPLETO = GeminiService()
 
-# Modelo para avaliação
+EVAL_MODEL = GenAIModel(
+    model=env.GEMINI_EVAL_MODEL,
+    api_key=env.GEMINI_API_KEY,
+    max_tokens=100000
+)
+
 EVAL_MODEL = OpenAIModel(
     api_key=env.OPENAI_API_KEY,
     azure_endpoint=env.OPENAI_URL,
@@ -67,6 +72,64 @@ BATCH_SIZE = 18
 
 # Cache para armazenar as respostas coletadas
 respostas_coletadas = {}
+
+async def get_response_from_gpt(example: Example) -> dict:
+    query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
+
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": env.OPENAI_API_KEY
+    }
+    
+    payload = {
+        "messages": [
+            {
+                "role": "user", 
+                "content": query,
+            }
+        ],
+        # "temperature": 0.8,
+        "max_tokens": 256
+    }
+
+    # url = f"{env.OPENAI_URL}openai/deployments/gpt-4o/chat/completions?api-version=2024-11-20"
+
+    url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        choice = data["choices"][0]["message"]
+        print(choice)
+        resultado = {
+            "texto": choice.get("content", None),
+            "links": []
+        }
+
+        context = choice.get("context", {})
+        for citation in context.get("citations", []):
+            uri = citation.get("url")
+            title = citation.get("title") or None
+            if uri:
+                resultado["links"].append({
+                    "uri": uri,
+                    "title": title,
+                })
+
+        return resultado
+
+
+async def get_response_from_gemini(example: Example) -> str:
+    query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
+
+    response = await GEMINI_COMPLETO.generate_content(
+            query,
+            model="gemini-2.5-flash-preview-05-20",
+            use_google_search=True,
+            response_format="text_and_links",
+        )
+    return response
 
 
 async def criar_agente_letta(index: int, name: str = "Agente Teste") -> str:
@@ -82,7 +145,9 @@ async def criar_agente_letta(index: int, name: str = "Agente Teste") -> str:
     """
     try:
         agent_id = await letta_service.create_agent(
-            agent_type="agentic_search", tags=[f"test_evaluation_{index}"], name=name
+            name=name,
+            agent_type="agentic_search",
+            tags=[f"test_evaluation_{index}"], 
         )
         logger.info(f"Agente criado: {agent_id} (índice {index})")
         return agent_id.id
@@ -125,8 +190,9 @@ async def obter_resposta_letta(
         dict: Resposta do agente em formato bruto
     """
     try:
+        query = f"Moro no Rio de Janeiro. {pergunta}"
         resposta = await letta_service.send_message_raw(
-            agent_id=agent_id, message_content=pergunta, name=nome_usuario
+            agent_id=agent_id, message_content=query, name=nome_usuario
         )
         return resposta
     except Exception as e:
@@ -134,81 +200,133 @@ async def obter_resposta_letta(
         return {}
 
 
-async def processar_batch(exemplos: List[Example], inicio_batch: int) -> Dict[str, Any]:
+async def processar_batch(
+    exemplos: List[Example], 
+    inicio_batch: int, 
+    modo: Literal["letta", "gpt", "gemini"] = "letta"
+) -> Dict[str, Any]:
     """
-    Processa um batch de exemplos criando agentes, obtendo respostas e depois excluindo os agentes.
+    Processa um batch de exemplos usando o modo selecionado:
+    - 'letta': cria agentes Letta, obtém respostas e exclui os agentes
+    - 'gpt': usa o modelo GPT para obter respostas
+    - 'gemini': usa o modelo Gemini para obter respostas
 
     Args:
-        exemplos: Lista de exemplos do batch
-        inicio_batch: Índice inicial do batch para identificação
-
+        exemplos: Lista de exemplos
+        inicio_batch: Índice inicial para identificação
+        modo: Modo de operação ('letta', 'gpt', 'gemini')
+        
     Returns:
         Dict[str, Any]: Dicionário com as respostas obtidas
     """
     resultados = {}
-    agentes_criados = {}
+    
+    if modo == "letta":
+        agentes_criados = {}
 
-    # Fase 1: Criar todos os agentes do batch
-    logger.info(
-        f"Criando {len(exemplos)} agentes para o batch começando em {inicio_batch}"
-    )
-    criacao_tarefas = []
+        # Fase 1: Criar todos os agentes do batch
+        logger.info(f"Criando {len(exemplos)} agentes para o batch começando em {inicio_batch}")
+        criacao_tarefas = []
 
-    for i, exemplo in enumerate(exemplos):
-        indice = inicio_batch + i
-        tarefa = criar_agente_letta(indice)
-        criacao_tarefas.append(tarefa)
+        for i, exemplo in enumerate(exemplos):
+            indice = inicio_batch + i
+            criacao_tarefas.append(criar_agente_letta(indice))
 
-    ids_agentes = await asyncio.gather(*criacao_tarefas, return_exceptions=True)
+        ids_agentes = await asyncio.gather(*criacao_tarefas, return_exceptions=True)
 
-    # Verificar quais agentes foram criados com sucesso
-    agentes_validos = []
-    for i, resultado in enumerate(ids_agentes):
-        if isinstance(resultado, Exception):
-            logger.error(f"Falha ao criar agente {inicio_batch + i}: {resultado}")
-        else:
-            agentes_validos.append((exemplos[i], resultado))
-            agentes_criados[resultado] = exemplos[i].id
+        # Verificar quais agentes foram criados com sucesso
+        agentes_validos = []
+        for i, resultado in enumerate(ids_agentes):
+            if isinstance(resultado, Exception):
+                logger.error(f"Falha ao criar agente {inicio_batch + i}: {resultado}")
+            else:
+                agentes_validos.append((exemplos[i], resultado))
+                agentes_criados[resultado] = exemplos[i].id
 
-    # Fase 2: Obter respostas dos agentes criados com sucesso
-    logger.info(f"Obtendo respostas de {len(agentes_validos)} agentes válidos")
-    tarefas_respostas = []
+        # Fase 2: Obter respostas dos agentes criados com sucesso
+        logger.info(f"Obtendo respostas de {len(agentes_validos)} agentes válidos")
+        tarefas_respostas = []
 
-    for exemplo, agent_id in agentes_validos:
-        # Recupera a pergunta presente no input do exemplo.
-        pergunta = (
-            exemplo.input.get("pergunta")
-            or exemplo.input.get("pergunta_individual")
-            or exemplo.input.get("Mensagem WhatsApp Simulada")
-            or next(iter(exemplo.input.values()), "")
-        )
-        if not isinstance(pergunta, str):
-            pergunta = str(pergunta)
-        tarefa = obter_resposta_letta(agent_id, pergunta)
-        tarefas_respostas.append(tarefa)
+        for exemplo, agent_id in agentes_validos:
+            # Recupera a pergunta presente no input do exemplo.
+            pergunta = (
+                exemplo.input.get("pergunta")
+                or exemplo.input.get("pergunta_individual")
+                or exemplo.input.get("Mensagem WhatsApp Simulada")
+                or next(iter(exemplo.input.values()), "")
+            )
+            if not isinstance(pergunta, str):
+                pergunta = str(pergunta)
+            tarefas_respostas.append(obter_resposta_letta(agent_id, pergunta))
 
-    respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
+        respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
 
-    # Processar respostas
-    for i, resposta in enumerate(respostas):
-        exemplo, agent_id = agentes_validos[i]
-        if isinstance(resposta, Exception):
-            logger.error(f"Erro ao obter resposta do agente {agent_id}: {resposta}")
-        else:
-            resultados[exemplo.id] = resposta
+        # Processar respostas
+        for i, resposta in enumerate(respostas):
+            exemplo, agent_id = agentes_validos[i]
+            if isinstance(resposta, Exception):
+                logger.error(f"Erro ao obter resposta do agente {agent_id}: {resposta}")
+            else:
+                resultados[exemplo.id] = resposta
 
-    # Fase 3: Excluir todos os agentes
-    logger.info(f"Excluindo {len(agentes_criados)} agentes")
-    tarefas_exclusao = []
+        # Fase 3: Excluir todos os agentes
+        logger.info(f"Excluindo {len(agentes_criados)} agentes")
+        tarefas_exclusao = [excluir_agente_letta(agent_id) for agent_id in agentes_criados]
+        await asyncio.gather(*tarefas_exclusao, return_exceptions=True)
 
-    for agent_id in agentes_criados:
-        tarefa = excluir_agente_letta(agent_id)
-        tarefas_exclusao.append(tarefa)
+    elif modo == "gpt":
+        logger.info(f"Obtendo respostas GPT para batch {inicio_batch}")
+        tarefas_respostas = []
 
-    await asyncio.gather(*tarefas_exclusao, return_exceptions=True)
+        for exemplo in exemplos:
+            # pergunta = (
+            #     exemplo.input.get("pergunta")
+            #     or exemplo.input.get("pergunta_individual")
+            #     or exemplo.input.get("Mensagem WhatsApp Simulada")
+            #     or next(iter(exemplo.input.values()), "")
+            # )
+
+            # if not isinstance(pergunta, str):
+            #     pergunta = str(pergunta)
+            tarefas_respostas.append(get_response_from_gpt(exemplo))
+        respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
+
+        for i, resposta in enumerate(respostas):
+            exemplo = exemplos[i]
+            if isinstance(resposta, Exception):
+                logger.error(f"Erro ao obter resposta GPT para exemplo {exemplo.id}: {resposta}")
+            else:
+                resultados[exemplo.id] = resposta
+    
+    elif modo == "gemini":
+        logger.info(f"Obtendo respostas Gemini para batch {inicio_batch}")
+        tarefas_respostas = []
+
+        for exemplo in exemplos:
+            # pergunta = (
+            #     exemplo.input.get("pergunta")
+            #     or exemplo.input.get("pergunta_individual")
+            #     or exemplo.input.get("Mensagem WhatsApp Simulada")
+            #     or next(iter(exemplo.input.values()), "")
+            # )
+
+            # if not isinstance(pergunta, str):
+            #     pergunta = str(pergunta)
+            tarefas_respostas.append(get_response_from_gemini(exemplo))
+
+        respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
+
+        for i, resposta in enumerate(respostas):
+            exemplo = exemplos[i]
+            if isinstance(resposta, Exception):
+                logger.error(f"Erro ao obter resposta Gemini para exemplo {exemplo.id}: {resposta}")
+            else:
+                resultados[exemplo.id] = resposta
+
+    else:
+        raise ValueError(f"Modo desconhecido: {modo}")
 
     return resultados
-
 
 async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
     """
@@ -236,7 +354,7 @@ async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
         )
 
         # Processar o batch
-        resultados_batch = await processar_batch(batch_atual, i)
+        resultados_batch = await processar_batch(batch_atual, i, modo="gemini")
         todas_respostas.update(resultados_batch)
 
         # Log do progresso
@@ -546,7 +664,7 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
             # experiment_eval_search_result_coverage,
             # experiment_eval_good_response_standards,
             experiment_eval_golden_link_in_tool_calling,
-            # experiment_eval_golden_link_in_answer
+            # experiment_eval_golden_link_in_answer,
         ],
         ##TODO: ALTERAR O NOME DO EXPERIMENTO
         experiment_name="Letta - Verificando golden links",
