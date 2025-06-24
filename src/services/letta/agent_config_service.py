@@ -55,27 +55,6 @@ class AgentConfigService:
             )
             return self._model_to_dict(new_cfg)
 
-        # Caso não tenha sido fornecida db, usar nova sessão
-        with get_db_session() as session:
-            cfg = AgentConfigRepository.get_active_config(session, agent_type)
-            if cfg:
-                return self._model_to_dict(cfg)
-
-            logger.info(
-                f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão..."
-            )
-            default_cfg = self._default_config(agent_type)
-            new_cfg = AgentConfigRepository.create_config(
-                db=session,
-                agent_type=agent_type,
-                memory_blocks=default_cfg["memory_blocks"],
-                tools=default_cfg["tools"],
-                model_name=default_cfg["model_name"],
-                embedding_name=default_cfg["embedding_name"],
-                metadata={"author": "System", "reason": "Criada automaticamente"},
-            )
-            return self._model_to_dict(new_cfg)
-
     def get_active_config_from_db(self, agent_type: str = "agentic_search") -> Dict[str, Any]:
         try:
             with get_db_session() as db:
@@ -158,8 +137,6 @@ class AgentConfigService:
         new_cfg_values: Dict[str, Any],
         agent_type: str,
         tags: Optional[List[str]],
-        db: Session,
-        config_id: str,
     ) -> Dict[str, bool]:
         client = letta_service.get_client_async()
         results: Dict[str, bool] = {}
@@ -175,8 +152,26 @@ class AgentConfigService:
 
         for agent in agents:
             try:
+                memory_blocks = await client.blocks.list(agent_id=agent.id)
+                memory_blocks_ids = [block.id for block in memory_blocks if block.name in new_cfg_values.get("memory_blocks")]
+                
+                for memory_block_id in memory_blocks_ids:
+                    await client.blocks.delete(memory_block_id)
+                
+                new_memory_blocks_ids = []
+                
+                for memory_block in new_cfg_values.get("memory_blocks"):
+                  memory_block = await client.blocks.create(
+                    agent_id=agent.id,
+                    name=memory_block["label"],
+                    value=memory_block["value"],
+                    limit=memory_block["limit"],
+                  )
+                  new_memory_blocks_ids.append(memory_block.id)
+                
                 await client.agents.modify(
                     agent_id=agent.id,
+                    block_ids=new_memory_blocks_ids,
                     tool_ids=tool_ids,
                     model=new_cfg_values.get("model_name"),
                     embedding=new_cfg_values.get("embedding_name"),
