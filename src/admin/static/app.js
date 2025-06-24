@@ -52,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar tema
     initTheme();
     
+    // Ajusta interface inicial com base na aba corrente
+    updateTabUI();
+    
     // Verificar se já existe um token salvo
     if (currentToken) {
         showAdminPanel();
@@ -168,6 +171,9 @@ function showLoading() {
 function hideLoading() {
     loadingIndicator.classList.add('d-none');
     contentArea.classList.remove('d-none');
+
+    // Garante que a interface certa seja exibida após carregar
+    updateTabUI();
 }
 
 function showAlert(message, type = 'success') {
