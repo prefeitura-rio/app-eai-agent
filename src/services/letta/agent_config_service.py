@@ -150,7 +150,7 @@ class AgentConfigService:
 
         for agent in agents:
             try:
-                memory_blocks = await client.blocks.list(agent_id=agent.id)
+                memory_blocks = await client.agents.blocks.list(agent_id=agent.id)
                 memory_blocks_ids = [block.id for block in memory_blocks if block.name in new_cfg_values.get("memory_blocks")]
                 
                 for memory_block_id in memory_blocks_ids:
