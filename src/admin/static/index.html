@@ -57,7 +57,7 @@
         
         <div id="adminPanel" class="admin-container d-none">
             <div class="navbar">
-                <h1 class="nav-title">Painel de edição de System Prompts</h1>
+                <h1 class="nav-title">Painel de Edição de Agentes</h1>
                 <div class="d-flex align-items-center">
                     <div class="theme-switch-wrapper">
                         <span class="icon sun-icon"><i class="bi bi-brightness-high-fill"></i></span>
@@ -86,6 +86,20 @@
                 </div>
             </div>
             
+            <!-- Navegação entre abas -->
+            <ul class="nav nav-tabs px-4" id="panelTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tabPrompt" data-bs-toggle="tab" type="button" role="tab">
+                        System Prompt
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tabConfig" data-bs-toggle="tab" type="button" role="tab">
+                        Configuração do Agente
+                    </button>
+                </li>
+            </ul>
+
             <div id="contentArea" class="content-layout d-none">
                 <!-- Editor de System Prompt (exibido primeiro) -->
                 <div class="prompt-section mb-4">
@@ -138,6 +152,67 @@
                         <div class="card-body">
                             <h4 class="section-title"><i class="bi bi-clock-history me-2"></i>Histórico de Prompts</h4>
                             <div id="historyList" class="list-group mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ======================== Config Section ======================== -->
+                <div class="config-section mb-4 d-none">
+                    <div class="card glass-card prompt-card">
+                        <div class="card-body">
+                            <h4 class="section-title"><i class="bi bi-gear me-2"></i>Configuração do Agente</h4>
+
+                            <div class="mb-3 mt-3">
+                                <label for="memoryBlocks" class="form-label mb-1">Memory Blocks (JSON)</label>
+                                <textarea id="memoryBlocks" class="prompt-editor" rows="6"></textarea>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="tools" class="form-label">Tools (comma separated)</label>
+                                    <input type="text" class="form-control glass-input" id="tools">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="modelName" class="form-label">Model</label>
+                                    <input type="text" class="form-control glass-input" id="modelName">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="embeddingName" class="form-label">Embedding</label>
+                                    <input type="text" class="form-control glass-input" id="embeddingName">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="authorCfg" class="form-label"><i class="bi bi-person me-1"></i>Autor</label>
+                                    <input type="text" class="form-control glass-input" id="authorCfg">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="reasonCfg" class="form-label"><i class="bi bi-info-circle me-1"></i>Motivo da Atualização</label>
+                                    <input type="text" class="form-control glass-input" id="reasonCfg">
+                                </div>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="updateAgentsCfg" checked>
+                                <label class="form-check-label" for="updateAgentsCfg">
+                                    Atualizar agentes existentes
+                                </label>
+                            </div>
+
+                            <button id="saveConfigButton" class="btn btn-primary btn-glass">
+                                <i class="bi bi-save me-1"></i>Salvar Configuração
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Histórico de Configs -->
+                <div class="config-history-section d-none">
+                    <div class="card glass-card">
+                        <div class="card-body">
+                            <h4 class="section-title"><i class="bi bi-clock-history me-2"></i>Histórico de Configurações</h4>
+                            <div id="configHistoryList" class="list-group mt-3"></div>
                         </div>
                     </div>
                 </div>
