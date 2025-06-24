@@ -492,13 +492,7 @@ input:checked + .slider:before {
     transition: all 0.3s ease;
 }
 
-/* Responsividade melhorada */
-@media (min-width: 1024px) {
-    .content-layout {
-        grid-template-columns: 2fr 1fr;
-        gap: var(--space-2xl);
-    }
-}
+/* Responsividade melhorada - histórico sempre abaixo do editor */
 
 @media (max-width: 768px) {
     .navbar {
@@ -597,6 +591,16 @@ input:disabled {
     box-shadow: 0 0 0 3px var(--focus-ring);
     border-color: var(--primary-color);
     outline: none;
+}
+
+/* Campo de tools com maior altura */
+#tools {
+    min-height: 80px;
+    padding: var(--space-md);
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
 }
 
 /* Container de email de suporte */
