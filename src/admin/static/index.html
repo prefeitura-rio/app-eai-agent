@@ -104,16 +104,7 @@
                             
 
                             
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="updateAgents" checked>
-                                <label class="form-check-label" for="updateAgents">
-                                    Atualizar agentes existentes
-                                </label>
-                            </div>
-                            
-                            <button id="saveButton" class="btn btn-primary btn-glass">
-                                <i class="bi bi-save me-1"></i>Salvar System Prompt
-                            </button>
+                            <!-- Botão de salvar movido para baixo -->
                         </div>
                     </div>
                 </div>
@@ -146,19 +137,24 @@
 
 
 
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="updateAgentsCfg" checked>
-                                <label class="form-check-label" for="updateAgentsCfg">
-                                    Atualizar agentes existentes
-                                </label>
+                            <!-- Controles unificados -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="updateAgents" checked>
+                                        <label class="form-check-label" for="updateAgents">
+                                            Atualizar agentes existentes
+                                        </label>
+                                    </div>
+                                    
+                                    <button id="saveAllButton" class="btn btn-primary btn-glass btn-lg">
+                                        <i class="bi bi-save me-1"></i>Salvar Alterações (Prompt + Configurações)
+                                    </button>
+                                    <button id="resetAllButton" class="btn btn-outline-danger btn-glass ms-2">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Resetar Tudo
+                                    </button>
+                                </div>
                             </div>
-
-                            <button id="saveConfigButton" class="btn btn-primary btn-glass">
-                                <i class="bi bi-save me-1"></i>Salvar Configuração
-                            </button>
-                            <button id="resetAllButton" class="btn btn-outline-danger btn-glass ms-2">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Resetar Tudo
-                            </button>
                         </div>
                     </div>
                 </div>

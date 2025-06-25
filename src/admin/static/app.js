@@ -7,7 +7,6 @@ const loadingIndicator = document.getElementById('loadingIndicator');
 const contentArea = document.getElementById('contentArea');
 const promptText = document.getElementById('promptText');
 const updateAgentsCheckbox = document.getElementById('updateAgents');
-const saveButton = document.getElementById('saveButton');
 const copyButton = document.getElementById('copyButton');
 const historyList = document.getElementById('historyList');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -20,8 +19,7 @@ const memoryBlocksText = document.getElementById('memoryBlocks');
 const toolsInput = document.getElementById('tools');
 const modelNameInput = document.getElementById('modelName');
 const embeddingNameInput = document.getElementById('embeddingName');
-const updateAgentsCfgCheckbox = document.getElementById('updateAgentsCfg');
-const saveConfigButton = document.getElementById('saveConfigButton');
+const saveAllButton = document.getElementById('saveAllButton');
 const resetAllButton = document.getElementById('resetAllButton');
 const deleteTestsBtn = document.getElementById('deleteTestsBtn');
 
@@ -54,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     loginForm.addEventListener('submit', handleLogin);
     agentTypeSelect.addEventListener('change', loadData);
-    saveButton.addEventListener('click', handleSavePrompt);
+    saveAllButton.addEventListener('click', handleSaveAll);
     logoutBtn.addEventListener('click', handleLogout);
     copyButton.addEventListener('click', handleCopyPrompt);
     
@@ -116,11 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // Listener botão salvar config
-    if (saveConfigButton) {
-        saveConfigButton.addEventListener('click', handleSaveConfig);
-    }
-
+    // Listeners botões
     if (resetAllButton) {
         resetAllButton.addEventListener('click', handleResetAll);
     }
@@ -229,7 +223,7 @@ function handleLogout() {
     location.reload();
 }
 
-function handleSavePrompt() {
+function handleSaveAll() {
     const agentType = agentTypeSelect.value;
     const newPrompt = promptText.value;
     
@@ -239,15 +233,27 @@ function handleSavePrompt() {
         return;
     }
     
+    // Validar JSON dos memory blocks
+    let memoryBlocksValue = memoryBlocksText.value.trim();
+    let memoryBlocksArray = null;
+    if (memoryBlocksValue) {
+        try {
+            memoryBlocksArray = JSON.parse(memoryBlocksValue);
+        } catch (e) {
+            showAlert('Memory blocks devem ser JSON válido.', 'danger');
+            return;
+        }
+    }
+    
     // Criar e mostrar modal de confirmação antes de salvar
-    const saveConfirmModal = createConfirmationModal();
+    const saveConfirmModal = createUnifiedConfirmationModal();
     document.body.appendChild(saveConfirmModal);
     
     // Obter referências aos elementos do modal
-    const modalElement = document.getElementById('saveConfirmModal');
-    const authorModalInput = document.getElementById('modalAuthorInput');
-    const reasonModalInput = document.getElementById('modalReasonInput');
-    const confirmSaveBtn = document.getElementById('confirmSaveBtn');
+    const modalElement = document.getElementById('saveUnifiedConfirmModal');
+    const authorModalInput = document.getElementById('modalAuthorUnifiedInput');
+    const reasonModalInput = document.getElementById('modalReasonUnifiedInput');
+    const confirmSaveBtn = document.getElementById('confirmSaveUnifiedBtn');
     
     // Sempre iniciar os campos vazios para forçar o preenchimento
     authorModalInput.value = '';
@@ -261,20 +267,18 @@ function handleSavePrompt() {
     confirmSaveBtn.addEventListener('click', function() {
         // Verificar se os campos obrigatórios foram preenchidos
         if (!authorModalInput.value.trim()) {
-            document.getElementById('authorModalFeedback').classList.remove('d-none');
+            document.getElementById('authorUnifiedModalFeedback').classList.remove('d-none');
             return;
         } else {
-            document.getElementById('authorModalFeedback').classList.add('d-none');
+            document.getElementById('authorUnifiedModalFeedback').classList.add('d-none');
         }
         
         if (!reasonModalInput.value.trim()) {
-            document.getElementById('reasonModalFeedback').classList.remove('d-none');
+            document.getElementById('reasonUnifiedModalFeedback').classList.remove('d-none');
             return;
         } else {
-            document.getElementById('reasonModalFeedback').classList.add('d-none');
+            document.getElementById('reasonUnifiedModalFeedback').classList.add('d-none');
         }
-        
-        // Os valores serão usados diretamente do modal
         
         // Fechar o modal
         modal.hide();
@@ -283,49 +287,55 @@ function handleSavePrompt() {
         modalElement.addEventListener('hidden.bs.modal', function () {
             saveConfirmModal.remove();
             
-            // Continuar com o processo de salvamento
-            proceedWithSave(agentType, newPrompt, authorModalInput.value.trim(), reasonModalInput.value.trim());
+            // Continuar com o processo de salvamento unificado
+            proceedWithUnifiedSave(
+                agentType, 
+                newPrompt, 
+                memoryBlocksArray, 
+                authorModalInput.value.trim(), 
+                reasonModalInput.value.trim()
+            );
         }, { once: true });
     });
 }
 
-function createConfirmationModal() {
+function createUnifiedConfirmationModal() {
     const modalDiv = document.createElement('div');
     modalDiv.className = 'modal fade';
-    modalDiv.id = 'saveConfirmModal';
+    modalDiv.id = 'saveUnifiedConfirmModal';
     modalDiv.tabIndex = '-1';
-    modalDiv.setAttribute('aria-labelledby', 'saveConfirmModalLabel');
+    modalDiv.setAttribute('aria-labelledby', 'saveUnifiedConfirmModalLabel');
     modalDiv.setAttribute('aria-hidden', 'true');
     
     modalDiv.innerHTML = `
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="saveConfirmModalLabel">Confirmar alterações</h5>
+                    <h5 class="modal-title" id="saveUnifiedConfirmModalLabel">Confirmar alterações unificadas</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Preencha as informações abaixo para salvar as alterações:</p>
+                    <p>Preencha as informações abaixo para salvar as alterações em <strong>System Prompt E Configurações</strong> como uma única versão:</p>
                     
                     <div class="mb-3">
-                        <label for="modalAuthorInput" class="form-label">Autor <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="modalAuthorInput" required>
-                        <div id="authorModalFeedback" class="invalid-feedback d-none">
+                        <label for="modalAuthorUnifiedInput" class="form-label">Autor <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalAuthorUnifiedInput" required>
+                        <div id="authorUnifiedModalFeedback" class="invalid-feedback d-none">
                             O nome do autor é obrigatório.
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="modalReasonInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="modalReasonInput" required>
-                        <div id="reasonModalFeedback" class="invalid-feedback d-none">
+                        <label for="modalReasonUnifiedInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalReasonUnifiedInput" required>
+                        <div id="reasonUnifiedModalFeedback" class="invalid-feedback d-none">
                             O motivo da atualização é obrigatório.
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="confirmSaveBtn">Salvar alterações</button>
+                    <button type="button" class="btn btn-primary" id="confirmSaveUnifiedBtn">Salvar tudo junto</button>
                 </div>
             </div>
         </div>
@@ -334,7 +344,7 @@ function createConfirmationModal() {
     return modalDiv;
 }
 
-function proceedWithSave(agentType, newPrompt, author, reason) {
+function proceedWithUnifiedSave(agentType, newPrompt, memoryBlocksArray, author, reason) {
     showLoading();
     
     const metadata = {
@@ -344,24 +354,53 @@ function proceedWithSave(agentType, newPrompt, author, reason) {
     
     const updateAgents = updateAgentsCheckbox.checked;
     
-    // Criar payload
+    // Criar payload unificado contendo tanto prompt quanto config
     const payload = {
+        agent_type: agentType,
+        new_prompt: newPrompt,
+        memory_blocks: memoryBlocksArray,
+        tools: toolsInput.value.split(',').map(t => t.trim()).filter(Boolean),
+        model_name: modelNameInput.value.trim() || null,
+        embedding_name: embeddingNameInput.value.trim() || null,
+        update_agents: updateAgents,
+        metadata: metadata
+    };
+    
+    // Por enquanto, vou chamar os dois endpoints sequencialmente
+    // TODO: Criar endpoint unificado no backend
+    console.log('Salvando alterações unificadas:', payload);
+    
+    // Primeiro salvar o prompt
+    const promptPayload = {
         new_prompt: newPrompt,
         agent_type: agentType,
         update_agents: updateAgents,
         metadata: metadata
     };
     
-    // Enviar requisição
-    apiRequest('POST', `${API_BASE_URL}/api/v1/system-prompt`, payload)
-        .then(response => {
+    apiRequest('POST', `${API_BASE_URL}/api/v1/system-prompt`, promptPayload)
+        .then(promptResponse => {
+            // Depois salvar a config
+            const configPayload = {
+                agent_type: agentType,
+                memory_blocks: memoryBlocksArray,
+                tools: payload.tools,
+                model_name: payload.model_name,
+                embedding_name: payload.embedding_name,
+                update_agents: updateAgents,
+                metadata: metadata
+            };
+            
+            return apiRequest('POST', `${API_BASE_URL}/api/v1/agent-config`, configPayload);
+        })
+        .then(configResponse => {
             hideLoading();
-            showAlert(response.message || 'Prompt atualizado com sucesso!');
+            showAlert('System Prompt e Configurações salvos com sucesso como uma única versão!');
             loadData(); // Recarregar dados
         })
         .catch(error => {
             hideLoading();
-            showAlert(error.message || 'Erro ao atualizar prompt', 'danger');
+            showAlert(error.message || 'Erro ao salvar alterações unificadas', 'danger');
         });
 }
 
@@ -478,53 +517,102 @@ function loadData() {
     });
 }
 
-// Função para criar o histórico unificado com versionamento unificado
+// Função para criar o histórico verdadeiramente unificado
 function createUnifiedHistory(prompts, configs) {
+    const versionsMap = new Map();
+    
+    // Processar prompts e configs agrupando por data
+    [...prompts, ...configs].forEach(item => {
+        const dateKey = item.created_at.split('T')[0]; // YYYY-MM-DD
+        const timestamp = new Date(item.created_at).getTime();
+        
+        if (!versionsMap.has(dateKey)) {
+            versionsMap.set(dateKey, []);
+        }
+        
+        versionsMap.get(dateKey).push({
+            ...item,
+            type: item.prompt_id ? 'prompt' : 'config',
+            timestamp: timestamp
+        });
+    });
+    
+    // Criar versões unificadas
     const unified = [];
+    let globalVersionCounter = 0;
     
-    // Processar prompts
-    prompts.forEach(prompt => {
-        unified.push({
-            id: prompt.prompt_id,
-            type: 'prompt',
-            version: generateVersionString(prompt.created_at, prompt.version),
-            originalVersion: prompt.version,
-            created_at: prompt.created_at,
-            is_active: prompt.is_active,
-            metadata: prompt.metadata,
-            content: prompt.content,
-            preview: typeof prompt.content === 'string' ? 
-                prompt.content.replace(/\n/g, ' ').trim().substring(0, 100) : 
-                '(Sem conteúdo)'
+    // Ordenar datas
+    const sortedDates = Array.from(versionsMap.keys()).sort();
+    
+    sortedDates.forEach(dateKey => {
+        const dayItems = versionsMap.get(dateKey);
+        
+        // Agrupar items por timestamp (mesmo momento = mesma versão)
+        const timestampGroups = new Map();
+        dayItems.forEach(item => {
+            const roundedTimestamp = Math.floor(item.timestamp / 60000) * 60000; // Agrupar por minuto
+            
+            if (!timestampGroups.has(roundedTimestamp)) {
+                timestampGroups.set(roundedTimestamp, []);
+            }
+            timestampGroups.get(roundedTimestamp).push(item);
         });
+        
+        // Criar uma versão para cada grupo de timestamp
+        Array.from(timestampGroups.entries())
+            .sort(([a], [b]) => a - b)
+            .forEach(([timestamp, items]) => {
+                globalVersionCounter++;
+                
+                const promptItem = items.find(i => i.type === 'prompt');
+                const configItem = items.find(i => i.type === 'config');
+                
+                const date = new Date(timestamp);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const version = `eai-${year}-${month}-${day}-v${globalVersionCounter}`;
+                
+                // Criar preview unificado
+                let preview = '';
+                if (promptItem && configItem) {
+                    preview = `Prompt + Config: ${(promptItem.content || '').substring(0, 50)}... | Tools: ${(configItem.tools || []).join(', ')}`;
+                } else if (promptItem) {
+                    preview = `Prompt: ${(promptItem.content || '').replace(/\n/g, ' ').trim().substring(0, 100)}`;
+                } else if (configItem) {
+                    preview = `Config: Tools: ${(configItem.tools || []).join(', ')}`;
+                }
+                
+                unified.push({
+                    id: promptItem?.prompt_id || configItem?.config_id,
+                    secondaryId: configItem?.config_id || promptItem?.prompt_id,
+                    type: 'unified',
+                    version: version,
+                    unifiedVersion: globalVersionCounter,
+                    created_at: new Date(timestamp).toISOString(),
+                    is_active: (promptItem?.is_active || configItem?.is_active) || false,
+                    metadata: promptItem?.metadata || configItem?.metadata,
+                    
+                    // Dados do prompt
+                    prompt_content: promptItem?.content,
+                    prompt_id: promptItem?.prompt_id,
+                    
+                    // Dados da config
+                    tools: configItem?.tools,
+                    model_name: configItem?.model_name,
+                    embedding_name: configItem?.embedding_name,
+                    config_id: configItem?.config_id,
+                    memory_blocks: configItem?.memory_blocks,
+                    
+                    preview: preview,
+                    hasPrompt: !!promptItem,
+                    hasConfig: !!configItem
+                });
+            });
     });
     
-    // Processar configurações
-    configs.forEach(config => {
-        unified.push({
-            id: config.config_id,
-            type: 'config',
-            version: generateVersionString(config.created_at, config.version),
-            originalVersion: config.version,
-            created_at: config.created_at,
-            is_active: config.is_active,
-            metadata: config.metadata,
-            tools: config.tools,
-            model_name: config.model_name,
-            embedding_name: config.embedding_name,
-            preview: `Tools: ${(config.tools || []).join(', ')}`
-        });
-    });
-    
-    // Ordenar por data de criação (mais recente primeiro)
-    unified.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
-    // Reorganizar versões para que sejam sequenciais no histórico unificado
-    // A versão já é unificada no backend, então apenas reordenamos por data
-    unified.forEach((item, index) => {
-        // Manter a versão original do backend que já é unificada
-        item.displayVersion = item.originalVersion;
-    });
+    // Reordenar por versão (mais recente primeiro) para exibição
+    unified.sort((a, b) => b.unifiedVersion - a.unifiedVersion);
     
     return unified;
 }
@@ -565,30 +653,35 @@ function renderUnifiedHistory(historyItems) {
             hour12: false
         }).format(brazilDate);
         
-        // Determinar se está ativo baseado no tipo
-        const isActive = (item.type === 'prompt' && item.id === currentPromptId) ||
-                        (item.type === 'config' && item.id === currentConfigId);
+        // Determinar se está ativo baseado nos IDs
+        const isActive = (item.prompt_id === currentPromptId) || (item.config_id === currentConfigId);
         
         const historyItem = document.createElement('div');
         historyItem.className = `history-item ${isActive ? 'active' : ''}`;
         historyItem.dataset.itemId = item.id;
         historyItem.dataset.itemType = item.type;
-        historyItem.dataset.version = item.originalVersion;
+        historyItem.dataset.version = item.unifiedVersion;
         
-        // Ícone e cor baseados no tipo
-        const typeInfo = item.type === 'prompt' ? 
-            { icon: 'bi-pencil-square', label: 'System Prompt', color: 'primary' } :
-            { icon: 'bi-gear', label: 'Configurações', color: 'info' };
+        // Criar badges para indicar o que está incluso na versão
+        let badges = '';
+        if (item.hasPrompt && item.hasConfig) {
+            badges = '<span class="badge bg-primary me-1">Prompt + Config</span>';
+        } else if (item.hasPrompt) {
+            badges = '<span class="badge bg-primary me-1">System Prompt</span>';
+        } else if (item.hasConfig) {
+            badges = '<span class="badge bg-info me-1">Configurações</span>';
+        }
         
         historyItem.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <span class="history-version">
-                    <i class="bi ${typeInfo.icon} me-1 text-${typeInfo.color}"></i>
-                    ${item.version} <span class="text-muted">(${typeInfo.label})</span>
+                    <i class="bi bi-bookmark me-1 text-primary"></i>
+                    ${item.version}
                 </span>
                 <span class="history-date">${date} ${timeStr}</span>
             </div>
             <div class="my-2">
+                ${badges}
                 ${item.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
                 ${item.metadata && item.metadata.author ? 
                     `<span class="metadata-badge">Autor: ${item.metadata.author}</span>` : ''}
@@ -596,20 +689,16 @@ function renderUnifiedHistory(historyItems) {
                     `<span class="metadata-badge">${item.metadata.reason}</span>` : ''}
             </div>
             <div class="history-preview" title="${item.preview}">
-                ${item.preview.substring(0, 100)}${item.preview.length > 100 ? '...' : ''}
+                ${item.preview}
             </div>
         `;
         
-        // Adicionar listener de clique
+        // Adicionar listener de clique para carregar a versão unificada
         historyItem.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            if (item.type === 'prompt') {
-                selectPromptById(item.id);
-            } else {
-                selectConfigById(item.id);
-            }
+            selectUnifiedVersion(item);
         });
         
         historyList.appendChild(historyItem);
@@ -777,186 +866,72 @@ window.addEventListener('load', function() {
 
 
 
-function handleSaveConfig() {
-    const agentType = agentTypeSelect.value;
+// Função handleSaveConfig removida - agora usamos handleSaveAll
 
-    // Validar JSON dos memory blocks antes de prosseguir
-    let memoryBlocksValue = memoryBlocksText.value.trim();
-    let memoryBlocksArray = null;
-    if (memoryBlocksValue) {
-        try {
-            memoryBlocksArray = JSON.parse(memoryBlocksValue);
-        } catch (e) {
-            showAlert('Memory blocks devem ser JSON válido.', 'danger');
-            return;
+// Funções createConfigConfirmationModal e proceedWithConfigSave removidas - agora usamos versões unificadas
+
+
+
+// Função selectConfigById removida - agora usamos selectUnifiedVersion
+
+function selectUnifiedVersion(item) {
+    console.log('Selecionando versão unificada:', item);
+    showLoading();
+    
+    try {
+        // Carregar dados do prompt se existir
+        if (item.hasPrompt && item.prompt_content) {
+            promptText.value = item.prompt_content;
+            currentPromptId = item.prompt_id;
+        } else if (item.hasPrompt && item.prompt_id) {
+            // Buscar conteúdo completo do prompt via API
+            selectPromptById(item.prompt_id);
         }
+        
+        // Carregar dados da configuração se existir
+        if (item.hasConfig) {
+            if (item.memory_blocks) {
+                memoryBlocksText.value = JSON.stringify(item.memory_blocks, null, 2);
+            }
+            if (item.tools) {
+                toolsInput.value = item.tools.join(', ');
+            }
+            if (item.model_name) {
+                modelNameInput.value = item.model_name;
+            }
+            if (item.embedding_name) {
+                embeddingNameInput.value = item.embedding_name;
+            }
+            currentConfigId = item.config_id;
+        }
+        
+        // Atualizar interface para mostrar que esta versão está selecionada
+        updateActiveUnifiedHistoryItem(item);
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Erro ao carregar versão unificada:', error);
+        hideLoading();
+        showAlert('Erro ao carregar versão: ' + error.message, 'danger');
     }
-
-    // Criar e mostrar modal de confirmação antes de salvar
-    const saveConfirmModal = createConfigConfirmationModal();
-    document.body.appendChild(saveConfirmModal);
-    
-    // Obter referências aos elementos do modal
-    const modalElement = document.getElementById('saveConfigConfirmModal');
-    const authorModalInput = document.getElementById('modalAuthorConfigInput');
-    const reasonModalInput = document.getElementById('modalReasonConfigInput');
-    const confirmSaveBtn = document.getElementById('confirmSaveConfigBtn');
-    
-    // Sempre iniciar os campos vazios para forçar o preenchimento
-    authorModalInput.value = '';
-    reasonModalInput.value = '';
-    
-    // Mostrar o modal
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-    
-    // Adicionar evento ao botão de confirmação
-    confirmSaveBtn.addEventListener('click', function() {
-        // Verificar se os campos obrigatórios foram preenchidos
-        if (!authorModalInput.value.trim()) {
-            document.getElementById('authorConfigModalFeedback').classList.remove('d-none');
-            return;
-        } else {
-            document.getElementById('authorConfigModalFeedback').classList.add('d-none');
-        }
-        
-        if (!reasonModalInput.value.trim()) {
-            document.getElementById('reasonConfigModalFeedback').classList.remove('d-none');
-            return;
-        } else {
-            document.getElementById('reasonConfigModalFeedback').classList.add('d-none');
-        }
-        
-        // Os valores serão usados diretamente do modal
-        
-        // Fechar o modal
-        modal.hide();
-        
-        // Remover o modal do DOM depois que for fechado
-        modalElement.addEventListener('hidden.bs.modal', function () {
-            saveConfirmModal.remove();
-            
-            // Continuar com o processo de salvamento
-            proceedWithConfigSave(agentType, memoryBlocksArray, authorModalInput.value.trim(), reasonModalInput.value.trim());
-        }, { once: true });
-    });
 }
 
-function createConfigConfirmationModal() {
-    const modalDiv = document.createElement('div');
-    modalDiv.className = 'modal fade';
-    modalDiv.id = 'saveConfigConfirmModal';
-    modalDiv.tabIndex = '-1';
-    modalDiv.setAttribute('aria-labelledby', 'saveConfigConfirmModalLabel');
-    modalDiv.setAttribute('aria-hidden', 'true');
-    
-    modalDiv.innerHTML = `
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="saveConfigConfirmModalLabel">Confirmar alterações da configuração</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Preencha as informações abaixo para salvar as alterações da configuração:</p>
-                    
-                    <div class="mb-3">
-                        <label for="modalAuthorConfigInput" class="form-label">Autor <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="modalAuthorConfigInput" required>
-                        <div id="authorConfigModalFeedback" class="invalid-feedback d-none">
-                            O nome do autor é obrigatório.
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="modalReasonConfigInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="modalReasonConfigInput" required>
-                        <div id="reasonConfigModalFeedback" class="invalid-feedback d-none">
-                            O motivo da atualização é obrigatório.
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="confirmSaveConfigBtn">Salvar configuração</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    return modalDiv;
-}
-
-function proceedWithConfigSave(agentType, memoryBlocksArray, author, reason) {
-    showLoading();
-    
-    const payload = {
-        agent_type: agentType,
-        memory_blocks: memoryBlocksArray,
-        tools: toolsInput.value.split(',').map(t => t.trim()).filter(Boolean),
-        model_name: modelNameInput.value.trim() || null,
-        embedding_name: embeddingNameInput.value.trim() || null,
-        update_agents: updateAgentsCfgCheckbox.checked,
-        metadata: {
-            author: author,
-            reason: reason,
-        },
-    };
-
-    apiRequest('POST', `${API_BASE_URL}/api/v1/agent-config`, payload)
-        .then(response => {
-            hideLoading();
-            showAlert(response.message || 'Configuração salva com sucesso!');
-            loadData(); // Recarregar todo o histórico unificado
-        })
-        .catch(err => {
-            hideLoading();
-            showAlert(err.message || 'Erro ao salvar configuração', 'danger');
-        });
-}
-
-
-
-function selectConfigById(configId) {
-    if (!configId) return;
-    showLoading();
-    const url = `${API_BASE_URL}/api/v1/agent-config/by-id/${configId}`;
-
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${currentToken}`,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) throw new Error(`Erro ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            memoryBlocksText.value = JSON.stringify(data.memory_blocks || [], null, 2);
-            toolsInput.value = (data.tools || []).join(', ');
-            modelNameInput.value = data.model_name || '';
-            embeddingNameInput.value = data.embedding_name || '';
-
-            currentConfigId = configId;
-
-            updateActiveConfigHistoryItem(configId);
-            hideLoading();
-        })
-        .catch(err => {
-            hideLoading();
-            showAlert('Erro ao buscar configuração: ' + err.message, 'danger');
-        });
-}
-
-function updateActiveConfigHistoryItem(configId) {
-    // Atualizar o item ativo no histórico unificado
-    currentConfigId = configId;
+function updateActiveUnifiedHistoryItem(selectedItem) {
+    // Atualizar IDs ativos
+    if (selectedItem.prompt_id) {
+        currentPromptId = selectedItem.prompt_id;
+    }
+    if (selectedItem.config_id) {
+        currentConfigId = selectedItem.config_id;
+    }
     
     // Re-renderizar o histórico para refletir o novo item ativo
     unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
     renderUnifiedHistory(unifiedHistoryData);
+    
+    // Definir que estamos visualizando um item do histórico
+    isHistoryItemView = true;
 }
 
 // ---------------------- RESET ALL ----------------------
