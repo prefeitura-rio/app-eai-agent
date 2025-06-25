@@ -1,16 +1,76 @@
 from typing import List
+import httpx
+import uuid
+from loguru import logger
 
 from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
 )
-from src.services.letta.system_prompt_service import system_prompt_service
 from src.services.letta.letta_service import letta_service
-import uuid
-from loguru import logger
-
 from letta_client import ContinueToolRule
 from src.config import env
-from src.services.letta.agent_config_service import agent_config_service
+
+
+async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str:
+    """Obtém o system prompt via API"""
+    try:
+        base_url = getattr(env, 'EAI_AGENT_URL', 'http://localhost:8000')
+        api_url = f"{base_url}system-prompt?agent_type={agent_type}"
+        
+        bearer_token = getattr(env, 'EAI_AGENT_TOKEN', '')
+        
+        headers = {}
+        if bearer_token:
+            headers['Authorization'] = f'Bearer {bearer_token}'
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(api_url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            
+            logger.info(f"System prompt obtido via API para agent_type: {agent_type}")
+            return data.get("prompt", "")
+            
+    except Exception as e:
+        logger.warning(f"Erro ao obter system prompt via API: {str(e)}. Usando fallback.")
+        # Fallback para prompt padrão
+        return f"""You are an AI assistant for the {agent_type} role.
+Follow these guidelines:
+1. Answer concisely but accurately
+2. Use tools when necessary
+3. Focus on providing factual information
+4. Be helpful, harmless, and honest"""
+
+
+async def _get_agent_config_from_api(agent_type: str = "agentic_search") -> dict:
+    """Obtém a configuração do agente via API"""
+    try:
+        base_url = getattr(env, 'EAI_AGENT_URL', 'http://localhost:8000')
+        api_url = f"{base_url}agent-config?agent_type={agent_type}"
+        
+        bearer_token = getattr(env, 'EAI_AGENT_TOKEN', '')
+        
+        headers = {}
+        if bearer_token:
+            headers['Authorization'] = f'Bearer {bearer_token}'
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(api_url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            
+            logger.info(f"Configuração do agente obtida via API para agent_type: {agent_type}")
+            return data
+            
+    except Exception as e:
+        logger.warning(f"Erro ao obter configuração via API: {str(e)}. Usando fallback.")
+        # Fallback para configuração padrão
+        return {
+            "memory_blocks": get_agentic_search_memory_blocks(),
+            "tools": ["google_search", "public_services_grounded_search"],
+            "model_name": env.LLM_MODEL,
+            "embedding_name": env.EMBEDDING_MODEL,
+        }
 
 
 async def create_agentic_search_agent(tags: List[str] = None, username: str = None):
@@ -18,23 +78,15 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
     try:
         client = letta_service.get_client_async()
 
-        # Obtém system prompt e configuração ativa do banco de dados
-        system_prompt = system_prompt_service.get_active_system_prompt_from_db(
-            agent_type="agentic_search"
-        )
+        # Obtém system prompt e configuração ativa via API
+        system_prompt = await _get_system_prompt_from_api(agent_type="agentic_search")
+        agent_cfg = await _get_agent_config_from_api(agent_type="agentic_search")
 
-        agent_cfg = agent_config_service.get_active_config_from_db(
-            agent_type="agentic_search"
-        )
-
-        # Extrai valores ou aplica fallback
-        memory_blocks = agent_cfg.get("memory_blocks") if agent_cfg else get_agentic_search_memory_blocks()
-        tools = agent_cfg.get("tools") if agent_cfg else [
-            "google_search",
-            "public_services_grounded_search",
-        ]
-        model_name = agent_cfg.get("model_name") if agent_cfg else env.LLM_MODEL
-        embedding_name = agent_cfg.get("embedding_name") if agent_cfg else env.EMBEDDING_MODEL
+        # Extrai valores com fallback já incluído nas funções API
+        memory_blocks = agent_cfg.get("memory_blocks", get_agentic_search_memory_blocks())
+        tools = agent_cfg.get("tools", ["google_search", "public_services_grounded_search"])
+        model_name = agent_cfg.get("model_name", env.LLM_MODEL)
+        embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
 
         agent = await client.agents.create(
             agent_type="memgpt_agent",
