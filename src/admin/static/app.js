@@ -6,8 +6,6 @@ const agentTypeSelect = document.getElementById('agentType');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const contentArea = document.getElementById('contentArea');
 const promptText = document.getElementById('promptText');
-const authorInput = document.getElementById('author');
-const reasonInput = document.getElementById('reason');
 const updateAgentsCheckbox = document.getElementById('updateAgents');
 const saveButton = document.getElementById('saveButton');
 const copyButton = document.getElementById('copyButton');
@@ -22,8 +20,6 @@ const memoryBlocksText = document.getElementById('memoryBlocks');
 const toolsInput = document.getElementById('tools');
 const modelNameInput = document.getElementById('modelName');
 const embeddingNameInput = document.getElementById('embeddingName');
-const authorCfgInput = document.getElementById('authorCfg');
-const reasonCfgInput = document.getElementById('reasonCfg');
 const updateAgentsCfgCheckbox = document.getElementById('updateAgentsCfg');
 const saveConfigButton = document.getElementById('saveConfigButton');
 const resetAllButton = document.getElementById('resetAllButton');
@@ -278,9 +274,7 @@ function handleSavePrompt() {
             document.getElementById('reasonModalFeedback').classList.add('d-none');
         }
         
-        // Atualizar os valores dos inputs principais com os valores do modal
-        authorInput.value = authorModalInput.value.trim();
-        reasonInput.value = reasonModalInput.value.trim();
+        // Os valores serão usados diretamente do modal
         
         // Fechar o modal
         modal.hide();
@@ -290,7 +284,7 @@ function handleSavePrompt() {
             saveConfirmModal.remove();
             
             // Continuar com o processo de salvamento
-            proceedWithSave(agentType, newPrompt, authorInput.value, reasonInput.value);
+            proceedWithSave(agentType, newPrompt, authorModalInput.value.trim(), reasonModalInput.value.trim());
         }, { once: true });
     });
 }
@@ -427,16 +421,6 @@ function loadData() {
     
     // Resetar o estado de visualização de histórico
     isHistoryItemView = false;
-    authorInput.disabled = false;
-    reasonInput.disabled = false;
-    
-    // Remover classe visual de visualização
-    authorInput.classList.remove('viewing-history');
-    reasonInput.classList.remove('viewing-history');
-    
-    // Limpar campos de autor e motivo ao iniciar
-    authorInput.value = '';
-    reasonInput.value = '';
     
     // Carregar todos os dados em paralelo
     Promise.all([
@@ -665,12 +649,7 @@ function selectPromptById(promptId) {
         promptText.value = data.prompt || '';
         currentPromptId = promptId;
         
-        // Encontrar o prompt no array local para obter metadados adicionais (apenas para visualização)
-        const localPrompt = promptsData.find(p => p.prompt_id === promptId);
-        if (localPrompt && localPrompt.metadata) {
-            authorInput.value = localPrompt.metadata.author || '(Não informado)';
-            reasonInput.value = localPrompt.metadata.reason || '(Não informado)';
-        }
+        // Metadados são exibidos apenas no histórico, não nos campos de edição
         
         // Atualizar a classe ativa nos itens do histórico
         updateActiveHistoryItem(promptId);
@@ -687,10 +666,7 @@ function selectPromptById(promptId) {
             promptText.value = localPrompt.content;
             currentPromptId = promptId;
             
-            if (localPrompt.metadata) {
-                authorInput.value = localPrompt.metadata.author || '(Não informado)';
-                reasonInput.value = localPrompt.metadata.reason || '(Não informado)';
-            }
+            // Metadados são exibidos apenas no histórico
             
             updateActiveHistoryItem(promptId);
             showAlert('Usando dados locais do prompt (podem estar incompletos)', 'warning');
@@ -713,14 +689,6 @@ function updateActiveHistoryItem(promptId) {
     
     // Definir que estamos visualizando um item do histórico
     isHistoryItemView = true;
-    
-    // Desabilitar edição dos campos de autor e motivo quando estiver visualizando histórico
-    authorInput.disabled = true;
-    reasonInput.disabled = true;
-    
-    // Adicionar classe visual para facilitar a percepção de que está em modo de visualização
-    authorInput.classList.add('viewing-history');
-    reasonInput.classList.add('viewing-history');
 }
 
 // Helper para fazer requisições API
@@ -853,9 +821,7 @@ function handleSaveConfig() {
             document.getElementById('reasonConfigModalFeedback').classList.add('d-none');
         }
         
-        // Atualizar os valores dos inputs principais com os valores do modal
-        authorCfgInput.value = authorModalInput.value.trim();
-        reasonCfgInput.value = reasonModalInput.value.trim();
+        // Os valores serão usados diretamente do modal
         
         // Fechar o modal
         modal.hide();
@@ -865,7 +831,7 @@ function handleSaveConfig() {
             saveConfirmModal.remove();
             
             // Continuar com o processo de salvamento
-            proceedWithConfigSave(agentType, memoryBlocksArray, authorCfgInput.value, reasonCfgInput.value);
+            proceedWithConfigSave(agentType, memoryBlocksArray, authorModalInput.value.trim(), reasonModalInput.value.trim());
         }, { once: true });
     });
 }
