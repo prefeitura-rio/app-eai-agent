@@ -73,14 +73,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Procurar pelo elemento .history-item mais próximo
         const historyItem = e.target.closest('.history-item');
-        if (historyItem && historyItem.dataset.promptId) {
+        if (historyItem) {
             console.log('Clique em item do histórico detectado via delegação de eventos');
-            console.log('Prompt ID:', historyItem.dataset.promptId);
-            console.log('Versão:', historyItem.dataset.version);
+            console.log('Item dataset:', historyItem.dataset);
+            
+            // Evitar duplo processamento - itens unificados são processados pelo listener específico
+            if (historyItem.dataset.itemType === 'unified') {
+                return;
+            }
             
             e.preventDefault();
             e.stopPropagation();
-            selectPromptById(historyItem.dataset.promptId);
         }
     });
     
@@ -878,43 +881,99 @@ function selectUnifiedVersion(item) {
     console.log('Selecionando versão unificada:', item);
     showLoading();
     
-    try {
-        // Carregar dados do prompt se existir
-        if (item.hasPrompt && item.prompt_content) {
-            promptText.value = item.prompt_content;
-            currentPromptId = item.prompt_id;
-        } else if (item.hasPrompt && item.prompt_id) {
-            // Buscar conteúdo completo do prompt via API
-            selectPromptById(item.prompt_id);
-        }
-        
-        // Carregar dados da configuração se existir
-        if (item.hasConfig) {
-            if (item.memory_blocks) {
-                memoryBlocksText.value = JSON.stringify(item.memory_blocks, null, 2);
-            }
-            if (item.tools) {
-                toolsInput.value = item.tools.join(', ');
-            }
-            if (item.model_name) {
-                modelNameInput.value = item.model_name;
-            }
-            if (item.embedding_name) {
-                embeddingNameInput.value = item.embedding_name;
-            }
-            currentConfigId = item.config_id;
-        }
-        
-        // Atualizar interface para mostrar que esta versão está selecionada
-        updateActiveUnifiedHistoryItem(item);
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Erro ao carregar versão unificada:', error);
-        hideLoading();
-        showAlert('Erro ao carregar versão: ' + error.message, 'danger');
+    // Criar array de promessas para carregar dados em paralelo
+    const loadPromises = [];
+    
+    // Carregar dados do prompt se existir
+    if (item.hasPrompt && item.prompt_id) {
+        const promptPromise = apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt/by-id/${item.prompt_id}`)
+            .then(promptData => {
+                promptText.value = promptData.prompt || '';
+                currentPromptId = item.prompt_id;
+                console.log('Prompt carregado:', promptData.prompt ? 'Conteúdo presente' : 'Conteúdo vazio');
+            })
+            .catch(error => {
+                console.error('Erro ao carregar prompt:', error);
+                // Tentar usar dados locais como fallback se disponível
+                if (item.prompt_content) {
+                    promptText.value = item.prompt_content;
+                    currentPromptId = item.prompt_id;
+                } else {
+                    promptText.value = '';
+                }
+                throw new Error(`Erro ao carregar prompt: ${error.message}`);
+            });
+        loadPromises.push(promptPromise);
+    } else {
+        // Limpar campo se não há prompt
+        promptText.value = '';
+        currentPromptId = null;
     }
+    
+    // Carregar dados da configuração se existir
+    if (item.hasConfig && item.config_id) {
+        const configPromise = apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config/by-id/${item.config_id}`)
+            .then(configData => {
+                memoryBlocksText.value = JSON.stringify(configData.memory_blocks || [], null, 2);
+                toolsInput.value = (configData.tools || []).join(', ');
+                modelNameInput.value = configData.model_name || '';
+                embeddingNameInput.value = configData.embedding_name || '';
+                currentConfigId = item.config_id;
+                console.log('Configuração carregada:', configData);
+            })
+            .catch(error => {
+                console.error('Erro ao carregar configuração:', error);
+                // Tentar usar dados locais como fallback se disponível
+                if (item.memory_blocks) {
+                    memoryBlocksText.value = JSON.stringify(item.memory_blocks, null, 2);
+                }
+                if (item.tools) {
+                    toolsInput.value = item.tools.join(', ');
+                }
+                if (item.model_name) {
+                    modelNameInput.value = item.model_name;
+                }
+                if (item.embedding_name) {
+                    embeddingNameInput.value = item.embedding_name;
+                }
+                currentConfigId = item.config_id;
+                throw new Error(`Erro ao carregar configuração: ${error.message}`);
+            });
+        loadPromises.push(configPromise);
+    } else {
+        // Limpar campos se não há configuração
+        memoryBlocksText.value = '[]';
+        toolsInput.value = '';
+        modelNameInput.value = '';
+        embeddingNameInput.value = '';
+        currentConfigId = null;
+    }
+    
+    // Aguardar todas as promessas e atualizar interface
+    Promise.allSettled(loadPromises)
+        .then(results => {
+            // Verificar se houve erros
+            const errors = results.filter(result => result.status === 'rejected');
+            if (errors.length > 0) {
+                console.warn('Alguns dados não puderam ser carregados completamente:', errors);
+                showAlert('Versão carregada com algumas limitações. Verifique o console para detalhes.', 'warning');
+            } else {
+                console.log('Versão unificada carregada com sucesso');
+            }
+            
+            // Atualizar interface para mostrar que esta versão está selecionada
+            updateActiveUnifiedHistoryItem(item);
+            
+            // Definir que estamos visualizando um item do histórico
+            isHistoryItemView = true;
+            
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar versão unificada:', error);
+            hideLoading();
+            showAlert('Erro ao carregar versão: ' + error.message, 'danger');
+        });
 }
 
 function updateActiveUnifiedHistoryItem(selectedItem) {
