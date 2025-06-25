@@ -944,7 +944,7 @@ function handleResetAll() {
 
     showLoading();
 
-    const updateAgents = updateAgentsCfgCheckbox.checked;
+    const updateAgents = updateAgentsCheckbox.checked;
 
     const req1 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/system-prompt/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
     const req2 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/agent-config/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
