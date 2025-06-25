@@ -478,7 +478,7 @@ function loadData() {
     });
 }
 
-// Função para criar o histórico unificado com novo padrão de versionamento
+// Função para criar o histórico unificado com versionamento unificado
 function createUnifiedHistory(prompts, configs) {
     const unified = [];
     
@@ -518,6 +518,13 @@ function createUnifiedHistory(prompts, configs) {
     
     // Ordenar por data de criação (mais recente primeiro)
     unified.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    // Reorganizar versões para que sejam sequenciais no histórico unificado
+    // A versão já é unificada no backend, então apenas reordenamos por data
+    unified.forEach((item, index) => {
+        // Manter a versão original do backend que já é unificada
+        item.displayVersion = item.originalVersion;
+    });
     
     return unified;
 }
@@ -577,12 +584,11 @@ function renderUnifiedHistory(historyItems) {
             <div class="d-flex justify-content-between align-items-center">
                 <span class="history-version">
                     <i class="bi ${typeInfo.icon} me-1 text-${typeInfo.color}"></i>
-                    ${item.version}
+                    ${item.version} <span class="text-muted">(${typeInfo.label})</span>
                 </span>
                 <span class="history-date">${date} ${timeStr}</span>
             </div>
             <div class="my-2">
-                <span class="badge bg-${typeInfo.color} me-1">${typeInfo.label}</span>
                 ${item.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
                 ${item.metadata && item.metadata.author ? 
                     `<span class="metadata-badge">Autor: ${item.metadata.author}</span>` : ''}

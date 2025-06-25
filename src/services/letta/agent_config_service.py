@@ -108,13 +108,14 @@ class AgentConfigService:
         metadata: Optional[Dict[str, Any]],
         result: Dict[str, Any],
     ) -> Dict[str, Any]:
-        # Criar versão automaticamente baseada na data atual e contagem de versões do dia
+        # Criar versão automaticamente baseada na data atual e contagem unificada de alterações do dia
         from datetime import datetime
+        from src.repositories.system_prompt_repository import SystemPromptRepository
         today = datetime.now().date()
-        existing_configs_today = AgentConfigRepository.count_configs_by_date_and_type(
+        existing_changes_today = SystemPromptRepository.count_unified_changes_by_date_and_type(
             db=db, agent_type=agent_type, date=today
         )
-        next_version = existing_configs_today + 1
+        next_version = existing_changes_today + 1
         
         cfg = AgentConfigRepository.create_config(
             db=db,

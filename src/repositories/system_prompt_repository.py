@@ -311,3 +311,40 @@ class SystemPromptRepository:
             )
             .count()
         )
+    
+    @staticmethod
+    def count_unified_changes_by_date_and_type(db: Session, agent_type: str, date) -> int:
+        """
+        Conta quantas alterações (prompts + configs) foram criadas em uma data específica 
+        para um tipo de agente, permitindo versionamento unificado.
+
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            date: Data para filtrar (datetime.date)
+
+        Returns:
+            int: Número total de alterações (prompts + configs) criadas na data
+        """
+        from sqlalchemy import func, cast, Date
+        from src.models.agent_config_model import AgentConfig
+        
+        prompt_count = (
+            db.query(SystemPrompt)
+            .filter(
+                SystemPrompt.agent_type == agent_type,
+                cast(SystemPrompt.created_at, Date) == date
+            )
+            .count()
+        )
+        
+        config_count = (
+            db.query(AgentConfig)
+            .filter(
+                AgentConfig.agent_type == agent_type,
+                cast(AgentConfig.created_at, Date) == date
+            )
+            .count()
+        )
+        
+        return prompt_count + config_count
