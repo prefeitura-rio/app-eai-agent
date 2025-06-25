@@ -222,10 +222,19 @@ class SystemPromptService:
         Returns:
             Dict: Resultado das operações atualizado
         """
+        # Criar versão automaticamente baseada na data atual e contagem de versões do dia
+        from datetime import datetime
+        today = datetime.now().date()
+        existing_prompts_today = SystemPromptRepository.count_prompts_by_date_and_type(
+            db=db, agent_type=agent_type, date=today
+        )
+        next_version = existing_prompts_today + 1
+        
         prompt = SystemPromptRepository.create_prompt(
             db=db,
             agent_type=agent_type,
             content=new_prompt,
+            version=next_version,
             metadata=metadata or {"source": "api"},
         )
         result["prompt_id"] = prompt.prompt_id
@@ -341,6 +350,7 @@ class SystemPromptService:
 
             default_prompt = self._get_default_prompt(agent_type)
 
+            # Para reset, sempre usar versão 1 na data atual
             new_prompt = SystemPromptRepository.create_prompt(
                 db=db,
                 agent_type=agent_type,

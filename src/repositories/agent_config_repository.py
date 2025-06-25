@@ -100,4 +100,28 @@ class AgentConfigRepository:
 
     @staticmethod
     def get_config_by_id(db: Session, config_id: str) -> Optional[AgentConfig]:
-        return db.query(AgentConfig).filter(AgentConfig.config_id == config_id).first() 
+        return db.query(AgentConfig).filter(AgentConfig.config_id == config_id).first()
+
+    @staticmethod
+    def count_configs_by_date_and_type(db: Session, agent_type: str, date) -> int:
+        """
+        Conta quantas configurações foram criadas em uma data específica para um tipo de agente.
+
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            date: Data para filtrar (datetime.date)
+
+        Returns:
+            int: Número de configurações criadas na data
+        """
+        from sqlalchemy import func, cast, Date
+        
+        return (
+            db.query(AgentConfig)
+            .filter(
+                AgentConfig.agent_type == agent_type,
+                cast(AgentConfig.created_at, Date) == date
+            )
+            .count()
+        ) 

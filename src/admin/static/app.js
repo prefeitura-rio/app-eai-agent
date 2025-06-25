@@ -16,9 +16,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 const errorMsg = document.getElementById('errorMsg');
 const themeToggle = document.getElementById('themeToggle');
 
-// Novos elementos DOM para Configuração
-const tabPrompt = document.getElementById('tabPrompt');
-const tabConfig = document.getElementById('tabConfig');
+// Elementos DOM para Configuração
 
 const memoryBlocksText = document.getElementById('memoryBlocks');
 const toolsInput = document.getElementById('tools');
@@ -28,21 +26,18 @@ const authorCfgInput = document.getElementById('authorCfg');
 const reasonCfgInput = document.getElementById('reasonCfg');
 const updateAgentsCfgCheckbox = document.getElementById('updateAgentsCfg');
 const saveConfigButton = document.getElementById('saveConfigButton');
-const configHistoryList = document.getElementById('configHistoryList');
 const resetAllButton = document.getElementById('resetAllButton');
 const deleteTestsBtn = document.getElementById('deleteTestsBtn');
 
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
 let currentPromptId = null;
+let currentConfigId = null;
 let promptsData = []; // Array para armazenar todos os dados dos prompts
+let configsData = []; // Array para armazenar todos os dados das configurações
+let unifiedHistoryData = []; // Array para o histórico unificado
 let currentTheme = localStorage.getItem('theme') || 'light';
 let isHistoryItemView = false; // Nova variável para rastrear se estamos visualizando um item do histórico
-
-// Variável para tab atual: 'prompt' ou 'config'
-let currentTab = 'prompt';
-let currentConfigId = null;
-let configsData = [];
 
 // API base URL - ajustar de acordo com o ambiente
 const API_BASE_URL = 'https://services.staging.app.dados.rio/eai-agent';
@@ -53,9 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar tema
     initTheme();
-    
-    // Ajusta interface inicial com base na aba corrente
-    updateTabUI();
     
     // Verificar se já existe um token salvo
     if (currentToken) {
@@ -126,11 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(checkPromptInterface, 500);
     });
 
-    // Eventos das abas
-    if (tabPrompt && tabConfig) {
-        tabPrompt.addEventListener('click', () => switchTab('prompt'));
-        tabConfig.addEventListener('click', () => switchTab('config'));
-    }
+
 
     // Listener botão salvar config
     if (saveConfigButton) {
@@ -187,9 +175,6 @@ function showLoading() {
 function hideLoading() {
     loadingIndicator.classList.add('d-none');
     contentArea.classList.remove('d-none');
-
-    // Garante que a interface certa seja exibida após carregar
-    updateTabUI();
 }
 
 function showAlert(message, type = 'success') {
@@ -436,10 +421,6 @@ function showCopyFeedback() {
 
 // Funções de dados
 function loadData() {
-    // Redireciona para função adequada de acordo com aba
-    if (currentTab === 'config') {
-        return loadConfigData();
-    }
 
     showLoading();
     const agentType = agentTypeSelect.value;
@@ -457,61 +438,52 @@ function loadData() {
     authorInput.value = '';
     reasonInput.value = '';
     
-    // Carregar dados em paralelo
+    // Carregar todos os dados em paralelo
     Promise.all([
-        // Carregar prompt atual (pode falhar se não existir)
+        // Carregar prompt atual
         apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt?agent_type=${agentType}`)
             .catch(error => {
-                // Se for erro de "não encontrado", retornamos um objeto vazio
                 if (error.message && error.message.includes('Nenhum system prompt encontrado')) {
-                    console.log('Nenhum prompt encontrado ainda, preparando para criar o primeiro');
                     return { prompt: '', is_new: true };
                 }
-                throw error; // Para outros erros, propagamos
+                throw error;
             }),
-        // Carregar histórico (pode estar vazio)
+        // Carregar configuração atual
+        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config?agent_type=${agentType}`)
+            .catch(err => ({ memory_blocks: '', tools: [], model_name: '', embedding_name: '' })),
+        // Carregar histórico de prompts
         apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt/history?agent_type=${agentType}`)
             .catch(error => {
-                // Se falhar, retornamos lista vazia
-                console.warn('Erro ao carregar histórico:', error);
+                console.warn('Erro ao carregar histórico de prompts:', error);
                 return { prompts: [] };
-            })
+            }),
+        // Carregar histórico de configurações
+        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config/history?agent_type=${agentType}`)
+            .catch(() => ({ configs: [] }))
     ])
-    .then(([currentData, historyData]) => {
-        // Log dos dados recebidos para depuração
-        console.log('Dados atuais:', currentData);
-        console.log('Dados do histórico:', historyData);
+    .then(([currentPromptData, currentConfigData, promptHistoryData, configHistoryData]) => {
+        console.log('Dados carregados:', { currentPromptData, currentConfigData, promptHistoryData, configHistoryData });
         
         // Preencher dados do prompt atual
-        promptText.value = currentData.prompt || '';
-        currentPromptId = currentData.prompt_id;
+        promptText.value = currentPromptData.prompt || '';
+        currentPromptId = currentPromptData.prompt_id;
         
-        // Metadados iniciais são mantidos vazios para forçar preenchimento ao salvar
-        // Os campos já foram limpos no início da função loadData
+        // Preencher dados da configuração atual
+        memoryBlocksText.value = JSON.stringify(currentConfigData.memory_blocks || [], null, 2);
+        toolsInput.value = (currentConfigData.tools || []).join(', ');
+        modelNameInput.value = currentConfigData.model_name || '';
+        embeddingNameInput.value = currentConfigData.embedding_name || '';
+        currentConfigId = currentConfigData.config_id;
         
-        // Se for um prompt novo, mostramos mensagem de orientação
-        if (currentData.is_new) {
-            showAlert('Nenhum prompt configurado para este tipo de agente. Adicione o texto do prompt e clique em Salvar para criar o primeiro.', 'info');
-        }
+        // Armazenar dados
+        promptsData = promptHistoryData.prompts || [];
+        configsData = configHistoryData.configs || [];
         
-        // Armazenar prompt atual no promptsData para fácil acesso
-        if (currentData.prompt && currentData.prompt_id && !historyData.prompts.some(p => p.prompt_id === currentData.prompt_id)) {
-            // Adicionar o prompt atual ao array caso ainda não esteja lá
-            historyData.prompts.unshift({
-                prompt_id: currentData.prompt_id,
-                version: currentData.version || 1,
-                content: currentData.prompt,
-                is_active: true,
-                created_at: currentData.created_at || new Date().toISOString(),
-                metadata: {}
-            });
-        }
+        // Criar histórico unificado com novo padrão de versionamento
+        unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
         
-        // Salvar os dados dos prompts globalmente para acesso fácil
-        promptsData = historyData.prompts || [];
-        
-        // Limpar e preencher o histórico
-        renderHistory(promptsData);
+        // Renderizar histórico unificado
+        renderUnifiedHistory(unifiedHistoryData);
         
         hideLoading();
     })
@@ -522,85 +494,138 @@ function loadData() {
     });
 }
 
-function renderHistory(prompts) {
+// Função para criar o histórico unificado com novo padrão de versionamento
+function createUnifiedHistory(prompts, configs) {
+    const unified = [];
+    
+    // Processar prompts
+    prompts.forEach(prompt => {
+        unified.push({
+            id: prompt.prompt_id,
+            type: 'prompt',
+            version: generateVersionString(prompt.created_at, prompt.version),
+            originalVersion: prompt.version,
+            created_at: prompt.created_at,
+            is_active: prompt.is_active,
+            metadata: prompt.metadata,
+            content: prompt.content,
+            preview: typeof prompt.content === 'string' ? 
+                prompt.content.replace(/\n/g, ' ').trim().substring(0, 100) : 
+                '(Sem conteúdo)'
+        });
+    });
+    
+    // Processar configurações
+    configs.forEach(config => {
+        unified.push({
+            id: config.config_id,
+            type: 'config',
+            version: generateVersionString(config.created_at, config.version),
+            originalVersion: config.version,
+            created_at: config.created_at,
+            is_active: config.is_active,
+            metadata: config.metadata,
+            tools: config.tools,
+            model_name: config.model_name,
+            embedding_name: config.embedding_name,
+            preview: `Tools: ${(config.tools || []).join(', ')}`
+        });
+    });
+    
+    // Ordenar por data de criação (mais recente primeiro)
+    unified.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    return unified;
+}
+
+// Função para gerar o padrão de versionamento eai-<YYYY>-<MM>-<DD>-v<X>
+function generateVersionString(dateStr, version) {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `eai-${year}-${month}-${day}-v${version}`;
+}
+
+// Função para renderizar o histórico unificado
+function renderUnifiedHistory(historyItems) {
     historyList.innerHTML = '';
     
-    if (prompts.length === 0) {
+    if (historyItems.length === 0) {
         historyList.innerHTML = '<div class="text-muted p-3">Nenhum histórico disponível</div>';
         return;
     }
     
-    prompts.forEach(prompt => {
-        const isActive = prompt.is_active;
-        const dateObj = new Date(prompt.created_at);
-        
-        // Ajustando para o fuso horário do Brasil (UTC-3)
+    historyItems.forEach(item => {
+        const dateObj = new Date(item.created_at);
         const brazilDate = new Date(dateObj);
         brazilDate.setHours(brazilDate.getHours() - 3);
         
-        // Formatando data usando a data já ajustada para UTC-3
-        const options = { 
+        const date = brazilDate.toLocaleDateString('pt-BR', {
             day: '2-digit', 
             month: '2-digit', 
-            year: 'numeric' 
-        };
-        const date = brazilDate.toLocaleDateString('pt-BR', options);
+            year: 'numeric'
+        });
         
-        // Obtendo horas e minutos da data já ajustada
-        const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
+        const timeStr = new Intl.DateTimeFormat('pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        });
+        }).format(brazilDate);
         
-        // E usamos para formatar a data
-        const timeStr = timeFormatter.format(brazilDate);
+        // Determinar se está ativo baseado no tipo
+        const isActive = (item.type === 'prompt' && item.id === currentPromptId) ||
+                        (item.type === 'config' && item.id === currentConfigId);
         
-        // Obter texto para preview - tentamos diferentes propriedades
-        let previewText = '(Sem conteúdo)';
-        if (typeof prompt.content === 'string') {
-            previewText = prompt.content.replace(/\n/g, ' ').trim();
-        }
+        const historyItem = document.createElement('div');
+        historyItem.className = `history-item ${isActive ? 'active' : ''}`;
+        historyItem.dataset.itemId = item.id;
+        historyItem.dataset.itemType = item.type;
+        historyItem.dataset.version = item.originalVersion;
         
-        const item = document.createElement('div');
-        item.className = `history-item ${prompt.prompt_id === currentPromptId ? 'active' : ''}`;
-        item.dataset.promptId = prompt.prompt_id;
-        item.dataset.version = prompt.version;
+        // Ícone e cor baseados no tipo
+        const typeInfo = item.type === 'prompt' ? 
+            { icon: 'bi-pencil-square', label: 'System Prompt', color: 'primary' } :
+            { icon: 'bi-gear', label: 'Configurações', color: 'info' };
         
-        // Adaptando para corresponder ao layout visualizado na captura de tela
-        item.innerHTML = `
+        historyItem.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
-                <span class="history-version">v${prompt.version}</span>
+                <span class="history-version">
+                    <i class="bi ${typeInfo.icon} me-1 text-${typeInfo.color}"></i>
+                    ${item.version}
+                </span>
                 <span class="history-date">${date} ${timeStr}</span>
             </div>
             <div class="my-2">
-                ${isActive ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
-                ${prompt.metadata && prompt.metadata.author ? 
-                    `<span class="metadata-badge">Autor: ${prompt.metadata.author}</span>` : ''}
-                ${prompt.metadata && prompt.metadata.reason ? 
-                    `<span class="metadata-badge">${prompt.metadata.reason}</span>` : ''}
+                <span class="badge bg-${typeInfo.color} me-1">${typeInfo.label}</span>
+                ${item.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
+                ${item.metadata && item.metadata.author ? 
+                    `<span class="metadata-badge">Autor: ${item.metadata.author}</span>` : ''}
+                ${item.metadata && item.metadata.reason ? 
+                    `<span class="metadata-badge">${item.metadata.reason}</span>` : ''}
             </div>
-            <div class="history-preview" title="${previewText.length > 150 ? previewText.substring(0, 150) + '...' : previewText}">
-                ${previewText.substring(0, 100)}${previewText.length > 100 ? '...' : ''}
+            <div class="history-preview" title="${item.preview}">
+                ${item.preview.substring(0, 100)}${item.preview.length > 100 ? '...' : ''}
             </div>
         `;
         
-        // Readicionando o listener de clique diretamente, além da delegação de eventos
-        item.addEventListener('click', function(e) {
-            console.log('Clique direto no item do histórico:', prompt.prompt_id);
-            selectPromptById(prompt.prompt_id);
+        // Adicionar listener de clique
+        historyItem.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            
+            if (item.type === 'prompt') {
+                selectPromptById(item.id);
+            } else {
+                selectConfigById(item.id);
+            }
         });
         
-        historyList.appendChild(item);
+        historyList.appendChild(historyItem);
     });
     
-    // Adiciona uma verificação para debugging
-    console.log(`Renderizados ${prompts.length} itens no histórico`);
-    document.querySelectorAll('.history-item').forEach(item => {
-        console.log(`Item: v${item.dataset.version}, ID: ${item.dataset.promptId}`);
-    });
+    console.log(`Renderizados ${historyItems.length} itens no histórico unificado`);
 }
 
 // Nova função completamente reescrita para selecionar por ID
@@ -679,15 +704,12 @@ function selectPromptById(promptId) {
 
 // Função auxiliar para atualizar o item ativo no histórico
 function updateActiveHistoryItem(promptId) {
-    // Remover ativo de todos os itens
-    const items = historyList.querySelectorAll('.history-item');
-    items.forEach(item => item.classList.remove('active'));
+    // Atualizar o item ativo no histórico unificado
+    currentPromptId = promptId;
     
-    // Encontrar e marcar o novo item ativo
-    const activeItem = historyList.querySelector(`.history-item[data-prompt-id="${promptId}"]`);
-    if (activeItem) {
-        activeItem.classList.add('active');
-    }
+    // Re-renderizar o histórico para refletir o novo item ativo
+    unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
+    renderUnifiedHistory(unifiedHistoryData);
     
     // Definir que estamos visualizando um item do histórico
     isHistoryItemView = true;
@@ -777,77 +799,9 @@ window.addEventListener('load', function() {
     setTimeout(checkPromptInterface, 1500);
 });
 
-// ------------------- Funções de Tabs -------------------
-function switchTab(tab) {
-    if (currentTab === tab) return;
-    currentTab = tab;
-    updateTabUI();
-    loadData();
-}
 
-function updateTabUI() {
-    const promptSection = document.querySelector('.prompt-section');
-    const historySection = document.querySelector('.history-section');
-    const configSection = document.querySelector('.config-section');
-    const configHistorySection = document.querySelector('.config-history-section');
 
-    if (currentTab === 'prompt') {
-        tabPrompt.classList.add('active');
-        tabConfig.classList.remove('active');
 
-        promptSection?.classList.remove('d-none');
-        historySection?.classList.remove('d-none');
-        configSection?.classList.add('d-none');
-        configHistorySection?.classList.add('d-none');
-    } else {
-        tabPrompt.classList.remove('active');
-        tabConfig.classList.add('active');
-
-        promptSection?.classList.add('d-none');
-        historySection?.classList.add('d-none');
-        configSection?.classList.remove('d-none');
-        configHistorySection?.classList.remove('d-none');
-    }
-}
-
-// ---------------------- CONFIG FUNCTIONS ----------------------
-function loadConfigData() {
-    showLoading();
-
-    const agentType = agentTypeSelect.value;
-
-    // Limpar campos
-    authorCfgInput.value = '';
-    reasonCfgInput.value = '';
-    isHistoryItemView = false;
-
-    Promise.all([
-        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config?agent_type=${agentType}`)
-            .catch(err => ({ memory_blocks: '', tools: [], model_name: '', embedding_name: '' })),
-        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config/history?agent_type=${agentType}`)
-            .catch(() => ({ configs: [] })),
-    ])
-        .then(([currentCfg, historyCfg]) => {
-            // Preencher campos
-            memoryBlocksText.value = JSON.stringify(currentCfg.memory_blocks || [], null, 2);
-            toolsInput.value = (currentCfg.tools || []).join(', ');
-            modelNameInput.value = currentCfg.model_name || '';
-            embeddingNameInput.value = currentCfg.embedding_name || '';
-
-            currentConfigId = currentCfg.config_id;
-
-            // Armazenar e renderizar histórico
-            configsData = historyCfg.configs || [];
-
-            renderConfigHistory(configsData);
-
-            hideLoading();
-        })
-        .catch(err => {
-            hideLoading();
-            showAlert('Erro ao carregar configurações: ' + (err.message || 'Erro desconhecido'), 'danger');
-        });
-}
 
 function handleSaveConfig() {
     const agentType = agentTypeSelect.value;
@@ -981,7 +935,7 @@ function proceedWithConfigSave(agentType, memoryBlocksArray, author, reason) {
         .then(response => {
             hideLoading();
             showAlert(response.message || 'Configuração salva com sucesso!');
-            loadConfigData();
+            loadData(); // Recarregar todo o histórico unificado
         })
         .catch(err => {
             hideLoading();
@@ -989,52 +943,7 @@ function proceedWithConfigSave(agentType, memoryBlocksArray, author, reason) {
         });
 }
 
-function renderConfigHistory(configs) {
-    if (!configHistoryList) return;
-    configHistoryList.innerHTML = '';
 
-    if (configs.length === 0) {
-        configHistoryList.innerHTML = '<div class="text-muted p-3">Nenhum histórico disponível</div>';
-        return;
-    }
-
-    configs.forEach(cfg => {
-        const dateObj = new Date(cfg.created_at);
-        const brazilDate = new Date(dateObj);
-        brazilDate.setHours(brazilDate.getHours() - 3);
-        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        const date = brazilDate.toLocaleDateString('pt-BR', options);
-        const timeStr = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(brazilDate);
-
-        const item = document.createElement('div');
-        item.className = `history-item ${cfg.config_id === currentConfigId ? 'active' : ''}`;
-        item.dataset.configId = cfg.config_id;
-        item.dataset.version = cfg.version;
-
-        item.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="history-version">v${cfg.version}</span>
-                <span class="history-date">${date} ${timeStr}</span>
-            </div>
-            <div class="my-2">
-                ${cfg.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
-                ${cfg.metadata && cfg.metadata.author ? `<span class="metadata-badge">Autor: ${cfg.metadata.author}</span>` : ''}
-                ${cfg.metadata && cfg.metadata.reason ? `<span class="metadata-badge">${cfg.metadata.reason}</span>` : ''}
-            </div>
-            <div class="history-preview" title="Tools: ${(cfg.tools || []).join(', ')}">
-                Tools: ${(cfg.tools || []).join(', ').substring(0, 80)}
-            </div>
-        `;
-
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            selectConfigById(cfg.config_id);
-        });
-
-        configHistoryList.appendChild(item);
-    });
-}
 
 function selectConfigById(configId) {
     if (!configId) return;
@@ -1070,10 +979,12 @@ function selectConfigById(configId) {
 }
 
 function updateActiveConfigHistoryItem(configId) {
-    const items = configHistoryList.querySelectorAll('.history-item');
-    items.forEach(i => i.classList.remove('active'));
-    const activeItem = configHistoryList.querySelector(`.history-item[data-config-id="${configId}"]`);
-    activeItem?.classList.add('active');
+    // Atualizar o item ativo no histórico unificado
+    currentConfigId = configId;
+    
+    // Re-renderizar o histórico para refletir o novo item ativo
+    unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
+    renderUnifiedHistory(unifiedHistoryData);
 }
 
 // ---------------------- RESET ALL ----------------------
@@ -1100,8 +1011,7 @@ function handleResetAll() {
             } else {
                 showAlert('System Prompt e Configurações resetados com sucesso!');
                 // Recarregar dados
-                currentTab = 'prompt';
-                switchTab('prompt');
+                loadData();
             }
         });
 }

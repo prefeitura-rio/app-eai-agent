@@ -659,6 +659,26 @@ input:disabled {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.badge.bg-primary {
+    font-size: 11px;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)) !important;
+    backdrop-filter: blur(8px);
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.badge.bg-info {
+    font-size: 11px;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--info-color), #0284c7) !important;
+    backdrop-filter: blur(8px);
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* Botões outline */
 .btn-outline-light {
     transition: all 0.3s ease;

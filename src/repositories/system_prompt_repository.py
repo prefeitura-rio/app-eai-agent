@@ -287,3 +287,27 @@ class SystemPromptRepository:
         )
 
         return [p.prompt_id for p in prompts] if prompts else []
+
+    @staticmethod
+    def count_prompts_by_date_and_type(db: Session, agent_type: str, date) -> int:
+        """
+        Conta quantos prompts foram criados em uma data específica para um tipo de agente.
+
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            date: Data para filtrar (datetime.date)
+
+        Returns:
+            int: Número de prompts criados na data
+        """
+        from sqlalchemy import func, cast, Date
+        
+        return (
+            db.query(SystemPrompt)
+            .filter(
+                SystemPrompt.agent_type == agent_type,
+                cast(SystemPrompt.created_at, Date) == date
+            )
+            .count()
+        )
