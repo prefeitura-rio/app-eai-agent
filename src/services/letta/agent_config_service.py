@@ -252,7 +252,7 @@ class AgentConfigService:
             db.commit()
 
             default_cfg = self._default_config(agent_type)
-            # Para reset, sempre usar versão 1 na data atual
+            # Para reset, sempre usar versão 1 já que deletamos todo o histórico
             new_cfg = AgentConfigRepository.create_config(
                 db=db,
                 agent_type=agent_type,

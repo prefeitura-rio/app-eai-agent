@@ -230,13 +230,27 @@ class SystemPromptService:
         )
         next_version = existing_changes_today + 1
         
-        prompt = SystemPromptRepository.create_prompt(
-            db=db,
-            agent_type=agent_type,
-            content=new_prompt,
-            version=next_version,
-            metadata=metadata or {"source": "api"},
-        )
+        logger.info(f"Calculando versão para {agent_type}: data={today}, mudanças_hoje={existing_changes_today}, próxima_versão={next_version}")
+        
+        try:
+            prompt = SystemPromptRepository.create_prompt(
+                db=db,
+                agent_type=agent_type,
+                content=new_prompt,
+                version=next_version,
+                metadata=metadata or {"source": "api"},
+            )
+        except Exception as e:
+            # Se falhar com a versão calculada, tenta criar sem especificar versão
+            # para deixar o repositório calcular automaticamente
+            logger.warning(f"Falha ao criar prompt com versão {next_version}, tentando auto-incremento: {str(e)}")
+            prompt = SystemPromptRepository.create_prompt(
+                db=db,
+                agent_type=agent_type,
+                content=new_prompt,
+                version=None,  # Deixa o repositório calcular
+                metadata=metadata or {"source": "api"},
+            )
         result["prompt_id"] = prompt.prompt_id
 
         if update_agents:
@@ -346,11 +360,13 @@ class SystemPromptService:
 
             SystemPromptRepository.delete_prompts_by_agent_type(db, agent_type)
 
+            # Força commit da deleção antes de criar o novo prompt
             db.commit()
 
             default_prompt = self._get_default_prompt(agent_type)
 
-            # Para reset, sempre usar versão 1 na data atual
+            # Para reset, sempre usar versão 1 (como no reset de config)
+            # O reset limpa todo o histórico, então começamos do zero
             new_prompt = SystemPromptRepository.create_prompt(
                 db=db,
                 agent_type=agent_type,
