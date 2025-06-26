@@ -230,6 +230,8 @@ class SystemPromptService:
         )
         next_version = existing_changes_today + 1
         
+        logger.info(f"Calculando versão para {agent_type}: data={today}, mudanças_hoje={existing_changes_today}, próxima_versão={next_version}")
+        
         try:
             prompt = SystemPromptRepository.create_prompt(
                 db=db,
@@ -363,20 +365,13 @@ class SystemPromptService:
 
             default_prompt = self._get_default_prompt(agent_type)
 
-            # Para reset, usar versão baseada na contagem atual após deleção
-            # Isso evita conflitos de constraint se houver race conditions
-            from datetime import datetime
-            today = datetime.now().date()
-            existing_changes_today = SystemPromptRepository.count_unified_changes_by_date_and_type(
-                db=db, agent_type=agent_type, date=today
-            )
-            next_version = existing_changes_today + 1
-            
+            # Para reset, sempre usar versão 1 (como no reset de config)
+            # O reset limpa todo o histórico, então começamos do zero
             new_prompt = SystemPromptRepository.create_prompt(
                 db=db,
                 agent_type=agent_type,
                 content=default_prompt,
-                version=next_version,
+                version=1,
                 metadata={"author": "System", "reason": "Resetado automaticamente"},
             )
 

@@ -362,6 +362,9 @@ class SystemPromptRepository:
         """
         Conta quantas alterações (prompts + configs) foram criadas em uma data específica 
         para um tipo de agente, permitindo versionamento unificado.
+        
+        Se não há registros para hoje, retorna a próxima versão baseada no maior número
+        de versão existente entre prompts e configs.
 
         Args:
             db: Sessão do banco de dados
@@ -392,4 +395,23 @@ class SystemPromptRepository:
             .count()
         )
         
-        return prompt_count + config_count
+        total_today = prompt_count + config_count
+        
+        # Se não há alterações hoje, verificar a maior versão existente
+        # para evitar conflitos de versionamento
+        if total_today == 0:
+            latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
+            latest_config = (
+                db.query(AgentConfig)
+                .filter(AgentConfig.agent_type == agent_type)
+                .order_by(AgentConfig.version.desc())
+                .first()
+            )
+            
+            prompt_version = latest_prompt.version if latest_prompt else 0
+            config_version = latest_config.version if latest_config else 0
+            
+            # Retorna a maior versão encontrada (será incrementada +1 no serviço)
+            return max(prompt_version, config_version)
+        
+        return total_today
