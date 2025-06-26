@@ -235,32 +235,6 @@ async def experiment_eval_search_result_coverage(
     )
 
 
-@create_evaluator(name="Golden Link Aparece na Resposta Final", kind="LLM")
-async def experiment_eval_golden_links_appear_final_answ(
-    input, output, expected
-) -> tuple | bool:
-
-    if input in output:
-        response = True
-    else:
-        response = False
-
-    return response
-
-
-@create_evaluator(name="Golden Link Aparece no Tool Calling", kind="LLM")
-async def experiment_eval_golden_links_appear_tool_calling(
-    input, output, expected
-) -> tuple | bool:
-
-    if input in output:
-        response = True
-    else:
-        response = False
-
-    return response
-
-
 @create_evaluator(name="Tool Calling", kind="LLM")
 async def experiment_eval_tool_calling(input, output, expected) -> float | bool:
     tool_definitions = await get_system_prompt()
@@ -326,8 +300,8 @@ async def experiment_eval_search_query_effectiveness(
     return sum(results) / len(results) if results else False
 
 
-@create_evaluator(name="Golden Link in Tool Calling v3")
-async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple | List:
+@create_evaluator(name="Golden Link in Tool Calling")
+async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     """
     Returns True if the agent output ultimately resolves to at least one of the
     golden links listed in metadata["Golden links"].
@@ -344,12 +318,15 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple | 
 
     # Sanity checks
     if not output:
-        return False
+        return (False, "No output provided")
 
-    golden_field = output.get("metadata", {}).get("Golden links", "")
-    golden_links = _parse_golden(golden_field)         # → list[str]
-    if not golden_links:
-        return False
+    golden_field = output.get("metadata", {}).get("Golden links list", "")
+    try:
+        golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
+    except (ValueError, SyntaxError):
+        golden_links = []
+    # golden_field = output.get("metadata", {}).get("Golden links", "")
+    # golden_links = _parse_golden(golden_field)
 
     # Resolve answer links
     answer_links: list[str] = []
@@ -373,8 +350,8 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple | 
         letta_links = await get_redirect_links(output)    # provided helper
         answer_links.extend(letta_links)
 
-    if not answer_links:
-        return False
+    if not answer_links or not golden_links:
+        return (False, "No links found in the answer or no golden links provided")
 
     # Normalize for fair compare
     gold_norm  = [_norm_url(u) for u in golden_links]
@@ -397,61 +374,7 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple | 
 
     return (response, explanation)
 
-
-async def get_redirect_links2(data: Union[dict, List[str]]) -> List[str]:
-    """
-    Extrai e resolve redirecionamentos de links Vertex (ou qualquer outro).
-    Aceita:
-      - dict com formato Vertex (ex: {agent_output: {links: [...]}})
-      - lista simples de strings com URLs
-    Retorna uma lista de links finais (resolvidos), sem duplicatas.
-    """
-    # 1. Extrair lista de links crus
-    if isinstance(data, dict):
-        links_raw = (
-            data.get("agent_output", {})
-                .get("links", [])
-        )
-        urls = [l.get("uri") or l.get("url") for l in links_raw if isinstance(l, dict)]
-    elif isinstance(data, list):
-        urls = data
-    else:
-        return []
-
-    urls = [u for u in urls if isinstance(u, str)]
-
-    # 2. Resolver redirecionamentos (com fallback HEAD → GET)
-    resolved = set()
-
-    async with httpx.AsyncClient(follow_redirects=True, timeout=5.0) as client:
-        tasks = []
-        for url in urls:
-            tasks.append(_resolve_url(client, url))
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
-
-    for r in responses:
-        if isinstance(r, str):
-            resolved.add(r)
-
-    return list(resolved)
-
-
-async def _resolve_url(client: httpx.AsyncClient, url: str) -> Union[str, None]:
-    """Resolve redirecionamento para uma única URL com fallback GET."""
-    try:
-        resp = await client.head(url)
-        resp.raise_for_status()
-        return str(resp.url)
-    except Exception:
-        try:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            return str(resp.url)
-        except Exception:
-            return None
-
-
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------
 # Helper functions – keep them private to avoid namespace pollution
 # ---------------------------------------------------------------------------
 
@@ -498,25 +421,52 @@ def _norm_url(url: str) -> str:
 
 
 @create_evaluator(name="Golden Link in Answer")
-async def experiment_eval_golden_link_in_answer(input, output, **kwargs) -> bool:
-    if not output or "agent_output" not in output:
-        return False
+async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
+    if not output:
+        return (False, "No output provided")
 
-    metadata = output.get("metadata", {})
-    golden_link = metadata.get("Golden links", "")
+    # golden_field = output.get("metadata", {}).get("Golden links", "")
+    # golden_links = _parse_golden(golden_field)
 
-    # pattern=r"[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
-    padrao_url = r"(https?://[^\s)]+|\b(?:[a-zA-Z0-9-]+\.)+(?:rio|br|com|org|net)\b)"
-    links = re.findall(
-        padrao_url, [final_response(output["agent_output"]).get("content", "")]
-    )
+    golden_field = output.get("metadata", {}).get("Golden links list", "")
 
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=2, verify=False
-    ) as session:
-        tasks = [process_link(session, link) for link in links]
-        results = await asyncio.gather(*tasks)
+    try:
+        golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
+    except (ValueError, SyntaxError):
+        golden_links = []
 
-    response = golden_link in results
+    resposta = output.get("agent_output", {}).get("texto") or final_response(output["agent_output"]).get("content", "")
 
-    return response
+    # pattern = r"(https?://)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,10}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)"
+    # pattern = r"\b(?:https?://|www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}(?:/[^\s]*)?"
+
+    markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", resposta)
+    plain_links = re.findall(r"https?://[^\s)\]]+", resposta)
+    raw_links = list(dict.fromkeys(markdown_links + plain_links))
+
+    if not raw_links or not golden_links:
+        return (False, "No links found in the answer or no golden links provided")
+
+    normalized_input_links = [f"https://{link}" if not link.startswith("http") else link for link in raw_links]
+    unique_links = list(dict.fromkeys([link for link in normalized_input_links if isinstance(link, str)]))[:10]
+
+    link_dicts = [{"uri": uri} for uri in unique_links]
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"}
+    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
+        await asyncio.gather(*(process_link(session, link) for link in link_dicts))
+
+    answer_links = [link.get("url") or link.get("uri") for link in link_dicts]
+
+    gold_norm  = [_norm_url(u) for u in golden_links]
+    links_norm = {_norm_url(u) for u in answer_links}
+
+    def match(gold: str, link: str) -> bool:
+        g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
+        l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
+        
+        return g_dom == l_dom and (not g_path or g_path == l_path)
+
+    response = any(match(g, l) for g in gold_norm for l in links_norm)
+
+    return (response, f"Golden links: {gold_norm}\nAnswer links: {links_norm}\nMatch found: {response}")

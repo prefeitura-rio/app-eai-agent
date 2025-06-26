@@ -68,7 +68,7 @@ EVAL_MODEL = OpenAIModel(
 )
 
 # Tamanho do batch para criação de agentes
-BATCH_SIZE = 18
+BATCH_SIZE = 10
 
 # Cache para armazenar as respostas coletadas
 respostas_coletadas = {}
@@ -92,16 +92,14 @@ async def get_response_from_gpt(example: Example) -> dict:
         "max_tokens": 256
     }
 
-    # url = f"{env.OPENAI_URL}openai/deployments/gpt-4o/chat/completions?api-version=2024-11-20"
-
-    url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
+    url = f"{env.OPENAI_URL}openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
+    # url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
         choice = data["choices"][0]["message"]
-        print(choice)
         resultado = {
             "texto": choice.get("content", None),
             "links": []
@@ -354,7 +352,7 @@ async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
         )
 
         # Processar o batch
-        resultados_batch = await processar_batch(batch_atual, i, modo="gemini")
+        resultados_batch = await processar_batch(batch_atual, i, modo="gpt")
         todas_respostas.update(resultados_batch)
 
         # Log do progresso
@@ -368,12 +366,17 @@ async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
     return todas_respostas
 
 
+# def final_response(agent_stream: dict) -> dict:
+#     if not agent_stream or "assistant_messages" not in agent_stream:
+#         return {}
+
+#     return agent_stream["assistant_messages"][-1]
+
 def final_response(agent_stream: dict) -> dict:
-    if not agent_stream or "assistant_messages" not in agent_stream:
+    try:
+        return agent_stream.get("grouped", {}).get("assistant_messages", [])[-1]
+    except (IndexError, AttributeError):
         return {}
-
-    return agent_stream["assistant_messages"][-1]
-
 
 def tool_returns(agent_stream: dict) -> str:
     if not agent_stream:
@@ -431,35 +434,31 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 async def process_link(session, link: dict):
     uri = link.get("uri")
     try:
-        # primeiro tenta HEAD
         response = await session.head(uri, follow_redirects=True)
         response.raise_for_status()
         link["url"] = str(response.url)
         link["error"] = None
-    except Exception:
+        return link
+    except Exception as e:
+        print(f"[HEAD FAILED] {uri}: {e}")
         try:
-            # fallback GET (alguns endpoints Vertex não aceitam HEAD)
             response = await session.get(uri, follow_redirects=True)
             response.raise_for_status()
             link["url"] = str(response.url)
             link["error"] = None
-        except Exception as e:
-            if "http" in str(e):
-                link["url"] = "http" + str(e).split("'\n")[0].split("http")[-1]
-            else:
-                link["url"] = None
-            link["error"] = str(e)
+            return link
+
+        except Exception as e2:
+            link["url"] = None
+            link["error"] = str(e2)
+            return link
+
 
 
 async def get_redirect_links(model_response):
-    # A estrutura esperada é output -> agent_output -> grouped -> tool_return_messages
     grouped = model_response.get("agent_output", {}).get("grouped", {})
     tool_msgs = grouped.get("tool_return_messages", [])
 
-    # Coleciona URIs em uma lista simples de strings
-    links_para_processar: list[str] = []
-
-    # Nomes das ferramentas de busca cujos retornos realmente contêm links de interesse.
     SEARCH_TOOL_NAMES = {
         "search_tool",
         "public_services_grounded_search",
@@ -468,112 +467,74 @@ async def get_redirect_links(model_response):
     }
 
     def _extract_urls(raw_list):
-        """Converte listas heterogêneas (str ou dict) em lista de strings de URL."""
         urls = []
-        if isinstance(raw_list, list):
-            for item in raw_list:
-                if isinstance(item, str):
-                    urls.append(item)
-                elif isinstance(item, dict):
-                    url_val = item.get("url") or item.get("uri")
-                    if isinstance(url_val, str):
-                        urls.append(url_val)
+        for item in raw_list:
+            if isinstance(item, str):
+                urls.append(item)
+            elif isinstance(item, dict):
+                url_val = item.get("url") or item.get("uri")
+                if isinstance(url_val, str):
+                    urls.append(url_val)
         return urls
 
+    links_para_processar = []
+
     for msg in tool_msgs:
-        # Se houver campo "name", usa-o para filtrar; caso contrário, assume que pode conter links.
         tool_name = msg.get("name")
         if tool_name and tool_name not in SEARCH_TOOL_NAMES:
             continue
 
-        # 1) Se já existe um dicionário estruturado em "tool_return", é o caminho mais simples.
-        tool_return = msg.get("tool_return")
+        try:
+            tool_return = json.loads(msg.get("tool_return", "{}"))
+        except Exception:
+            continue
+
+        links = []
+
         if isinstance(tool_return, dict):
-            # Pode vir como {"links": [...]} ou {"result": [{"url": ...}, ...]}
-            if tool_return.get("links"):
-                links_para_processar.extend(_extract_urls(tool_return["links"]))
-            elif tool_return.get("result"):
-                links_para_processar.extend([
-                    item["url"]
-                    for item in tool_return["result"]
-                    if item.get("url")
-                ])
-            # Continue para próximo msg, não precisamos examinar stdout.
-            continue
+            if "links" in tool_return:
+                links = _extract_urls(tool_return["links"])
+            elif "result" in tool_return:
+                links = [item.get("url") for item in tool_return["result"] if item.get("url")]
+        elif isinstance(tool_return, list):
+            links = _extract_urls(tool_return)
 
-        # 1.b) tool_return como lista de urls/dicts
-        if isinstance(tool_return, list):
-            links_para_processar.extend(_extract_urls(tool_return))
-            continue
+        if not links:
+            stdout = msg.get("stdout", "")
+            stdout_list = stdout if isinstance(stdout, list) else [stdout]
+            for std in stdout_list:
+                if not std:
+                    continue
+                try:
+                    start_index = std.find("{")
+                    end_index = std.rfind("}") + 1
+                    if start_index == -1 or end_index == 0:
+                        continue
+                    data = ast.literal_eval(std[start_index:end_index])
+                    if data.get("links"):
+                        links = _extract_urls(data["links"])
+                    elif data.get("result"):
+                        links = [item.get("url") for item in data["result"] if item.get("url")]
+                except Exception:
+                    continue
+                if links:
+                    break
 
-        # 2) Fallback: tenta extrair JSON a partir de stdout (string ou lista de strings)
-        stdout = msg.get("stdout", "")
-        # Se for lista, pega cada item; se for string, coloca em lista com um item
-        stdout_list = stdout if isinstance(stdout, list) else [stdout]
+        links_para_processar.extend(links)
 
-        for std in stdout_list:
-            if not std:
-                continue
-            try:
-                start_index = std.find("{")
-                end_index = std.rfind("}") + 1
-                if start_index == -1 or end_index == 0:
-                    continue  # não há JSON
-                data = ast.literal_eval(std[start_index:end_index])
-                if data.get("links"):
-                    links_para_processar.extend(_extract_urls(data["links"]))
-                elif data.get("result"):
-                    links_para_processar.extend([
-                        item["url"]
-                        for item in data["result"]
-                        if item.get("url")
-                    ])
-            except (ValueError, SyntaxError):
-                continue  # ignora stdout não-parseável
+    # Remove duplicados e limita a 10 links (opcional)
+    unique_links = list(dict.fromkeys([link for link in links_para_processar if isinstance(link, str)]))[:10]
 
-    # Filtra links permitidos e remove ruído comum
-    ALLOWED_PREFIXES = (
-        "https://carioca.rio/servicos/",
-        "https://www.1746.rio/hc/pt-br/articles/",
-        "https://assistenciasocial.prefeitura.rio/",
-        "https://prefeitura.rio/",
-    )
-
-    EXCLUDE_KEYWORDS = (
-        "termo-de-uso",
-        "privacidade",
-        "faq",
-        "politica",
-        "termo de uso",
-    )
-
-    def allowed(u: str) -> bool:
-        if not u:
-            return False
-        if not any(u.startswith(p) for p in ALLOWED_PREFIXES):
-            return False
-        lowered = u.lower()
-        return not any(k in lowered for k in EXCLUDE_KEYWORDS)
-
-    unique_links = list({uri for uri in links_para_processar if isinstance(uri, str) and allowed(uri)})
-
-    # Limita a análise aos primeiros 10 links para evitar ruído excessivo
-    unique_links = unique_links[:10]
-
-    # Converte em dicts para reutilizar process_link
+    # Prepara para resolver redirects
     link_dicts = [{"uri": uri} for uri in unique_links]
 
-    # Resolve redirecionamentos em paralelo
-    async with httpx.AsyncClient(follow_redirects=True, timeout=2, verify=False) as session:
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"}
+    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-    # Retorna somente URLs finais (link["url"]) ou o próprio uri caso não haja redirect
-    final_urls = []
-    for link in link_dicts:
-        if link.get("url"):
-            final_urls.append(link["url"])
-        elif link.get("uri"):
-            final_urls.append(link["uri"])
+    # Retorna a lista só com URLs finais corrigidos (ou original se não redirecionou)
+    final_urls = [link.get("url") or link.get("uri") for link in link_dicts]
+
     return final_urls
 
 
@@ -628,11 +589,6 @@ async def experiment_eval(
     else:
         explanation = str(explanation)
 
-    print(f"Query: {input.get('pergunta')}")
-    print(f"Label: {label}")
-    print(f"Explanation: {explanation}")
-    print("---" * 20)
-
     return (eval_result, explanation)
 
 
@@ -646,14 +602,12 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
     """
     logger.info("Iniciando avaliação Phoenix com as respostas coletadas")
 
-    # Criar uma função personalizada para o Phoenix que retorna as respostas já coletadas
     async def get_cached_responses(example: Example) -> dict:
         return {
             "agent_output": respostas_coletadas.get(example.id, {}),
             "metadata": example.metadata,
         }
 
-    # Executar o experimento Phoenix usando as respostas em cache
     experiment = run_experiment(
         dataset,
         get_cached_responses,
@@ -664,11 +618,9 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
             # experiment_eval_search_result_coverage,
             # experiment_eval_good_response_standards,
             experiment_eval_golden_link_in_tool_calling,
-            # experiment_eval_golden_link_in_answer,
+            experiment_eval_golden_link_in_answer,
         ],
-        ##TODO: ALTERAR O NOME DO EXPERIMENTO
-        experiment_name="Letta - Verificando golden links",
-        ## -----------------------------------
+        experiment_name="GPT",
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=10,
@@ -683,7 +635,7 @@ async def main():
     logger.info("Iniciando a execução do script...")
 
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
-    dataset_name = "Golden Dataset - Small Sample"
+    dataset_name = "Golden Dataset" # - Small Sample"
     logger.info(f"Carregando dataset: {dataset_name}")
     dataset = phoenix_client.get_dataset(name=dataset_name)
 
