@@ -61,9 +61,10 @@ async def unified_reset(
             # Força commit da deleção antes de criar novos registros
             db.commit()
 
-            # 3. Gerar nome da versão no padrão eai-YYYY-MM-DD-v1
-            from datetime import datetime
-            today = datetime.now()
+            # 3. Gerar nome da versão no padrão eai-YYYY-MM-DD-v1 (horário do Brasil)
+            from datetime import datetime, timezone, timedelta
+            brazil_tz = timezone(timedelta(hours=-3))  # UTC-3 (horário de Brasília)
+            today = datetime.now(brazil_tz)
             version_display = f"eai-{today.strftime('%Y-%m-%d')}-v1"
             
             # 4. Criar prompt padrão (versão 1)

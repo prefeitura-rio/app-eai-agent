@@ -57,13 +57,23 @@ class UnifiedHistoryService:
         unified_history = []
         
         for version in versions:
-            # Gerar nome da versão no padrão eai-YYYY-MM-DD-vX
+            # Gerar nome da versão no padrão eai-YYYY-MM-DD-vX (horário do Brasil)
             created_date = version.created_at
             if created_date:
+                # Converter para horário do Brasil se necessário
+                from datetime import timezone, timedelta
+                brazil_tz = timezone(timedelta(hours=-3))  # UTC-3 (horário de Brasília)
+                if created_date.tzinfo is None:
+                    # Se não tem timezone, assume UTC e converte para Brasil
+                    created_date = created_date.replace(tzinfo=timezone.utc).astimezone(brazil_tz)
+                else:
+                    # Se já tem timezone, converte para Brasil
+                    created_date = created_date.astimezone(brazil_tz)
                 version_display = f"eai-{created_date.strftime('%Y-%m-%d')}-v{version.version_number}"
             else:
-                from datetime import datetime
-                today = datetime.now()
+                from datetime import datetime, timezone, timedelta
+                brazil_tz = timezone(timedelta(hours=-3))  # UTC-3 (horário de Brasília)
+                today = datetime.now(brazil_tz)
                 version_display = f"eai-{today.strftime('%Y-%m-%d')}-v{version.version_number}"
             
             # Verificar se já existe version_display nos metadados

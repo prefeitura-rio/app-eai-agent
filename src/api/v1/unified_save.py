@@ -82,9 +82,10 @@ async def save_unified_changes(request: UnifiedSaveRequest):
             # Obter próximo número de versão
             version_number = UnifiedVersionRepository.get_next_version_number(db, request.agent_type)
             
-            # Gerar nome da versão no padrão eai-YYYY-MM-DD-vX
-            from datetime import datetime
-            today = datetime.now()
+            # Gerar nome da versão no padrão eai-YYYY-MM-DD-vX (horário do Brasil)
+            from datetime import datetime, timezone, timedelta
+            brazil_tz = timezone(timedelta(hours=-3))  # UTC-3 (horário de Brasília)
+            today = datetime.now(brazil_tz)
             version_display = f"eai-{today.strftime('%Y-%m-%d')}-v{version_number}"
             
             prompt_id = None
