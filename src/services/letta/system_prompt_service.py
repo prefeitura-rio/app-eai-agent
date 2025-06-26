@@ -230,13 +230,25 @@ class SystemPromptService:
         )
         next_version = existing_changes_today + 1
         
-        prompt = SystemPromptRepository.create_prompt(
-            db=db,
-            agent_type=agent_type,
-            content=new_prompt,
-            version=next_version,
-            metadata=metadata or {"source": "api"},
-        )
+        try:
+            prompt = SystemPromptRepository.create_prompt(
+                db=db,
+                agent_type=agent_type,
+                content=new_prompt,
+                version=next_version,
+                metadata=metadata or {"source": "api"},
+            )
+        except Exception as e:
+            # Se falhar com a versão calculada, tenta criar sem especificar versão
+            # para deixar o repositório calcular automaticamente
+            logger.warning(f"Falha ao criar prompt com versão {next_version}, tentando auto-incremento: {str(e)}")
+            prompt = SystemPromptRepository.create_prompt(
+                db=db,
+                agent_type=agent_type,
+                content=new_prompt,
+                version=None,  # Deixa o repositório calcular
+                metadata=metadata or {"source": "api"},
+            )
         result["prompt_id"] = prompt.prompt_id
 
         if update_agents:
@@ -346,16 +358,25 @@ class SystemPromptService:
 
             SystemPromptRepository.delete_prompts_by_agent_type(db, agent_type)
 
+            # Força commit da deleção antes de criar o novo prompt
             db.commit()
 
             default_prompt = self._get_default_prompt(agent_type)
 
-            # Para reset, sempre usar versão 1 na data atual
+            # Para reset, usar versão baseada na contagem atual após deleção
+            # Isso evita conflitos de constraint se houver race conditions
+            from datetime import datetime
+            today = datetime.now().date()
+            existing_changes_today = SystemPromptRepository.count_unified_changes_by_date_and_type(
+                db=db, agent_type=agent_type, date=today
+            )
+            next_version = existing_changes_today + 1
+            
             new_prompt = SystemPromptRepository.create_prompt(
                 db=db,
                 agent_type=agent_type,
                 content=default_prompt,
-                version=1,
+                version=next_version,
                 metadata={"author": "System", "reason": "Resetado automaticamente"},
             )
 
