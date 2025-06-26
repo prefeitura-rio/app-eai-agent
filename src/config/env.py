@@ -40,5 +40,6 @@ GOOGLE_BIGQUERY_PAGE_SIZE = int(
 )
 NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
 
+# OPENAI
 OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY")
 OPENAI_URL = getenv_or_action("OPENAI_URL")
