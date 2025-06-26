@@ -477,18 +477,15 @@ function loadData() {
         // Carregar configuração atual
         apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config?agent_type=${agentType}`)
             .catch(err => ({ memory_blocks: '', tools: [], model_name: '', embedding_name: '' })),
-        // Carregar histórico de prompts
-        apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt/history?agent_type=${agentType}`)
+        // Carregar histórico unificado (novo endpoint)
+        apiRequest('GET', `${API_BASE_URL}/api/v1/unified-history?agent_type=${agentType}&limit=50`)
             .catch(error => {
-                console.warn('Erro ao carregar histórico de prompts:', error);
-                return { prompts: [] };
-            }),
-        // Carregar histórico de configurações
-        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config/history?agent_type=${agentType}`)
-            .catch(() => ({ configs: [] }))
+                console.warn('Erro ao carregar histórico unificado:', error);
+                return { items: [] };
+            })
     ])
-    .then(([currentPromptData, currentConfigData, promptHistoryData, configHistoryData]) => {
-        console.log('Dados carregados:', { currentPromptData, currentConfigData, promptHistoryData, configHistoryData });
+    .then(([currentPromptData, currentConfigData, unifiedHistoryResponse]) => {
+        console.log('Dados carregados:', { currentPromptData, currentConfigData, unifiedHistoryResponse });
         
         // Preencher dados do prompt atual
         promptText.value = currentPromptData.prompt || '';
@@ -501,15 +498,11 @@ function loadData() {
         embeddingNameInput.value = currentConfigData.embedding_name || '';
         currentConfigId = currentConfigData.config_id;
         
-        // Armazenar dados
-        promptsData = promptHistoryData.prompts || [];
-        configsData = configHistoryData.configs || [];
-        
-        // Criar histórico unificado com novo padrão de versionamento
-        unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
+        // Usar histórico unificado do backend
+        unifiedHistoryData = unifiedHistoryResponse.items || [];
         
         // Renderizar histórico unificado
-        renderUnifiedHistory(unifiedHistoryData);
+        renderBackendUnifiedHistory(unifiedHistoryData);
         
         hideLoading();
     })
@@ -520,118 +513,10 @@ function loadData() {
     });
 }
 
-// Função para criar o histórico verdadeiramente unificado
-function createUnifiedHistory(prompts, configs) {
-    const versionsMap = new Map();
-    
-    // Processar prompts e configs agrupando por data
-    [...prompts, ...configs].forEach(item => {
-        const dateKey = item.created_at.split('T')[0]; // YYYY-MM-DD
-        const timestamp = new Date(item.created_at).getTime();
-        
-        if (!versionsMap.has(dateKey)) {
-            versionsMap.set(dateKey, []);
-        }
-        
-        versionsMap.get(dateKey).push({
-            ...item,
-            type: item.prompt_id ? 'prompt' : 'config',
-            timestamp: timestamp
-        });
-    });
-    
-    // Criar versões unificadas
-    const unified = [];
-    let globalVersionCounter = 0;
-    
-    // Ordenar datas
-    const sortedDates = Array.from(versionsMap.keys()).sort();
-    
-    sortedDates.forEach(dateKey => {
-        const dayItems = versionsMap.get(dateKey);
-        
-        // Agrupar items por timestamp (mesmo momento = mesma versão)
-        const timestampGroups = new Map();
-        dayItems.forEach(item => {
-            const roundedTimestamp = Math.floor(item.timestamp / 60000) * 60000; // Agrupar por minuto
-            
-            if (!timestampGroups.has(roundedTimestamp)) {
-                timestampGroups.set(roundedTimestamp, []);
-            }
-            timestampGroups.get(roundedTimestamp).push(item);
-        });
-        
-        // Criar uma versão para cada grupo de timestamp
-        Array.from(timestampGroups.entries())
-            .sort(([a], [b]) => a - b)
-            .forEach(([timestamp, items]) => {
-                globalVersionCounter++;
-                
-                const promptItem = items.find(i => i.type === 'prompt');
-                const configItem = items.find(i => i.type === 'config');
-                
-                const date = new Date(timestamp);
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const version = `eai-${year}-${month}-${day}-v${globalVersionCounter}`;
-                
-                // Criar preview unificado
-                let preview = '';
-                if (promptItem && configItem) {
-                    preview = `Prompt + Config: ${(promptItem.content || '').substring(0, 50)}... | Tools: ${(configItem.tools || []).join(', ')}`;
-                } else if (promptItem) {
-                    preview = `Prompt: ${(promptItem.content || '').replace(/\n/g, ' ').trim().substring(0, 100)}`;
-                } else if (configItem) {
-                    preview = `Config: Tools: ${(configItem.tools || []).join(', ')}`;
-                }
-                
-                unified.push({
-                    id: promptItem?.prompt_id || configItem?.config_id,
-                    secondaryId: configItem?.config_id || promptItem?.prompt_id,
-                    type: 'unified',
-                    version: version,
-                    unifiedVersion: globalVersionCounter,
-                    created_at: new Date(timestamp).toISOString(),
-                    is_active: (promptItem?.is_active || configItem?.is_active) || false,
-                    metadata: promptItem?.metadata || configItem?.metadata,
-                    
-                    // Dados do prompt
-                    prompt_content: promptItem?.content,
-                    prompt_id: promptItem?.prompt_id,
-                    
-                    // Dados da config
-                    tools: configItem?.tools,
-                    model_name: configItem?.model_name,
-                    embedding_name: configItem?.embedding_name,
-                    config_id: configItem?.config_id,
-                    memory_blocks: configItem?.memory_blocks,
-                    
-                    preview: preview,
-                    hasPrompt: !!promptItem,
-                    hasConfig: !!configItem
-                });
-            });
-    });
-    
-    // Reordenar por versão (mais recente primeiro) para exibição
-    unified.sort((a, b) => b.unifiedVersion - a.unifiedVersion);
-    
-    return unified;
-}
+// Funções de histórico unificado removidas - agora usamos dados do backend
 
-// Função para gerar o padrão de versionamento eai-<YYYY>-<MM>-<DD>-v<X>
-function generateVersionString(dateStr, version) {
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    return `eai-${year}-${month}-${day}-v${version}`;
-}
-
-// Função para renderizar o histórico unificado
-function renderUnifiedHistory(historyItems) {
+// Função para renderizar o histórico unificado (dados do backend)
+function renderBackendUnifiedHistory(historyItems) {
     historyList.innerHTML = '';
     
     if (historyItems.length === 0) {
@@ -656,40 +541,43 @@ function renderUnifiedHistory(historyItems) {
             hour12: false
         }).format(brazilDate);
         
-        // Determinar se está ativo baseado nos IDs
-        const isActive = (item.prompt_id === currentPromptId) || (item.config_id === currentConfigId);
+        // Determinar se está ativo baseado nos dados do backend
+        const isActive = item.is_active;
         
         const historyItem = document.createElement('div');
         historyItem.className = `history-item ${isActive ? 'active' : ''}`;
-        historyItem.dataset.itemId = item.id;
-        historyItem.dataset.itemType = item.type;
-        historyItem.dataset.version = item.unifiedVersion;
+        historyItem.dataset.itemId = item.version_id;
+        historyItem.dataset.itemType = 'unified';
+        historyItem.dataset.versionNumber = item.version_number;
         
-        // Criar badges para indicar o que está incluso na versão
+        // Criar badges baseados no tipo de alteração
         let badges = '';
-        if (item.hasPrompt && item.hasConfig) {
+        if (item.change_type === 'both') {
             badges = '<span class="badge bg-primary me-1">Prompt + Config</span>';
-        } else if (item.hasPrompt) {
+        } else if (item.change_type === 'prompt') {
             badges = '<span class="badge bg-primary me-1">System Prompt</span>';
-        } else if (item.hasConfig) {
+        } else if (item.change_type === 'config') {
             badges = '<span class="badge bg-info me-1">Configurações</span>';
         }
+        
+        // Criar versão formatada
+        const versionDisplay = `Versão ${item.version_number}`;
         
         historyItem.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <span class="history-version">
                     <i class="bi bi-bookmark me-1 text-primary"></i>
-                    ${item.version}
+                    ${versionDisplay}
                 </span>
                 <span class="history-date">${date} ${timeStr}</span>
             </div>
             <div class="my-2">
                 ${badges}
                 ${item.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
-                ${item.metadata && item.metadata.author ? 
-                    `<span class="metadata-badge">Autor: ${item.metadata.author}</span>` : ''}
-                ${item.metadata && item.metadata.reason ? 
-                    `<span class="metadata-badge">${item.metadata.reason}</span>` : ''}
+                ${item.author ? 
+                    `<span class="metadata-badge">Autor: ${item.author}</span>` : ''}
+                ${item.reason ? 
+                    `<span class="metadata-badge">${item.reason}</span>` : ''}
             </div>
             <div class="history-preview" title="${item.preview}">
                 ${item.preview}
@@ -701,13 +589,13 @@ function renderUnifiedHistory(historyItems) {
             e.preventDefault();
             e.stopPropagation();
             
-            selectUnifiedVersion(item);
+            selectBackendUnifiedVersion(item);
         });
         
         historyList.appendChild(historyItem);
     });
     
-    console.log(`Renderizados ${historyItems.length} itens no histórico unificado`);
+    console.log(`Renderizados ${historyItems.length} itens no histórico unificado do backend`);
 }
 
 // Nova função completamente reescrita para selecionar por ID
@@ -877,97 +765,47 @@ window.addEventListener('load', function() {
 
 // Função selectConfigById removida - agora usamos selectUnifiedVersion
 
-function selectUnifiedVersion(item) {
-    console.log('Selecionando versão unificada:', item);
+function selectBackendUnifiedVersion(item) {
+    console.log('Selecionando versão unificada do backend:', item);
     showLoading();
     
-    // Criar array de promessas para carregar dados em paralelo
-    const loadPromises = [];
-    
-    // Carregar dados do prompt se existir
-    if (item.hasPrompt && item.prompt_id) {
-        const promptPromise = apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt/by-id/${item.prompt_id}`)
-            .then(promptData => {
-                promptText.value = promptData.prompt || '';
-                currentPromptId = item.prompt_id;
-                console.log('Prompt carregado:', promptData.prompt ? 'Conteúdo presente' : 'Conteúdo vazio');
-            })
-            .catch(error => {
-                console.error('Erro ao carregar prompt:', error);
-                // Tentar usar dados locais como fallback se disponível
-                if (item.prompt_content) {
-                    promptText.value = item.prompt_content;
-                    currentPromptId = item.prompt_id;
-                } else {
-                    promptText.value = '';
-                }
-                throw new Error(`Erro ao carregar prompt: ${error.message}`);
-            });
-        loadPromises.push(promptPromise);
-    } else {
-        // Limpar campo se não há prompt
-        promptText.value = '';
-        currentPromptId = null;
-    }
-    
-    // Carregar dados da configuração se existir
-    if (item.hasConfig && item.config_id) {
-        const configPromise = apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config/by-id/${item.config_id}`)
-            .then(configData => {
-                memoryBlocksText.value = JSON.stringify(configData.memory_blocks || [], null, 2);
-                toolsInput.value = (configData.tools || []).join(', ');
-                modelNameInput.value = configData.model_name || '';
-                embeddingNameInput.value = configData.embedding_name || '';
-                currentConfigId = item.config_id;
-                console.log('Configuração carregada:', configData);
-            })
-            .catch(error => {
-                console.error('Erro ao carregar configuração:', error);
-                // Tentar usar dados locais como fallback se disponível
-                if (item.memory_blocks) {
-                    memoryBlocksText.value = JSON.stringify(item.memory_blocks, null, 2);
-                }
-                if (item.tools) {
-                    toolsInput.value = item.tools.join(', ');
-                }
-                if (item.model_name) {
-                    modelNameInput.value = item.model_name;
-                }
-                if (item.embedding_name) {
-                    embeddingNameInput.value = item.embedding_name;
-                }
-                currentConfigId = item.config_id;
-                throw new Error(`Erro ao carregar configuração: ${error.message}`);
-            });
-        loadPromises.push(configPromise);
-    } else {
-        // Limpar campos se não há configuração
-        memoryBlocksText.value = '[]';
-        toolsInput.value = '';
-        modelNameInput.value = '';
-        embeddingNameInput.value = '';
-        currentConfigId = null;
-    }
-    
-    // Aguardar todas as promessas e atualizar interface
-    Promise.allSettled(loadPromises)
-        .then(results => {
-            // Verificar se houve erros
-            const errors = results.filter(result => result.status === 'rejected');
-            if (errors.length > 0) {
-                console.warn('Alguns dados não puderam ser carregados completamente:', errors);
-                showAlert('Versão carregada com algumas limitações. Verifique o console para detalhes.', 'warning');
+    // Usar o endpoint de detalhes de versão para obter dados completos
+    apiRequest('GET', `${API_BASE_URL}/api/v1/unified-history/version/${item.version_number}?agent_type=${agentTypeSelect.value}`)
+        .then(versionDetails => {
+            console.log('Detalhes da versão carregados:', versionDetails);
+            
+            // Preencher dados do prompt se existir
+            if (versionDetails.prompt) {
+                promptText.value = versionDetails.prompt.content || '';
+                currentPromptId = versionDetails.prompt.prompt_id;
             } else {
-                console.log('Versão unificada carregada com sucesso');
+                promptText.value = '';
+                currentPromptId = null;
+            }
+            
+            // Preencher dados da configuração se existir
+            if (versionDetails.config) {
+                memoryBlocksText.value = JSON.stringify(versionDetails.config.memory_blocks || [], null, 2);
+                toolsInput.value = (versionDetails.config.tools || []).join(', ');
+                modelNameInput.value = versionDetails.config.model_name || '';
+                embeddingNameInput.value = versionDetails.config.embedding_name || '';
+                currentConfigId = versionDetails.config.config_id;
+            } else {
+                memoryBlocksText.value = '[]';
+                toolsInput.value = '';
+                modelNameInput.value = '';
+                embeddingNameInput.value = '';
+                currentConfigId = null;
             }
             
             // Atualizar interface para mostrar que esta versão está selecionada
-            updateActiveUnifiedHistoryItem(item);
+            updateActiveBackendHistoryItem(item);
             
             // Definir que estamos visualizando um item do histórico
             isHistoryItemView = true;
             
             hideLoading();
+            console.log('Versão unificada carregada com sucesso');
         })
         .catch(error => {
             console.error('Erro ao carregar versão unificada:', error);
@@ -976,18 +814,15 @@ function selectUnifiedVersion(item) {
         });
 }
 
-function updateActiveUnifiedHistoryItem(selectedItem) {
-    // Atualizar IDs ativos
-    if (selectedItem.prompt_id) {
-        currentPromptId = selectedItem.prompt_id;
-    }
-    if (selectedItem.config_id) {
-        currentConfigId = selectedItem.config_id;
-    }
-    
-    // Re-renderizar o histórico para refletir o novo item ativo
-    unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
-    renderUnifiedHistory(unifiedHistoryData);
+function updateActiveBackendHistoryItem(selectedItem) {
+    // Marcar o item selecionado como ativo no histórico
+    document.querySelectorAll('.history-item').forEach(item => {
+        if (item.dataset.versionNumber === selectedItem.version_number.toString()) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
     
     // Definir que estamos visualizando um item do histórico
     isHistoryItemView = true;
@@ -997,7 +832,7 @@ function updateActiveUnifiedHistoryItem(selectedItem) {
 function handleResetAll() {
     const agentType = agentTypeSelect.value;
 
-    if (!confirm('Tem certeza que deseja resetar System Prompt E Configuração do Agente para o padrão? Esta ação criará novas versões e não pode ser desfeita.')) {
+    if (!confirm('Tem certeza que deseja resetar COMPLETAMENTE o banco de dados para este tipo de agente? Esta ação removerá TODO o histórico e recriará versões padrão. Esta ação NÃO pode ser desfeita.')) {
         return;
     }
 
@@ -1005,20 +840,24 @@ function handleResetAll() {
 
     const updateAgents = updateAgentsCheckbox.checked;
 
-    const req1 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/system-prompt/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
-    const req2 = apiRequest('DELETE', `${API_BASE_URL}/api/v1/agent-config/reset?agent_type=${agentType}&update_agents=${updateAgents}`);
-
-    Promise.allSettled([req1, req2])
-        .then(results => {
+    // Usar o novo endpoint de reset unificado
+    apiRequest('DELETE', `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}&update_agents=${updateAgents}`)
+        .then(response => {
             hideLoading();
-            const err = results.find(r => r.status === 'rejected');
-            if (err) {
-                showAlert('Erro ao resetar: ' + err.reason, 'danger');
-            } else {
-                showAlert('System Prompt e Configurações resetados com sucesso!');
-                // Recarregar dados
-                loadData();
-            }
+            console.log('Reset unificado concluído:', response);
+            
+            let message = response.message || 'Reset unificado concluído com sucesso!';
+            const alertType = response.success ? 'success' : 'warning';
+            
+            showAlert(message, alertType);
+            
+            // Recarregar dados
+            loadData();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Erro no reset unificado:', error);
+            showAlert('Erro ao executar reset unificado: ' + (error.message || 'Erro desconhecido'), 'danger');
         });
 }
 

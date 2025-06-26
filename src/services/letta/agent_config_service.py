@@ -5,6 +5,7 @@ from loguru import logger
 
 from src.db import get_db_session
 from src.repositories.agent_config_repository import AgentConfigRepository
+from src.repositories.unified_version_repository import UnifiedVersionRepository
 from src.services.letta.letta_service import letta_service
 from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
@@ -108,14 +109,10 @@ class AgentConfigService:
         metadata: Optional[Dict[str, Any]],
         result: Dict[str, Any],
     ) -> Dict[str, Any]:
-        # Criar versão automaticamente baseada na data atual e contagem unificada de alterações do dia
-        from datetime import datetime
-        from src.repositories.system_prompt_repository import SystemPromptRepository
-        today = datetime.now().date()
-        existing_changes_today = SystemPromptRepository.count_unified_changes_by_date_and_type(
-            db=db, agent_type=agent_type, date=today
-        )
-        next_version = existing_changes_today + 1
+        # Obter próximo número de versão do controle unificado
+        version_number = UnifiedVersionRepository.get_next_version_number(db, agent_type)
+        
+        logger.info(f"Criando configuração para {agent_type} com versão unificada: {version_number}")
         
         cfg = AgentConfigRepository.create_config(
             db=db,
@@ -124,10 +121,23 @@ class AgentConfigService:
             tools=new_cfg_values.get("tools"),
             model_name=new_cfg_values.get("model_name"),
             embedding_name=new_cfg_values.get("embedding_name"),
-            version=next_version,
+            version=version_number,
             metadata=metadata or {"source": "api"},
         )
+        
+        # Registrar no controle de versões unificado
+        unified_version = UnifiedVersionRepository.create_version(
+            db=db,
+            agent_type=agent_type,
+            change_type="config",
+            config_id=cfg.config_id,
+            author=metadata.get("author") if metadata else None,
+            reason=metadata.get("reason") if metadata else None,
+            metadata=metadata,
+        )
+        
         result["config_id"] = cfg.config_id
+        result["unified_version"] = unified_version.version_number
 
         if update_agents:
             agents_result = await self._update_all_agents(
@@ -249,6 +259,10 @@ class AgentConfigService:
         try:
             # Apaga histórico
             AgentConfigRepository.delete_configs_by_agent_type(db, agent_type)
+            
+            # Remover do controle de versões unificado também
+            UnifiedVersionRepository.delete_versions_by_agent_type(db, agent_type)
+            
             db.commit()
 
             default_cfg = self._default_config(agent_type)
@@ -263,6 +277,19 @@ class AgentConfigService:
                 version=1,
                 metadata={"author": "System", "reason": "Resetado automaticamente"},
             )
+            
+            # Registrar no controle de versões unificado
+            unified_version = UnifiedVersionRepository.create_version(
+                db=db,
+                agent_type=agent_type,
+                change_type="config",
+                config_id=new_cfg.config_id,
+                author="System",
+                reason="Resetado automaticamente",
+                metadata={"author": "System", "reason": "Resetado automaticamente"},
+            )
+            
+            result["unified_version"] = unified_version.version_number
 
             if update_agents:
                 agents_result = await self._update_all_agents(
