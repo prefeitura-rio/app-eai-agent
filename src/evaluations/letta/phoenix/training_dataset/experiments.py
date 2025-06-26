@@ -6,6 +6,7 @@ import time
 import asyncio
 import uuid
 from typing import Dict, List, Any, Literal
+from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
@@ -27,7 +28,8 @@ import pandas as pd
 import httpx
 import phoenix as px
 import nest_asyncio
-from src.services.llm.gemini_service import GeminiService
+from src.services.llm.gemini_service import gemini_service
+from src.services.llm.openai_service import openai_service
 
 from phoenix.evals import llm_classify
 from phoenix.evals.models import OpenAIModel
@@ -52,7 +54,6 @@ logger = logging.getLogger(__name__)
 
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
-GEMINI_COMPLETO = GeminiService()
 
 EVAL_MODEL = GenAIModel(
     model=env.GEMINI_EVAL_MODEL,
@@ -76,57 +77,35 @@ respostas_coletadas = {}
 async def get_response_from_gpt(example: Example) -> dict:
     query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
 
-    headers = {
-        "Content-Type": "application/json",
-        "api-key": env.OPENAI_API_KEY
-    }
-    
-    payload = {
-        "messages": [
-            {
-                "role": "user", 
-                "content": query,
-            }
-        ],
-        # "temperature": 0.8,
-        "max_tokens": 256
-    }
+    response = await openai_service.generate_content(
+        query,
+        use_web_search=True,
+    )
 
-    url = f"{env.OPENAI_URL}openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
-    # url = f"{env.OPENAI_URL}openai/deployments/gpt-4.1/chat/completions?api-version=2024-02-15-preview"
+    def remover_utm(url: str) -> str:
+        """Remove todos os parâmetros utm_ da URL."""
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        # Mantém apenas os parâmetros que NÃO começam com 'utm_source'
+        nova_query = {k: v for k, v in query.items() if not k.startswith('utm_source')}
+        return urlunparse(parsed._replace(query=urlencode(nova_query, doseq=True)))
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        choice = data["choices"][0]["message"]
-        resultado = {
-            "texto": choice.get("content", None),
-            "links": []
-        }
-
-        context = choice.get("context", {})
-        for citation in context.get("citations", []):
-            uri = citation.get("url")
-            title = citation.get("title") or None
-            if uri:
-                resultado["links"].append({
-                    "uri": uri,
-                    "title": title,
-                })
-
-        return resultado
+    for link in response.get("links", []):
+        if "uri" in link:
+            link["uri"] = remover_utm(link["uri"])
+    return response
 
 
 async def get_response_from_gemini(example: Example) -> str:
     query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
 
-    response = await GEMINI_COMPLETO.generate_content(
-            query,
-            model="gemini-2.5-flash-preview-05-20",
-            use_google_search=True,
-            response_format="text_and_links",
-        )
+    response = await gemini_service.generate_content(
+        query,
+        model="gemini-2.5-flash-preview-05-20",
+        use_google_search=True,
+        response_format="text_and_links",
+    )
+    
     return response
 
 
