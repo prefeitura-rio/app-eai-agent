@@ -57,10 +57,24 @@ class UnifiedHistoryService:
         unified_history = []
         
         for version in versions:
+            # Gerar nome da versão no padrão eai-YYYY-MM-DD-vX
+            created_date = version.created_at
+            if created_date:
+                version_display = f"eai-{created_date.strftime('%Y-%m-%d')}-v{version.version_number}"
+            else:
+                from datetime import datetime
+                today = datetime.now()
+                version_display = f"eai-{today.strftime('%Y-%m-%d')}-v{version.version_number}"
+            
+            # Verificar se já existe version_display nos metadados
+            if version.version_metadata and version.version_metadata.get("version_display"):
+                version_display = version.version_metadata["version_display"]
+            
             # Dados básicos da versão
             item = {
                 "version_id": str(version.version_id),
                 "version_number": version.version_number,
+                "version_display": version_display,
                 "change_type": version.change_type,
                 "created_at": version.created_at.isoformat() if version.created_at else None,
                 "author": version.author,

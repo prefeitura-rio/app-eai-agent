@@ -350,60 +350,42 @@ function createUnifiedConfirmationModal() {
 function proceedWithUnifiedSave(agentType, newPrompt, memoryBlocksArray, author, reason) {
     showLoading();
     
-    const metadata = {
-        author: author,
-        reason: reason
-    };
-    
     const updateAgents = updateAgentsCheckbox.checked;
     
-    // Criar payload unificado contendo tanto prompt quanto config
-    const payload = {
+    // Usar novo endpoint unificado para salvar tudo em uma única versão
+    const unifiedPayload = {
         agent_type: agentType,
-        new_prompt: newPrompt,
+        prompt_content: newPrompt,
         memory_blocks: memoryBlocksArray,
         tools: toolsInput.value.split(',').map(t => t.trim()).filter(Boolean),
         model_name: modelNameInput.value.trim() || null,
         embedding_name: embeddingNameInput.value.trim() || null,
         update_agents: updateAgents,
-        metadata: metadata
+        author: author,
+        reason: reason
     };
     
-    // Por enquanto, vou chamar os dois endpoints sequencialmente
-    // TODO: Criar endpoint unificado no backend
-    console.log('Salvando alterações unificadas:', payload);
+    console.log('Salvando alterações unificadas com novo endpoint:', unifiedPayload);
     
-    // Primeiro salvar o prompt
-    const promptPayload = {
-        new_prompt: newPrompt,
-        agent_type: agentType,
-        update_agents: updateAgents,
-        metadata: metadata
-    };
-    
-    apiRequest('POST', `${API_BASE_URL}/api/v1/system-prompt`, promptPayload)
-        .then(promptResponse => {
-            // Depois salvar a config
-            const configPayload = {
-                agent_type: agentType,
-                memory_blocks: memoryBlocksArray,
-                tools: payload.tools,
-                model_name: payload.model_name,
-                embedding_name: payload.embedding_name,
-                update_agents: updateAgents,
-                metadata: metadata
-            };
-            
-            return apiRequest('POST', `${API_BASE_URL}/api/v1/agent-config`, configPayload);
-        })
-        .then(configResponse => {
+    apiRequest('POST', `${API_BASE_URL}/api/v1/unified-save`, unifiedPayload)
+        .then(response => {
             hideLoading();
-            showAlert('System Prompt e Configurações salvos com sucesso como uma única versão!');
+            console.log('Salvamento unificado concluído:', response);
+            
+            let message = `${response.version_display} salva com sucesso!`;
+            const alertType = response.success ? 'success' : 'warning';
+            
+            if (response.message && response.message !== 'Alterações salvas com sucesso') {
+                message = response.message;
+            }
+            
+            showAlert(message, alertType);
             loadData(); // Recarregar dados
         })
         .catch(error => {
             hideLoading();
-            showAlert(error.message || 'Erro ao salvar alterações unificadas', 'danger');
+            console.error('Erro no salvamento unificado:', error);
+            showAlert('Erro ao salvar alterações: ' + (error.message || 'Erro desconhecido'), 'danger');
         });
 }
 
@@ -560,8 +542,8 @@ function renderBackendUnifiedHistory(historyItems) {
             badges = '<span class="badge bg-info me-1">Configurações</span>';
         }
         
-        // Criar versão formatada
-        const versionDisplay = `Versão ${item.version_number}`;
+        // Usar nomenclatura correta da versão
+        const versionDisplay = item.version_display || `eai-${new Date(item.created_at).toISOString().split('T')[0]}-v${item.version_number}`;
         
         historyItem.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
@@ -847,6 +829,15 @@ function handleResetAll() {
             console.log('Reset unificado concluído:', response);
             
             let message = response.message || 'Reset unificado concluído com sucesso!';
+            if (response.version_display) {
+                message = `Reset concluído! Nova versão ${response.version_display} criada.`;
+                if (response.message.includes('agentes foram atualizados')) {
+                    const agentInfo = response.message.split(',')[1];
+                    if (agentInfo) {
+                        message += ` ${agentInfo.trim()}`;
+                    }
+                }
+            }
             const alertType = response.success ? 'success' : 'warning';
             
             showAlert(message, alertType);

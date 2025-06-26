@@ -61,17 +61,26 @@ async def unified_reset(
             # Força commit da deleção antes de criar novos registros
             db.commit()
 
-            # 3. Criar prompt padrão (versão 1)
+            # 3. Gerar nome da versão no padrão eai-YYYY-MM-DD-v1
+            from datetime import datetime
+            today = datetime.now()
+            version_display = f"eai-{today.strftime('%Y-%m-%d')}-v1"
+            
+            # 4. Criar prompt padrão (versão 1)
             default_prompt = system_prompt_service._get_default_prompt(agent_type)
             new_prompt = SystemPromptRepository.create_prompt(
                 db=db,
                 agent_type=agent_type,
                 content=default_prompt,
                 version=1,
-                metadata={"author": "System", "reason": "Reset unificado automaticamente"},
+                metadata={
+                    "author": "System", 
+                    "reason": "Reset unificado automaticamente",
+                    "version_display": version_display
+                },
             )
 
-            # 4. Criar configuração padrão (versão 1)  
+            # 5. Criar configuração padrão (versão 1)  
             default_config = agent_config_service._default_config(agent_type)
             new_config = AgentConfigRepository.create_config(
                 db=db,
@@ -81,10 +90,14 @@ async def unified_reset(
                 model_name=default_config["model_name"],
                 embedding_name=default_config["embedding_name"],
                 version=1,
-                metadata={"author": "System", "reason": "Reset unificado automaticamente"},
+                metadata={
+                    "author": "System", 
+                    "reason": "Reset unificado automaticamente",
+                    "version_display": version_display
+                },
             )
 
-            # 5. Criar entrada de versão unificada (versão 1)
+            # 6. Criar entrada de versão unificada (versão 1)
             unified_version = UnifiedVersionRepository.create_version(
                 db=db,
                 agent_type=agent_type,
@@ -93,15 +106,20 @@ async def unified_reset(
                 config_id=new_config.config_id,
                 author="System",
                 reason="Reset unificado automaticamente",
-                description="Reset completo do sistema - prompt e configuração recriados",
-                metadata={"author": "System", "reason": "Reset unificado automaticamente"},
+                description=f"Reset completo do sistema - {version_display}",
+                metadata={
+                    "author": "System", 
+                    "reason": "Reset unificado automaticamente",
+                    "version_display": version_display
+                },
             )
 
             result["unified_version"] = unified_version.version_number
+            result["version_display"] = version_display
             result["prompt_id"] = new_prompt.prompt_id
             result["config_id"] = new_config.config_id
 
-            # 6. Atualizar agentes se solicitado
+            # 7. Atualizar agentes se solicitado
             if update_agents:
                 # Atualizar agentes com novo prompt
                 prompt_agents_result = await system_prompt_service.update_all_agents_system_prompt(
