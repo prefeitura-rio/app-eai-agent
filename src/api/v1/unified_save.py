@@ -90,6 +90,15 @@ async def save_unified_changes(request: UnifiedSaveRequest):
             prompt_id = None
             config_id = None
             
+            # Obter configuração atual para usar como base (mesmo se não houver mudanças de config)
+            current_config = AgentConfigRepository.get_active_config(db, request.agent_type)
+            
+            # Preparar valores de configuração (usar valores fornecidos ou fallback para configuração atual)
+            memory_blocks_value = request.memory_blocks if request.memory_blocks is not None else (current_config.memory_blocks if current_config else [])
+            tools_value = request.tools if request.tools is not None else (current_config.tools if current_config else [])
+            model_name_value = request.model_name if request.model_name is not None else (current_config.model_name if current_config else "")
+            embedding_name_value = request.embedding_name if request.embedding_name is not None else (current_config.embedding_name if current_config else "")
+            
             # Salvar prompt se fornecido
             if has_prompt_changes:
                 prompt = SystemPromptRepository.create_prompt(
@@ -107,16 +116,14 @@ async def save_unified_changes(request: UnifiedSaveRequest):
 
             # Salvar configuração se fornecida
             if has_config_changes:
-                # Obter configuração atual para usar como base
-                current_config = AgentConfigRepository.get_active_config(db, request.agent_type)
                 
                 config = AgentConfigRepository.create_config(
                     db=db,
                     agent_type=request.agent_type,
-                    memory_blocks=request.memory_blocks or (current_config.memory_blocks if current_config else []),
-                    tools=request.tools or (current_config.tools if current_config else []),
-                    model_name=request.model_name or (current_config.model_name if current_config else ""),
-                    embedding_name=request.embedding_name or (current_config.embedding_name if current_config else ""),
+                    memory_blocks=memory_blocks_value,
+                    tools=tools_value,
+                    model_name=model_name_value,
+                    embedding_name=embedding_name_value,
                     version=version_number,
                     metadata={
                         "author": request.author or "API",
@@ -168,10 +175,10 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                 # Atualizar agentes com configuração se foi alterada
                 if has_config_changes:
                     config_values = {
-                        "memory_blocks": request.memory_blocks or (current_config.memory_blocks if current_config else []),
-                        "tools": request.tools or (current_config.tools if current_config else []),
-                        "model_name": request.model_name or (current_config.model_name if current_config else ""),
-                        "embedding_name": request.embedding_name or (current_config.embedding_name if current_config else ""),
+                        "memory_blocks": memory_blocks_value,
+                        "tools": tools_value,
+                        "model_name": model_name_value,
+                        "embedding_name": embedding_name_value,
                     }
                     
                     config_agents_result = await agent_config_service._update_all_agents(

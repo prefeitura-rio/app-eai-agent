@@ -238,7 +238,7 @@ function handleSaveAll() {
     
     // Validar JSON dos memory blocks
     let memoryBlocksValue = memoryBlocksText.value.trim();
-    let memoryBlocksArray = null;
+    let memoryBlocksArray = [];
     if (memoryBlocksValue) {
         try {
             memoryBlocksArray = JSON.parse(memoryBlocksValue);
