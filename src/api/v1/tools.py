@@ -5,7 +5,7 @@ from src.services.llm.openai_service import OpenAIService
 from src.core.security.dependencies import validar_token
 from src.services.letta.agents.tools.typesense_search import typesense_search
 from src.services.llm.gemini_service import GeminiService
-
+from src.config import env
 
 router = APIRouter(
     prefix="/letta/tools",
@@ -51,7 +51,7 @@ async def gpt_search_tool(
         openai_service = OpenAIService()
         response = await openai_service.generate_content(
             text=f"Você é um especialista em busca de informações. Faça uma busca na web para encontrar as informações mais relevantes sobre o seguinte assunto: {query}.",
-            model="o4-mini",
+            model=env.GPT_SEARCH_MODEL,
             use_web_search=True,
         )
 
