@@ -73,7 +73,6 @@ class OpenAIService:
                     "region": "Rio de Janeiro"
                 }
             }],
-            "tool_choice": {"type": "web_search_preview"},
             "max_output_tokens": 4000,
         }
 
