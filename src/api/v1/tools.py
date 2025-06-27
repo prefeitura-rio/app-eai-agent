@@ -55,12 +55,28 @@ async def gpt_search_tool(
             use_web_search=True,
         )
 
-        if not response or response.get("resposta") is None:
+        # Verifica se a resposta existe e tem conteúdo válido
+        if not response:
             raise HTTPException(
-                status_code=500, detail="Falha ao gerar resposta do GPT"
+                status_code=500, detail="Nenhuma resposta recebida do GPT"
             )
+        
+        resposta_texto = response.get("resposta")
+        if not resposta_texto or resposta_texto.strip() == "":
+            logger.warning(f"Resposta vazia do GPT. Response completa: {response}")
+            # Tenta usar fallback com dados disponíveis
+            links = response.get("links", [])
+            if links:
+                response["resposta"] = f"Encontrei {len(links)} resultados relevantes sobre '{query}'. Consulte os links fornecidos para mais informações."
+            else:
+                raise HTTPException(
+                    status_code=500, detail="Resposta do GPT está vazia e sem links disponíveis"
+                )
 
         return response
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
         logger.error(f"Erro ao gerar resposta do GPT: {e}")
         raise HTTPException(

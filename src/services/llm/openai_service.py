@@ -146,61 +146,84 @@ class OpenAIService:
         """Extrai texto da Responses API conforme estrutura das docs oficiais."""
         try:
             print(f"🔍 DEBUG: Iniciando extração de texto da resposta")
-            print(f"🔍 DEBUG: response type: {type(response)}")
-            print(f"🔍 DEBUG: response attributes: {dir(response)}")
             
-            if hasattr(response, 'output_text'):
+            # Tenta estrutura direta do output_text
+            if hasattr(response, 'output_text') and response.output_text:
                 text = response.output_text
-                print(f"🔍 DEBUG: Texto extraído via output_text: {text[:100] if text else 'None'}...")
+                print(f"✅ Texto extraído via output_text: {text[:100] if text else 'None'}...")
                 return text
             
-            elif hasattr(response, 'output'):
-                print(f"🔍 DEBUG: response.output type: {type(response.output)}")
-                print(f"🔍 DEBUG: response.output attributes: {dir(response.output) if hasattr(response.output, '__dict__') else 'N/A'}")
+            # Processa output como lista ou objeto
+            if hasattr(response, 'output'):
+                texts = []
                 
-                # Tenta diferentes estruturas da resposta
+                # Se output é uma lista
                 if isinstance(response.output, list):
                     print(f"🔍 DEBUG: output é lista com {len(response.output)} items")
                     for i, item in enumerate(response.output):
-                        print(f"🔍 DEBUG: Item {i}: type={getattr(item, 'type', 'N/A')}")
-                        if hasattr(item, 'type') and item.type == 'message':
-                            if hasattr(item, 'content') and len(item.content) > 0:
-                                content_item = item.content[0]
-                                if hasattr(content_item, 'text'):
-                                    text = content_item.text
-                                    print(f"🔍 DEBUG: Texto extraído via content[0].text: {text[:100] if text else 'None'}...")
-                                    return text
-                                elif hasattr(content_item, 'type') and content_item.type == 'output_text':
-                                    text = content_item.text
-                                    print(f"🔍 DEBUG: Texto extraído via output_text type: {text[:100] if text else 'None'}...")
-                                    return text
+                        item_type = getattr(item, 'type', 'N/A')
+                        print(f"🔍 DEBUG: Item {i}: type={item_type}")
+                        
+                        if item_type == 'message':
+                            text = self._extract_text_from_message_item(item)
+                            if text:
+                                texts.append(text)
                 
+                # Se output tem items (objeto)
                 elif hasattr(response.output, 'items'):
-                    print(f"🔍 DEBUG: output.items length: {len(response.output.items) if hasattr(response.output.items, '__len__') else 'N/A'}")
-                    for item in response.output.items:
-                        print(f"🔍 DEBUG: Item type: {getattr(item, 'type', 'N/A')}")
-                        if hasattr(item, 'type') and item.type == 'message':
-                            if hasattr(item, 'content') and len(item.content) > 0:
-                                content_item = item.content[0]
-                                if hasattr(content_item, 'text'):
-                                    text = content_item.text
-                                    print(f"🔍 DEBUG: Texto extraído via items content[0].text: {text[:100] if text else 'None'}...")
-                                    return text
-                                elif hasattr(content_item, 'type') and content_item.type == 'output_text':
-                                    text = content_item.text
-                                    print(f"🔍 DEBUG: Texto extraído via items output_text type: {text[:100] if text else 'None'}...")
-                                    return text
+                    items = response.output.items
+                    print(f"🔍 DEBUG: output.items com {len(items) if hasattr(items, '__len__') else 'N/A'} items")
+                    for item in items:
+                        item_type = getattr(item, 'type', 'N/A')
+                        print(f"🔍 DEBUG: Item type: {item_type}")
+                        
+                        if item_type == 'message':
+                            text = self._extract_text_from_message_item(item)
+                            if text:
+                                texts.append(text)
+                
+                # Retorna textos encontrados
+                if texts:
+                    final_text = " ".join(texts)
+                    print(f"✅ Texto extraído com sucesso: {final_text[:100]}...")
+                    return final_text
             
-            print(f"🔍 DEBUG: Nenhuma estrutura conhecida encontrada, convertendo para string")
+            # Fallback: tenta converter resposta para string
+            print(f"⚠️ Nenhuma estrutura conhecida encontrada, usando fallback")
             response_str = str(response)
             print(f"🔍 DEBUG: response como string: {response_str[:200]}...")
-            return response_str
+            
+            # Verifica se a string contém texto útil
+            if len(response_str) > 10 and "object at" not in response_str:
+                return response_str
+            else:
+                return "Resposta recebida mas sem texto extraível"
             
         except Exception as e:
             print(f"❌ Erro ao extrair texto da Responses API: {e}")
             import traceback
             traceback.print_exc()
             return f"Erro ao extrair texto: {str(e)}"
+    
+    def _extract_text_from_message_item(self, item) -> str:
+        """Extrai texto de um item do tipo 'message'."""
+        try:
+            if hasattr(item, 'content') and item.content:
+                for content_item in item.content:
+                    # Texto direto
+                    if hasattr(content_item, 'text') and content_item.text:
+                        return content_item.text
+                    
+                    # Output text específico
+                    if (hasattr(content_item, 'type') and 
+                        content_item.type in ['output_text', 'text'] and 
+                        hasattr(content_item, 'text')):
+                        return content_item.text
+            
+            return ""
+        except Exception as e:
+            print(f"❌ Erro ao extrair texto de message item: {e}")
+            return ""
 
     def _extract_links_from_response(self, response) -> List[Dict[str, Any]]:
         """Extrai links com metadados da Responses API conforme docs oficiais."""
