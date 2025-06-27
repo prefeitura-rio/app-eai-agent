@@ -38,7 +38,7 @@ class OpenAIService:
 
         Returns:
             Dict contendo:
-                - resposta: Texto gerado pelo modelo
+                - texto: Texto gerado pelo modelo
                 - links: Lista de links com metadados nativos (quando usar web_search)
                   * uri: URL da fonte
                   * title: Título da página
@@ -83,7 +83,7 @@ class OpenAIService:
             response = await self.client.responses.create(**request_config)
             
             return {
-                "resposta": self._extract_text_from_response(response),
+                "texto": self._extract_text_from_response(response),
                 "links": self._extract_links_from_response(response),
                 "model_used": model,
                 "web_search_used": True,
@@ -131,7 +131,7 @@ class OpenAIService:
             response = await self.client.chat.completions.create(**generation_config)
             
             return {
-                "resposta": self._extract_text_from_chat_completion(response),
+                "texto": self._extract_text_from_chat_completion(response),
                 "links": [],  
                 "model_used": model,
                 "web_search_used": False,
