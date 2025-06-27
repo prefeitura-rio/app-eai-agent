@@ -51,7 +51,7 @@ async def gpt_search_tool(
         openai_service = OpenAIService()
         response = await openai_service.generate_content(
             text=f"Você é um especialista em busca de informações. Faça uma busca na web para encontrar as informações mais relevantes sobre o seguinte assunto: {query}.",
-            model="o4-mini-2025-04-16",
+            model="o4-mini",
             use_web_search=True,
         )
 
