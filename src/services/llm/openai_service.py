@@ -74,7 +74,6 @@ class OpenAIService:
                 }
             }],
             "tool_choice": {"type": "web_search_preview"},
-            "temperature": 0.7, 
             "max_output_tokens": 4000,
         }
 
