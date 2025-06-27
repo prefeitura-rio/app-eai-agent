@@ -49,38 +49,40 @@ async def gpt_search_tool(
 ):
     try:
         openai_service = OpenAIService()
+        
+        prompt = f"Pesquise e forneça informações atualizadas sobre: {query}. " \
+                f"Cite as fontes e forneça uma resposta completa e informativa."
+        
         response = await openai_service.generate_content(
-            text=f"Você é um especialista em busca de informações. Faça uma busca na web para encontrar as informações mais relevantes sobre o seguinte assunto: {query}.",
+            text=prompt,
             model=env.GPT_SEARCH_MODEL,
             use_web_search=True,
         )
 
-        # Verifica se a resposta existe e tem conteúdo válido
         if not response:
             raise HTTPException(
-                status_code=500, detail="Nenhuma resposta recebida do GPT"
+                status_code=500, detail="Nenhuma resposta recebida do serviço"
             )
         
-        resposta_texto = response.get("resposta")
-        if not resposta_texto or resposta_texto.strip() == "":
-            logger.warning(f"Resposta vazia do GPT. Response completa: {response}")
-            # Tenta usar fallback com dados disponíveis
-            links = response.get("links", [])
-            if links:
-                response["resposta"] = f"Encontrei {len(links)} resultados relevantes sobre '{query}'. Consulte os links fornecidos para mais informações."
-            else:
-                raise HTTPException(
-                    status_code=500, detail="Resposta do GPT está vazia e sem links disponíveis"
-                )
+        resposta_texto = response.get("resposta", "").strip()
+        links = response.get("links", [])
+        
+        if not resposta_texto and links:
+            response["resposta"] = f"Encontrei {len(links)} fontes relevantes sobre '{query}'. Consulte os links para informações detalhadas."
+        
+        elif not resposta_texto and not links:
+            raise HTTPException(
+                status_code=500, detail="Não foi possível obter informações sobre a consulta"
+            )
 
         return response
+        
     except HTTPException:
-        # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        logger.error(f"Erro ao gerar resposta do GPT: {e}")
+        logger.error(f"Erro no gpt_search_tool: {e}")
         raise HTTPException(
-            status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
+            status_code=500, detail=f"Erro interno: {str(e)}"
         )
         
         

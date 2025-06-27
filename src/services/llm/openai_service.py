@@ -38,12 +38,10 @@ class OpenAIService:
 
         Returns:
             Dict contendo:
-                - texto: Texto gerado pelo modelo
-                - links: Lista de links com metadados nativos (quando usar web_search)
+                - resposta: Texto gerado pelo modelo
+                - links: Lista de links com metadados (quando usar web_search)
                   * uri: URL da fonte
                   * title: Título da página
-                  * start_index/end_index: Posição da citação no texto
-                  * web_search_id: ID da busca realizada
                 - model_used: Modelo usado na geração
                 - web_search_used: Se web search foi usado
         """
@@ -65,7 +63,7 @@ class OpenAIService:
             "input": text,
             "tools": [{
                 "type": "web_search_preview",
-                "search_context_size": "medium",  # low, medium, high
+                "search_context_size": "medium",
                 "user_location": {
                     "type": "approximate",
                     "country": "BR",
@@ -83,11 +81,10 @@ class OpenAIService:
             response = await self.client.responses.create(**request_config)
             
             return {
-                "texto": self._extract_text_from_response(response),
+                "resposta": self._extract_text_from_response(response),
                 "links": self._extract_links_from_response(response),
                 "model_used": model,
-                "web_search_used": True,
-                "raw_response": response  
+                "web_search_used": True
             }
 
         except Exception as e:
@@ -131,11 +128,10 @@ class OpenAIService:
             response = await self.client.chat.completions.create(**generation_config)
             
             return {
-                "texto": self._extract_text_from_chat_completion(response),
-                "links": [],  
+                "resposta": self._extract_text_from_chat_completion(response),
+                "links": [],
                 "model_used": model,
-                "web_search_used": False,
-                "raw_response": response  
+                "web_search_used": False
             }
 
         except Exception as e:
@@ -143,173 +139,118 @@ class OpenAIService:
             raise
 
     def _extract_text_from_response(self, response) -> str:
-        """Extrai texto da Responses API conforme estrutura das docs oficiais."""
+        """Extrai texto da Responses API conforme documentação oficial."""
         try:
-            print(f"🔍 DEBUG: Iniciando extração de texto da resposta")
-            
-            # Tenta estrutura direta do output_text
+            # Primeira tentativa: output_text direto (conforme docs)
             if hasattr(response, 'output_text') and response.output_text:
-                text = response.output_text
-                print(f"✅ Texto extraído via output_text: {text[:100] if text else 'None'}...")
-                return text
+                return response.output_text.strip()
             
-            # Processa output como lista ou objeto
-            if hasattr(response, 'output'):
-                texts = []
-                
-                # Se output é uma lista
-                if isinstance(response.output, list):
-                    print(f"🔍 DEBUG: output é lista com {len(response.output)} items")
-                    for i, item in enumerate(response.output):
-                        item_type = getattr(item, 'type', 'N/A')
-                        print(f"🔍 DEBUG: Item {i}: type={item_type}")
-                        
-                        if item_type == 'message':
-                            text = self._extract_text_from_message_item(item)
-                            if text:
-                                texts.append(text)
-                
-                # Se output tem items (objeto)
-                elif hasattr(response.output, 'items'):
-                    items = response.output.items
-                    print(f"🔍 DEBUG: output.items com {len(items) if hasattr(items, '__len__') else 'N/A'} items")
-                    for item in items:
-                        item_type = getattr(item, 'type', 'N/A')
-                        print(f"🔍 DEBUG: Item type: {item_type}")
-                        
-                        if item_type == 'message':
-                            text = self._extract_text_from_message_item(item)
-                            if text:
-                                texts.append(text)
-                
-                # Retorna textos encontrados
-                if texts:
-                    final_text = " ".join(texts)
-                    print(f"✅ Texto extraído com sucesso: {final_text[:100]}...")
-                    return final_text
+            # Segunda tentativa: buscar na estrutura output
+            if hasattr(response, 'output') and isinstance(response.output, list):
+                for item in response.output:
+                    if getattr(item, 'type', None) == 'message':
+                        text = self._extract_text_from_message_item(item)
+                        if text:
+                            return text.strip()
             
-            # Fallback: tenta converter resposta para string
-            print(f"⚠️ Nenhuma estrutura conhecida encontrada, usando fallback")
-            response_str = str(response)
-            print(f"🔍 DEBUG: response como string: {response_str[:200]}...")
+            # Terceira tentativa: buscar em output.items
+            elif hasattr(response, 'output') and hasattr(response.output, 'items'):
+                for item in response.output.items:
+                    if getattr(item, 'type', None) == 'message':
+                        text = self._extract_text_from_message_item(item)
+                        if text:
+                            return text.strip()
             
-            # Verifica se a string contém texto útil
-            if len(response_str) > 10 and "object at" not in response_str:
-                return response_str
-            else:
-                return "Resposta recebida mas sem texto extraível"
+            # Se chegou até aqui, não conseguiu extrair texto
+            return ""
             
         except Exception as e:
-            print(f"❌ Erro ao extrair texto da Responses API: {e}")
-            import traceback
-            traceback.print_exc()
-            return f"Erro ao extrair texto: {str(e)}"
+            print(f"Erro ao extrair texto da Responses API: {e}")
+            return ""
     
     def _extract_text_from_message_item(self, item) -> str:
         """Extrai texto de um item do tipo 'message'."""
         try:
-            if hasattr(item, 'content') and item.content:
-                for content_item in item.content:
-                    # Texto direto
-                    if hasattr(content_item, 'text') and content_item.text:
-                        return content_item.text
-                    
-                    # Output text específico
-                    if (hasattr(content_item, 'type') and 
-                        content_item.type in ['output_text', 'text'] and 
-                        hasattr(content_item, 'text')):
-                        return content_item.text
+            if not hasattr(item, 'content') or not item.content:
+                return ""
+            
+            for content_item in item.content:
+                if hasattr(content_item, 'text') and content_item.text:
+                    return content_item.text
             
             return ""
-        except Exception as e:
-            print(f"❌ Erro ao extrair texto de message item: {e}")
+        except Exception:
             return ""
 
     def _extract_links_from_response(self, response) -> List[Dict[str, Any]]:
-        """Extrai links com metadados da Responses API conforme docs oficiais."""
+        """Extrai links com metadados da Responses API conforme documentação oficial."""
         links = []
         
         try:
             web_search_id = None
             
+            # Processa output como lista
             if hasattr(response, 'output') and isinstance(response.output, list):
-                for item in response.output:
-                    if hasattr(item, 'type') and item.type == 'web_search_call':
-                        web_search_id = getattr(item, 'id', None)
-                        status = getattr(item, 'status', 'unknown')
-                        print(f"🔍 Web search call encontrado: {web_search_id} (status: {status})")
-                    
-                    elif hasattr(item, 'type') and item.type == 'message':
-                        if hasattr(item, 'content') and len(item.content) > 0:
-                            content_item = item.content[0]
-                            
-                            if hasattr(content_item, 'annotations') and content_item.annotations:
-                                for annotation in content_item.annotations:
-                                    if hasattr(annotation, 'type') and annotation.type == 'url_citation':
-                                        link_data = {
-                                            "uri": getattr(annotation, 'url', ''),
-                                            "title": getattr(annotation, 'title', None),
-                                            "start_index": getattr(annotation, 'start_index', None),
-                                            "end_index": getattr(annotation, 'end_index', None),
-                                            "web_search_id": web_search_id,
-                                            "source": "responses_api_native"
-                                        }
-                                        
-                                        link_data = {k: v for k, v in link_data.items() if v is not None}
-                                        links.append(link_data)
+                links.extend(self._process_output_items(response.output))
             
+            # Processa output.items
             elif hasattr(response, 'output') and hasattr(response.output, 'items'):
-                for item in response.output.items:
-                    if hasattr(item, 'type') and item.type == 'web_search_call':
-                        web_search_id = getattr(item, 'id', None)
-                        status = getattr(item, 'status', 'unknown')
-                        print(f"🔍 Web search call encontrado: {web_search_id} (status: {status})")
-                    
-                    elif hasattr(item, 'type') and item.type == 'message':
-                        if hasattr(item, 'content') and len(item.content) > 0:
-                            content_item = item.content[0]
-                            
-                            if hasattr(content_item, 'annotations') and content_item.annotations:
-                                for annotation in content_item.annotations:
-                                    if hasattr(annotation, 'type') and annotation.type == 'url_citation':
-                                        link_data = {
-                                            "uri": getattr(annotation, 'url', ''),
-                                            "title": getattr(annotation, 'title', None),
-                                            "start_index": getattr(annotation, 'start_index', None),
-                                            "end_index": getattr(annotation, 'end_index', None),
-                                            "web_search_id": web_search_id,
-                                            "source": "responses_api_native"
-                                        }
-                                        
-                                        link_data = {k: v for k, v in link_data.items() if v is not None}
-                                        links.append(link_data)
-
-            print(f"✅ Links extraídos nativamente: {len(links)}")
-            
-            if len(links) == 0:
-                print("🔍 DEBUG: Estrutura da resposta para análise:")
-                if hasattr(response, 'output'):
-                    if isinstance(response.output, list):
-                        print(f"   output é lista com {len(response.output)} items")
-                        for i, item in enumerate(response.output):
-                            print(f"   Item {i}: type={getattr(item, 'type', 'N/A')}")
-                            if hasattr(item, 'content'):
-                                print(f"     content length: {len(item.content) if item.content else 0}")
-                                if item.content and len(item.content) > 0:
-                                    content = item.content[0]
-                                    print(f"     annotations: {hasattr(content, 'annotations')}")
-                                    if hasattr(content, 'annotations'):
-                                        print(f"     annotations length: {len(content.annotations) if content.annotations else 0}")
-                    else:
-                        print(f"   output type: {type(response.output)}")
-                else:
-                    print("   Sem atributo output")
+                links.extend(self._process_output_items(response.output.items))
             
         except Exception as e:
-            print(f"❌ Erro ao extrair links da Responses API: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Erro ao extrair links da Responses API: {e}")
 
+        return links
+    
+    def _process_output_items(self, items) -> List[Dict[str, Any]]:
+        """Processa itens do output para extrair links."""
+        links = []
+        web_search_id = None
+        
+        try:
+            for item in items:
+                item_type = getattr(item, 'type', None)
+                
+                # Captura ID da busca web
+                if item_type == 'web_search_call':
+                    web_search_id = getattr(item, 'id', None)
+                
+                # Extrai links das mensagens
+                elif item_type == 'message':
+                    message_links = self._extract_links_from_message(item, web_search_id)
+                    links.extend(message_links)
+        
+        except Exception as e:
+            print(f"Erro ao processar items do output: {e}")
+        
+        return links
+    
+    def _extract_links_from_message(self, message_item, web_search_id: str = None) -> List[Dict[str, Any]]:
+        """Extrai links de um item de mensagem."""
+        links = []
+        
+        try:
+            if not hasattr(message_item, 'content') or not message_item.content:
+                return links
+            
+            for content_item in message_item.content:
+                if hasattr(content_item, 'annotations') and content_item.annotations:
+                    for annotation in content_item.annotations:
+                        if getattr(annotation, 'type', None) == 'url_citation':
+                            link_data = {
+                                "uri": getattr(annotation, 'url', ''),
+                                "title": getattr(annotation, 'title', None)
+                            }
+                            
+                            # Remove campos vazios/None
+                            link_data = {k: v for k, v in link_data.items() if v}
+                            
+                            if link_data.get("uri"):
+                                links.append(link_data)
+        
+        except Exception as e:
+            print(f"Erro ao extrair links da mensagem: {e}")
+        
         return links
 
     def _extract_text_from_chat_completion(self, response) -> str:
