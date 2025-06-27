@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from loguru import logger
 
+from services.llm.openai_service import OpenAIService
 from src.core.security.dependencies import validar_token
 from src.services.letta.agents.tools.typesense_search import typesense_search
 from src.services.llm.gemini_service import GeminiService
@@ -42,6 +43,31 @@ async def google_search_tool(
         )
 
 
+@router.get("/gpt_search", name="Busca com GPT")
+async def gpt_search_tool(
+    query: str = Query(..., description="Texto da consulta"),
+):
+    try:
+        openai_service = OpenAIService()
+        response = await openai_service.generate_content(
+            text=query,
+            model="o4-mini-2025-04-16",
+            use_web_search=True,
+        )
+
+        if not response or response.get("resposta") is None:
+            raise HTTPException(
+                status_code=500, detail="Falha ao gerar resposta do GPT"
+            )
+
+        return response
+    except Exception as e:
+        logger.error(f"Erro ao gerar resposta do GPT: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
+        )
+        
+        
 @router.get("/public_services_grounded_search", name="Busca Serviços Públicos")
 async def public_services_grounded_search_tool(
     query: str = Query(..., description="Texto da consulta"),
