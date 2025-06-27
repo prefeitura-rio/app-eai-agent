@@ -47,14 +47,13 @@ class OpenAIService:
         """
         
         if use_web_search:
-            return await self._generate_with_web_search(text, image, model, config)
+            return await self._generate_with_web_search(text, model, config)
         else:
-            return await self._generate_without_web_search(text, image, model, config)
+            return await self._generate_without_web_search(text, model, config)
 
     async def _generate_with_web_search(
         self,
         text: str,
-        image: Optional[Union[str, Path, bytes]] = None,
         model: str = "gpt-4o",
         config: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
@@ -81,8 +80,8 @@ class OpenAIService:
             response = await self.client.responses.create(**request_config)
             
             return {
-                "resposta": self._extract_text_from_response(response),
-                "links": self._extract_links_from_response(response),
+                "resposta": await self._extract_text_from_response(response),
+                "links": await self._extract_links_from_response(response),
                 "model_used": model,
                 "web_search_used": True
             }
@@ -138,7 +137,7 @@ class OpenAIService:
             print(f"Erro ao gerar conteúdo: {e}")
             raise
 
-    def _extract_text_from_response(self, response) -> str:
+    async def _extract_text_from_response(self, response) -> str:
         """Extrai texto da Responses API conforme documentação oficial."""
         try:
             # Primeira tentativa: output_text direto (conforme docs)
@@ -182,7 +181,7 @@ class OpenAIService:
         except Exception:
             return ""
 
-    def _extract_links_from_response(self, response) -> List[Dict[str, Any]]:
+    async def _extract_links_from_response(self, response) -> List[Dict[str, Any]]:
         """Extrai links com metadados da Responses API conforme documentação oficial."""
         links = []
         
