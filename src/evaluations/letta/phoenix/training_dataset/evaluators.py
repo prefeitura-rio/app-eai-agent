@@ -320,13 +320,15 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
-    golden_field = output.get("metadata", {}).get("Golden links list", "")
-    try:
-        golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
-    except (ValueError, SyntaxError):
-        golden_links = []
-    # golden_field = output.get("metadata", {}).get("Golden links", "")
-    # golden_links = _parse_golden(golden_field)
+    # golden_field = output.get("metadata", {}).get("Golden links list", "")
+
+    # try:
+    #     golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
+    # except (ValueError, SyntaxError):
+    #     golden_links = []
+
+    golden_field = output.get("metadata", {}).get("Golden links", "")
+    golden_links = _parse_golden(golden_field)
 
     # Resolve answer links
     answer_links: list[str] = []
@@ -425,15 +427,15 @@ async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
-    # golden_field = output.get("metadata", {}).get("Golden links", "")
-    # golden_links = _parse_golden(golden_field)
+    golden_field = output.get("metadata", {}).get("Golden links", "")
+    golden_links = _parse_golden(golden_field)
 
-    golden_field = output.get("metadata", {}).get("Golden links list", "")
+    # golden_field = output.get("metadata", {}).get("Golden links list", "")
 
-    try:
-        golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
-    except (ValueError, SyntaxError):
-        golden_links = []
+    # try:
+    #     golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
+    # except (ValueError, SyntaxError):
+    #     golden_links = []
 
     resposta = output.get("agent_output", {}).get("texto") or final_response(output["agent_output"]).get("content", "")
 

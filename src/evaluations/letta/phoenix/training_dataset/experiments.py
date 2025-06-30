@@ -331,7 +331,7 @@ async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
         )
 
         # Processar o batch
-        resultados_batch = await processar_batch(batch_atual, i, modo="gpt")
+        resultados_batch = await processar_batch(batch_atual, i, modo="letta")
         todas_respostas.update(resultados_batch)
 
         # Log do progresso
@@ -443,6 +443,7 @@ async def get_redirect_links(model_response):
         "public_services_grounded_search",
         "google_search",
         "typesense_search",
+        "gpt_search"
     }
 
     def _extract_urls(raw_list):
@@ -502,7 +503,7 @@ async def get_redirect_links(model_response):
         links_para_processar.extend(links)
 
     # Remove duplicados e limita a 10 links (opcional)
-    unique_links = list(dict.fromkeys([link for link in links_para_processar if isinstance(link, str)]))[:10]
+    unique_links = list(dict.fromkeys([link for link in links_para_processar]))[:10]
 
     # Prepara para resolver redirects
     link_dicts = [{"uri": uri} for uri in unique_links]
@@ -599,7 +600,7 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
             experiment_eval_golden_link_in_tool_calling,
             experiment_eval_golden_link_in_answer,
         ],
-        experiment_name="GPT",
+        experiment_name="eai-2025-06-27-v6",
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=10,
@@ -614,7 +615,7 @@ async def main():
     logger.info("Iniciando a execução do script...")
 
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
-    dataset_name = "Golden Dataset" # - Small Sample"
+    dataset_name = "Golden Dataset - Small Sample"
     logger.info(f"Carregando dataset: {dataset_name}")
     dataset = phoenix_client.get_dataset(name=dataset_name)
 
