@@ -104,6 +104,7 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
                 ContinueToolRule(tool_name="archival_memory_insert"),
                 ContinueToolRule(tool_name="google_search"),
                 ContinueToolRule(tool_name="public_services_grounded_search"),
+                ContinueToolRule(tool_name="gpt_search"),
             ],
             tags=["agentic_search"] + (tags if tags else []),
             model=model_name,
