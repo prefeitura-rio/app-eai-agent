@@ -56,9 +56,7 @@ phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 
 EVAL_MODEL = GenAIModel(
-    model=env.GEMINI_EVAL_MODEL,
-    api_key=env.GEMINI_API_KEY,
-    max_tokens=100000
+    model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
 )
 
 EVAL_MODEL = OpenAIModel(
@@ -69,10 +67,11 @@ EVAL_MODEL = OpenAIModel(
 )
 
 # Tamanho do batch para criação de agentes
-BATCH_SIZE = 10
+BATCH_SIZE = 15
 
 # Cache para armazenar as respostas coletadas
 respostas_coletadas = {}
+
 
 async def get_response_from_gpt(example: Example) -> dict:
     query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
@@ -87,7 +86,7 @@ async def get_response_from_gpt(example: Example) -> dict:
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
         # Mantém apenas os parâmetros que NÃO começam com 'utm_source'
-        nova_query = {k: v for k, v in query.items() if not k.startswith('utm_source')}
+        nova_query = {k: v for k, v in query.items() if not k.startswith("utm_source")}
         return urlunparse(parsed._replace(query=urlencode(nova_query, doseq=True)))
 
     for link in response.get("links", []):
@@ -105,7 +104,7 @@ async def get_response_from_gemini(example: Example) -> str:
         use_google_search=True,
         response_format="text_and_links",
     )
-    
+
     return response
 
 
@@ -124,7 +123,7 @@ async def criar_agente_letta(index: int, name: str = "Agente Teste") -> str:
         agent_id = await letta_service.create_agent(
             name=name,
             agent_type="agentic_search",
-            tags=[f"test_evaluation_{index}"], 
+            tags=[f"test_evaluation_{index}"],
         )
         logger.info(f"Agente criado: {agent_id} (índice {index})")
         return agent_id.id
@@ -178,9 +177,9 @@ async def obter_resposta_letta(
 
 
 async def processar_batch(
-    exemplos: List[Example], 
-    inicio_batch: int, 
-    modo: Literal["letta", "gpt", "gemini"] = "letta"
+    exemplos: List[Example],
+    inicio_batch: int,
+    modo: Literal["letta", "gpt", "gemini"] = "letta",
 ) -> Dict[str, Any]:
     """
     Processa um batch de exemplos usando o modo selecionado:
@@ -192,17 +191,19 @@ async def processar_batch(
         exemplos: Lista de exemplos
         inicio_batch: Índice inicial para identificação
         modo: Modo de operação ('letta', 'gpt', 'gemini')
-        
+
     Returns:
         Dict[str, Any]: Dicionário com as respostas obtidas
     """
     resultados = {}
-    
+
     if modo == "letta":
         agentes_criados = {}
 
         # Fase 1: Criar todos os agentes do batch
-        logger.info(f"Criando {len(exemplos)} agentes para o batch começando em {inicio_batch}")
+        logger.info(
+            f"Criando {len(exemplos)} agentes para o batch começando em {inicio_batch}"
+        )
         criacao_tarefas = []
 
         for i, exemplo in enumerate(exemplos):
@@ -248,7 +249,9 @@ async def processar_batch(
 
         # Fase 3: Excluir todos os agentes
         logger.info(f"Excluindo {len(agentes_criados)} agentes")
-        tarefas_exclusao = [excluir_agente_letta(agent_id) for agent_id in agentes_criados]
+        tarefas_exclusao = [
+            excluir_agente_letta(agent_id) for agent_id in agentes_criados
+        ]
         await asyncio.gather(*tarefas_exclusao, return_exceptions=True)
 
     elif modo == "gpt":
@@ -271,10 +274,12 @@ async def processar_batch(
         for i, resposta in enumerate(respostas):
             exemplo = exemplos[i]
             if isinstance(resposta, Exception):
-                logger.error(f"Erro ao obter resposta GPT para exemplo {exemplo.id}: {resposta}")
+                logger.error(
+                    f"Erro ao obter resposta GPT para exemplo {exemplo.id}: {resposta}"
+                )
             else:
                 resultados[exemplo.id] = resposta
-    
+
     elif modo == "gemini":
         logger.info(f"Obtendo respostas Gemini para batch {inicio_batch}")
         tarefas_respostas = []
@@ -296,7 +301,9 @@ async def processar_batch(
         for i, resposta in enumerate(respostas):
             exemplo = exemplos[i]
             if isinstance(resposta, Exception):
-                logger.error(f"Erro ao obter resposta Gemini para exemplo {exemplo.id}: {resposta}")
+                logger.error(
+                    f"Erro ao obter resposta Gemini para exemplo {exemplo.id}: {resposta}"
+                )
             else:
                 resultados[exemplo.id] = resposta
 
@@ -304,6 +311,7 @@ async def processar_batch(
         raise ValueError(f"Modo desconhecido: {modo}")
 
     return resultados
+
 
 async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
     """
@@ -351,11 +359,13 @@ async def coletar_todas_respostas(dataset) -> Dict[str, Any]:
 
 #     return agent_stream["assistant_messages"][-1]
 
+
 def final_response(agent_stream: dict) -> dict:
     try:
         return agent_stream.get("grouped", {}).get("assistant_messages", [])[-1]
     except (IndexError, AttributeError):
         return {}
+
 
 def tool_returns(agent_stream: dict) -> str:
     if not agent_stream:
@@ -433,7 +443,6 @@ async def process_link(session, link: dict):
             return link
 
 
-
 async def get_redirect_links(model_response):
     grouped = model_response.get("agent_output", {}).get("grouped", {})
     tool_msgs = grouped.get("tool_return_messages", [])
@@ -443,7 +452,7 @@ async def get_redirect_links(model_response):
         "public_services_grounded_search",
         "google_search",
         "typesense_search",
-        "gpt_search"
+        "gpt_search",
     }
 
     def _extract_urls(raw_list):
@@ -475,30 +484,11 @@ async def get_redirect_links(model_response):
             if "links" in tool_return:
                 links = _extract_urls(tool_return["links"])
             elif "result" in tool_return:
-                links = [item.get("url") for item in tool_return["result"] if item.get("url")]
+                links = [
+                    item.get("url") for item in tool_return["result"] if item.get("url")
+                ]
         elif isinstance(tool_return, list):
             links = _extract_urls(tool_return)
-
-        if not links:
-            stdout = msg.get("stdout", "")
-            stdout_list = stdout if isinstance(stdout, list) else [stdout]
-            for std in stdout_list:
-                if not std:
-                    continue
-                try:
-                    start_index = std.find("{")
-                    end_index = std.rfind("}") + 1
-                    if start_index == -1 or end_index == 0:
-                        continue
-                    data = ast.literal_eval(std[start_index:end_index])
-                    if data.get("links"):
-                        links = _extract_urls(data["links"])
-                    elif data.get("result"):
-                        links = [item.get("url") for item in data["result"] if item.get("url")]
-                except Exception:
-                    continue
-                if links:
-                    break
 
         links_para_processar.extend(links)
 
@@ -508,14 +498,21 @@ async def get_redirect_links(model_response):
     # Prepara para resolver redirects
     link_dicts = [{"uri": uri} for uri in unique_links]
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"}
-    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
+    }
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=5, verify=False, headers=headers
+    ) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
     # Retorna a lista só com URLs finais corrigidos (ou original se não redirecionou)
     final_urls = [link.get("url") or link.get("uri") for link in link_dicts]
-
-    return final_urls
+    final_links = [
+        {"url": link.get("url"), "uri": link.get("uri"), "error": link.get("error")}
+        for link in link_dicts
+    ]
+    return final_urls, final_links
 
 
 async def experiment_eval(
@@ -600,7 +597,7 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
             experiment_eval_golden_link_in_tool_calling,
             experiment_eval_golden_link_in_answer,
         ],
-        experiment_name="eai-2025-06-27-v6",
+        experiment_name="eai-2025-06-27-v6-small-sample",
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=10,
@@ -615,7 +612,7 @@ async def main():
     logger.info("Iniciando a execução do script...")
 
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
-    dataset_name = "Golden Dataset - Small Sample"
+    dataset_name = "golden_dataset _small_sample_v2"
     logger.info(f"Carregando dataset: {dataset_name}")
     dataset = phoenix_client.get_dataset(name=dataset_name)
 

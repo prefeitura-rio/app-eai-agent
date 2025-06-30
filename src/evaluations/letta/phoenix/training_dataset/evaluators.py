@@ -309,10 +309,10 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     Now supports Letta (Vertex), Gemini, and GPT outputs.
 
     Matching rules
-    - Scheme (http/https) is ignored.  
-    - 'www.' prefix is ignored.  
-    - Trailing slashes are ignored.  
-    - If the golden link has a path, the path must match exactly.  
+    - Scheme (http/https) is ignored.
+    - 'www.' prefix is ignored.
+    - Trailing slashes are ignored.
+    - If the golden link has a path, the path must match exactly.
     - If the golden link is only a domain, any path on that domain passes.
     """
 
@@ -320,65 +320,76 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
-    # golden_field = output.get("metadata", {}).get("Golden links list", "")
+    golden_field = output.get("metadata", {}).get("Golden links list", "")
 
-    # try:
-    #     golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
-    # except (ValueError, SyntaxError):
-    #     golden_links = []
+    try:
+        golden_links = (
+            ast.literal_eval(golden_field)
+            if isinstance(golden_field, str)
+            else golden_field
+        )
+    except (ValueError, SyntaxError):
+        golden_links = []
 
-    golden_field = output.get("metadata", {}).get("Golden links", "")
-    golden_links = _parse_golden(golden_field)
+    # golden_field = output.get("metadata", {}).get("Golden links", "")
+    # golden_links = _parse_golden(golden_field)
 
     # Resolve answer links
     answer_links: list[str] = []
     link_dicts = []
-    
+    explanation_links = []
     if "links" in output["agent_output"]:
         for link in output["agent_output"]["links"]:
             uri = link.get("uri") or link.get("url")
             link_dicts.append({"uri": uri})
 
-        async with httpx.AsyncClient(follow_redirects=True, timeout=2, verify=False) as session:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=2, verify=False
+        ) as session:
             await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
         final_urls = []
         for link in link_dicts:
             if link.get("url"):
                 final_urls.append(link["url"])
-        
+                explanation_links.append(
+                    {
+                        "url": link.get("url"),
+                        "uri": link.get("uri"),
+                        "error": link.get("error"),
+                    }
+                )
         answer_links = final_urls
     else:
-        letta_links = await get_redirect_links(output)    # provided helper
+        letta_links, explanation_links = await get_redirect_links(
+            output
+        )  # provided helper
         answer_links.extend(letta_links)
 
     if not answer_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
 
     # Normalize for fair compare
-    gold_norm  = [_norm_url(u) for u in golden_links]
+    gold_norm = [_norm_url(u) for u in golden_links]
     links_norm = {_norm_url(u) for u in answer_links}
 
     # Exact-enough comparison (see docstring for the rules)
     def match(gold: str, link: str) -> bool:
         g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
         l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
-        
+
         return g_dom == l_dom and (not g_path or g_path == l_path)
 
     response = any(match(g, l) for g in gold_norm for l in links_norm)
 
-    explanation = (
-        f"Golden links: {gold_norm}\n"
-        f"Answer links: {links_norm}\n"
-        f"Match found: {response}"
-    )
+    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {response}"
+    return response, explanation
 
-    return (response, explanation)
 
 # -----------------------------------------------------
 # Helper functions – keep them private to avoid namespace pollution
 # ---------------------------------------------------------------------------
+
 
 def _parse_golden(raw) -> list[str]:
     """Turn metadata['Golden links'] into a clean list."""
@@ -391,6 +402,7 @@ def _parse_golden(raw) -> list[str]:
         # Try to read a Python-style list first
         try:
             import ast
+
             parsed = ast.literal_eval(raw)
             if isinstance(parsed, list):
                 return [str(x).strip() for x in parsed if "http" in str(x)]
@@ -410,13 +422,13 @@ def _norm_url(url: str) -> str:
         return ""
 
     if not url.startswith(("http://", "https://")):
-        url = "http://" + url                       # makes urlparse happy
+        url = "http://" + url  # makes urlparse happy
 
     parsed = urlparse(url)
     domain = parsed.netloc.lower().lstrip("www.")
-    path   = unquote(parsed.path).rstrip("/").lower()
+    path = unquote(parsed.path).rstrip("/").lower()
 
-    if ":~:text=" in path:                         # Strip scroll-to-text fragments
+    if ":~:text=" in path:  # Strip scroll-to-text fragments
         path = path.split(":~:text=")[0]
 
     return f"{domain}{path}"
@@ -427,17 +439,23 @@ async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
-    golden_field = output.get("metadata", {}).get("Golden links", "")
-    golden_links = _parse_golden(golden_field)
+    # golden_field = output.get("metadata", {}).get("Golden links", "")
+    # golden_links = _parse_golden(golden_field)
 
-    # golden_field = output.get("metadata", {}).get("Golden links list", "")
+    golden_field = output.get("metadata", {}).get("Golden links list", "")
 
-    # try:
-    #     golden_links = ast.literal_eval(golden_field) if isinstance(golden_field, str) else golden_field
-    # except (ValueError, SyntaxError):
-    #     golden_links = []
+    try:
+        golden_links = (
+            ast.literal_eval(golden_field)
+            if isinstance(golden_field, str)
+            else golden_field
+        )
+    except (ValueError, SyntaxError):
+        golden_links = []
 
-    resposta = output.get("agent_output", {}).get("texto") or final_response(output["agent_output"]).get("content", "")
+    resposta = output.get("agent_output", {}).get("texto") or final_response(
+        output["agent_output"]
+    ).get("content", "")
 
     # pattern = r"(https?://)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,10}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)"
     # pattern = r"\b(?:https?://|www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}(?:/[^\s]*)?"
@@ -449,26 +467,42 @@ async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
     if not raw_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
 
-    normalized_input_links = [f"https://{link}" if not link.startswith("http") else link for link in raw_links]
-    unique_links = list(dict.fromkeys([link for link in normalized_input_links if isinstance(link, str)]))[:10]
+    normalized_input_links = [
+        f"https://{link}" if not link.startswith("http") else link for link in raw_links
+    ]
+    unique_links = list(
+        dict.fromkeys(
+            [link for link in normalized_input_links if isinstance(link, str)]
+        )
+    )[:10]
 
     link_dicts = [{"uri": uri} for uri in unique_links]
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"}
-    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
+    }
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=5, verify=False, headers=headers
+    ) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
+    explanation_links = [
+        {"url": link.get("url"), "uri": link.get("uri"), "error": link.get("error")}
+        for link in link_dicts
+    ]
     answer_links = [link.get("url") or link.get("uri") for link in link_dicts]
 
-    gold_norm  = [_norm_url(u) for u in golden_links]
+    gold_norm = [_norm_url(u) for u in golden_links]
     links_norm = {_norm_url(u) for u in answer_links}
 
     def match(gold: str, link: str) -> bool:
         g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
         l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
-        
+
         return g_dom == l_dom and (not g_path or g_path == l_path)
 
     response = any(match(g, l) for g in gold_norm for l in links_norm)
 
-    return (response, f"Golden links: {gold_norm}\nAnswer links: {links_norm}\nMatch found: {response}")
+    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {response}"
+
+    return response, explanation

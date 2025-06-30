@@ -1,8 +1,8 @@
 from src.utils.infisical import getenv_or_action
 
-# import dotenv
+import dotenv
 
-# dotenv.load_dotenv(dotenv_path="src/config/.env")
+dotenv.load_dotenv(dotenv_path="src/config/.env")
 
 
 LETTA_API_URL = getenv_or_action("LETTA_API_URL")
