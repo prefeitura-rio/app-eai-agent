@@ -6,6 +6,9 @@ from src.core.security.dependencies import validar_token
 from src.services.letta.agents.tools.typesense_search import typesense_search
 from src.services.llm.gemini_service import GeminiService
 from src.config import env
+from src.services.deep_research.graph import graph, log_graph_event
+from src.services.deep_research.configuration import Configuration
+from langchain_core.messages import HumanMessage
 
 router = APIRouter(
     prefix="/letta/tools",
@@ -49,10 +52,12 @@ async def gpt_search_tool(
 ):
     try:
         openai_service = OpenAIService()
-        
-        prompt = f"Pesquise e forneça informações atualizadas sobre: {query}. " \
-                f"Cite as fontes e forneça uma resposta completa e informativa."
-        
+
+        prompt = (
+            f"Pesquise e forneça informações atualizadas sobre: {query}. "
+            f"Cite as fontes e forneça uma resposta completa e informativa."
+        )
+
         response = await openai_service.generate_content(
             text=prompt,
             model=env.GPT_SEARCH_MODEL,
@@ -63,29 +68,30 @@ async def gpt_search_tool(
             raise HTTPException(
                 status_code=500, detail="Nenhuma resposta recebida do serviço"
             )
-        
+
         resposta_texto = response.get("resposta", "").strip()
         links = response.get("links", [])
-        
+
         if not resposta_texto and links:
-            response["resposta"] = f"Encontrei {len(links)} fontes relevantes sobre '{query}'. Consulte os links para informações detalhadas."
-        
+            response["resposta"] = (
+                f"Encontrei {len(links)} fontes relevantes sobre '{query}'. Consulte os links para informações detalhadas."
+            )
+
         elif not resposta_texto and not links:
             raise HTTPException(
-                status_code=500, detail="Não foi possível obter informações sobre a consulta"
+                status_code=500,
+                detail="Não foi possível obter informações sobre a consulta",
             )
 
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Erro no gpt_search_tool: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Erro interno: {str(e)}"
-        )
-        
-        
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
+
 @router.get("/public_services_grounded_search", name="Busca Serviços Públicos")
 async def public_services_grounded_search_tool(
     query: str = Query(..., description="Texto da consulta"),
@@ -119,3 +125,52 @@ async def public_services_grounded_search_tool(
         raise HTTPException(
             status_code=500, detail=f"Erro ao processar a requisição: {str(e)}"
         )
+
+
+@router.get("/google_deep_research", name="Google Deep Research")
+async def google_deep_research(question: str) -> str:
+    """
+    Performs deep research on a given question using a multi-step agent.
+    """
+    logger.info(f"🚀 Starting research: {question}")
+
+    # Define a configuration for the tool
+    config = Configuration(
+        query_generator_model="gemini-2.0-flash",
+        reflection_model="gemini-2.5-flash-preview-04-17",
+        answer_model="gemini-2.5-flash-preview-04-17",
+        number_of_initial_queries=3,
+        max_research_loops=2,
+    )
+
+    # Define the initial state with the research question
+    initial_state = {"messages": [HumanMessage(content=question)]}
+
+    # Stream the graph execution and find the final answer
+    final_answer = "Could not find an answer."
+
+    try:
+        async for event in graph.astream(
+            initial_state, config={"configurable": config.model_dump()}
+        ):
+            # Log each event
+            for event_name, event_data in event.items():
+                log_graph_event(event_name, event_data)
+
+                # Check for final answer
+                if event_name == "finalize_answer":
+                    if "messages" in event_data and event_data["messages"]:
+                        message = event_data["messages"][-1]
+                        final_answer = message.content
+                        logger.info("✅ Research completed")
+                        break
+
+            # Break if we found the final answer
+            if "finalize_answer" in event:
+                break
+
+    except Exception as e:
+        logger.error(f"❌ Research failed: {str(e)}")
+        final_answer = f"Error occurred during research: {str(e)}"
+
+    return final_answer

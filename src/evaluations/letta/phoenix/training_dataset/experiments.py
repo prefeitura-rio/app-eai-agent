@@ -596,8 +596,9 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
             # experiment_eval_good_response_standards,
             experiment_eval_golden_link_in_tool_calling,
             experiment_eval_golden_link_in_answer,
+            experiment_eval_activate_search,
         ],
-        experiment_name="eai-2025-06-27-v6-small-sample",
+        experiment_name="eai-2025-06-27-v12",
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=10,
@@ -612,7 +613,17 @@ async def main():
     logger.info("Iniciando a execução do script...")
 
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
-    dataset_name = "golden_dataset _small_sample_v2"
+
+    datasets_names = [
+        # "golden_dataset_super_small_sample_v2",
+        # "golden_dataset_small_sample_v2",
+        "golden_dataset_small_sample_v3",
+        # "golden_dataset_v2",
+        # "golden_dataset",
+        # "golden_dataset_small_sample",
+    ]
+
+    dataset_name = datasets_names[0]
     logger.info(f"Carregando dataset: {dataset_name}")
     dataset = phoenix_client.get_dataset(name=dataset_name)
 

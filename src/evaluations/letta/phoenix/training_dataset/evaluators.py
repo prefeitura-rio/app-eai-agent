@@ -300,6 +300,32 @@ async def experiment_eval_search_query_effectiveness(
     return sum(results) / len(results) if results else False
 
 
+@create_evaluator(name="Activate Search Tools")
+async def experiment_eval_activate_search(output) -> bool | tuple:
+    if not output:
+        return (False, "No output provided")
+    grouped = output.get("agent_output", {}).get("grouped", {})
+    tool_msgs = grouped.get("tool_return_messages", [])
+
+    SEARCH_TOOL_NAMES = [
+        "public_services_grounded_search",
+        "google_search",
+        "typesense_search",
+        "gpt_search",
+    ]
+
+    activated_tools = []
+    for msg in tool_msgs:
+        tool_name = msg.get("name")
+        if tool_name and tool_name in SEARCH_TOOL_NAMES:
+            activated_tools.append(tool_name)
+
+    activated_tools = list(set(activated_tools))
+    explanation = f"Activated tools: {activated_tools}"
+
+    return len(activated_tools) > 0, explanation
+
+
 @create_evaluator(name="Golden Link in Tool Calling")
 async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     """

@@ -92,9 +92,12 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
         memory_blocks = agent_cfg.get(
             "memory_blocks", get_agentic_search_memory_blocks()
         )
-        # tools = agent_cfg.get("tools", ["google_search", "public_services_grounded_search"])
-        tools = ["google_search"]
+        tools = agent_cfg.get(
+            "tools", ["google_search", "public_services_grounded_search"]
+        )
+        # tools = ["google_search"]
         model_name = agent_cfg.get("model_name", env.LLM_MODEL)
+        # model_name = "google_ai/gemini-2.5-pro"
         embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
 
         agent = await client.agents.create(
