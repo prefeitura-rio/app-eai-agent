@@ -10,7 +10,7 @@ from src.config import env
 from src.evaluations.letta.phoenix.training_dataset.evaluators import *
 from src.evaluations.letta.phoenix.training_dataset.utils import coletar_todas_respostas
 from src.evaluations.letta.phoenix.training_dataset.prompts import (
-    SYSTEM_PROMPT_BASELINE_O4,
+    SYSTEM_PROMPT_BASELINE_4O,
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
 )
@@ -103,17 +103,19 @@ async def main():
     experiments_configs = [
         # {
         #     "dataset_name": "golden_dataset_v4",
-        #     "experiment_name": "baseline-o4-2025-06-27-v12",
+        #     "experiment_name": "baseline-4o-2025-06-27-v12",
         #     "evaluators": evaluators,
+        #     "experiment_description": "Temperature: 0.7, Model: gpt-4o",
         #     "tools": ["gpt_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
         #     "batch_size": 10,
         #     "temperature": 0.7,
-        #     "system_prompt": SYSTEM_PROMPT_BASELINE_O4,
+        #     "system_prompt": SYSTEM_PROMPT_BASELINE_4O,
         # },
         # {
         #     "dataset_name": "golden_dataset_v4",
-        #     "experiment_name": "baseline-gemini-2.5-flash-2025-06-27-v12",
+        #     "experiment_name": "baseline-gemini-2025-07-01",
+        #     "experiment_description": "Temperature: 0.7, Model: gemini-2.5-flash-lite-preview-06-17",
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",

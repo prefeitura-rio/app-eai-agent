@@ -110,7 +110,7 @@ Fontes:
 </examples>
 """
 
-SYSTEM_PROMPT_BASELINE_O4 = """
+SYSTEM_PROMPT_BASELINE_4O = """
 Answer the user's question based on the information found in the gpt_search.
 
 <tools>

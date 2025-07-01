@@ -6,7 +6,7 @@ import ast
 import requests
 from src.config import env
 
-exp_id = "RXhwZXJpbWVudDozNjQ="
+exp_id = "RXhwZXJpbWVudDozNjU="
 url = f"{env.PHOENIX_ENDPOINT}v1/experiments/{exp_id}/json"
 
 r = requests.get(url)
@@ -102,6 +102,7 @@ for i, item in enumerate(data):
         if assistant_messages and "content" in assistant_messages[0]
         else "No answer found."
     )
+    golden_answer = get_safe(item, "reference_output.golden_answer", "No answer found.")
 
     annotations = get_safe(item, "annotations", [])
 
@@ -115,6 +116,8 @@ for i, item in enumerate(data):
     report_parts.append("\n### Agent Answer")
     report_parts.append(answer)
 
+    report_parts.append("\n### Golden Answer")
+    report_parts.append(golden_answer)
     # Annotations
     report_parts.append("\n### Evaluations")
 
