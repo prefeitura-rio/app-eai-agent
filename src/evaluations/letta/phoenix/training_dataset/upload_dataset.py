@@ -12,6 +12,7 @@ def upload_dataset(
     input_keys: list,
     output_keys: list,
     metadata_keys: list,
+    dataset_description: str,
 ):
     dataset = phoenix_client.upload_dataset(
         dataframe=dataframe,
@@ -19,9 +20,10 @@ def upload_dataset(
         input_keys=input_keys,
         output_keys=output_keys,
         metadata_keys=metadata_keys,
+        dataset_description=dataset_description,
     )
 
-    print(f"Dataset '{dataset_name}' enviado com sucesso para o Phoenix!")
+    print(f"Dataset '{dataset_name}' enviado com sucesso para o Phoenix!\n\n")
 
 
 def main():
@@ -49,7 +51,15 @@ def main():
             "input_keys": input_keys,
             "output_keys": output_keys,
             "metadata_keys": metadata_keys,
-            "dataset_description": "Golden Dataset - Eai Agent",
+            "dataset_description": "Golden Dataset - 241 samples",
+        },
+        {
+            "dataset_name": "golden_dataset_small_sample_v3_test",
+            "dataframe": dataframe.head(10),
+            "input_keys": input_keys,
+            "output_keys": output_keys,
+            "metadata_keys": metadata_keys,
+            "dataset_description": "Golden Dataset - 10 samples",
         },
     ]
 
