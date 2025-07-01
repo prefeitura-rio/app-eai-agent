@@ -107,7 +107,9 @@ async def main():
         #     "evaluators": evaluators,
         #     "tools": ["gpt_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-        #     "system_prompt": system_prompt_baseline_o4,
+        #     "batch_size": 10,
+        #     "temperature": 0.7,
+        #     "system_prompt": SYSTEM_PROMPT_BASELINE_O4,
         # },
         # {
         #     "dataset_name": "golden_dataset_v4",
@@ -115,7 +117,9 @@ async def main():
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-        #     "system_prompt": system_prompt_baseline_gemini,
+        #     "batch_size": 10,
+        #     "temperature": 0.7,
+        #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
         {
             "dataset_name": "golden_dataset_v4_small_sample",
@@ -168,7 +172,11 @@ async def main():
             experiment_metadata={
                 "tools": experiment_config.get("tools"),
                 "final_repose_model": experiment_config.get("model_name"),
-                "eval_model": env.GPT_EVAL_MODEL if env.EVAL_MODEL_TYPE == "gpt" else env.GEMINI_EVAL_MODEL,
+                "eval_model": (
+                    env.GPT_EVAL_MODEL
+                    if env.EVAL_MODEL_TYPE == "gpt"
+                    else env.GEMINI_EVAL_MODEL
+                ),
                 "batch_size": experiment_config.get("batch_size"),
                 "temperature": experiment_config.get("temperature"),
                 "system_prompt": experiment_config.get("system_prompt"),
