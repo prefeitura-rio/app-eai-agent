@@ -3,10 +3,15 @@ import re
 from datetime import datetime
 import ast
 
+import requests
+from src.config import env
 
-# --- Configuration ---
-# Adjust your input and output file paths here
-INPUT_JSON_PATH = "/Users/m/Downloads/eai-2025-07-01.json"
+exp_id = "RXhwZXJpbWVudDozNjQ="
+url = f"{env.PHOENIX_ENDPOINT}v1/experiments/{exp_id}/json"
+
+r = requests.get(url)
+data = json.loads(r.text)
+
 OUTPUT_MD_PATH = "experiment_report.md"
 
 # --- Helper Functions ---
@@ -46,18 +51,6 @@ def get_safe(data_dict, key_path, default=None):
 
 # --- Main Script ---
 
-print(f"Loading data from {INPUT_JSON_PATH}...")
-try:
-    with open(INPUT_JSON_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
-except FileNotFoundError:
-    print(f"ERROR: Input file not found at {INPUT_JSON_PATH}")
-    exit()
-except json.JSONDecodeError:
-    print(
-        f"ERROR: Could not decode JSON from {INPUT_JSON_PATH}. Please check the file format."
-    )
-    exit()
 
 if not data:
     print("The JSON file is empty. No report will be generated.")
