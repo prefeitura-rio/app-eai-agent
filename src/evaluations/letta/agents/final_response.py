@@ -28,7 +28,7 @@ explanation: Your reasoning step by step about the clarity of the response.
 label: "clear" or "unclear"
 """
 
-GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT = """
+ANSWER_SIMILARITY_PROMPT = """
 In this task, you will evaluate how well a model's response captures the core topics and essential concepts present in an ideal (gold standard) response.
 
 The evaluation is based on content coverage, not stylistic similarity or phrasing.

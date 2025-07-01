@@ -9,7 +9,7 @@ from src.evaluations.letta.agents.final_response import (
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
     FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
-    GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
+    ANSWER_SIMILARITY_PROMPT,
     GROUNDEDNESS_LLM_JUDGE_PROMPT,
     LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
     SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
@@ -40,7 +40,7 @@ from src.evaluations.letta.phoenix.utils import extrair_query, get_system_prompt
 from phoenix.experiments.evaluators import create_evaluator
 import ast
 from urllib.parse import urlparse, unquote
-import json
+from urllib.parse import urlparse, parse_qsl, urlencode
 
 
 async def eval_binary(prompt, rails, input, output, extra_kwargs=None):
@@ -92,32 +92,6 @@ async def experiment_eval_clarity(input, output, expected) -> tuple | bool:
         input,
         output,
     )
-
-
-@create_evaluator(name="Similaridade com Resposta Ideal", kind="LLM")
-async def experiment_eval_gold_standard_similarity(
-    input, output, expected
-) -> float | bool:
-    rails_gold_standard_similarity = ["equivalent", "similar", "different"]
-    mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
-
-    response = await experiment_eval(
-        input=input,
-        output=output,
-        prompt=GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
-        rails=rails_gold_standard_similarity,
-        expected=expected,
-    )
-
-    if not isinstance(response, bool):
-        label = response.get("label")
-
-        if isinstance(response, pd.Series):
-            label = label.iloc[0]
-        if isinstance(label, str) and label in mapping:
-            return mapping[label]
-
-    return False
 
 
 @create_evaluator(name="Lidar com Emergências", kind="LLM")
@@ -301,9 +275,10 @@ async def experiment_eval_search_query_effectiveness(
 
 
 @create_evaluator(name="Activate Search Tools")
-async def experiment_eval_activate_search(output) -> bool | tuple:
+async def activate_search(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
+    
     grouped = output.get("agent_output", {}).get("grouped", {})
     tool_msgs = grouped.get("tool_return_messages", [])
 
@@ -314,20 +289,15 @@ async def experiment_eval_activate_search(output) -> bool | tuple:
         "gpt_search",
     ]
 
-    activated_tools = []
-    for msg in tool_msgs:
-        tool_name = msg.get("name")
-        if tool_name and tool_name in SEARCH_TOOL_NAMES:
-            activated_tools.append(tool_name)
+    activated_tools = {msg.get("name") for msg in tool_msgs if msg.get("name") in SEARCH_TOOL_NAMES}
 
-    activated_tools = list(set(activated_tools))
-    explanation = f"Activated tools: {activated_tools}"
+    explanation = f"Activated tools: {list(activated_tools)}"
 
     return len(activated_tools) > 0, explanation
 
 
 @create_evaluator(name="Golden Link in Tool Calling")
-async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
+async def golden_link_in_tool_calling(output) -> bool | tuple:
     """
     Returns True if the agent output ultimately resolves to at least one of the
     golden links listed in metadata["Golden links"].
@@ -342,7 +312,6 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     - If the golden link is only a domain, any path on that domain passes.
     """
 
-    # Sanity checks
     if not output:
         return (False, "No output provided")
 
@@ -360,56 +329,34 @@ async def experiment_eval_golden_link_in_tool_calling(output) -> bool | tuple:
     # golden_field = output.get("metadata", {}).get("Golden links", "")
     # golden_links = _parse_golden(golden_field)
 
-    # Resolve answer links
     answer_links: list[str] = []
-    link_dicts = []
     explanation_links = []
-    if "links" in output["agent_output"]:
-        for link in output["agent_output"]["links"]:
-            uri = link.get("uri") or link.get("url")
-            link_dicts.append({"uri": uri})
+    link_dicts = []
 
-        async with httpx.AsyncClient(
-            follow_redirects=True, timeout=2, verify=False
-        ) as session:
+    if "links" in output.get("agent_output", {}):
+        link_dicts = [{"uri": link.get("uri") or link.get("url")} for link in output["agent_output"]["links"]]
+
+        async with httpx.AsyncClient(follow_redirects=True, timeout=2, verify=False) as session:
             await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-        final_urls = []
-        for link in link_dicts:
-            if link.get("url"):
-                final_urls.append(link["url"])
-                explanation_links.append(
-                    {
-                        "url": link.get("url"),
-                        "uri": link.get("uri"),
-                        "error": link.get("error"),
-                    }
-                )
-        answer_links = final_urls
+        answer_links = [link["url"] for link in link_dicts if link.get("url")]
+        explanation_links = [{"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")} for l in link_dicts]
+
     else:
-        letta_links, explanation_links = await get_redirect_links(
-            output
-        )  # provided helper
+        letta_links, explanation_links = await get_redirect_links(output)
         answer_links.extend(letta_links)
 
     if not answer_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
 
-    # Normalize for fair compare
     gold_norm = [_norm_url(u) for u in golden_links]
     links_norm = {_norm_url(u) for u in answer_links}
 
-    # Exact-enough comparison (see docstring for the rules)
-    def match(gold: str, link: str) -> bool:
-        g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
-        l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
+    match_found = any(_match(g, l) for g in gold_norm for l in links_norm)
 
-        return g_dom == l_dom and (not g_path or g_path == l_path)
-
-    response = any(match(g, l) for g in gold_norm for l in links_norm)
-
-    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {response}"
-    return response, explanation
+    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {match_found}"
+    
+    return match_found, explanation
 
 
 # -----------------------------------------------------
@@ -442,7 +389,6 @@ def _parse_golden(raw) -> list[str]:
 
 def _norm_url(url: str) -> str:
     """Lower-case, drop scheme, drop www., strip trailing slash and `:~:text=` fragments."""
-    from urllib.parse import urlparse, unquote
 
     if not url:
         return ""
@@ -451,17 +397,29 @@ def _norm_url(url: str) -> str:
         url = "http://" + url  # makes urlparse happy
 
     parsed = urlparse(url)
-    domain = parsed.netloc.lower().lstrip("www.")
-    path = unquote(parsed.path).rstrip("/").lower()
+
+    domain = parsed.netloc.lower().removeprefix("www.")
+    path = unquote(parsed.path).lower().rstrip("/")
 
     if ":~:text=" in path:  # Strip scroll-to-text fragments
         path = path.split(":~:text=")[0]
+    
+    # Mantém apenas os parâmetros que NÃO começam com 'utm_source'
+    query_params = parse_qsl(parsed.query, keep_blank_values=True)
+    if query_params and query_params[-1][0] == "utm_source":
+        query_params = query_params[:-1]
+    
+    query_string = urlencode(query_params)
 
-    return f"{domain}{path}"
+    norm_url = f"{domain}{path}"
+    if query_string:
+        norm_url += f"?{query_string}"
+
+    return norm_url
 
 
 @create_evaluator(name="Golden Link in Answer")
-async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
+async def golden_link_in_answer(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
@@ -479,12 +437,7 @@ async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
     except (ValueError, SyntaxError):
         golden_links = []
 
-    resposta = output.get("agent_output", {}).get("texto") or final_response(
-        output["agent_output"]
-    ).get("content", "")
-
-    # pattern = r"(https?://)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,10}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)"
-    # pattern = r"\b(?:https?://|www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}(?:/[^\s]*)?"
+    resposta = output.get("agent_output", {}).get("texto") or final_response(output["agent_output"]).get("content", "")
 
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", resposta)
     plain_links = re.findall(r"https?://[^\s)\]]+", resposta)
@@ -493,12 +446,10 @@ async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
     if not raw_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
 
-    normalized_input_links = [
-        f"https://{link}" if not link.startswith("http") else link for link in raw_links
-    ]
+    normalized_links = [f"https://{link}" if not link.startswith("http") else link for link in raw_links]
     unique_links = list(
         dict.fromkeys(
-            [link for link in normalized_input_links if isinstance(link, str)]
+            [link for link in normalized_links if isinstance(link, str)]
         )
     )[:10]
 
@@ -507,28 +458,49 @@ async def experiment_eval_golden_link_in_answer(output) -> bool | tuple:
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
     }
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=5, verify=False, headers=headers
-    ) as session:
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-    explanation_links = [
-        {"url": link.get("url"), "uri": link.get("uri"), "error": link.get("error")}
-        for link in link_dicts
-    ]
     answer_links = [link.get("url") or link.get("uri") for link in link_dicts]
+    explanation_links = [{"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")} for l in link_dicts]
 
     gold_norm = [_norm_url(u) for u in golden_links]
     links_norm = {_norm_url(u) for u in answer_links}
 
-    def match(gold: str, link: str) -> bool:
-        g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
-        l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
+    match_found = any(_match(g, l) for g in gold_norm for l in links_norm)
+    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {match_found}"
 
-        return g_dom == l_dom and (not g_path or g_path == l_path)
+    return match_found, explanation
 
-    response = any(match(g, l) for g in gold_norm for l in links_norm)
 
-    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {response}"
+@create_evaluator(name="Answer Similarity", kind="LLM")
+async def answer_similarity(input, output, expected) -> tuple:
+    rails = ["equivalent", "similar", "different"]
+    mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
 
-    return response, explanation
+    response = await experiment_eval(
+        input=input,
+        output=output,
+        prompt=ANSWER_SIMILARITY_PROMPT,
+        rails=rails,
+        expected=expected,
+    )
+
+    label = response.iloc[0]["label"]
+    explanation = response.iloc[0]["explanation"]
+
+    if label in mapping:
+        eval_result = mapping[label]
+    else:
+        eval_result = 0
+        explanation = "Label not recognized or not in mapping"
+
+    return (eval_result, explanation)
+
+def _match(gold: str, link: str) -> bool:
+    """Match logic for golden vs answer link based on domain and path."""
+    g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
+    l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
+
+    return g_dom == l_dom and (not g_path or g_path == l_path)

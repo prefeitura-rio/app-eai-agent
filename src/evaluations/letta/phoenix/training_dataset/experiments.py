@@ -55,15 +55,15 @@ logger = logging.getLogger(__name__)
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 
-EVAL_MODEL = GenAIModel(
-    model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
-)
+# EVAL_MODEL = GenAIModel(
+#     model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
+# )
 
 EVAL_MODEL = OpenAIModel(
-    api_key=env.OPENAI_API_KEY,
+    api_key=env.OPENAI_AZURE_API_KEY,
     azure_endpoint=env.OPENAI_URL,
-    api_version="2024-02-15-preview",
-    model="gpt-4.1",
+    api_version="2025-01-01-preview",
+    model="gpt-4o",
 )
 
 # Tamanho do batch para criação de agentes
@@ -420,27 +420,25 @@ async def resolve_redirect_url(url: str) -> str:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-async def process_link(session, link: dict):
+async def process_link(session: httpx.AsyncClient, link: dict) -> dict:
     uri = link.get("uri")
+
     try:
         response = await session.head(uri, follow_redirects=True)
-        response.raise_for_status()
         link["url"] = str(response.url)
         link["error"] = None
-        return link
     except Exception as e:
-        print(f"[HEAD FAILED] {uri}: {e}")
         try:
             response = await session.get(uri, follow_redirects=True)
-            response.raise_for_status()
             link["url"] = str(response.url)
             link["error"] = None
-            return link
 
         except Exception as e2:
             link["url"] = None
             link["error"] = str(e2)
             return link
+        
+    return link
 
 
 async def get_redirect_links(model_response):
@@ -448,7 +446,6 @@ async def get_redirect_links(model_response):
     tool_msgs = grouped.get("tool_return_messages", [])
 
     SEARCH_TOOL_NAMES = {
-        "search_tool",
         "public_services_grounded_search",
         "google_search",
         "typesense_search",
@@ -478,41 +475,27 @@ async def get_redirect_links(model_response):
         except Exception:
             continue
 
-        links = []
-
-        if isinstance(tool_return, dict):
-            if "links" in tool_return:
-                links = _extract_urls(tool_return["links"])
-            elif "result" in tool_return:
-                links = [
-                    item.get("url") for item in tool_return["result"] if item.get("url")
-                ]
-        elif isinstance(tool_return, list):
-            links = _extract_urls(tool_return)
-
+        links = _extract_urls(tool_return)
         links_para_processar.extend(links)
 
-    # Remove duplicados e limita a 10 links (opcional)
-    unique_links = list(dict.fromkeys([link for link in links_para_processar]))[:10]
-
-    # Prepara para resolver redirects
+    unique_links = list(dict.fromkeys([links_para_processar]))[:10]
     link_dicts = [{"uri": uri} for uri in unique_links]
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
     }
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=5, verify=False, headers=headers
-    ) as session:
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
     # Retorna a lista só com URLs finais corrigidos (ou original se não redirecionou)
     final_urls = [link.get("url") or link.get("uri") for link in link_dicts]
-    final_links = [
+    final_info = [
         {"url": link.get("url"), "uri": link.get("uri"), "error": link.get("error")}
         for link in link_dicts
     ]
-    return final_urls, final_links
+    
+    return final_urls, final_info
 
 
 async def experiment_eval(
@@ -521,28 +504,11 @@ async def experiment_eval(
     if not output or "agent_output" not in output:
         return False
 
-    agent_output = output["agent_output"]
-    metadata = output.get("metadata", {})
-    golden_link = metadata.get("Golden links", "")
-
-    df = pd.DataFrame(
-        {
-            "query": [input.get("pergunta")],
-            "model_response": [final_response(agent_output).get("content", "")],
-            "golden_link": [golden_link],
-        }
-    )
-
-    if expected:
-        df["ideal_response"] = [expected.get("resposta_ideal")]
-
-    for k, val in kwargs.items():
-        if isinstance(val, str):
-            df[k] = [val]
-        elif isinstance(val, list):
-            df[k] = [", ".join(val)]
-        else:
-            df[k] = [val]
+    df = pd.DataFrame({
+        "query": [input.get("Mensagem WhatsApp Simulada", "")],
+        "model_response": [final_response(output["agent_output"]).get("content", "")],
+        "ideal_response": [expected.get("Golden Answer", "") if expected else ""],
+    })
 
     response = llm_classify(
         data=df,
@@ -551,22 +517,10 @@ async def experiment_eval(
         model=EVAL_MODEL,
         provide_explanation=True,
         run_sync=False,
+        verbose=True
     )
 
-    label = response.get("label")
-    if hasattr(label, "iloc"):
-        label = label.iloc[0]
-        eval_result = bool(label == rails[0])
-    else:
-        eval_result = bool(label == rails[0])
-
-    explanation = response.get("explanation")
-    if hasattr(explanation, "iloc"):
-        explanation = str(explanation.iloc[0])
-    else:
-        explanation = str(explanation)
-
-    return (eval_result, explanation)
+    return response
 
 
 async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
@@ -594,11 +548,12 @@ async def executar_avaliacao_phoenix(dataset, respostas_coletadas):
             # experiment_eval_whatsapp_formatting_compliance,
             # experiment_eval_search_result_coverage,
             # experiment_eval_good_response_standards,
-            experiment_eval_golden_link_in_tool_calling,
-            experiment_eval_golden_link_in_answer,
-            experiment_eval_activate_search,
+            golden_link_in_tool_calling,
+            golden_link_in_answer,
+            activate_search,
+            answer_similarity,
         ],
-        experiment_name="eai-2025-06-27-v12",
+        experiment_name="eai-2025-06-27-v17",
         experiment_description="Evaluating final response of the agent with various evaluators.",
         dry_run=False,
         concurrency=10,
@@ -615,10 +570,10 @@ async def main():
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
 
     datasets_names = [
-        # "golden_dataset_super_small_sample_v2",
+        "golden_dataset_super_small_sample_v2",
         # "golden_dataset_small_sample_v2",
-        "golden_dataset_small_sample_v3",
-        # "golden_dataset_v2",
+        # "golden_dataset_small_sample_v3",
+        # "golden_dataset_v3",
         # "golden_dataset",
         # "golden_dataset_small_sample",
     ]
