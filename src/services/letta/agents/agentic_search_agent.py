@@ -79,7 +79,12 @@ async def _get_agent_config_from_api(agent_type: str = "agentic_search") -> dict
         }
 
 
-async def create_agentic_search_agent(tags: List[str] = None, username: str = None):
+async def create_agentic_search_agent(
+    tags: List[str] = None,
+    username: str = None,
+    tools: list = None,
+    model_name: str = None,
+):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
@@ -92,12 +97,17 @@ async def create_agentic_search_agent(tags: List[str] = None, username: str = No
         memory_blocks = agent_cfg.get(
             "memory_blocks", get_agentic_search_memory_blocks()
         )
-        tools = agent_cfg.get(
-            "tools", ["google_search", "public_services_grounded_search"]
-        )
-        # tools = ["google_search"]
-        model_name = agent_cfg.get("model_name", env.LLM_MODEL)
-        # model_name = "google_ai/gemini-2.5-pro"
+
+        if tools is None:
+            tools = agent_cfg.get(
+                "tools", ["google_search", "public_services_grounded_search"]
+            )
+
+        if model_name is None:
+            model_name = agent_cfg.get("model_name", env.LLM_MODEL)
+
+        logger.info(f"Model name: {model_name} | Tools: {tools}")
+
         embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
 
         agent = await client.agents.create(

@@ -9,9 +9,9 @@ from src.config import env
 from src.evaluations.letta.phoenix.llm_models.genai_model import GenAIModel
 
 model = GenAIModel(
-    model="gemini-2.5-flash-preview-04-17", 
+    model="gemini-2.5-flash-preview-04-17",
     api_key=env.GEMINI_API_KEY,
-    )
+)
 
 phoenix_client = px.Client(endpoint="http://34.60.92.205:6006")
 
@@ -25,7 +25,7 @@ def extrair_valor(raw_text: str, label: str):
         texto = texto.replace("\\n", " ").strip()
         texto = re.sub(" +", " ", texto)
         return texto
-    
+
     return None
 
 
@@ -35,7 +35,9 @@ def parse_response(response: str):
 
     if tool_call and "send_message" in tool_call:
         message = re.search(r"arguments='\{(.*)\}'", tool_call, re.DOTALL).group(1)
-        message = re.sub(r'\s*"request_heartbeat":\s*(true|false)\s*,?', "", message).strip()
+        message = re.sub(
+            r'\s*"request_heartbeat":\s*(true|false)\s*,?', "", message
+        ).strip()
         message = re.sub(r"^(\\n|\s)+|(\s|\\n)+$", "", message)
         message = re.search(r'"message":\s*"(.+)"', message, re.DOTALL).group(1)
     else:
@@ -45,18 +47,21 @@ def parse_response(response: str):
 
     return tool, message
 
+
 def extrair_content(raw_text: str):
     match = re.search(r"(?:content|text)='(.*?)'", raw_text)
     return match.group(1) if match else None
+
 
 async def extrair_query(raw_text: str):
     match = re.search(r'"query": "(.*?)"', raw_text)
     return match.group(1) if match else None
 
+
 async def get_system_prompt() -> str:
     url = f"{env.EAI_AGENT_URL}/system-prompt?agent_type=agentic_search"
     headers = {
-        "accept": "application/json", 
+        "accept": "application/json",
         "Authorization": f"Bearer {env.EAI_AGENT_TOKEN}",
     }
 
@@ -66,7 +71,8 @@ async def get_system_prompt() -> str:
         return response.json().get("prompt", "")
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
         raise RuntimeError(f"Erro ao buscar system prompt: {e}")
-    
+
+
 def eval(df, prompt, rails, eval_name):
     with suppress_tracing():
         result = llm_classify(

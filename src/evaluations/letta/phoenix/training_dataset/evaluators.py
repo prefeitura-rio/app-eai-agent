@@ -26,7 +26,7 @@ from src.evaluations.letta.agents.search_tools import (
     SEARCH_RESULT_COVERAGE_LLM_JUDGE_PROMPT,
 )
 
-from src.evaluations.letta.phoenix.training_dataset.experiments import (
+from src.evaluations.letta.phoenix.training_dataset.utils import (
     empty_agent_core_memory,
     experiment_eval,
     final_response,
