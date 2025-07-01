@@ -94,7 +94,7 @@ async def main():
     ]
     experiments_configs = [
         # {
-        #     "dataset_name": "golden_dataset_v3",
+        #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-o4-2025-06-27-v12",
         #     "evaluators": evaluators,
         #     "tools": ["gpt_search"],
@@ -102,7 +102,7 @@ async def main():
         #     "system_prompt": system_prompt_baseline_o4,
         # },
         # {
-        #     "dataset_name": "golden_dataset_v3",
+        #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-gemini-2.5-flash-2025-06-27-v12",
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
@@ -116,15 +116,14 @@ async def main():
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 15,
+            "batch_size": 10,
             "system_prompt": SYSTEM_PROMPT_EAI,
+            "temperature": 0.2,
         },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
-        tools = experiment_config.get("tools", None)
-        model_name = experiment_config.get("model_name", None)
         experiment_name = experiment_config["experiment_name"]
         experiment_description = experiment_config.get("experiment_description", None)
         evaluators = experiment_config["evaluators"]
@@ -145,10 +144,11 @@ async def main():
         logger.info("Iniciando coleta de respostas em batches")
         respostas = await coletar_todas_respostas(
             dataset=dataset,
-            tools=tools,
-            model_name=model_name,
-            batch_size=batch_size,
-            system_prompt=system_prompt,
+            tools=experiment_config.get("tools"),
+            model_name=experiment_config.get("model_name"),
+            batch_size=experiment_config.get("batch_size", 10),
+            system_prompt=experiment_config.get("system_prompt"),
+            temperature=experiment_config.get("temperature", 0.7),
         )
 
         # Etapa 2: Executar avaliação Phoenix

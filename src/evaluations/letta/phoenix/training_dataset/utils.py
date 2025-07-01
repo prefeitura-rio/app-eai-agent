@@ -94,6 +94,7 @@ async def criar_agente_letta(
     tools: list = None,
     model_name: str = None,
     system_prompt: str = None,
+    temperature: float = 0.7,
 ) -> str:
     """
     Cria um agente Letta para avaliação.
@@ -114,6 +115,7 @@ async def criar_agente_letta(
             tools=tools,
             model_name=model_name,
             system_prompt=system_prompt,
+            temperature=temperature,
         )
         # logger.info(f"Agente criado: {agent_id} (índice {index})")
         logger.info(f"Agente criado: {index}")
@@ -175,6 +177,7 @@ async def processar_batch(
     tools: list = None,
     model_name: str = None,
     system_prompt: str = None,
+    temperature: float = 0.7,
 ) -> Dict[str, Any]:
     """
     Processa um batch de exemplos usando o modo selecionado:
@@ -209,6 +212,7 @@ async def processar_batch(
                     tools=tools,
                     model_name=model_name,
                     system_prompt=system_prompt,
+                    temperature=temperature,
                 )
             )
 
@@ -303,6 +307,7 @@ async def coletar_todas_respostas(
     model_name: str = None,
     batch_size: int = None,
     system_prompt: str = None,
+    temperature: float = 0.7,
 ) -> Dict[str, Any]:
     """
     Coleta respostas para todo o dataset em batches.
@@ -339,6 +344,7 @@ async def coletar_todas_respostas(
             tools=tools,
             model_name=model_name,
             system_prompt=system_prompt,
+            temperature=temperature,
         )
         todas_respostas.update(resultados_batch)
 
