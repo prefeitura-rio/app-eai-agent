@@ -60,6 +60,7 @@ class LettaService:
         name: str = None,
         tools: list = None,
         model_name: str = None,
+        system_prompt: str = None,
     ):
         """Cria um novo agente de acordo com o tipo de agente passado."""
         if agent_type == "agentic_search":
@@ -68,7 +69,11 @@ class LettaService:
             )
 
             return await create_agentic_search_agent(
-                tags=tags, username=name, tools=tools, model_name=model_name
+                tags=tags,
+                username=name,
+                tools=tools,
+                model_name=model_name,
+                system_prompt=system_prompt,
             )
         else:
             raise ValueError(f"Tipo de agente não suportado: {agent_type}")

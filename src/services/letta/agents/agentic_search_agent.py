@@ -84,13 +84,17 @@ async def create_agentic_search_agent(
     username: str = None,
     tools: list = None,
     model_name: str = None,
+    system_prompt: str = None,
 ):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
 
         # Obtém system prompt e configuração ativa via API
-        system_prompt = await _get_system_prompt_from_api(agent_type="agentic_search")
+        if system_prompt is None:
+            system_prompt = await _get_system_prompt_from_api(
+                agent_type="agentic_search"
+            )
         agent_cfg = await _get_agent_config_from_api(agent_type="agentic_search")
 
         # Extrai valores com fallback já incluído nas funções API

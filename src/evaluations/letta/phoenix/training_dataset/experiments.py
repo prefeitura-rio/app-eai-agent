@@ -85,7 +85,7 @@ async def main():
         golden_link_in_tool_calling,
         golden_link_in_answer,
         activate_search,
-        answer_similarity,
+        # answer_similarity,
     ]
     experiments_configs = [
         # {
@@ -94,6 +94,7 @@ async def main():
         #     "evaluators": evaluators,
         #     "tools": ["gpt_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+        #     "system_prompt": system_prompt_baseline_o4,
         # },
         # {
         #     "dataset_name": "golden_dataset_v3",
@@ -101,15 +102,8 @@ async def main():
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+        #     "system_prompt": system_prompt_baseline_gemini,
         # },
-        {
-            "dataset_name": "golden_dataset_small_sample_v3",
-            "experiment_name": "test-gemini-2025-06-27-v12",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 15,
-        },
         {
             "dataset_name": "golden_dataset_small_sample_v3",
             "experiment_name": "eai-2025-06-27-v12",
@@ -117,6 +111,7 @@ async def main():
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
             "batch_size": 15,
+            "system_prompt": None,
         },
     ]
 
@@ -127,6 +122,7 @@ async def main():
         experiment_name = experiment_config["experiment_name"]
         evaluators = experiment_config["evaluators"]
         batch_size = experiment_config.get("batch_size", 10)
+        system_prompt = experiment_config.get("system_prompt", 10)
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)
@@ -141,7 +137,11 @@ async def main():
         # Etapa 1: Coletar todas as respostas em batches
         logger.info("Iniciando coleta de respostas em batches")
         respostas = await coletar_todas_respostas(
-            dataset=dataset, tools=tools, model_name=model_name, batch_size=batch_size
+            dataset=dataset,
+            tools=tools,
+            model_name=model_name,
+            batch_size=batch_size,
+            system_prompt=system_prompt,
         )
 
         # Etapa 2: Executar avaliação Phoenix

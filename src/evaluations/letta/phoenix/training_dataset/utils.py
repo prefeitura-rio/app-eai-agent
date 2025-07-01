@@ -88,7 +88,11 @@ async def get_response_from_gemini(example: Example) -> str:
 
 
 async def criar_agente_letta(
-    index: int, name: str = "Agente Teste", tools: list = None, model_name: str = None
+    index: int,
+    name: str = "Agente Teste",
+    tools: list = None,
+    model_name: str = None,
+    system_prompt: str = None,
 ) -> str:
     """
     Cria um agente Letta para avaliação.
@@ -108,6 +112,7 @@ async def criar_agente_letta(
             tags=[f"test_evaluation_{index}"],
             tools=tools,
             model_name=model_name,
+            system_prompt=system_prompt,
         )
         # logger.info(f"Agente criado: {agent_id} (índice {index})")
         logger.info(f"Agente criado: {index}")
@@ -168,6 +173,7 @@ async def processar_batch(
     modo: Literal["letta", "gpt", "gemini"] = "letta",
     tools: list = None,
     model_name: str = None,
+    system_prompt: str = None,
 ) -> Dict[str, Any]:
     """
     Processa um batch de exemplos usando o modo selecionado:
@@ -197,7 +203,12 @@ async def processar_batch(
         for i, exemplo in enumerate(exemplos):
             indice = inicio_batch + i
             criacao_tarefas.append(
-                criar_agente_letta(index=indice, tools=tools, model_name=model_name)
+                criar_agente_letta(
+                    index=indice,
+                    tools=tools,
+                    model_name=model_name,
+                    system_prompt=system_prompt,
+                )
             )
 
         ids_agentes = await asyncio.gather(*criacao_tarefas, return_exceptions=True)
@@ -304,7 +315,11 @@ async def processar_batch(
 
 
 async def coletar_todas_respostas(
-    dataset, tools: list = None, model_name: str = None, batch_size: int = None
+    dataset,
+    tools: list = None,
+    model_name: str = None,
+    batch_size: int = None,
+    system_prompt: str = None,
 ) -> Dict[str, Any]:
     """
     Coleta respostas para todo o dataset em batches.
@@ -340,6 +355,7 @@ async def coletar_todas_respostas(
             modo="letta",
             tools=tools,
             model_name=model_name,
+            system_prompt=system_prompt,
         )
         todas_respostas.update(resultados_batch)
 
