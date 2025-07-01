@@ -8,6 +8,11 @@ sys.path.append(
 from src.config import env
 from src.evaluations.letta.phoenix.training_dataset.evaluators import *
 from src.evaluations.letta.phoenix.training_dataset.utils import coletar_todas_respostas
+from src.evaluations.letta.phoenix.training_dataset.prompts import (
+    SYSTEM_PROMPT_BASELINE_O4,
+    SYSTEM_PROMPT_BASELINE_GEMINI,
+    SYSTEM_PROMPT_EAI,
+)
 
 os.environ["PHOENIX_HOST"] = env.PHOENIX_HOST
 os.environ["PHOENIX_PORT"] = env.PHOENIX_PORT
@@ -111,7 +116,7 @@ async def main():
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
             "batch_size": 15,
-            "system_prompt": None,
+            "system_prompt": SYSTEM_PROMPT_EAI,
         },
     ]
 

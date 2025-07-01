@@ -35,6 +35,15 @@ def main():
         encoding="utf-8",
     )
 
+    datasets_to_upload = [
+        {
+            "dataset_name": "GPT_Dataset-2025-06-27",
+            "dataframe": dataframe,
+            "input_keys": [],
+            "output_keys": [],
+        },
+    ]
+
     print(dataframe.columns)
     print(dataframe.head())
 
