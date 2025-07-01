@@ -1,4 +1,6 @@
 import typing
+import traceback
+from loguru import logger
 from letta_client.agents.messages.types.letta_streaming_response import (
     LettaStreamingResponse,
 )
@@ -31,8 +33,18 @@ async def process_stream(response: typing.AsyncIterator[LettaStreamingResponse])
                     agent_message_response += chunk.message.content
             elif hasattr(chunk, "text") and chunk.text:
                 agent_message_response += chunk.text
+    except ConnectionError as e:
+        logger.error(f"Erro de conexão ao processar stream: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    except TimeoutError as e:
+        logger.error(f"Timeout ao processar stream: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    except ValueError as e:
+        logger.error(f"Erro de valor/formato ao processar stream: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
     except Exception as e:
-        print(f"Erro ao processar stream: {e}")
+        logger.error(f"Erro inesperado ao processar stream: {type(e).__name__}: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
 
     return agent_message_response
 
@@ -87,8 +99,18 @@ async def process_stream_raw(response: typing.AsyncIterator[LettaStreamingRespon
             elif isinstance(chunk, LettaUsageStatistics):
                 result["letta_usage_statistics"].append(chunk)
                 ordered_messages.append({"type": "letta_usage_statistics", "message": chunk})
+    except ConnectionError as e:
+        logger.error(f"Erro de conexão ao processar stream raw: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    except TimeoutError as e:
+        logger.error(f"Timeout ao processar stream raw: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    except ValueError as e:
+        logger.error(f"Erro de valor/formato ao processar stream raw: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
     except Exception as e:
-        print(f"Erro ao processar stream: {e}")
+        logger.error(f"Erro inesperado ao processar stream raw: {type(e).__name__}: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
 
     return {
         "grouped": result,
