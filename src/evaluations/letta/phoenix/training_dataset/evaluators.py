@@ -332,7 +332,6 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
     # golden_links = _parse_golden(golden_field)
 
     answer_links: list[str] = []
-    explanation_links = []
     link_dicts = []
 
     if "links" in output.get("agent_output", {}):
@@ -346,25 +345,23 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
         ) as session:
             await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-        answer_links = [link["url"] for link in link_dicts if link.get("url")]
-        explanation_links = [
+        answer_links = [
             {"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")}
             for l in link_dicts
         ]
 
     else:
-        letta_links, explanation_links = await get_redirect_links(output)
-        answer_links.extend(letta_links)
+        answer_links = await get_redirect_links(output)
 
     if not answer_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
 
-    gold_norm = [_norm_url(u) for u in golden_links]
-    links_norm = {_norm_url(u) for u in answer_links}
+    answer_links, overall_count = match_golden_link(
+        answer_links=answer_links, golden_links=golden_links
+    )
 
-    match_found = any(_match(g, l) for g in gold_norm for l in links_norm)
-
-    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {match_found}"
+    match_found = True if overall_count > 0 else False
+    explanation = f"Golden links: {golden_links}\nAnswer links: {answer_links}\nNumber of Matchs: {overall_count}"
 
     return match_found, explanation
 
@@ -372,29 +369,41 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
 # -----------------------------------------------------
 # Helper functions – keep them private to avoid namespace pollution
 # ---------------------------------------------------------------------------
+def match_golden_link(answer_links, golden_links):
+    """
+    Match golden links in explanation links.
+    """
+    overall_count = 0
+    for answer_link in answer_links:
+        url = _norm_url(answer_link.get("url"))
+        url = None if url == "" else url
+        answer_link["url"] = url
 
+        count = 0
+        golden_found = None
+        for golden_link in golden_links:
+            if str(url) in _norm_url(golden_link):
+                answer_link["has_golden_link"] = True
+                count += 1
+                overall_count += 1
+                golden_found = _norm_url(golden_link)
 
-def _parse_golden(raw) -> list[str]:
-    """Turn metadata['Golden links'] into a clean list."""
-    if not raw:
-        return []
-    if isinstance(raw, list):
-        return [str(x).strip() for x in raw if "http" in str(x)]
-    if isinstance(raw, str):
-        raw = raw.strip()
-        # Try to read a Python-style list first
-        try:
-            import ast
+        answer_link["golden_link"] = golden_found
+        answer_link["has_golden_link"] = True if count > 0 else False
 
-            parsed = ast.literal_eval(raw)
-            if isinstance(parsed, list):
-                return [str(x).strip() for x in parsed if "http" in str(x)]
-        except Exception:
-            pass
-        # Fallback: split on comma or whitespace
-        sep = "," if "," in raw else None
-        return [s.strip() for s in raw.split(sep) if "http" in s]
-    return []
+    answer_links = [
+        {
+            "has_golden_link": item.get("has_golden_link"),
+            "golden_link": item.get("golden_link"),
+            "url": item.get("url"),
+            "uri": item.get("uri"),
+            "error": item.get("error"),
+        }
+        for item in answer_links
+    ]
+    reordered_data = sorted(answer_links, key=lambda item: item["golden_link"] is None)
+
+    return reordered_data, overall_count
 
 
 def _norm_url(url: str) -> str:
@@ -463,7 +472,7 @@ async def golden_link_in_answer(output) -> bool | tuple:
     ]
     unique_links = list(
         dict.fromkeys([link for link in normalized_links if isinstance(link, str)])
-    )[:10]
+    )
 
     link_dicts = [{"uri": uri} for uri in unique_links]
 
@@ -476,17 +485,17 @@ async def golden_link_in_answer(output) -> bool | tuple:
     ) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-    answer_links = [link.get("url") or link.get("uri") for link in link_dicts]
-    explanation_links = [
+    answer_links = [
         {"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")}
         for l in link_dicts
     ]
 
-    gold_norm = [_norm_url(u) for u in golden_links]
-    links_norm = {_norm_url(u) for u in answer_links}
+    answer_links, overall_count = match_golden_link(
+        answer_links=answer_links, golden_links=golden_links
+    )
 
-    match_found = any(_match(g, l) for g in gold_norm for l in links_norm)
-    explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {match_found}"
+    match_found = True if overall_count > 0 else False
+    explanation = f"Golden links: {golden_links}\nAnswer links: {answer_links}\nNumber of Matchs: {overall_count}"
 
     return match_found, explanation
 
@@ -514,11 +523,3 @@ async def answer_similarity(input, output, expected) -> tuple:
         explanation = "Label not recognized or not in mapping"
 
     return (eval_result, explanation)
-
-
-def _match(gold: str, link: str) -> bool:
-    """Match logic for golden vs answer link based on domain and path."""
-    g_dom, g_path = gold.split("/", 1) if "/" in gold else (gold, "")
-    l_dom, l_path = link.split("/", 1) if "/" in link else (link, "")
-
-    return g_dom == l_dom and (not g_path or g_path == l_path)

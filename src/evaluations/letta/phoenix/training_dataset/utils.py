@@ -48,9 +48,13 @@ if env.EVAL_MODEL_TYPE == "gpt":
         api_version="2025-01-01-preview",
         model=env.GPT_EVAL_MODEL,
     )
-else:
+elif env.EVAL_MODEL_TYPE == "gemini":
     EVAL_MODEL = GenAIModel(
         model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
+    )
+else:
+    raise ValueError(
+        f"Invalid model type: {env.EVAL_MODEL_TYPE}. Accept only `gpt` or `gemini`"
     )
 
 
@@ -506,13 +510,12 @@ async def get_redirect_links(model_response):
     ) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-    final_urls = [link.get("url") or link.get("uri") for link in link_dicts]
     final_links = [
         {"url": link.get("url"), "uri": link.get("uri"), "error": link.get("error")}
         for link in link_dicts
     ]
 
-    return final_urls, final_links
+    return final_links
 
 
 async def experiment_eval(
