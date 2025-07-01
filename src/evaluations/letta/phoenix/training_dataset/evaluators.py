@@ -278,7 +278,7 @@ async def experiment_eval_search_query_effectiveness(
 async def activate_search(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
-    
+
     grouped = output.get("agent_output", {}).get("grouped", {})
     tool_msgs = grouped.get("tool_return_messages", [])
 
@@ -289,7 +289,9 @@ async def activate_search(output) -> bool | tuple:
         "gpt_search",
     ]
 
-    activated_tools = {msg.get("name") for msg in tool_msgs if msg.get("name") in SEARCH_TOOL_NAMES}
+    activated_tools = {
+        msg.get("name") for msg in tool_msgs if msg.get("name") in SEARCH_TOOL_NAMES
+    }
 
     explanation = f"Activated tools: {list(activated_tools)}"
 
@@ -300,7 +302,7 @@ async def activate_search(output) -> bool | tuple:
 async def golden_link_in_tool_calling(output) -> bool | tuple:
     """
     Returns True if the agent output ultimately resolves to at least one of the
-    golden links listed in metadata["Golden links"].
+    golden links listed in metadata["golden_links_list"].
 
     Now supports Letta (Vertex), Gemini, and GPT outputs.
 
@@ -315,7 +317,7 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
-    golden_field = output.get("metadata", {}).get("Golden links list", "")
+    golden_field = output.get("metadata", {}).get("golden_links_list", "")
 
     try:
         golden_links = (
@@ -334,13 +336,21 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
     link_dicts = []
 
     if "links" in output.get("agent_output", {}):
-        link_dicts = [{"uri": link.get("uri") or link.get("url")} for link in output["agent_output"]["links"]]
+        link_dicts = [
+            {"uri": link.get("uri") or link.get("url")}
+            for link in output["agent_output"]["links"]
+        ]
 
-        async with httpx.AsyncClient(follow_redirects=True, timeout=2, verify=False) as session:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=2, verify=False
+        ) as session:
             await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
         answer_links = [link["url"] for link in link_dicts if link.get("url")]
-        explanation_links = [{"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")} for l in link_dicts]
+        explanation_links = [
+            {"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")}
+            for l in link_dicts
+        ]
 
     else:
         letta_links, explanation_links = await get_redirect_links(output)
@@ -355,7 +365,7 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
     match_found = any(_match(g, l) for g in gold_norm for l in links_norm)
 
     explanation = f"Golden links: {golden_links}\nAnswer links: {explanation_links}\nMatch found: {match_found}"
-    
+
     return match_found, explanation
 
 
@@ -403,12 +413,12 @@ def _norm_url(url: str) -> str:
 
     if ":~:text=" in path:  # Strip scroll-to-text fragments
         path = path.split(":~:text=")[0]
-    
+
     # Mantém apenas os parâmetros que NÃO começam com 'utm_source'
     query_params = parse_qsl(parsed.query, keep_blank_values=True)
     if query_params and query_params[-1][0] == "utm_source":
         query_params = query_params[:-1]
-    
+
     query_string = urlencode(query_params)
 
     norm_url = f"{domain}{path}"
@@ -426,7 +436,7 @@ async def golden_link_in_answer(output) -> bool | tuple:
     # golden_field = output.get("metadata", {}).get("Golden links", "")
     # golden_links = _parse_golden(golden_field)
 
-    golden_field = output.get("metadata", {}).get("Golden links list", "")
+    golden_field = output.get("metadata", {}).get("golden_links_list", "")
 
     try:
         golden_links = (
@@ -437,7 +447,9 @@ async def golden_link_in_answer(output) -> bool | tuple:
     except (ValueError, SyntaxError):
         golden_links = []
 
-    resposta = output.get("agent_output", {}).get("texto") or final_response(output["agent_output"]).get("content", "")
+    resposta = output.get("agent_output", {}).get("texto") or final_response(
+        output["agent_output"]
+    ).get("content", "")
 
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", resposta)
     plain_links = re.findall(r"https?://[^\s)\]]+", resposta)
@@ -446,11 +458,11 @@ async def golden_link_in_answer(output) -> bool | tuple:
     if not raw_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
 
-    normalized_links = [f"https://{link}" if not link.startswith("http") else link for link in raw_links]
+    normalized_links = [
+        f"https://{link}" if not link.startswith("http") else link for link in raw_links
+    ]
     unique_links = list(
-        dict.fromkeys(
-            [link for link in normalized_links if isinstance(link, str)]
-        )
+        dict.fromkeys([link for link in normalized_links if isinstance(link, str)])
     )[:10]
 
     link_dicts = [{"uri": uri} for uri in unique_links]
@@ -459,11 +471,16 @@ async def golden_link_in_answer(output) -> bool | tuple:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
     }
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False, headers=headers) as session:
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=5, verify=False, headers=headers
+    ) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
     answer_links = [link.get("url") or link.get("uri") for link in link_dicts]
-    explanation_links = [{"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")} for l in link_dicts]
+    explanation_links = [
+        {"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")}
+        for l in link_dicts
+    ]
 
     gold_norm = [_norm_url(u) for u in golden_links]
     links_norm = {_norm_url(u) for u in answer_links}
@@ -497,6 +514,7 @@ async def answer_similarity(input, output, expected) -> tuple:
         explanation = "Label not recognized or not in mapping"
 
     return (eval_result, explanation)
+
 
 def _match(gold: str, link: str) -> bool:
     """Match logic for golden vs answer link based on domain and path."""

@@ -44,9 +44,10 @@ def main():
         "subtema",
         "golden_links_list",
     ]
+
     datasets_to_upload = [
         {
-            "dataset_name": "golden_dataset_v3_test",
+            "dataset_name": "golden_dataset_v4",
             "dataframe": dataframe,
             "input_keys": input_keys,
             "output_keys": output_keys,
@@ -54,7 +55,7 @@ def main():
             "dataset_description": "Golden Dataset - 241 samples",
         },
         {
-            "dataset_name": "golden_dataset_small_sample_v3_test",
+            "dataset_name": "golden_dataset_v4_small_sample",
             "dataframe": dataframe.head(10),
             "input_keys": input_keys,
             "output_keys": output_keys,

@@ -94,7 +94,7 @@ async def main():
     ]
     experiments_configs = [
         # {
-        #     "dataset_name": "golden_dataset_v3",
+        #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-o4-2025-06-27-v12",
         #     "evaluators": evaluators,
         #     "tools": ["gpt_search"],
@@ -102,7 +102,7 @@ async def main():
         #     "system_prompt": system_prompt_baseline_o4,
         # },
         # {
-        #     "dataset_name": "golden_dataset_v3",
+        #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-gemini-2.5-flash-2025-06-27-v12",
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
@@ -110,12 +110,12 @@ async def main():
         #     "system_prompt": system_prompt_baseline_gemini,
         # },
         {
-            "dataset_name": "golden_dataset_small_sample_v3",
+            "dataset_name": "golden_dataset_v4_small_sample",
             "experiment_name": "eai-2025-06-27-v12",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 15,
+            "batch_size": 10,
             "system_prompt": SYSTEM_PROMPT_EAI,
             "temperature": 0.2,
         },
