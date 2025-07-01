@@ -7,7 +7,7 @@ from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
 )
 from src.services.letta.letta_service import letta_service
-from letta_client import ContinueToolRule
+from letta_client import ContinueToolRule, LlmConfig
 from src.config import env
 
 
@@ -133,7 +133,12 @@ async def create_agentic_search_agent(
                 ContinueToolRule(tool_name="gpt_search"),
             ],
             tags=["agentic_search"] + (tags if tags else []),
-            model=model_name,
+            llm_config=LlmConfig(
+                model=model_name,
+                model_endpoint_type="google_ai",
+                temperature=0.2,
+                context_window=50000,
+            ),
             embedding=embedding_name,
             system=system_prompt,
             memory_blocks=memory_blocks,
