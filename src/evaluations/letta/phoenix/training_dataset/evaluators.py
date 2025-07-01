@@ -300,7 +300,7 @@ async def activate_search(output) -> bool | tuple:
 async def golden_link_in_tool_calling(output) -> bool | tuple:
     """
     Returns True if the agent output ultimately resolves to at least one of the
-    golden links listed in metadata["Golden links"].
+    golden links listed in metadata["golden_links_list"].
 
     Now supports Letta (Vertex), Gemini, and GPT outputs.
 
@@ -315,7 +315,7 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
     if not output:
         return (False, "No output provided")
 
-    golden_field = output.get("metadata", {}).get("Golden links list", "")
+    golden_field = output.get("metadata", {}).get("golden_links_list", "")
 
     try:
         golden_links = (
@@ -426,7 +426,7 @@ async def golden_link_in_answer(output) -> bool | tuple:
     # golden_field = output.get("metadata", {}).get("Golden links", "")
     # golden_links = _parse_golden(golden_field)
 
-    golden_field = output.get("metadata", {}).get("Golden links list", "")
+    golden_field = output.get("metadata", {}).get("golden_links_list", "")
 
     try:
         golden_links = (

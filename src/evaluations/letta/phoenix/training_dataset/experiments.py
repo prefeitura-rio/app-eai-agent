@@ -44,7 +44,7 @@ phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 
 async def executar_avaliacao_phoenix(
-    dataset: str, respostas_coletadas: dict, experiment_name: str, evaluators: list
+    dataset: str, respostas_coletadas: dict, experiment_name: str, experiment_description: str, evaluators: list
 ):
     """
     Executa a avaliação Phoenix usando as respostas já coletadas.
@@ -68,7 +68,7 @@ async def executar_avaliacao_phoenix(
         get_cached_responses,
         evaluators=evaluators,
         experiment_name=experiment_name,
-        experiment_description="Evaluating final response of the agent with various evaluators.",
+        experiment_description=experiment_description,
         dry_run=False,
         concurrency=10,
     )
@@ -90,7 +90,7 @@ async def main():
         golden_link_in_tool_calling,
         golden_link_in_answer,
         activate_search,
-        # answer_similarity,
+        answer_similarity,
     ]
     experiments_configs = [
         # {
@@ -110,8 +110,9 @@ async def main():
         #     "system_prompt": system_prompt_baseline_gemini,
         # },
         {
-            "dataset_name": "golden_dataset_small_sample_v3",
+            "dataset_name": "golden_dataset_v4_small_sample",
             "experiment_name": "eai-2025-06-27-v12",
+            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
@@ -125,6 +126,7 @@ async def main():
         tools = experiment_config.get("tools", None)
         model_name = experiment_config.get("model_name", None)
         experiment_name = experiment_config["experiment_name"]
+        experiment_description = experiment_config.get("experiment_description", None)
         evaluators = experiment_config["evaluators"]
         batch_size = experiment_config.get("batch_size", 10)
         system_prompt = experiment_config.get("system_prompt", 10)
@@ -155,6 +157,7 @@ async def main():
             dataset=dataset,
             respostas_coletadas=respostas,
             experiment_name=experiment_name,
+            experiment_description=experiment_description,
             evaluators=evaluators,
         )
 

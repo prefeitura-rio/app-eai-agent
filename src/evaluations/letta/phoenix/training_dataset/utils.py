@@ -42,18 +42,19 @@ logger = logging.getLogger(__name__)
 from src.config import env
 
 EVAL_MODEL = OpenAIModel(
-    api_key=env.OPENAI_API_KEY,
+    api_key=env.OPENAI_AZURE_API_KEY,
     azure_endpoint=env.OPENAI_URL,
-    api_version="2024-02-15-preview",
-    model="gpt-4.1",
+    api_version="2025-01-01-preview",
+    model="gpt-4o",
 )
-EVAL_MODEL = GenAIModel(
-    model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
-)
+
+# EVAL_MODEL = GenAIModel(
+#     model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
+# )
 
 
 async def get_response_from_gpt(example: Example) -> dict:
-    query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
+    query = f"Moro no Rio de Janeiro. {example.input.get("mensagem_whatsapp_simulada")}"
 
     response = await openai_service.generate_content(
         query,
@@ -75,7 +76,7 @@ async def get_response_from_gpt(example: Example) -> dict:
 
 
 async def get_response_from_gemini(example: Example) -> str:
-    query = f"Moro no Rio de Janeiro. {example.input.get("Mensagem WhatsApp Simulada")}"
+    query = f"Moro no Rio de Janeiro. {example.input.get("mensagem_whatsapp_simulada")}"
 
     response = await gemini_service.generate_content(
         query,
@@ -231,7 +232,7 @@ async def processar_batch(
             pergunta = (
                 exemplo.input.get("pergunta")
                 or exemplo.input.get("pergunta_individual")
-                or exemplo.input.get("Mensagem WhatsApp Simulada")
+                or exemplo.input.get("mensagem_whatsapp_simulada")
                 or next(iter(exemplo.input.values()), "")
             )
             if not isinstance(pergunta, str):
@@ -260,15 +261,6 @@ async def processar_batch(
         tarefas_respostas = []
 
         for exemplo in exemplos:
-            # pergunta = (
-            #     exemplo.input.get("pergunta")
-            #     or exemplo.input.get("pergunta_individual")
-            #     or exemplo.input.get("Mensagem WhatsApp Simulada")
-            #     or next(iter(exemplo.input.values()), "")
-            # )
-
-            # if not isinstance(pergunta, str):
-            #     pergunta = str(pergunta)
             tarefas_respostas.append(get_response_from_gpt(exemplo))
         respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
 
@@ -286,15 +278,6 @@ async def processar_batch(
         tarefas_respostas = []
 
         for exemplo in exemplos:
-            # pergunta = (
-            #     exemplo.input.get("pergunta")
-            #     or exemplo.input.get("pergunta_individual")
-            #     or exemplo.input.get("Mensagem WhatsApp Simulada")
-            #     or next(iter(exemplo.input.values()), "")
-            # )
-
-            # if not isinstance(pergunta, str):
-            #     pergunta = str(pergunta)
             tarefas_respostas.append(get_response_from_gemini(exemplo))
 
         respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
@@ -461,7 +444,6 @@ async def get_redirect_links(model_response):
     tool_msgs = grouped.get("tool_return_messages", [])
 
     SEARCH_TOOL_NAMES = {
-        "search_tool",
         "public_services_grounded_search",
         "google_search",
         "typesense_search",
@@ -474,16 +456,16 @@ async def get_redirect_links(model_response):
             if isinstance(item, str):
                 urls.append(item)
             elif isinstance(item, dict):
-                url_val = item.get("url") or item.get("uri")
-                if isinstance(url_val, str):
-                    urls.append(url_val)
+                url = item.get("url") or item.get("uri")
+                if isinstance(url, str):
+                    urls.append(url)
         return urls
 
     links_para_processar = []
 
     for msg in tool_msgs:
         tool_name = msg.get("name")
-        if tool_name and tool_name not in SEARCH_TOOL_NAMES:
+        if tool_name not in SEARCH_TOOL_NAMES:
             continue
 
         try:
@@ -505,78 +487,46 @@ async def get_redirect_links(model_response):
 
         links_para_processar.extend(links)
 
-    # Remove duplicados e limita a 10 links (opcional)
     unique_links = list(dict.fromkeys([link for link in links_para_processar]))[:10]
-
-    # Prepara para resolver redirects
     link_dicts = [{"uri": uri} for uri in unique_links]
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
     }
+
     async with httpx.AsyncClient(
         follow_redirects=True, timeout=5, verify=False, headers=headers
     ) as session:
         await asyncio.gather(*(process_link(session, link) for link in link_dicts))
 
-    # Retorna a lista só com URLs finais corrigidos (ou original se não redirecionou)
     final_urls = [link.get("url") or link.get("uri") for link in link_dicts]
     final_links = [
         {"url": link.get("url"), "uri": link.get("uri"), "error": link.get("error")}
         for link in link_dicts
     ]
+
     return final_urls, final_links
 
 
 async def experiment_eval(
-    input, output, prompt, rails, expected=None, eval_model=None, **kwargs
+    input, output, prompt, rails, expected=None, **kwargs
 ) -> tuple | bool:
     if not output or "agent_output" not in output:
         return False
 
-    agent_output = output["agent_output"]
-    metadata = output.get("metadata", {})
-    golden_link = metadata.get("Golden links", "")
-
-    df = pd.DataFrame(
-        {
-            "query": [input.get("pergunta")],
-            "model_response": [final_response(agent_output).get("content", "")],
-            "golden_link": [golden_link],
-        }
-    )
-
-    if expected:
-        df["ideal_response"] = [expected.get("resposta_ideal")]
-
-    for k, val in kwargs.items():
-        if isinstance(val, str):
-            df[k] = [val]
-        elif isinstance(val, list):
-            df[k] = [", ".join(val)]
-        else:
-            df[k] = [val]
+    df = pd.DataFrame({
+        "query": [input.get("mensagem_whatsapp_simulada")],
+        "model_response": [final_response(output["agent_output"]).get("content", "")],
+        "ideal_response": [expected.get("golden_answer", "") if expected else ""],
+    })
 
     response = llm_classify(
         data=df,
         template=prompt,
         rails=rails,
-        model=eval_model,
+        model=EVAL_MODEL,
         provide_explanation=True,
         run_sync=False,
     )
 
-    label = response.get("label")
-    if hasattr(label, "iloc"):
-        label = label.iloc[0]
-        eval_result = bool(label == rails[0])
-    else:
-        eval_result = bool(label == rails[0])
-
-    explanation = response.get("explanation")
-    if hasattr(explanation, "iloc"):
-        explanation = str(explanation.iloc[0])
-    else:
-        explanation = str(explanation)
-
-    return (eval_result, explanation)
+    return response
