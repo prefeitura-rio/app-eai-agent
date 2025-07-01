@@ -1,126 +1,182 @@
-# import json
-# import re
-# import ast
+import json
+import re
+from datetime import datetime
+import ast
 
 
-# def parse_links(input_string):
-#     # Dicionário para armazenar o resultado
-#     parsed_dict = {}
-#     pattern = re.compile(r"(.+?):\s*(.*?)(?=\n[A-Z][a-z]+ [a-z]+:|$)", re.DOTALL)
-#     matches = pattern.findall(input_string)
+# --- Configuration ---
+# Adjust your input and output file paths here
+INPUT_JSON_PATH = "/Users/m/Downloads/eai-2025-07-01.json"
+OUTPUT_MD_PATH = "experiment_report.md"
 
-#     for key, value in matches:
-#         clean_key = key.strip().lower().replace(" ", "_")
-#         parsed_value = ast.literal_eval(value.strip())
-#         parsed_dict[clean_key] = parsed_value
-
-#     if "match_found" in parsed_dict:
-#         parsed_dict["math_found"] = parsed_dict.pop("match_found")
-
-#     return parsed_dict
+# --- Helper Functions ---
 
 
-# data = json.load(open("/Users/m/Downloads/eai-2025-06-30.json"))
+def parse_links(input_string):
+    parsed_dict = {}
+    pattern = re.compile(r"(.+?):\s*(.*?)(?=\n[^\n:]+:|$)", re.DOTALL)
+    matches = pattern.findall(input_string)
+    for key, value in matches:
+        clean_key = key.strip().lower().replace(" ", "_")
+        value_str = value.strip()
+        try:
+            parsed_value = ast.literal_eval(value_str)
+        except (ValueError, SyntaxError):
+            parsed_value = value_str
 
-# for item in data[7:8]:
-#     output = item["output"]
-#     input = item["input"]
-#     annotations = item["annotations"]
+        parsed_dict[clean_key] = parsed_value
 
-#     separator = "=" * 100
-
-#     print(separator)
-#     print("ID: ", output["metadata"]["id"], "\n")
-#     print("Mensagem:\n", input["mensagem_whatsapp_simulada"], "\n")
-#     print(
-#         "Resposta:\n",
-#         output["agent_output"]["grouped"]["assistant_messages"][0]["content"],
-#         "\n",
-#     )
-#     show_annotations = [
-#         "Golden Link in Tool Calling",
-#         "Golden Link in Answer",
-#         "Answer Similarity",
-#     ]
-#     for annotation in annotations:
-#         if annotation["name"] in show_annotations:
-#             print("-" * 100, "\n")
-#             print(annotation["name"], "\n")
-#             print("Score: ", annotation["score"], "\n")
-
-#             if "Link" in annotation["name"] and annotation["score"] == 1:
-#                 d = parse_links(input_string=annotation["explanation"])
-#                 print(d)
-#             else:
-#                 print(
-#                     "Explanation: ",
-#                     annotation["explanation"].replace("\\n", "\n"),
-#                     "\n",
-#                 )
-#     print(separator)
+    return parsed_dict
 
 
-from src.evaluations.letta.phoenix.training_dataset.evaluators import _norm_url
-
-
-explanation_links = [
-    {
-        "url": "https://prefeitura.rio/saude/prefeitura-inaugura-centro-especializado-para-pessoas-com-autismo",
-        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF6q2x0wzvydKRDa3NTkL0-lk3pTuZaSZAovM7qR2JcqmmVPntEzNW8i1EJEb9t2p6UCy2yTBOmEgdYH2K_9UYMVhR6JbnG4QT-O-WKVV1uMFVRyjeb_zJa5Rm41V9hvzgWrbUFAZm9JREqAVW9AfTA_B4bzibCHbR7TYFdAHLd_gPd6TvrXGUaD1S63IbVTCmJIVf_ANKLYVZ-",
-        "error": None,
-    },
-    {
-        "url": None,
-        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGuFM6QXd_yHmOMUILGrMren8g6I14FTLORMoriG-y0KvOWcpslVDc14ksCLMAhSHmTfkCSyZ-caI9KSNT31Uwtz_J-1jaeVZ4zqn9QcsfAZoM_EYpSTxrUCE9pwI8SJ6O6ReSV8TRmN5LvKQcwjhb360CNtgRLj2WaWwS2taFvKtjkA_gikEtt-dNKOSKEfvBXAbRBINfGTU9y3nw-fGWlLvkab5VZm6vA1flAg-hR",
-        "error": "Client error '403 Forbidden' for url 'https://agenciabrasil.ebc.com.br/saude/noticia/2023-07/rio-de-janeiro-cria-programa-de-descoberta-precoce-do-autismo'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
-    },
-    {
-        "url": None,
-        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG9Z3w623XYzVFI7jL7NG-DV_aajAaOElfrCSxWs8RS0xi3VhIuvEYpnGKHQl7U83Y6Sv3nY8C7R3Es-UgVrebVs73_qQ-ZEdnYIhCVGE5cYnCSyqR01VDlOBI3nD-5tqgThOKRyMQDzI1XeLIJ_L6uaR6P8t8O81afnmoHAQrJUTmI8VNvo9IqBV-QmDlVojTTFNw7wZT2wTmjUXO5wVj0JxiJj6gQxuuN-PA0MWiW4y3zSbptLXnB4a3HRtzCIuVV",
-        "error": "",
-    },
-    {
-        "url": "https://prefeitura.rio/cidade/evento-com-acoes-de-diversas-secretarias-no-planetario-lembra-o-dia-mundial-de-conscientizacao-do-autismo/",
-        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHZQf0rcpmkB5XhhwVv4OUyrzUSUuwTY0cIrLUGs2HTmUnKsPf9rqdF8b-6E9eS6yDFJvGjr17smy3QUdHHQ-8e56HI378UqqOJhgwJVTaufp3aTuhV_Y9eFyCBFM15dITzKdSAVouG5mg7d7hrgqbfS5V8jSqyt2HxSXE1NhLIuoeiW_DH48kgk3iZA0ihzJ1lMfzDRVtiAd_4dspGuO6VmxlHX-urewzPHVG8jwhQtxOBZzgq42d4O83cQyKceWJpNE1H",
-        "error": None,
-    },
-]
-golden_links = [
-    "https://prefeitura.rio/saude/prefeitura-inaugura-centro-especializado-para-pessoas-com-autismo/",
-    "https://prefeitura.rio/cidade/evento-com-acoes-de-diversas-secretarias-no-planetario-lembra-o-dia-mundial-de-conscientizacao-do-autismo",
-]
-
-
-def match_golden_link(explanation_links, golden_links):
+def get_safe(data_dict, key_path, default=None):
     """
-    Match golden links in explanation links.
+    Safely get a value from a nested dictionary.
+    key_path should be a string like 'key1.key2.key3'.
     """
-    overall_count = 0
-    for answer_link in explanation_links:
-        url = _norm_url(answer_link.get("url"))
-        url = None if url == "" else url
-        answer_link["url"] = url
+    keys = key_path.split(".")
+    current = data_dict
+    for key in keys:
+        if isinstance(current, dict) and key in current:
+            current = current[key]
+        else:
+            return default
+    return current
 
-        count = 0
-        golden_found = None
-        for golden_link in golden_links:
-            if str(url) in _norm_url(golden_link):
-                answer_link["has_golden_link"] = True
-                count += 1
-                overall_count += 1
-                golden_found = _norm_url(golden_link)
 
-        answer_link["golden_link"] = golden_found
-        answer_link["has_golden_link"] = True if count > 0 else False
+# --- Main Script ---
 
-    explanation_links = [
-        {
-            "has_golden_link": item.get("has_golden_link"),
-            "golden_link": item.get("golden_link"),
-            "url": item.get("url"),
-            "uri": item.get("uri"),
-            "error": item.get("error"),
-        }
-        for item in explanation_links
+print(f"Loading data from {INPUT_JSON_PATH}...")
+try:
+    with open(INPUT_JSON_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+except FileNotFoundError:
+    print(f"ERROR: Input file not found at {INPUT_JSON_PATH}")
+    exit()
+except json.JSONDecodeError:
+    print(
+        f"ERROR: Could not decode JSON from {INPUT_JSON_PATH}. Please check the file format."
+    )
+    exit()
+
+if not data:
+    print("The JSON file is empty. No report will be generated.")
+    exit()
+
+# --- 1. Extract Shared Experiment Metadata (from the first item) ---
+first_item = data[0]
+metadata = get_safe(first_item, "output.metadata", {})
+experiment_metadata = get_safe(first_item, "output.experiment_metadata", {})
+
+system_prompt = get_safe(experiment_metadata, "system_prompt", "Not available")
+tools = get_safe(experiment_metadata, "tools", "Not available")
+eval_model = get_safe(experiment_metadata, "eval_model", "Not available")
+temperature = get_safe(experiment_metadata, "temperature", "Not available")
+final_repose_model = get_safe(
+    experiment_metadata, "final_repose_model", "Not available"
+)
+system_prompt_answer_similarity = get_safe(
+    experiment_metadata, "system_prompt_answer_similatiry", "Not available"
+)
+
+
+# --- 2. Build the Markdown Report ---
+
+report_parts = []
+
+# Report Header
+report_parts.append("\n## Summary")
+report_parts.append("| Parameter | Value |")
+report_parts.append("|---|---|")
+report_parts.append(f"| **Evaluation Model** | `{eval_model}` |")
+report_parts.append(f"| **Final Response Model** | `{final_repose_model}` |")
+report_parts.append(f"| **Temperature** | `{temperature}` |")
+report_parts.append(f"| **Tools Provided** | `{tools}` |")  # Tools can be long
+report_parts.append("-" * 100)  # Visual separator for the main content
+
+# Process each item in the data
+for i, item in enumerate(data):
+    # Extract item-specific data using safe access
+    msg_id = get_safe(item, "output.metadata.id", f"Unknown_ID_{i+1}")
+    msg = get_safe(item, "input.mensagem_whatsapp_simulada", "No message found.")
+
+    # Safely get the assistant's answer
+    assistant_messages = get_safe(
+        item, "output.agent_output.grouped.assistant_messages", []
+    )
+    answer = (
+        assistant_messages[0]["content"]
+        if assistant_messages and "content" in assistant_messages[0]
+        else "No answer found."
+    )
+
+    annotations = get_safe(item, "annotations", [])
+
+    report_parts.append(f"\n## ID: {msg_id}")
+
+    # Input Message
+    report_parts.append("### User Message")
+    report_parts.append(msg)
+
+    # Agent Answer
+    report_parts.append("\n### Agent Answer")
+    report_parts.append(answer)
+
+    # Annotations
+    report_parts.append("\n### Evaluations")
+
+    show_annotations = [
+        "Answer Similarity",
+        "Golden Link in Answer",
+        "Golden Link in Tool Calling",
     ]
-    return explanation_links, overall_count
+    annotations_by_name = {
+        ann.get("name"): ann for ann in annotations if ann.get("name")
+    }
+
+    if not annotations_by_name:
+        report_parts.append("_No annotations found for this record._")
+    else:
+        for name in show_annotations:
+            if name in annotations_by_name:
+                annotation = annotations_by_name[name]
+
+                ann_name = annotation.get("name", "N/A")
+                ann_score = annotation.get("score", "N/A")
+                ann_explanation = annotation.get("explanation", "")
+
+                report_parts.append(f"\n#### {ann_name}")
+                report_parts.append(f"**Score:** `{ann_score}`")
+
+                # Format explanation differently based on content type
+                if "Link" in ann_name:
+                    parsed_explanation = parse_links(input_string=ann_explanation)
+                    formatted_explanation = json.dumps(parsed_explanation, indent=2)
+                    report_parts.append("**Explanation:**")
+                    report_parts.append(f"```json\n{formatted_explanation}\n```")
+                else:
+                    # Clean up escaped newlines for better readability
+                    ann_explanation = ann_explanation.replace("\\n", "\n")
+                    report_parts.append("**Explanation:**")
+                    report_parts.append(ann_explanation)
+
+    report_parts.append("\n" + "---")  # Horizontal rule to separate records
+
+# --- 3. Add Appendix for Large Content ---
+report_parts.append("\n# Appendix: Prompts and Tools")
+
+# Main System Prompt
+report_parts.append("\n## Main System Prompt")
+report_parts.append(f"```text\n{system_prompt}\n```")
+
+# Answer Similarity Prompt
+report_parts.append("\n## Answer Similarity System Prompt")
+report_parts.append(f"```text\n{system_prompt_answer_similarity}\n```")
+
+# --- 4. Write to File ---
+final_report = "\n".join(report_parts)
+
+with open(OUTPUT_MD_PATH, "w", encoding="utf-8") as f:
+    f.write(final_report)
+
+print(f"✅ Report successfully generated at: {OUTPUT_MD_PATH}")
