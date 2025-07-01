@@ -6,7 +6,7 @@ from letta_client import Letta, AsyncLetta
 from letta_client.types import MessageCreate, TextContent
 
 import src.config.env as env
-from src.services.letta.message_wrapper import process_stream, process_stream_raw
+from src.services.letta.message_wrapper import process_stream_with_retry, process_stream_raw_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class LettaService:
             agentic_tags = [tag for tag in all_tags if "agentic" in tag.lower()]
             return agentic_tags
         except Exception as error:
-            print(f"Erro ao obter tags: {error}")
+            logger.error(f"Erro ao obter tags: {error}")
             return []
 
     async def create_agent(
@@ -116,13 +116,13 @@ class LettaService:
             )
 
             if response:
-                agent_message_response = await process_stream(response)
+                agent_message_response = await process_stream_with_retry(response)
                 return agent_message_response or ""
 
             return ""
         except Exception as error:
-            print(f"Erro detalhado: {error}")
-            print(traceback.format_exc())
+            logger.error(f"Erro detalhado ao enviar timer message: {error}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
     async def send_message(
@@ -157,11 +157,13 @@ class LettaService:
             )
 
             if response:
-                agent_message_response = await process_stream(response)
+                agent_message_response = await process_stream_with_retry(response)
                 return agent_message_response or ""
 
             return ""
         except Exception as error:
+            logger.error(f"Erro detalhado ao enviar mensagem: {error}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
     async def send_message_raw(
@@ -197,28 +199,35 @@ class LettaService:
             )
 
             if response:
-                return await process_stream_raw(response)
+                return await process_stream_raw_with_retry(response)
 
             return {
-                "system_messages": [],
-                "user_messages": [],
-                "reasoning_messages": [],
-                "tool_call_messages": [],
-                "tool_return_messages": [],
-                "assistant_messages": [],
-                "letta_usage_statistics": [],
+                "grouped": {
+                    "system_messages": [],
+                    "user_messages": [],
+                    "reasoning_messages": [],
+                    "tool_call_messages": [],
+                    "tool_return_messages": [],
+                    "assistant_messages": [],
+                    "letta_usage_statistics": [],
+                },
+                "ordered": []
             }
         except Exception as error:
-            logger.error(f"Erro ao enviar mensagem: {error}")
+            logger.error(f"Erro ao enviar mensagem raw: {error}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return {
                 "error": str(error),
-                "system_messages": [],
-                "user_messages": [],
-                "reasoning_messages": [],
-                "tool_call_messages": [],
-                "tool_return_messages": [],
-                "assistant_messages": [],
-                "letta_usage_statistics": [],
+                "grouped": {
+                    "system_messages": [],
+                    "user_messages": [],
+                    "reasoning_messages": [],
+                    "tool_call_messages": [],
+                    "tool_return_messages": [],
+                    "assistant_messages": [],
+                    "letta_usage_statistics": [],
+                },
+                "ordered": []
             }
 
 
