@@ -41,16 +41,17 @@ logger = logging.getLogger(__name__)
 
 from src.config import env
 
-EVAL_MODEL = OpenAIModel(
-    api_key=env.OPENAI_AZURE_API_KEY,
-    azure_endpoint=env.OPENAI_URL,
-    api_version="2025-01-01-preview",
-    model="gpt-4o",
-)
-
-# EVAL_MODEL = GenAIModel(
-#     model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
-# )
+if env.EVAL_MODEL_NAME == "gpt-4o":
+    EVAL_MODEL = OpenAIModel(
+        api_key=env.OPENAI_AZURE_API_KEY,
+        azure_endpoint=env.OPENAI_URL,
+        api_version="2025-01-01-preview",
+        model="gpt-4o",
+    )
+else:
+    EVAL_MODEL = GenAIModel(
+        model=env.GEMINI_EVAL_MODEL, api_key=env.GEMINI_API_KEY, max_tokens=100000
+    )
 
 
 async def get_response_from_gpt(example: Example) -> dict:

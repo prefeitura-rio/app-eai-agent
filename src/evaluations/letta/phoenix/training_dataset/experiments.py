@@ -167,7 +167,8 @@ async def main():
             evaluators=experiment_config["evaluators"],
             experiment_metadata={
                 "tools": experiment_config.get("tools"),
-                "model_name": experiment_config.get("model_name"),
+                "final_repose_model": experiment_config.get("model_name"),
+                "eval_model": env.EVAL_MODEL_NAME,
                 "batch_size": experiment_config.get("batch_size"),
                 "temperature": experiment_config.get("temperature"),
                 "system_prompt": experiment_config.get("system_prompt"),

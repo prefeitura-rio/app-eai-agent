@@ -48,3 +48,5 @@ OPENAI_AZURE_API_KEY = getenv_or_action("OPENAI_AZURE_API_KEY")
 OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY")
 OPENAI_URL = getenv_or_action("OPENAI_URL")
 GPT_SEARCH_MODEL = getenv_or_action("GPT_SEARCH_MODEL")
+
+EVAL_MODEL_NAME = getenv_or_action("EVAL_MODEL_NAME")
