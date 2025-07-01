@@ -85,33 +85,36 @@ async def create_agentic_search_agent(
     tools: list = None,
     model_name: str = None,
     system_prompt: str = None,
+    temperature: float = 0.7,
 ):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
 
         # Obtém system prompt e configuração ativa via API
+        use_api_system_prompt = False
         if system_prompt is None:
+            use_api_system_prompt = True
             system_prompt = await _get_system_prompt_from_api(
                 agent_type="agentic_search"
             )
         agent_cfg = await _get_agent_config_from_api(agent_type="agentic_search")
 
-        # Extrai valores com fallback já incluído nas funções API
-        memory_blocks = agent_cfg.get(
-            "memory_blocks", get_agentic_search_memory_blocks()
-        )
-
         if tools is None:
             tools = agent_cfg.get(
                 "tools", ["google_search", "public_services_grounded_search"]
             )
-
         if model_name is None:
             model_name = agent_cfg.get("model_name", env.LLM_MODEL)
 
-        logger.info(f"Model name: {model_name} | Tools: {tools}")
+        logger.info(
+            f"Model name: {model_name} | Temperature: {temperature} | Tools: {tools} | API System Prompt: {use_api_system_prompt}"
+        )
 
+        # Extrai valores com fallback já incluído nas funções API
+        memory_blocks = agent_cfg.get(
+            "memory_blocks", get_agentic_search_memory_blocks()
+        )
         embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
 
         agent = await client.agents.create(
@@ -133,12 +136,13 @@ async def create_agentic_search_agent(
                 ContinueToolRule(tool_name="gpt_search"),
             ],
             tags=["agentic_search"] + (tags if tags else []),
-            llm_config=LlmConfig(
-                model=model_name,
-                model_endpoint_type="google_ai",
-                temperature=0.2,
-                context_window=50000,
-            ),
+            # llm_config=LlmConfig(
+            #     model=model_name,
+            #     model_endpoint_type="google_ai",
+            #     temperature=temperature,
+            #     context_window=50000,
+            # ),
+            model=model_name,
             embedding=embedding_name,
             system=system_prompt,
             memory_blocks=memory_blocks,

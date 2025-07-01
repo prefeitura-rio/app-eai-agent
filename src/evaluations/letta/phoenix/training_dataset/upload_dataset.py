@@ -6,20 +6,19 @@ from src.config import env
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 
-def upload_dataset(dataset_name: str, dataframe: pd.DataFrame):
+def upload_dataset(
+    dataset_name: str,
+    dataframe: pd.DataFrame,
+    input_keys: list,
+    output_keys: list,
+    metadata_keys: list,
+):
     dataset = phoenix_client.upload_dataset(
         dataframe=dataframe,
         dataset_name=dataset_name,
-        input_keys=[
-            "pergunta",
-            "titulo",
-            "descricao",
-            "informacoes_complementares",
-            "prazo_esperado",
-            "resumo_whatsapp",
-            "orgao_gestor",
-        ],
-        # output_keys=["resposta_ideal"],
+        input_keys=input_keys,
+        output_keys=output_keys,
+        metadata_keys=metadata_keys,
     )
 
     print(f"Dataset '{dataset_name}' enviado com sucesso para o Phoenix!")
@@ -35,19 +34,34 @@ def main():
         encoding="utf-8",
     )
 
+    input_keys = ["mensagem_whatsapp_simulada"]
+    output_keys = ["golden_answer"]
+    metadata_keys = [
+        "id",
+        "tema",
+        "subtema",
+        "golden_links_list",
+    ]
     datasets_to_upload = [
         {
-            "dataset_name": "GPT_Dataset-2025-06-27",
+            "dataset_name": "golden_dataset_v3_test",
             "dataframe": dataframe,
-            "input_keys": [],
-            "output_keys": [],
+            "input_keys": input_keys,
+            "output_keys": output_keys,
+            "metadata_keys": metadata_keys,
+            "dataset_description": "Golden Dataset - Eai Agent",
         },
     ]
 
-    print(dataframe.columns)
-    print(dataframe.head())
-
-    # upload_dataset(dataset_name=dataset_name, dataframe=dataframe)
+    for dataset in datasets_to_upload:
+        upload_dataset(
+            dataset_name=dataset["dataset_name"],
+            dataframe=dataset["dataframe"],
+            input_keys=dataset["input_keys"],
+            output_keys=dataset["output_keys"],
+            metadata_keys=dataset["metadata_keys"],
+            dataset_description=dataset["dataset_description"],
+        )
 
 
 if __name__ == "__main__":

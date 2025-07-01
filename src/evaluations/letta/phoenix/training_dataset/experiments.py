@@ -117,17 +117,13 @@ async def main():
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
             "batch_size": 15,
             "system_prompt": SYSTEM_PROMPT_EAI,
+            "temperature": 0.2,
         },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
-        tools = experiment_config.get("tools", None)
-        model_name = experiment_config.get("model_name", None)
         experiment_name = experiment_config["experiment_name"]
-        evaluators = experiment_config["evaluators"]
-        batch_size = experiment_config.get("batch_size", 10)
-        system_prompt = experiment_config.get("system_prompt", 10)
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)
@@ -143,10 +139,11 @@ async def main():
         logger.info("Iniciando coleta de respostas em batches")
         respostas = await coletar_todas_respostas(
             dataset=dataset,
-            tools=tools,
-            model_name=model_name,
-            batch_size=batch_size,
-            system_prompt=system_prompt,
+            tools=experiment_config.get("tools"),
+            model_name=experiment_config.get("model_name"),
+            batch_size=experiment_config.get("batch_size", 10),
+            system_prompt=experiment_config.get("system_prompt"),
+            temperature=experiment_config.get("temperature", 0.7),
         )
 
         # Etapa 2: Executar avaliação Phoenix
@@ -155,7 +152,7 @@ async def main():
             dataset=dataset,
             respostas_coletadas=respostas,
             experiment_name=experiment_name,
-            evaluators=evaluators,
+            evaluators=experiment_config["evaluators"],
         )
 
         logger.info(f"Processo completo: {experiment_name}\n")
