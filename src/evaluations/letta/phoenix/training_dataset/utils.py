@@ -520,11 +520,15 @@ async def experiment_eval(
     if not output or "agent_output" not in output:
         return False
 
-    df = pd.DataFrame({
-        "query": [input.get("mensagem_whatsapp_simulada")],
-        "model_response": [final_response(output["agent_output"]).get("content", "")],
-        "ideal_response": [expected.get("golden_answer", "") if expected else ""],
-    })
+    df = pd.DataFrame(
+        {
+            "query": [input.get("mensagem_whatsapp_simulada")],
+            "model_response": [
+                final_response(output["agent_output"]).get("content", "")
+            ],
+            "ideal_response": [expected.get("golden_answer", "") if expected else ""],
+        }
+    )
 
     response = llm_classify(
         data=df,

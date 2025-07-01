@@ -46,21 +46,29 @@ def main():
     ]
 
     datasets_to_upload = [
+        # {
+        #     "dataset_name": "golden_dataset_v4",
+        #     "dataframe": dataframe,
+        #     "input_keys": input_keys,
+        #     "output_keys": output_keys,
+        #     "metadata_keys": metadata_keys,
+        #     "dataset_description": "Golden Dataset - 241 samples",
+        # },
+        # {
+        #     "dataset_name": "golden_dataset_v4_small_sample",
+        #     "dataframe": dataframe.head(10),
+        #     "input_keys": input_keys,
+        #     "output_keys": output_keys,
+        #     "metadata_keys": metadata_keys,
+        #     "dataset_description": "Golden Dataset - 10 samples",
+        # },
         {
-            "dataset_name": "golden_dataset_v4",
-            "dataframe": dataframe,
+            "dataset_name": "golden_dataset_v4_very_small_sample",
+            "dataframe": dataframe.head(1),
             "input_keys": input_keys,
             "output_keys": output_keys,
             "metadata_keys": metadata_keys,
-            "dataset_description": "Golden Dataset - 241 samples",
-        },
-        {
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "dataframe": dataframe.head(10),
-            "input_keys": input_keys,
-            "output_keys": output_keys,
-            "metadata_keys": metadata_keys,
-            "dataset_description": "Golden Dataset - 10 samples",
+            "dataset_description": "Golden Dataset - 1 sample",
         },
     ]
 

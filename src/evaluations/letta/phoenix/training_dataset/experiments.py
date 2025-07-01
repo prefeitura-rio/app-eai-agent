@@ -1,6 +1,7 @@
 import sys
 import os
 import asyncio
+import json
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
@@ -13,6 +14,7 @@ from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
 )
+from src.evaluations.letta.agents.final_response import ANSWER_SIMILARITY_PROMPT
 
 os.environ["PHOENIX_HOST"] = env.PHOENIX_HOST
 os.environ["PHOENIX_PORT"] = env.PHOENIX_PORT
@@ -49,6 +51,7 @@ async def executar_avaliacao_phoenix(
     experiment_name: str,
     experiment_description: str,
     evaluators: list,
+    experiment_metadata: dict,
 ):
     """
     Executa a avaliação Phoenix usando as respostas já coletadas.
@@ -65,6 +68,7 @@ async def executar_avaliacao_phoenix(
         return {
             "agent_output": respostas_coletadas.get(example.id, {}),
             "metadata": example.metadata,
+            "experiment_metadata": experiment_metadata,
         }
 
     experiment = run_experiment(
@@ -115,68 +119,20 @@ async def main():
         # },
         {
             "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-27-v12",
+            "experiment_name": "eai-2025-06-27",
             "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
             "batch_size": 10,
+            "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
-            "temperature": 1,
-        },
-        {
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-27-v12",
-            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-            "temperature": 0.75,
-        },
-        {
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-27-v12",
-            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-            "temperature": 0.5,
-        },
-        {
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-27-v12",
-            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-            "temperature": 0.25,
-        },
-        {
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-27-v12",
-            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-            "temperature": 0,
         },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
-        experiment_name = (
-            experiment_config["experiment_name"]
-            + "-temperature-"
-            + str(experiment_config["temperature"])
-        )
+        experiment_name = experiment_config["experiment_name"]
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)
@@ -209,6 +165,14 @@ async def main():
                 "experiment_description", None
             ),
             evaluators=experiment_config["evaluators"],
+            experiment_metadata={
+                "tools": experiment_config.get("tools"),
+                "model_name": experiment_config.get("model_name"),
+                "batch_size": experiment_config.get("batch_size"),
+                "temperature": experiment_config.get("temperature"),
+                "system_prompt": experiment_config.get("system_prompt"),
+                "system_prompt_answer_similatiry": ANSWER_SIMILARITY_PROMPT,
+            },
         )
 
         logger.info(f"Processo completo: {experiment_name}\n")
