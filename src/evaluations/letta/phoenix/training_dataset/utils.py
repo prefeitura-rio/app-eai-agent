@@ -304,7 +304,7 @@ async def processar_batch(
 
 
 async def coletar_todas_respostas(
-    dataset, tools: list = None, model_name: str = None, batch_size: int = 10
+    dataset, tools: list = None, model_name: str = None, batch_size: int = None
 ) -> Dict[str, Any]:
     """
     Coleta respostas para todo o dataset em batches.
@@ -315,6 +315,9 @@ async def coletar_todas_respostas(
     Returns:
         Dict[str, Any]: Dicionário com todas as respostas
     """
+    if batch_size is None:
+        batch_size = 10
+
     exemplos = list(dataset.examples.values())
     total_exemplos = len(exemplos)
     todas_respostas = {}

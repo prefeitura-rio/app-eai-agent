@@ -74,8 +74,6 @@ async def executar_avaliacao_phoenix(
 
 async def main():
     """Função principal que executa todo o processo"""
-    logger.info("Iniciando a execução do script...")
-
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
 
     evaluators = [
@@ -109,17 +107,32 @@ async def main():
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
+            "batch_size": 15,
+        },
+        {
+            "dataset_name": "golden_dataset_small_sample_v3",
+            "experiment_name": "eai-2025-06-27-v12",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 15,
         },
     ]
 
-    for experiment_config in experiments_configs:
+    for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
         tools = experiment_config.get("tools", None)
         model_name = experiment_config.get("model_name", None)
         experiment_name = experiment_config["experiment_name"]
         evaluators = experiment_config["evaluators"]
         batch_size = experiment_config.get("batch_size", 10)
+
+        logger.info(f"{'='*100}")
+        percentage = 100 * (experiment_index + 1) / len(experiments_configs)
+        logger.info(
+            f"Experimento {experiment_index + 1} de {len(experiments_configs)} | {percentage:.2f}%"
+        )
+        logger.info(f"Iniciando Experimento : {experiment_name}")
 
         logger.info(f"Carregando dataset: {dataset_name}")
         dataset = phoenix_client.get_dataset(name=dataset_name)
@@ -139,7 +152,8 @@ async def main():
             evaluators=evaluators,
         )
 
-        logger.info("Processo completo!")
+        logger.info(f"Processo completo: {experiment_name}\n")
+        logger.info(f"{'='*100}\n\n")
 
 
 if __name__ == "__main__":
