@@ -54,26 +54,32 @@ class LettaService:
             return []
 
     async def create_agent(
-        self, agent_type: str, tags: List[str] = None, name: str = None
+        self,
+        agent_type: str,
+        tags: List[str] = None,
+        name: str = None,
+        tools: list = None,
+        model_name: str = None,
     ):
         """Cria um novo agente de acordo com o tipo de agente passado."""
         if agent_type == "agentic_search":
             from src.services.letta.agents.agentic_search_agent import (
                 create_agentic_search_agent,
             )
-            return await create_agentic_search_agent(tags=tags, username=name)
+
+            return await create_agentic_search_agent(
+                tags=tags, username=name, tools=tools, model_name=model_name
+            )
         else:
             raise ValueError(f"Tipo de agente não suportado: {agent_type}")
-        
-    async def delete_agent(
-        self, agent_id: str
-    ):
+
+    async def delete_agent(self, agent_id: str):
         """Deleta um agente de acordo com o ID passado."""
         if agent_id:
             return await self.client_async.agents.delete(agent_id)
         else:
             raise ValueError(f"ID do agente não suportado: {agent_id}")
-        
+
     async def deletar_agentes_teste(self):
         """Deleta todos os agentes de teste."""
         agents = await self.client_async.agents.list()
@@ -81,7 +87,7 @@ class LettaService:
             if hasattr(agent, "tags") and agent.tags:
                 if any("test" in tag.lower() for tag in agent.tags):
                     await self.client_async.agents.delete(agent.id)
-    
+
     async def send_timer_message(self, agent_id: str) -> str:
         """
         Envia uma mensagem de timer para o agente.
@@ -151,7 +157,6 @@ class LettaService:
         except Exception as error:
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
-
     async def send_message_raw(
         self, agent_id: str, message_content: str, name: str = None
     ) -> dict:
@@ -194,7 +199,7 @@ class LettaService:
                 "tool_call_messages": [],
                 "tool_return_messages": [],
                 "assistant_messages": [],
-                "letta_usage_statistics": []
+                "letta_usage_statistics": [],
             }
         except Exception as error:
             logger.error(f"Erro ao enviar mensagem: {error}")
@@ -206,7 +211,7 @@ class LettaService:
                 "tool_call_messages": [],
                 "tool_return_messages": [],
                 "assistant_messages": [],
-                "letta_usage_statistics": []
+                "letta_usage_statistics": [],
             }
 
 
