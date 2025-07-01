@@ -44,7 +44,11 @@ phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 
 
 async def executar_avaliacao_phoenix(
-    dataset: str, respostas_coletadas: dict, experiment_name: str, experiment_description: str, evaluators: list
+    dataset: str,
+    respostas_coletadas: dict,
+    experiment_name: str,
+    experiment_description: str,
+    evaluators: list,
 ):
     """
     Executa a avaliação Phoenix usando as respostas já coletadas.
@@ -118,17 +122,61 @@ async def main():
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
             "batch_size": 10,
             "system_prompt": SYSTEM_PROMPT_EAI,
-            "temperature": 0.2,
+            "temperature": 1,
+        },
+        {
+            "dataset_name": "golden_dataset_v4_small_sample",
+            "experiment_name": "eai-2025-06-27-v12",
+            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 10,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+            "temperature": 0.75,
+        },
+        {
+            "dataset_name": "golden_dataset_v4_small_sample",
+            "experiment_name": "eai-2025-06-27-v12",
+            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 10,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+            "temperature": 0.5,
+        },
+        {
+            "dataset_name": "golden_dataset_v4_small_sample",
+            "experiment_name": "eai-2025-06-27-v12",
+            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 10,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+            "temperature": 0.25,
+        },
+        {
+            "dataset_name": "golden_dataset_v4_small_sample",
+            "experiment_name": "eai-2025-06-27-v12",
+            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 10,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+            "temperature": 0,
         },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
-        experiment_name = experiment_config["experiment_name"]
-        experiment_description = experiment_config.get("experiment_description", None)
-        evaluators = experiment_config["evaluators"]
-        batch_size = experiment_config.get("batch_size", 10)
-        system_prompt = experiment_config.get("system_prompt", 10)
+        experiment_name = (
+            experiment_config["experiment_name"]
+            + "-temperature-"
+            + str(experiment_config["temperature"])
+        )
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)
@@ -157,8 +205,10 @@ async def main():
             dataset=dataset,
             respostas_coletadas=respostas,
             experiment_name=experiment_name,
-            experiment_description=experiment_description,
-            evaluators=evaluators,
+            experiment_description=experiment_config.get(
+                "experiment_description", None
+            ),
+            evaluators=experiment_config["evaluators"],
         )
 
         logger.info(f"Processo completo: {experiment_name}\n")
