@@ -119,8 +119,8 @@ async def main():
         # },
         {
             "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-27",
-            "experiment_description": "Run 'Answer Similarity' eval with google_search tool",
+            "experiment_name": "eai-2025-06-30",
+            "experiment_description": "Temperature: 0.7, Model: google_ai/gemini-2.5-flash-lite-preview-06-17",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
@@ -168,7 +168,7 @@ async def main():
             experiment_metadata={
                 "tools": experiment_config.get("tools"),
                 "final_repose_model": experiment_config.get("model_name"),
-                "eval_model": env.EVAL_MODEL_NAME,
+                "eval_model": env.GPT_EVAL_MODEL if env.EVAL_MODEL_TYPE == "gpt" else env.GEMINI_EVAL_MODEL,
                 "batch_size": experiment_config.get("batch_size"),
                 "temperature": experiment_config.get("temperature"),
                 "system_prompt": experiment_config.get("system_prompt"),

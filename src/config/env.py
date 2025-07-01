@@ -49,4 +49,5 @@ OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY")
 OPENAI_URL = getenv_or_action("OPENAI_URL")
 GPT_SEARCH_MODEL = getenv_or_action("GPT_SEARCH_MODEL")
 
-EVAL_MODEL_NAME = getenv_or_action("EVAL_MODEL_NAME")
+EVAL_MODEL_TYPE = getenv_or_action("EVAL_MODEL_TYPE", default="gpt")
+GPT_EVAL_MODEL = getenv_or_action("GPT_EVAL_MODEL", default="gpt-4o")

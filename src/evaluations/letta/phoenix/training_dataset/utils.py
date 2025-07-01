@@ -41,12 +41,12 @@ logger = logging.getLogger(__name__)
 
 from src.config import env
 
-if env.EVAL_MODEL_NAME == "gpt-4o":
+if env.EVAL_MODEL_TYPE == "gpt":
     EVAL_MODEL = OpenAIModel(
         api_key=env.OPENAI_AZURE_API_KEY,
         azure_endpoint=env.OPENAI_URL,
         api_version="2025-01-01-preview",
-        model="gpt-4o",
+        model=env.GPT_EVAL_MODEL,
     )
 else:
     EVAL_MODEL = GenAIModel(
