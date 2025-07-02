@@ -1,81 +1,538 @@
-// --- ELEMENTOS DOM ---
-const experimentIdInput = document.getElementById("experimentIdInput");
-const fetchExperimentBtn = document.getElementById("fetchExperimentBtn");
-const loadingIndicator = document.getElementById("loadingIndicator");
-const alertArea = document.getElementById("alertArea");
-const logoutBtn = document.getElementById("logoutBtn");
-const resultContainer = document.getElementById("resultContainer");
-const metadataContainer = document.getElementById("metadataContainer");
-const summaryMetricsContainer = document.getElementById(
-  "summaryMetricsContainer"
-);
-const filterContainer = document.getElementById("filterContainer");
-const experimentAccordion = document.getElementById("experimentAccordion");
-const experimentsPanel = document.getElementById("experimentsPanel");
+// --- APP STATE ---
+const appState = {
+  currentToken: localStorage.getItem("adminToken"),
+  fullExperimentData: null,
+  filteredRuns: [],
+  selectedRunId: null,
+};
 
-// --- VARIÁVEIS GLOBAIS ---
-let currentToken = localStorage.getItem("adminToken");
-let originalJsonData = null;
+// --- DOM ELEMENTS ---
+const elements = {
+  loginContainer: document.querySelector(".login-container"),
+  experimentsPanel: document.getElementById("experimentsPanel"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  experimentIdInput: document.getElementById("experimentIdInput"),
+  fetchExperimentBtn: document.getElementById("fetchExperimentBtn"),
+  loadingIndicator: document.getElementById("loadingIndicator"),
+  alertArea: document.getElementById("alertArea"),
+  resultContainer: document.getElementById("resultContainer"),
+  metadataContainer: document.getElementById("metadataContainer"),
+  summaryMetricsContainer: document.getElementById("summaryMetricsContainer"),
+  filterContainer: document.getElementById("filterContainer"),
+  testRunList: document.getElementById("test-run-list"),
+  mainContentArea: document.getElementById("main-content-area"),
+  jsonModalCode: document.querySelector("#jsonModal pre code"),
+  testRunItemTemplate: document.getElementById("test-run-item-template"),
+};
 
-// --- INICIALIZAÇÃO ---
-document.addEventListener("DOMContentLoaded", function () {
-  if (currentToken) {
+// --- INITIALIZATION ---
+document.addEventListener("DOMContentLoaded", () => {
+  if (appState.currentToken) {
     showExperimentsPanel();
   }
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-  }
-  document.addEventListener(
-    "experimentsReady",
-    initializeExperimentsFunctionality
-  );
+  document.addEventListener("experimentsReady", initializeApp);
 });
 
-// --- FUNÇÕES DE UI E LÓGICA ---
-
 function showExperimentsPanel() {
-  if (experimentsPanel) {
-    document.querySelector(".login-container").classList.add("d-none");
-    experimentsPanel.classList.remove("d-none");
-    initializeExperimentsFunctionality();
-  }
+  elements.loginContainer.classList.add("d-none");
+  elements.experimentsPanel.classList.remove("d-none");
 }
 
-function initializeExperimentsFunctionality() {
-  if (fetchExperimentBtn && !fetchExperimentBtn.dataset.listenerAttached) {
-    fetchExperimentBtn.addEventListener("click", fetchExperimentData);
-    fetchExperimentBtn.dataset.listenerAttached = "true";
-  }
-  if (experimentIdInput && !experimentIdInput.dataset.listenerAttached) {
-    experimentIdInput.addEventListener("keypress", (event) => {
-      if (event.key === "Enter") fetchExperimentData();
-    });
-    experimentIdInput.dataset.listenerAttached = "true";
-  }
+function initializeApp() {
+  elements.logoutBtn.addEventListener("click", handleLogout);
+  elements.fetchExperimentBtn.addEventListener("click", fetchExperimentData);
+  elements.experimentIdInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") fetchExperimentData();
+  });
+  elements.testRunList.addEventListener("click", handleTestRunSelect);
 }
 
+// --- EVENT HANDLERS ---
 function handleLogout() {
   localStorage.removeItem("adminToken");
   location.reload();
 }
 
-function showAlert(message, type = "danger") {
-  if (alertArea) {
-    const alertId = `alert-${Date.now()}`;
-    alertArea.innerHTML = `
-            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-    if (type === "success") {
-      setTimeout(() => {
-        const alertElement = document.getElementById(alertId);
-        if (alertElement) {
-          new bootstrap.Alert(alertElement).close();
-        }
-      }, 4000);
+function handleTestRunSelect(event) {
+  const selectedItem = event.target.closest(".test-run-item");
+  if (selectedItem && selectedItem.dataset.id !== appState.selectedRunId) {
+    appState.selectedRunId = selectedItem.dataset.id;
+    render();
+  }
+}
+
+function handleFilters() {
+  const activeFilters = {};
+  elements.filterContainer.querySelectorAll("select").forEach((select) => {
+    if (select.value) {
+      activeFilters[select.dataset.metricName] = parseFloat(select.value);
     }
+  });
+
+  appState.filteredRuns = appState.fullExperimentData.experiment.filter(
+    (exp) => {
+      if (Object.keys(activeFilters).length === 0) return true;
+
+      const annotations = exp.annotations || [];
+      return Object.entries(activeFilters).every(
+        ([metricName, targetScore]) => {
+          const annotation = annotations.find(
+            (ann) => ann.name === metricName
+          );
+          return annotation && annotation.score === targetScore;
+        }
+      );
+    }
+  );
+
+  if (
+    appState.selectedRunId &&
+    !appState.filteredRuns.some(
+      (run) => run.output.metadata.id === appState.selectedRunId
+    )
+  ) {
+    appState.selectedRunId = null;
+  }
+  render();
+}
+
+function clearFilters() {
+  elements.filterContainer
+    .querySelectorAll("select")
+    .forEach((select) => (select.value = ""));
+  handleFilters();
+}
+
+// --- DATA FETCHING ---
+async function fetchExperimentData() {
+  const expId = elements.experimentIdInput.value.trim();
+  if (!expId) {
+    showAlert("Por favor, insira um ID de experimento.", "warning");
+    return;
+  }
+
+  setLoading(true);
+  resetUI();
+
+  try {
+    const url = `data?id=${encodeURIComponent(expId)}`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${appState.currentToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `HTTP ${response.status}: ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    appState.fullExperimentData = data;
+    appState.filteredRuns = [...data.experiment];
+    appState.selectedRunId = null;
+
+    elements.resultContainer.classList.remove("d-none");
+    render();
+    showAlert("Experimento carregado com sucesso!", "success");
+  } catch (error) {
+    console.error("Erro ao buscar experimento:", error);
+    showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
+  } finally {
+    setLoading(false);
+  }
+}
+
+// --- RENDERING LOGIC ---
+function render() {
+  if (!appState.fullExperimentData) return;
+
+  renderMetadata(appState.fullExperimentData.experiment_metadata);
+  renderSummaryMetrics(appState.fullExperimentData.experiment);
+  renderFilters(appState.fullExperimentData.experiment);
+  renderSidebar();
+  renderMainContent();
+}
+
+function renderSidebar() {
+  elements.testRunList.innerHTML = "";
+
+  appState.filteredRuns.forEach((run) => {
+    const item =
+      elements.testRunItemTemplate.content.cloneNode(true).firstElementChild;
+    const runId = run.output.metadata.id;
+
+    item.dataset.id = runId;
+    item.querySelector(".test-id span").textContent = runId;
+
+    if (runId === appState.selectedRunId) {
+      item.classList.add("active");
+    }
+
+    const metricsContainer = item.querySelector(".test-metrics");
+    (run.annotations || []).slice(0, 2).forEach((ann) => {
+      const badge = document.createElement("span");
+      badge.className = `metric-badge ${getScoreClass(ann.score)}`;
+      badge.textContent = `${ann.name.split(" ")[0]}: ${ann.score.toFixed(
+        1
+      )}`;
+      metricsContainer.appendChild(badge);
+    });
+
+    elements.testRunList.appendChild(item);
+  });
+}
+
+function renderMainContent() {
+  if (!appState.selectedRunId) {
+    elements.mainContentArea.innerHTML = `
+          <div class="placeholder-content">
+              <i class="bi bi-eyedropper"></i>
+              <h5>Selecione um Test Run</h5>
+              <p>Clique em um item da lista à esquerda para ver os detalhes.</p>
+          </div>`;
+    return;
+  }
+
+  const runData = appState.fullExperimentData.experiment.find(
+    (exp) => exp.output.metadata.id === appState.selectedRunId
+  );
+  if (!runData) return;
+
+  elements.mainContentArea.innerHTML = "";
+
+  const userMessageSection = createSection(
+    "Mensagem do Usuário",
+    `
+      <div class="alert alert-secondary">${runData.input.mensagem_whatsapp_simulada}</div>
+  `
+  );
+  elements.mainContentArea.appendChild(userMessageSection);
+
+  const agentAnswerHtml = marked.parse(
+    runData.output.agent_output?.ordered.find(
+      (m) => m.type === "assistant_message"
+    )?.message.content || "N/A"
+  );
+  const goldenAnswerHtml = marked.parse(
+    runData.reference_output.golden_answer || "N/A"
+  );
+  const diffHtml = generateDiffHtml(goldenAnswerHtml, agentAnswerHtml);
+
+  const comparisonSection = createSection(
+    "Comparação de Respostas",
+    `
+      <div class="row g-4">
+          <div class="col-md-6">
+              <div class="comparison-box">
+                  <h5><i class="bi bi-robot text-primary"></i> Resposta do Agente</h5>
+                  <div class="diff-output">${diffHtml.agent}</div>
+              </div>
+          </div>
+          <div class="col-md-6">
+              <div class="comparison-box">
+                  <h5><i class="bi bi-trophy-fill" style="color:var(--gold);"></i> Resposta de Referência</h5>
+                  <div class="diff-output">${diffHtml.golden}</div>
+              </div>
+          </div>
+      </div>
+  `
+  );
+  elements.mainContentArea.appendChild(comparisonSection);
+
+  elements.mainContentArea.appendChild(
+    createSection("Avaliações", renderEvaluations(runData.annotations))
+  );
+  elements.mainContentArea.appendChild(
+    createSection(
+      "Passo a Passo do Agente",
+      renderReasoningTimeline(runData.output.agent_output?.ordered)
+    )
+  );
+}
+
+function renderMetadata(metadata) {
+  if (!metadata) return;
+
+  const promptsHTML = `
+      <div class="d-flex justify-content-between align-items-center mt-3">
+          <strong>System Prompt Principal</strong>
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#systemPromptCollapse"><i class="bi bi-arrows-expand"></i></button>
+      </div>
+      <div class="collapse" id="systemPromptCollapse"><pre><code>${
+        metadata.system_prompt || ""
+      }</code></pre></div>
+  `;
+
+  elements.metadataContainer.innerHTML = `
+      <div class="card mb-4">
+          <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Parâmetros do Experimento</h4>
+                  <div>
+                      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jsonModal"><i class="bi bi-code-slash"></i> Ver JSON</button>
+                      <button class="btn btn-sm btn-primary" id="downloadJsonBtn"><i class="bi bi-download"></i> Baixar JSON</button>
+                  </div>
+              </div>
+              <hr>
+              <p class="mb-1"><strong>Modelo de Avaliação:</strong> ${
+                metadata.eval_model || "N/A"
+              }</p>
+              <p class="mb-1"><strong>Modelo de Resposta Final:</strong> ${
+                metadata.final_repose_model || "N/A"
+              }</p>
+              ${promptsHTML}
+          </div>
+      </div>
+  `;
+
+  elements.jsonModalCode.textContent = JSON.stringify(
+    appState.fullExperimentData,
+    null,
+    2
+  );
+  document.getElementById("downloadJsonBtn").addEventListener("click", () => {
+    const expId = elements.experimentIdInput.value.trim() || "experiment";
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(
+        JSON.stringify(appState.fullExperimentData, null, 2)
+      );
+    const a = document.createElement("a");
+    a.href = dataStr;
+    a.download = `experiment-${expId}.json`;
+    a.click();
+    a.remove();
+  });
+}
+
+function renderSummaryMetrics(experimentData) {
+  const metrics = {};
+  experimentData.forEach((exp) => {
+    (exp.annotations || []).forEach((ann) => {
+      if (!metrics[ann.name]) metrics[ann.name] = { scores: [], counts: {} };
+      metrics[ann.name].scores.push(ann.score);
+      const scoreKey = ann.score;
+      metrics[ann.name].counts[scoreKey] =
+        (metrics[ann.name].counts[scoreKey] || 0) + 1;
+    });
+  });
+
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+  const sortedMetricNames = Object.keys(metrics).sort(
+    (a, b) =>
+      (desiredOrder.indexOf(a) ?? 99) - (desiredOrder.indexOf(b) ?? 99)
+  );
+
+  let metricsHtml = `<h5 class="sidebar-section-title">Métricas Gerais (${experimentData.length} runs)</h5>`;
+  sortedMetricNames.forEach((name) => {
+    const metric = metrics[name];
+    const average =
+      metric.scores.length > 0
+        ? metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length
+        : 0;
+    const distributionHtml = Object.entries(metric.counts)
+      .sort(([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA))
+      .map(
+        ([score, count]) =>
+          `<span>${parseFloat(score).toFixed(1)}: ${count}</span>`
+      )
+      .join("");
+
+    metricsHtml += `
+          <div class="summary-metric-item">
+              <h6>${name}</h6>
+              <div class="average-score">${average.toFixed(2)}</div>
+              <div class="score-distribution">${distributionHtml}</div>
+          </div>`;
+  });
+  elements.summaryMetricsContainer.innerHTML = metricsHtml;
+}
+
+function renderFilters(experimentData) {
+  const filterOptions = {};
+  experimentData.forEach((exp) => {
+    (exp.annotations || []).forEach((ann) => {
+      if (!filterOptions[ann.name]) filterOptions[ann.name] = new Set();
+      filterOptions[ann.name].add(ann.score);
+    });
+  });
+
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+  const sortedFilterNames = Object.keys(filterOptions).sort(
+    (a, b) =>
+      (desiredOrder.indexOf(a) ?? 99) - (desiredOrder.indexOf(b) ?? 99)
+  );
+
+  let filtersHtml = sortedFilterNames
+    .map((name) => {
+      const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
+      let optionsHtml =
+        '<option value="">Qualquer Nota</option>' +
+        scores
+          .map(
+            (score) => `<option value="${score}">${score.toFixed(1)}</option>`
+          )
+          .join("");
+      return `
+          <div class="mb-2">
+              <label class="form-label small fw-bold">${name}</label>
+              <select class="form-select form-select-sm" data-metric-name="${name}">${optionsHtml}</select>
+          </div>`;
+    })
+    .join("");
+
+  if (filtersHtml) {
+    elements.filterContainer.innerHTML = `
+          <div class="card mt-4 mb-4">
+               <div class="card-body">
+                   <h5 class="card-title small">Filtros de Avaliação</h5>
+                   ${filtersHtml}
+                   <div class="d-flex gap-2 mt-3">
+                       <button id="applyFiltersBtn" class="btn btn-sm btn-primary w-100">Aplicar</button>
+                       <button id="clearFiltersBtn" class="btn btn-sm btn-outline-secondary w-100">Limpar</button>
+                   </div>
+               </div>
+          </div>`;
+    document
+      .getElementById("applyFiltersBtn")
+      .addEventListener("click", handleFilters);
+    document
+      .getElementById("clearFiltersBtn")
+      .addEventListener("click", clearFilters);
+  }
+}
+
+function renderEvaluations(annotations) {
+  if (!annotations || annotations.length === 0)
+    return "<p>Nenhuma avaliação disponível.</p>";
+
+  const grid = document.createElement("div");
+  grid.className = "evaluation-grid";
+
+  annotations.forEach((ann) => {
+    const card = document.createElement("div");
+    card.className = "evaluation-card";
+
+    let explanationContent = "";
+    if (ann.explanation) {
+      explanationContent =
+        typeof ann.explanation === "object"
+          ? `<pre><code>${JSON.stringify(
+              ann.explanation,
+              null,
+              2
+            )}</code></pre>`
+          : marked.parse(String(ann.explanation));
+    }
+
+    card.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-2">
+              <p class="name mb-0">${ann.name}</p>
+              <div class="score ${getScoreClass(
+                ann.score
+              )}">${ann.score.toFixed(1)}</div>
+          </div>
+          ${
+            explanationContent
+              ? `<div class="explanation">${explanationContent}</div>`
+              : ""
+          }
+      `;
+    grid.appendChild(card);
+  });
+  return grid.outerHTML;
+}
+
+function renderReasoningTimeline(orderedSteps) {
+  if (!orderedSteps || orderedSteps.length === 0)
+    return "<p>Nenhum passo a passo disponível.</p>";
+
+  const timeline = document.createElement("div");
+  timeline.className = "reasoning-timeline";
+
+  orderedSteps.forEach((step) => {
+    const stepEl = document.createElement("div");
+    let title = "",
+      content = "",
+      typeClass = "";
+
+    if (step.type === "reasoning_message") {
+      typeClass = "type-reasoning";
+      title = "🧠 Raciocínio";
+      content = `<div class="step-content reasoning">"${step.message.reasoning}"</div>`;
+    } else if (step.type === "tool_call_message") {
+      typeClass = "type-tool-call";
+      title = `🔧 Chamada de Ferramenta: <strong>${step.message.tool_call.name}</strong>`;
+      content = `<div class="step-content"><pre><code>${JSON.stringify(
+        step.message.tool_call.arguments,
+        null,
+        2
+      )}</code></pre></div>`;
+    } else if (step.type === "tool_return_message") {
+      typeClass = "type-tool-return";
+      title = "↪️ Retorno da Ferramenta";
+      const returnData = step.message.tool_return;
+      const contentData =
+        typeof returnData === "object" && returnData !== null
+          ? JSON.stringify(returnData, null, 2)
+          : String(returnData);
+      content = `<div class="step-content"><pre><code>${contentData}</code></pre></div>`;
+    }
+
+    if (title) {
+      stepEl.className = `reasoning-step ${typeClass}`;
+      stepEl.innerHTML = `<div class="step-title">${title}</div>${content}`;
+      timeline.appendChild(stepEl);
+    }
+  });
+  return timeline.outerHTML;
+}
+
+// --- UTILITY FUNCTIONS ---
+function setLoading(isLoading) {
+  elements.loadingIndicator.classList.toggle("d-none", !isLoading);
+  elements.fetchExperimentBtn.disabled = isLoading;
+  elements.fetchExperimentBtn.innerHTML = isLoading
+    ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...'
+    : '<i class="bi bi-search me-1"></i> Buscar';
+}
+
+function resetUI() {
+  appState.fullExperimentData = null;
+  appState.filteredRuns = [];
+  appState.selectedRunId = null;
+  elements.alertArea.innerHTML = "";
+  elements.resultContainer.classList.add("d-none");
+  elements.metadataContainer.innerHTML = "";
+  elements.summaryMetricsContainer.innerHTML = "";
+  elements.filterContainer.innerHTML = "";
+  elements.testRunList.innerHTML = "";
+  elements.mainContentArea.innerHTML = "";
+}
+
+function showAlert(message, type = "danger") {
+  const alertId = `alert-${Date.now()}`;
+  elements.alertArea.innerHTML = `
+      <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>`;
+  if (type === "success") {
+    setTimeout(() => document.getElementById(alertId)?.remove(), 4000);
   }
 }
 
@@ -85,536 +542,66 @@ function getScoreClass(score) {
   return "score-mid";
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO ---
+function createSection(title, content) {
+  const section = document.createElement("div");
+  section.innerHTML = `<h3 class="section-title">${title}</h3>${content}`;
+  return section;
+}
 
-function renderMetadata(metadata) {
-  if (!metadata) return;
+function generateDiffHtml(goldenText, agentText) {
+  const cleanGolden =
+    new DOMParser().parseFromString(goldenText, "text/html").body
+      .textContent || "";
+  const cleanAgent =
+    new DOMParser().parseFromString(agentText, "text/html").body
+      .textContent || "";
 
-  const createPromptSectionHTML = (title, id, collapseId) => {
-    return `
-            <div class="metadata-item-full-width">
-                <div class="d-flex justify-content-between align-items-center">
-                    <strong>${title}</strong>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                        <i class="bi bi-arrows-expand"></i> Ver/Ocultar
-                    </button>
-                </div>
-                <div class="collapse mt-2" id="${collapseId}">
-                    <pre><code id="${id}"></code></pre>
-                </div>
-            </div>
-        `;
+  const goldenLines = cleanGolden.split("\n");
+  const agentLines = cleanAgent.split("\n");
+
+  const matrix = Array(agentLines.length + 1)
+    .fill(null)
+    .map(() => Array(goldenLines.length + 1).fill(0));
+  for (let i = 1; i <= agentLines.length; i++) {
+    for (let j = 1; j <= goldenLines.length; j++) {
+      if (agentLines[i - 1] === goldenLines[j - 1]) {
+        matrix[i][j] = 1 + matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.max(matrix[i - 1][j], matrix[i][j - 1]);
+      }
+    }
+  }
+
+  let i = agentLines.length,
+    j = goldenLines.length;
+  let agentResult = [],
+    goldenResult = [];
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && agentLines[i - 1] === goldenLines[j - 1]) {
+      agentResult.unshift(agentLines[i - 1]);
+      goldenResult.unshift(goldenLines[j - 1]);
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || matrix[i][j - 1] >= matrix[i - 1][j])) {
+      goldenResult.unshift(`<del>${goldenLines[j - 1]}</del>`);
+      agentResult.unshift("");
+      j--;
+    } else if (i > 0 && (j === 0 || matrix[i][j - 1] < matrix[i - 1][j])) {
+      agentResult.unshift(`<ins>${agentLines[i - 1]}</ins>`);
+      goldenResult.unshift("");
+      i--;
+    } else {
+      break;
+    }
+  }
+
+  // Filter out empty lines that were placeholders for alignment
+  const finalGolden = goldenResult.filter((line) => line !== "").join("\n");
+  const finalAgent = agentResult.filter((line) => line !== "").join("\n");
+
+  return {
+    golden: `<pre>${finalGolden}</pre>`,
+    agent: `<pre>${finalAgent}</pre>`,
   };
-
-  const promptsHTML = `
-        ${createPromptSectionHTML(
-          "System Prompt Principal",
-          "system-prompt-code",
-          "systemPromptCollapse"
-        )}
-        ${createPromptSectionHTML(
-          "System Prompt (Similaridade)",
-          "system-prompt-similarity-code",
-          "systemPromptSimilarityCollapse"
-        )}
-    `;
-
-  metadataContainer.innerHTML = `
-        <div class="card metadata-card">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h4 class="section-title mb-0 flex-grow-1" style="border-bottom: none; padding-bottom: 0;">Parâmetros do Experimento</h4>
-                <div id="jsonActionsContainer">
-                    <button class="btn btn-sm btn-outline-secondary" id="viewJsonBtn" data-bs-toggle="modal" data-bs-target="#jsonModal">
-                        <i class="bi bi-code-slash me-1"></i> Ver JSON
-                    </button>
-                    <button class="btn btn-sm btn-primary" id="downloadJsonBtn">
-                        <i class="bi bi-download me-1"></i> Baixar JSON
-                    </button>
-                </div>
-            </div>
-            <hr class="my-3">
-            <div class="metadata-grid">
-                <div class="metadata-item"><strong>Modelo de Avaliação:</strong> ${
-                  metadata.eval_model || "N/A"
-                }</div>
-                <div class="metadata-item"><strong>Modelo de Resposta Final:</strong> ${
-                  metadata.final_repose_model || "N/A"
-                }</div>
-                <div class="metadata-item"><strong>Temperatura:</strong> ${
-                  metadata.temperature || "N/A"
-                }</div>
-                <div class="metadata-item"><strong>Ferramentas:</strong> ${
-                  metadata.tools?.join(", ") || "N/A"
-                }</div>
-                ${promptsHTML}
-            </div>
-        </div>
-    `;
-
-  if (metadata.system_prompt) {
-    document.getElementById("system-prompt-code").textContent =
-      metadata.system_prompt;
-  }
-  if (metadata.system_prompt_answer_similatiry) {
-    document.getElementById("system-prompt-similarity-code").textContent =
-      metadata.system_prompt_answer_similatiry;
-  }
-
-  document.getElementById("viewJsonBtn").addEventListener("click", () => {
-    const jsonModalContent = document.querySelector("#jsonModal pre code");
-    if (jsonModalContent && originalJsonData) {
-      jsonModalContent.textContent = JSON.stringify(
-        originalJsonData,
-        null,
-        2
-      );
-    }
-  });
-  document.getElementById("downloadJsonBtn").addEventListener("click", () => {
-    if (!originalJsonData) return;
-    const expId = experimentIdInput.value.trim() || "experiment";
-    const dataStr =
-      "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(originalJsonData, null, 2));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `experiment-${expId}.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  });
-}
-
-function renderEvaluations(annotations) {
-  if (!annotations || annotations.length === 0) {
-    return "<p>Nenhuma avaliação disponível.</p>";
-  }
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
-  const sortedAnnotations = [...annotations].sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a.name);
-    const indexB = desiredOrder.indexOf(b.name);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
-  });
-  return sortedAnnotations
-    .map((ann) => {
-      let explanationContent = "";
-      if (ann.explanation) {
-        if (
-          ann.name === "Answer Similarity" &&
-          typeof ann.explanation === "string"
-        ) {
-          explanationContent = marked.parse(ann.explanation);
-        } else if (
-          typeof ann.explanation === "object" &&
-          ann.explanation !== null
-        ) {
-          explanationContent = `<pre><code>${JSON.stringify(
-            ann.explanation,
-            null,
-            2
-          )}</code></pre>`;
-        } else {
-          explanationContent = `<pre><code>${ann.explanation}</code></pre>`;
-        }
-      }
-      return `
-        <div class="evaluation-card">
-            <div class="main-info">
-                <p class="name">${ann.name}</p>
-                <div class="score ${getScoreClass(
-                  ann.score
-                )}">${ann.score.toFixed(1)}</div>
-            </div>
-            ${
-              explanationContent
-                ? `<div class="explanation">${explanationContent}</div>`
-                : ""
-            }
-        </div>
-        `;
-    })
-    .join("");
-}
-
-function renderReasoning(orderedSteps) {
-  if (!orderedSteps || orderedSteps.length === 0) return "";
-  return orderedSteps
-    .map((step) => {
-      let stepHtml = "";
-      if (step.type === "reasoning_message") {
-        stepHtml = `<strong>🧠 Raciocínio:</strong><p>"${step.message.reasoning}"</p>`;
-      } else if (step.type === "tool_call_message") {
-        stepHtml = `<strong>🔧 Chamada de Ferramenta: ${
-          step.message.tool_call.name
-        }</strong><pre><code>${JSON.stringify(
-          step.message.tool_call.arguments,
-          null,
-          2
-        )}</code></pre>`;
-      } else if (
-        step.type === "tool_return_message" &&
-        step.message.tool_return
-      ) {
-        const toolReturnData = step.message.tool_return;
-        let returnContentHtml = "";
-        if (typeof toolReturnData === "object" && toolReturnData !== null) {
-          const remainingData = { ...toolReturnData };
-          const createSubSection = (title, data, isMarkdown = false) => {
-            if (!data || (Array.isArray(data) && data.length === 0))
-              return "";
-            const content = isMarkdown
-              ? `<div class="markdown-content">${marked.parse(data)}</div>`
-              : `<pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
-            return `<div class="mt-2"><strong>${title}</strong>${content}</div>`;
-          };
-          returnContentHtml += createSubSection(
-            "Texto:",
-            remainingData.text,
-            true
-          );
-          delete remainingData.text;
-          returnContentHtml += createSubSection(
-            "Sources:",
-            remainingData.sources
-          );
-          delete remainingData.sources;
-          returnContentHtml += createSubSection(
-            "Web Search Queries:",
-            remainingData.web_search_queries
-          );
-          delete remainingData.web_search_queries;
-          if (Object.keys(remainingData).length > 0) {
-            returnContentHtml += createSubSection(
-              "Dados Adicionais:",
-              remainingData
-            );
-          }
-        } else {
-          returnContentHtml = `<pre><code>${
-            typeof toolReturnData === "string"
-              ? toolReturnData
-              : JSON.stringify(toolReturnData, null, 2)
-          }</code></pre>`;
-        }
-        stepHtml = `<strong>↪️ Retorno da Ferramenta:</strong>${returnContentHtml}`;
-      }
-      return stepHtml ? `<div class="reasoning-step">${stepHtml}</div>` : "";
-    })
-    .join("");
-}
-
-function renderCollapsibleReasoning(orderedSteps, accordionId) {
-  if (!orderedSteps || orderedSteps.length === 0) {
-    return `<h4 class="section-title">Passo a Passo do Agente (Reasoning)</h4><p>Nenhum passo a passo disponível.</p>`;
-  }
-  const reasoningCollapseId = `reasoning-collapse-${accordionId}`;
-  return `
-        <div class="d-flex justify-content-between align-items-center mt-4">
-            <h4 class="section-title mb-0" style="border-bottom: none;">Passo a Passo do Agente (Reasoning)</h4>
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${reasoningCollapseId}" aria-expanded="false" aria-controls="${reasoningCollapseId}">
-                <i class="bi bi-arrows-expand"></i> Expandir
-            </button>
-        </div>
-        <div class="collapse pt-3" id="${reasoningCollapseId}">
-            ${renderReasoning(orderedSteps)}
-        </div>
-    `;
-}
-
-function calculateAndRenderSummaryMetrics(experimentData) {
-  const metrics = {};
-  experimentData.forEach((exp) => {
-    if (!exp.annotations) return;
-    exp.annotations.forEach((ann) => {
-      if (!metrics[ann.name]) {
-        metrics[ann.name] = { scores: [], counts: {} };
-      }
-      metrics[ann.name].scores.push(ann.score);
-      const scoreKey = ann.score; // Use o número puro como chave
-      metrics[ann.name].counts[scoreKey] =
-        (metrics[ann.name].counts[scoreKey] || 0) + 1;
-    });
-  });
-
-  let metricsHtml = "";
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
-  const sortedMetricNames = Object.keys(metrics).sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a);
-    const indexB = desiredOrder.indexOf(b);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
-  });
-
-  for (const name of sortedMetricNames) {
-    const metric = metrics[name];
-    const average =
-      metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
-
-    // **CORREÇÃO**: Lógica para formatar os números da distribuição
-    const distributionHtml = Object.entries(metric.counts)
-      .sort(([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA))
-      .map(([score, count]) => {
-        const scoreNum = parseFloat(score);
-        // Exibe como inteiro se for 0, 1, etc. Senão, com 1 casa decimal.
-        const formattedScore =
-          scoreNum % 1 === 0 ? scoreNum.toFixed(0) : scoreNum.toFixed(1);
-        return `<span>${formattedScore}: ${count}</span>`;
-      })
-      .join("");
-
-    metricsHtml += `
-            <div class="summary-metric-item">
-                <h6>${name}</h6>
-                <div class="average-score">${average.toFixed(2)}</div>
-                <div class="score-distribution">${distributionHtml}</div>
-            </div>
-        `;
-  }
-
-  summaryMetricsContainer.innerHTML = `
-        <div class="card metadata-card">
-            <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Métricas Gerais: ${experimentData.length} runs</h4>
-            <div class="summary-grid">${metricsHtml}</div>
-        </div>
-    `;
-}
-
-function renderFilters(experimentData) {
-  filterContainer.innerHTML = "";
-  const filterOptions = {};
-  experimentData.forEach((exp) => {
-    if (exp.annotations) {
-      exp.annotations.forEach((ann) => {
-        if (!filterOptions[ann.name]) {
-          filterOptions[ann.name] = new Set();
-        }
-        filterOptions[ann.name].add(ann.score);
-      });
-    }
-  });
-
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
-  const sortedFilterNames = Object.keys(filterOptions).sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a);
-    const indexB = desiredOrder.indexOf(b);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
-  });
-
-  let filtersHtml = "";
-  sortedFilterNames.forEach((name) => {
-    const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
-    const filterId = `filter-${name.replace(/\s+/g, "-")}`;
-
-    let optionsHtml = '<option value="">Qualquer Nota</option>';
-    scores.forEach((score) => {
-      optionsHtml += `<option value="${score}">${score.toFixed(1)}</option>`;
-    });
-
-    filtersHtml += `
-            <div class="flex-grow-1">
-                <label for="${filterId}" class="form-label small fw-bold">${name}</label>
-                <select id="${filterId}" class="form-select" data-metric-name="${name}">
-                    ${optionsHtml}
-                </select>
-            </div>
-        `;
-  });
-
-  if (filtersHtml) {
-    filterContainer.innerHTML = `
-            <div class="card metadata-card mt-4">
-                 <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Filtros de Avaliação</h4>
-                 <div id="dynamicFilters" class="d-flex flex-wrap gap-3">${filtersHtml}</div>
-                 <div class="d-flex gap-2 mt-3">
-                     <button id="applyFiltersBtn" class="btn btn-success"><i class="bi bi-funnel-fill me-1"></i> Aplicar Filtros</button>
-                     <button id="clearFiltersBtn" class="btn btn-outline-secondary">Limpar Filtros</button>
-                 </div>
-            </div>`;
-    document
-      .getElementById("applyFiltersBtn")
-      .addEventListener("click", applyFilters);
-    document
-      .getElementById("clearFiltersBtn")
-      .addEventListener("click", clearFilters);
-  }
-}
-
-function applyFilters() {
-  const activeFilters = {};
-  document.querySelectorAll("#dynamicFilters select").forEach((select) => {
-    if (select.value) {
-      activeFilters[select.dataset.metricName] = parseFloat(select.value);
-    }
-  });
-
-  document
-    .querySelectorAll("#experimentAccordion .accordion-item")
-    .forEach((item) => {
-      const annotations = JSON.parse(item.dataset.annotations || "[]");
-      let shouldShow = true;
-
-      for (const metricName in activeFilters) {
-        const targetScore = activeFilters[metricName];
-        const annotation = annotations.find((ann) => ann.name === metricName);
-
-        if (!annotation || annotation.score !== targetScore) {
-          shouldShow = false;
-          break;
-        }
-      }
-      item.classList.toggle("d-none", !shouldShow);
-    });
-}
-
-function clearFilters() {
-  document.querySelectorAll("#dynamicFilters select").forEach((select) => {
-    select.value = "";
-  });
-  document
-    .querySelectorAll("#experimentAccordion .accordion-item")
-    .forEach((item) => {
-      item.classList.remove("d-none");
-    });
-}
-
-function renderExperimentReport(data) {
-  metadataContainer.innerHTML = "";
-  summaryMetricsContainer.innerHTML = "";
-  filterContainer.innerHTML = "";
-  experimentAccordion.innerHTML = "";
-
-  renderMetadata(data.experiment_metadata);
-  calculateAndRenderSummaryMetrics(data.experiment);
-  renderFilters(data.experiment);
-
-  data.experiment.forEach((exp, index) => {
-    const sanitizedId = exp.example_id.replace(/[^a-zA-Z0-9_-]/g, "");
-    const accordionId = `exp-${sanitizedId}`;
-    const output = exp.output;
-
-    const agentAnswerHtml = exp.output.agent_output?.ordered.find(
-      (m) => m.type === "assistant_message"
-    )
-      ? marked.parse(
-          exp.output.agent_output.ordered.find(
-            (m) => m.type === "assistant_message"
-          ).message.content
-        )
-      : "<p>N/A</p>";
-    const goldenAnswerHtml = exp.reference_output.golden_answer
-      ? marked.parse(exp.reference_output.golden_answer)
-      : "<p>N/A</p>";
-
-    const accordionItem = document.createElement("div");
-    accordionItem.className = "accordion-item mt-4";
-    accordionItem.dataset.annotations = JSON.stringify(exp.annotations || []);
-    accordionItem.innerHTML = `
-        <h2 class="accordion-header" id="heading-${accordionId}">
-            <button class="accordion-button ${
-              index > 0 ? "collapsed" : ""
-            }" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="${
-      index === 0
-    }" aria-controls="collapse-${accordionId}">
-                <strong>ID do Teste:</strong> ${output.metadata.id}
-            </button>
-        </h2>
-        <div id="collapse-${accordionId}" class="accordion-collapse collapse ${
-      index === 0 ? "show" : ""
-    }" aria-labelledby="heading-${accordionId}" data-bs-parent="#experimentAccordion">
-            <div class="accordion-body">
-                <h4 class="section-title">Mensagem do Usuário</h4>
-                <div class="alert alert-secondary">${
-                  exp.input.mensagem_whatsapp_simulada
-                }</div>
-                <h4 class="section-title">Comparação de Respostas</h4>
-                <div class="row g-4">
-                    <div class="col-md-6"><div class="comparison-box"><h5 class="agent-answer">🤖 Resposta do Agente</h5><div>${agentAnswerHtml}</div></div></div>
-                    <div class="col-md-6"><div class="comparison-box"><h5 class="golden-answer">🏆 Resposta de Referência (Golden)</h5><div>${goldenAnswerHtml}</div></div></div>
-                </div>
-                <h4 class="section-title">Avaliações</h4>
-                ${renderEvaluations(exp.annotations)}
-                ${renderCollapsibleReasoning(
-                  exp.output.agent_output?.ordered,
-                  accordionId
-                )}
-            </div>
-        </div>
-    `;
-    experimentAccordion.appendChild(accordionItem);
-  });
-
-  resultContainer.classList.remove("d-none");
-}
-
-function fetchExperimentData() {
-  const expId = experimentIdInput.value.trim();
-  if (!expId) {
-    showAlert("Por favor, insira um ID de experimento.", "warning");
-    return;
-  }
-
-  loadingIndicator.classList.remove("d-none");
-  resultContainer.classList.add("d-none");
-  alertArea.innerHTML = "";
-  fetchExperimentBtn.disabled = true;
-  fetchExperimentBtn.innerHTML =
-    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...';
-
-  const url = `data?id=${encodeURIComponent(expId)}`;
-
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${currentToken}`,
-      "Content-Type": "application/json",
-    },
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail ||
-            `HTTP ${response.status}: ${response.statusText}`
-        );
-      }
-      return response.json();
-    })
-    .then((data) => {
-      originalJsonData = data;
-      renderExperimentReport(data);
-      showAlert("Experimento carregado com sucesso!", "success");
-    })
-    .catch((error) => {
-      console.error("Erro ao buscar experimento:", error);
-      showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
-      resultContainer.classList.add("d-none");
-    })
-    .finally(() => {
-      loadingIndicator.classList.add("d-none");
-      fetchExperimentBtn.disabled = false;
-      fetchExperimentBtn.innerHTML =
-        '<i class="bi bi-search me-1"></i> Buscar';
-    });
 }
