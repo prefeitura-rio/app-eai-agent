@@ -86,13 +86,9 @@ function getScoreClass(score) {
 function renderMetadata(metadata) {
   if (!metadata) return;
 
-  // Helper para gerar uma seção de prompt colapsável
   const createPromptSection = (title, content, id) => {
     if (!content) return "";
-    const escapedContent = content
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">");
+    const markdownHtml = marked.parse(content || "");
     return `
             <div class="metadata-item-full-width">
                 <div class="d-flex justify-content-between align-items-center">
@@ -102,7 +98,7 @@ function renderMetadata(metadata) {
                     </button>
                 </div>
                 <div class="collapse mt-2" id="${id}">
-                    <pre><code>${escapedContent}</code></pre>
+                    <div class="markdown-content">${markdownHtml}</div>
                 </div>
             </div>
         `;
@@ -184,14 +180,28 @@ function renderEvaluations(annotations) {
     return "<p>Nenhuma avaliação disponível.</p>";
 
   return annotations
-    .map(
-      (ann) => `
+    .map((ann) => {
+      let explanationContent = "";
+      if (ann.explanation) {
+        // CORREÇÃO: Verifica se a explicação é um objeto e a formata como JSON
+        if (typeof ann.explanation === "object" && ann.explanation !== null) {
+          explanationContent = `<pre><code>${JSON.stringify(
+            ann.explanation,
+            null,
+            2
+          )}</code></pre>`;
+        } else {
+          explanationContent = ann.explanation;
+        }
+      }
+
+      return `
         <div class="evaluation-card">
-            <div class="details">
+            <div class="details w-100">
                 <div class="name">${ann.name}</div>
                 ${
-                  ann.explanation
-                    ? `<div class="explanation">${ann.explanation}</div>`
+                  explanationContent
+                    ? `<div class="explanation">${explanationContent}</div>`
                     : ""
                 }
             </div>
@@ -199,8 +209,8 @@ function renderEvaluations(annotations) {
               ann.score
             )}">${ann.score.toFixed(1)}</div>
         </div>
-    `
-    )
+        `;
+    })
     .join("");
 }
 
@@ -209,39 +219,58 @@ function renderReasoning(orderedSteps) {
 
   return orderedSteps
     .map((step) => {
+      let stepHtml = "";
       if (step.type === "reasoning_message") {
-        return `
-                <div class="reasoning-step">
-                    <strong>🧠 Raciocínio:</strong>
-                    <p>"${step.message.reasoning}"</p>
-                </div>`;
-      }
-      if (step.type === "tool_call_message") {
-        return `
-                <div class="reasoning-step">
-                    <strong>🔧 Chamada de Ferramenta: ${
-                      step.message.tool_call.name
-                    }</strong>
-                    <pre><code>${JSON.stringify(
-                      step.message.tool_call.arguments,
-                      null,
-                      2
-                    )}</code></pre>
-                </div>`;
-      }
-      if (step.type === "tool_return_message" && step.message.tool_return) {
-        const toolReturn =
-          typeof step.message.tool_return === "string"
-            ? step.message.tool_return
-            : JSON.stringify(step.message.tool_return, null, 2);
+        stepHtml = `
+            <strong>🧠 Raciocínio:</strong>
+            <p>"${step.message.reasoning}"</p>`;
+      } else if (step.type === "tool_call_message") {
+        stepHtml = `
+            <strong>🔧 Chamada de Ferramenta: ${
+              step.message.tool_call.name
+            }</strong>
+            <pre><code>${JSON.stringify(
+              step.message.tool_call.arguments,
+              null,
+              2
+            )}</code></pre>`;
+      } else if (
+        step.type === "tool_return_message" &&
+        step.message.tool_return
+      ) {
+        const toolReturnData = step.message.tool_return;
+        let returnContentHtml = "";
 
-        return `
-                <div class="reasoning-step">
-                    <strong>↪️ Retorno da Ferramenta:</strong>
-                    <pre><code>${toolReturn}</code></pre>
-                </div>`;
+        if (
+          typeof toolReturnData === "object" &&
+          toolReturnData !== null &&
+          toolReturnData.text
+        ) {
+          returnContentHtml += `<div class="markdown-content mb-2">${marked.parse(
+            toolReturnData.text
+          )}</div>`;
+
+          const otherData = { ...toolReturnData };
+          delete otherData.text;
+          if (Object.keys(otherData).length > 0) {
+            returnContentHtml += `<strong>Dados Adicionais:</strong><pre><code>${JSON.stringify(
+              otherData,
+              null,
+              2
+            )}</code></pre>`;
+          }
+        } else {
+          const toolReturnString =
+            typeof toolReturnData === "string"
+              ? toolReturnData
+              : JSON.stringify(toolReturnData, null, 2);
+          returnContentHtml = `<pre><code>${toolReturnString}</code></pre>`;
+        }
+
+        stepHtml = `<strong>↪️ Retorno da Ferramenta:</strong>${returnContentHtml}`;
       }
-      return "";
+
+      return stepHtml ? `<div class="reasoning-step">${stepHtml}</div>` : "";
     })
     .join("");
 }
@@ -283,7 +312,6 @@ function renderExperimentReport(data) {
     )?.message.content;
     const goldenAnswerContent = reference.golden_answer;
 
-    // Usa marked.js para renderizar o markdown, se o conteúdo existir
     const agentAnswerHtml = agentAnswerContent
       ? marked.parse(agentAnswerContent)
       : "<p>N/A</p>";

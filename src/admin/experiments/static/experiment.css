@@ -31,29 +31,31 @@
     margin-bottom: 0.25rem;
 }
 
-/* Item de metadados que ocupa a largura total */
+/* Item de metadados que ocupa a largura total (para prompts) */
 .metadata-item-full-width {
     grid-column: 1 / -1;
-    background-color: var(--surface-elevated);
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
 }
 .metadata-item-full-width strong {
     color: var(--primary-color);
     font-size: 0.8rem;
     text-transform: uppercase;
 }
-.metadata-item-full-width pre {
-    background-color: #2d2d2d;
-    color: #f0f0f0;
+
+/* NOVO: Estilo para conteúdo renderizado como Markdown */
+.markdown-content {
+    background-color: var(--surface-elevated);
     padding: var(--space-md);
     border-radius: var(--radius-md);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    white-space: pre-wrap;       
-    word-wrap: break-word;  
+    border: 1px solid var(--border-color-muted);
+    font-size: 0.95rem;
+    word-wrap: break-word;
 }
-
+.markdown-content p:last-child {
+    margin-bottom: 0;
+}
+.markdown-content ul, .markdown-content ol {
+    padding-left: 1.5rem;
+}
 
 /* Estilos para o corpo do acordeão */
 .accordion-body {
@@ -120,7 +122,6 @@
     border-radius: var(--radius-md);
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
-    /* Adicionado para quebra de linha */
     white-space: pre-wrap;
     word-wrap: break-word;
 }
@@ -159,6 +160,23 @@
     margin-top: var(--space-md);
     padding-top: var(--space-md);
 }
+
+/* NOVO: Estilo para PRE dentro de explanation */
+.explanation pre {
+    background-color: #2d2d2d;
+    color: #f0f0f0;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-top: 0;
+}
+.explanation > pre:first-child {
+    margin-top: calc(-1 * var(--space-md)); /* Compensa o padding-top do pai */
+}
+
 
 /* Estilos para o Modal de JSON */
 .modal-body pre {
