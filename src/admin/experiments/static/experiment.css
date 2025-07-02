@@ -1,0 +1,26 @@
+/* Garante que o fundo seja aplicado corretamente */
+body {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Estilo para a caixa de resultados JSON */
+.result-box {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    max-height: 60vh;
+    overflow-y: auto;
+    white-space: pre-wrap; /* Quebra de linha no JSON */
+    word-wrap: break-word; /* Quebra palavras longas */
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 14px;
+    color: var(--text-color);
+    box-shadow: var(--shadow-inner, inset 0 2px 4px 0 rgba(0,0,0,0.06));
+}
+
+/* Melhorias na aparência do input */
+#experimentIdInput {
+    font-size: 1.1rem;
+}
