@@ -11,6 +11,7 @@ const experimentsPanel = document.getElementById("experimentsPanel");
 
 // --- VARIÁVEIS GLOBAIS ---
 let currentToken = localStorage.getItem("adminToken");
+let originalJsonData = null; // Para armazenar o JSON original
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener("DOMContentLoaded", function () {
@@ -63,7 +64,6 @@ function showAlert(message, type = "danger") {
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         `;
-    // Auto-dismiss success alerts
     if (type === "success") {
       setTimeout(() => {
         const alertElement = document.getElementById(alertId);
@@ -85,9 +85,57 @@ function getScoreClass(score) {
 
 function renderMetadata(metadata) {
   if (!metadata) return;
+
+  // Helper para gerar uma seção de prompt colapsável
+  const createPromptSection = (title, content, id) => {
+    if (!content) return "";
+    // Escapa HTML para exibição segura em <pre>
+    const escapedContent = content
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">");
+    return `
+            <div class="metadata-item-full-width">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong>${title}</strong>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="false" aria-controls="${id}">
+                        <i class="bi bi-arrows-expand"></i> Ver/Ocultar
+                    </button>
+                </div>
+                <div class="collapse mt-2" id="${id}">
+                    <pre><code>${escapedContent}</code></pre>
+                </div>
+            </div>
+        `;
+  };
+
+  const promptsHTML = `
+        ${createPromptSection(
+          "System Prompt Principal",
+          metadata.system_prompt,
+          "systemPromptCollapse"
+        )}
+        ${createPromptSection(
+          "System Prompt (Similaridade)",
+          metadata.system_prompt_answer_similatiry,
+          "systemPromptSimilarityCollapse"
+        )}
+    `;
+
   metadataContainer.innerHTML = `
         <div class="card metadata-card">
-            <h4 class="section-title">Parâmetros do Experimento</h4>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h4 class="section-title mb-0 flex-grow-1" style="border-bottom: none; padding-bottom: 0;">Parâmetros do Experimento</h4>
+                <div id="jsonActionsContainer">
+                    <button class="btn btn-sm btn-outline-secondary" id="viewJsonBtn" data-bs-toggle="modal" data-bs-target="#jsonModal">
+                        <i class="bi bi-code-slash me-1"></i> Ver JSON
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="downloadJsonBtn">
+                        <i class="bi bi-download me-1"></i> Baixar JSON
+                    </button>
+                </div>
+            </div>
+            <hr class="my-3">
             <div class="metadata-grid">
                 <div class="metadata-item"><strong>Modelo de Avaliação:</strong> ${
                   metadata.eval_model || "N/A"
@@ -101,9 +149,36 @@ function renderMetadata(metadata) {
                 <div class="metadata-item"><strong>Ferramentas:</strong> ${
                   metadata.tools?.join(", ") || "N/A"
                 }</div>
+                ${promptsHTML}
             </div>
         </div>
     `;
+
+  // Adiciona event listeners para os novos botões
+  document.getElementById("viewJsonBtn").addEventListener("click", () => {
+    const jsonModalContent = document.querySelector("#jsonModal pre code");
+    if (jsonModalContent && originalJsonData) {
+      jsonModalContent.textContent = JSON.stringify(
+        originalJsonData,
+        null,
+        2
+      );
+    }
+  });
+
+  document.getElementById("downloadJsonBtn").addEventListener("click", () => {
+    if (!originalJsonData) return;
+    const expId = experimentIdInput.value.trim() || "experiment";
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(originalJsonData, null, 2));
+    const downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `experiment-${expId}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  });
 }
 
 function renderEvaluations(annotations) {
@@ -183,7 +258,9 @@ function renderExperimentReport(data) {
 
   // Renderiza cada item do experimento em um acordeão
   data.experiment.forEach((exp, index) => {
-    const accordionId = `exp-${exp.example_id}`;
+    // CORREÇÃO: Sanitiza o ID para ser um seletor CSS válido
+    const sanitizedId = exp.example_id.replace(/[^a-zA-Z0-9_-]/g, "");
+    const accordionId = `exp-${sanitizedId}`;
     const output = exp.output;
     const agentOutput = output.agent_output;
     const reference = exp.reference_output;
@@ -279,13 +356,14 @@ function fetchExperimentData() {
       return response.json();
     })
     .then((data) => {
-      // AQUI ESTÁ A MUDANÇA PRINCIPAL
+      originalJsonData = data; // Armazena os dados brutos
       renderExperimentReport(data);
       showAlert("Experimento carregado com sucesso!", "success");
     })
     .catch((error) => {
       console.error("Erro ao buscar experimento:", error);
       showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
+      resultContainer.classList.add("d-none");
     })
     .finally(() => {
       loadingIndicator.classList.add("d-none");

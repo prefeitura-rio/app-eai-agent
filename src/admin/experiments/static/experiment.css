@@ -31,6 +31,30 @@
     margin-bottom: 0.25rem;
 }
 
+/* Item de metadados que ocupa a largura total */
+.metadata-item-full-width {
+    grid-column: 1 / -1;
+    background-color: var(--surface-elevated);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+}
+.metadata-item-full-width strong {
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+.metadata-item-full-width pre {
+    background-color: #2d2d2d;
+    color: #f0f0f0;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;       
+    word-wrap: break-word;  
+}
+
+
 /* Estilos para o corpo do acordeão */
 .accordion-body {
     background-color: var(--surface-1);
@@ -96,6 +120,9 @@
     border-radius: var(--radius-md);
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
+    /* Adicionado para quebra de linha */
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 /* Estilo para as avaliações */
@@ -131,4 +158,10 @@
     border-top: 1px dashed var(--border-color);
     margin-top: var(--space-md);
     padding-top: var(--space-md);
+}
+
+/* Estilos para o Modal de JSON */
+.modal-body pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }

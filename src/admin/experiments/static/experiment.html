@@ -37,7 +37,7 @@
         <!-- Painel Principal (escondido inicialmente) -->
         <div id="experimentsPanel" class="admin-container d-none">
             <div class="navbar">
-                <h1 class="nav-title">Visualizador de Experimentos v1</h1>
+                <h1 class="nav-title">Visualizador de Experimentos v2</h1>
                 <div class="d-flex align-items-center">
                     <button id="logoutBtn" class="btn btn-sm btn-outline-light">Sair</button>
                 </div>
@@ -80,6 +80,21 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Modal para visualização do JSON -->
+    <div class="modal fade" id="jsonModal" tabindex="-1" aria-labelledby="jsonModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="jsonModalLabel">JSON Original do Experimento</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-dark text-light">
+            <pre><code><!-- Conteúdo do JSON será inserido aqui --></code></pre>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Bootstrap JS -->

@@ -60,7 +60,8 @@ async def get_experiment_data(
 
         # Repassa o status e o conteúdo da resposta do Phoenix
         if response.status_code == 200:
-            return JSONResponse(content=parse_output(json.loads(response.text)))
+            response_content = parse_output(json.loads(response.text))
+            return JSONResponse(content=response_content)
         else:
             logger.error(
                 f"Erro ao buscar dados do Phoenix. Status: {response.status_code}, Resposta: {response.text}"
