@@ -176,14 +176,35 @@ function renderMetadata(metadata) {
 }
 
 function renderEvaluations(annotations) {
-  if (!annotations || annotations.length === 0)
+  if (!annotations || annotations.length === 0) {
     return "<p>Nenhuma avaliação disponível.</p>";
+  }
 
-  return annotations
+  // Definir a ordem de exibição desejada
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+
+  // Criar uma cópia e ordenar as anotações
+  const sortedAnnotations = [...annotations].sort((a, b) => {
+    const indexA = desiredOrder.indexOf(a.name);
+    const indexB = desiredOrder.indexOf(b.name);
+
+    // Se um item não estiver na lista de ordem, ele vai para o final
+    const effectiveIndexA = indexA === -1 ? Infinity : indexA;
+    const effectiveIndexB = indexB === -1 ? Infinity : indexB;
+
+    return effectiveIndexA - effectiveIndexB;
+  });
+
+  // Mapear sobre a lista ordenada para gerar o HTML
+  return sortedAnnotations
     .map((ann) => {
       let explanationContent = "";
       if (ann.explanation) {
-        // CORREÇÃO: Verifica se a explicação é um objeto e a formata como JSON
         if (typeof ann.explanation === "object" && ann.explanation !== null) {
           explanationContent = `<pre><code>${JSON.stringify(
             ann.explanation,
