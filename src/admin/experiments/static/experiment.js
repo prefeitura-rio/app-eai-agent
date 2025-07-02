@@ -349,28 +349,20 @@ function calculateAndRenderSummaryMetrics(experimentData) {
       metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
     const distributionHtml = Object.entries(metric.counts)
       .sort(([scoreA], [scoreB]) => scoreB - scoreA)
-      .map(
-        ([score, count]) =>
-          `<span class="score-distribution-tag ${getScoreClass(
-            parseFloat(score)
-          )}">${parseFloat(score).toFixed(1)} (${count})</span>`
-      )
+      .map(([score, count]) => {
+        const scoreF = parseFloat(score);
+        const formattedScore =
+          scoreF === 0.0 || scoreF === 1.0
+            ? scoreF.toFixed(0)
+            : scoreF.toFixed(1);
+        return `<span>${formattedScore}: ${count}</span>`;
+      })
       .join("");
 
     metricsHtml += `
             <div class="summary-metric-item">
                 <h6>${name}</h6>
-                <div class="summary-metric-bar-container">
-                    <span class="avg-score">${average.toFixed(2)}</span>
-                    <div class="progress-bar-summary">
-                        <div class="progress-bar-summary-inner" style="width: ${
-                          average * 100
-                        }%"></div>
-                    </div>
-                    <span class="run-count">${
-                      metric.scores.length
-                    } runs</span>
-                </div>
+                <div class="average-score">${average.toFixed(2)}</div>
                 <div class="score-distribution">${distributionHtml}</div>
             </div>
         `;
@@ -378,8 +370,8 @@ function calculateAndRenderSummaryMetrics(experimentData) {
 
   summaryMetricsContainer.innerHTML = `
         <div class="card metadata-card">
-            <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Métricas Gerais</h4>
-            <div>${metricsHtml}</div>
+            <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Métricas Gerais: ${experimentData.length} runs</h4>
+            <div class="summary-grid">${metricsHtml}</div>
         </div>
     `;
 }
