@@ -22,7 +22,7 @@ async def get_experiments_page(request: Request):
     Retorna a página principal de visualização de experimentos.
     A URL final será /admin/experiments_v2/
     """
-    html_path = os.path.join(STATIC_DIR, "experiment_v2.html")
+    html_path = os.path.join(STATIC_DIR, "experiment.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
