@@ -199,7 +199,9 @@ function renderEvaluations(annotations) {
     .map((ann) => {
       let explanationContent = "";
       if (ann.explanation) {
-        if (typeof ann.explanation === "object" && ann.explanation !== null) {
+        if (ann.name === "Answer Similarity" && typeof ann.explanation === 'string') {
+            explanationContent = marked.parse(ann.explanation);
+        } else if (typeof ann.explanation === "object" && ann.explanation !== null) {
           explanationContent = `<pre><code>${JSON.stringify(
             ann.explanation,
             null,
@@ -212,10 +214,8 @@ function renderEvaluations(annotations) {
       return `
         <div class="evaluation-card">
             <div class="main-info">
-                <div class="score ${getScoreClass(
-                  ann.score
-                )}">${ann.score.toFixed(1)}</div>
                 <p class="name">${ann.name}</p>
+                <div class="score ${getScoreClass(ann.score)}">${ann.score.toFixed(1)}</div>
             </div>
             ${
               explanationContent

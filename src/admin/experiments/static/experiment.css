@@ -31,16 +31,18 @@
     margin-bottom: 0.25rem;
 }
 
-/* Item de metadados que ocupa a largura total (para prompts) */
+/* Item de metadados que ocupa a largura total */
 .metadata-item-full-width {
     grid-column: 1 / -1;
+    background-color: var(--surface-elevated);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
 }
 .metadata-item-full-width strong {
     color: var(--primary-color);
     font-size: 0.8rem;
     text-transform: uppercase;
 }
-
 .metadata-item-full-width pre {
     background-color: #2d2d2d;
     color: #f0f0f0;
@@ -52,21 +54,6 @@
     word-wrap: break-word;  
 }
 
-/* Estilo para conteúdo renderizado como Markdown */
-.markdown-content {
-    background-color: var(--surface-elevated);
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color-muted);
-    font-size: 0.95rem;
-    word-wrap: break-word;
-}
-.markdown-content p:last-child {
-    margin-bottom: 0;
-}
-.markdown-content ul, .markdown-content ol {
-    padding-left: 1.5rem;
-}
 
 /* Estilos para o corpo do acordeão */
 .accordion-body {
@@ -105,11 +92,11 @@
     color: var(--heading-color);
 }
 .comparison-box .golden-answer {
-    border-left: 4px solid #ffd700;
+    border-left: 4px solid #ffd700; /* Destaque dourado */
     padding-left: 1rem;
 }
 .comparison-box .agent-answer {
-    border-left: 4px solid var(--primary-color);
+    border-left: 4px solid var(--primary-color); /* Destaque azul */
     padding-left: 1rem;
 }
 
@@ -136,109 +123,81 @@
     white-space: pre-wrap;
     word-wrap: break-word;
 }
-.reasoning-step .markdown-content {
-    border: 1px solid var(--border-color);
-}
-
 
 /* Estilo para as avaliações */
 .evaluation-card {
     background: var(--surface-2);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-md);
     margin-bottom: var(--space-sm);
     display: flex;
     flex-direction: column;
+    align-items: stretch;
 }
-
 .evaluation-card .main-info {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-sm);
-    width: 100%;
 }
-
-.evaluation-card .details {
-    flex-grow: 1;
-}
-
 .evaluation-card .name {
     font-weight: 600;
+}
+.evaluation-card .main-info p.name {
     margin-bottom: 0;
 }
 .evaluation-card .score {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     font-weight: bold;
-    padding: 0.1rem 0.6rem;
+    padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
     color: white;
-    flex-shrink: 0;
 }
-.score-high { background-color: #28a745; }
-.score-low { background-color: #dc3545; }
-.score-mid { background-color: #ffc107; color: #212529 !important; }
+/* Cores para as notas */
+.score-high { background-color: #28a745; } /* Verde para 1.0 */
+.score-low { background-color: #dc3545; } /* Vermelho para 0.0 */
+.score-mid { background-color: #ffc107; } /* Amarelo para notas médias */
 
 .explanation {
     background-color: var(--surface-elevated);
     font-size: 0.9rem;
     color: var(--text-color-muted);
     border-top: 1px dashed var(--border-color);
-    margin-top: var(--space-sm);
-    padding: var(--space-sm) 0;
-    width: 100%;
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
 }
 
+/* Estilos para o conteúdo renderizado do Markdown */
+.explanation h1, .explanation h2, .explanation h3, .explanation h4 {
+    font-size: 1.1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    color: var(--heading-color);
+}
+.explanation p {
+    margin-bottom: 0.5rem;
+}
+.explanation p:last-child {
+    margin-bottom: 0;
+}
+.explanation ul, .explanation ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+}
 .explanation pre {
     background-color: #2d2d2d;
     color: #f0f0f0;
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
     white-space: pre-wrap;
     word-wrap: break-word;
-    margin: 0;
+}
+.explanation code {
+    font-family: 'JetBrains Mono', monospace;
 }
 
 /* Estilos para o Modal de JSON */
 .modal-body pre {
     white-space: pre-wrap;
     word-wrap: break-word;
-}
-
-/* --- NOVOS ESTILOS PARA MÉTRICAS GERAIS (GRID) --- */
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-}
-.summary-metric-item {
-    background: var(--surface-elevated);
-    padding: 1rem;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
-}
-.summary-metric-item h6 {
-    font-weight: 600;
-    color: var(--text-color);
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
-.summary-metric-item .average-score {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    line-height: 1.2;
-    margin-bottom: 0.5rem;
-}
-.score-distribution {
-    font-size: 0.85rem;
-    color: var(--text-color-muted);
-    display: flex;
-    justify-content: start;
-    gap: 1rem;
-    flex-wrap: wrap;
 }
