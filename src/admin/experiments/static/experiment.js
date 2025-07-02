@@ -89,7 +89,6 @@ function renderMetadata(metadata) {
   // Helper para gerar uma seção de prompt colapsável
   const createPromptSection = (title, content, id) => {
     if (!content) return "";
-    // Escapa HTML para exibição segura em <pre>
     const escapedContent = content
       .replace(/&/g, "&")
       .replace(/</g, "<")
@@ -154,7 +153,6 @@ function renderMetadata(metadata) {
         </div>
     `;
 
-  // Adiciona event listeners para os novos botões
   document.getElementById("viewJsonBtn").addEventListener("click", () => {
     const jsonModalContent = document.querySelector("#jsonModal pre code");
     if (jsonModalContent && originalJsonData) {
@@ -248,22 +246,50 @@ function renderReasoning(orderedSteps) {
     .join("");
 }
 
+function renderCollapsibleReasoning(orderedSteps, accordionId) {
+  if (!orderedSteps || orderedSteps.length === 0) {
+    return `<h4 class="section-title">Passo a Passo do Agente (Reasoning)</h4><p>Nenhum passo a passo disponível.</p>`;
+  }
+
+  const reasoningCollapseId = `reasoning-collapse-${accordionId}`;
+
+  return `
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <h4 class="section-title mb-0" style="border-bottom: none;">Passo a Passo do Agente (Reasoning)</h4>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${reasoningCollapseId}" aria-expanded="false" aria-controls="${reasoningCollapseId}">
+                <i class="bi bi-arrows-expand"></i> Expandir
+            </button>
+        </div>
+        <div class="collapse pt-3" id="${reasoningCollapseId}">
+            ${renderReasoning(orderedSteps)}
+        </div>
+    `;
+}
+
 function renderExperimentReport(data) {
-  // Limpa resultados anteriores
   metadataContainer.innerHTML = "";
   experimentAccordion.innerHTML = "";
-
-  // Renderiza os metadados no topo
   renderMetadata(data.experiment_metadata);
 
-  // Renderiza cada item do experimento em um acordeão
   data.experiment.forEach((exp, index) => {
-    // CORREÇÃO: Sanitiza o ID para ser um seletor CSS válido
     const sanitizedId = exp.example_id.replace(/[^a-zA-Z0-9_-]/g, "");
     const accordionId = `exp-${sanitizedId}`;
     const output = exp.output;
     const agentOutput = output.agent_output;
     const reference = exp.reference_output;
+
+    const agentAnswerContent = agentOutput?.ordered.find(
+      (m) => m.type === "assistant_message"
+    )?.message.content;
+    const goldenAnswerContent = reference.golden_answer;
+
+    // Usa marked.js para renderizar o markdown, se o conteúdo existir
+    const agentAnswerHtml = agentAnswerContent
+      ? marked.parse(agentAnswerContent)
+      : "<p>N/A</p>";
+    const goldenAnswerHtml = goldenAnswerContent
+      ? marked.parse(goldenAnswerContent)
+      : "<p>N/A</p>";
 
     const accordionItemHTML = `
             <div class="accordion-item">
@@ -273,7 +299,7 @@ function renderExperimentReport(data) {
                     }" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="${
       index === 0
     }" aria-controls="collapse-${accordionId}">
-                        <strong>ID do Teste:</strong> ${output.metadata.id}
+                        <strong>ID do Teste:</strong> ${output.metadata.id}
                     </button>
                 </h2>
                 <div id="collapse-${accordionId}" class="accordion-collapse collapse ${
@@ -291,17 +317,13 @@ function renderExperimentReport(data) {
                             <div class="col-md-6">
                                 <div class="comparison-box">
                                     <h5 class="agent-answer">🤖 Resposta do Agente</h5>
-                                    <p>${
-                                      agentOutput?.ordered.find(
-                                        (m) => m.type === "assistant_message"
-                                      )?.message.content || "N/A"
-                                    }</p>
+                                    <div>${agentAnswerHtml}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="comparison-box">
                                     <h5 class="golden-answer">🏆 Resposta de Referência (Golden)</h5>
-                                    <p>${reference.golden_answer}</p>
+                                    <div>${goldenAnswerHtml}</div>
                                 </div>
                             </div>
                         </div>
@@ -309,8 +331,10 @@ function renderExperimentReport(data) {
                         <h4 class="section-title">Avaliações</h4>
                         ${renderEvaluations(exp.annotations)}
                         
-                        <h4 class="section-title">Passo a Passo do Agente (Reasoning)</h4>
-                        ${renderReasoning(agentOutput?.ordered)}
+                        ${renderCollapsibleReasoning(
+                          agentOutput?.ordered,
+                          accordionId
+                        )}
 
                     </div>
                 </div>
@@ -356,7 +380,7 @@ function fetchExperimentData() {
       return response.json();
     })
     .then((data) => {
-      originalJsonData = data; // Armazena os dados brutos
+      originalJsonData = data;
       renderExperimentReport(data);
       showAlert("Experimento carregado com sucesso!", "success");
     })
