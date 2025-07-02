@@ -41,14 +41,14 @@ class GeminiService:
                 "temperature": temperature,
             },
         )
+        logger.info(f"Response: {response}")
         candidate = response.candidates[0]
-
         if candidate.grounding_metadata.grounding_chunks:
             resolved_urls_map = await resolve_urls(
                 urls_to_resolve=candidate.grounding_metadata.grounding_chunks
             )
         else:
-            logger.info(f"Response: {response}")
+            logger.info(f"Candidate: {candidate}")
             raise Exception("No grounding chunks found")
 
         citations = get_citations(
