@@ -17,26 +17,22 @@ router = APIRouter(
 )
 
 
-@router.get("/google_search", name="Busca Google")
+@router.get("/google_search", name="Google Search")
 async def google_search_tool(
     query: str = Query(..., description="Texto da consulta"),
 ):
     try:
         gemini_service = GeminiService()
-        response = await gemini_service.generate_content(
-            query,
-            model="gemini-2.0-flash",
-            use_google_search=True,
-            response_format="text_and_links",
+        response = await gemini_service.google_search(
+            query=query,
+            model="gemini-2.5-flash-lite-preview-06-17",
+            temperature=0.0,
         )
 
-        if not response or response.get("texto") is None:
+        if not response or response.get("text") is None:
             raise HTTPException(
                 status_code=500, detail="Falha ao gerar resposta do Gemini"
             )
-
-        links = response.get("links", [])
-        response["links"] = links
 
         return response
     except Exception as e:
