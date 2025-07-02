@@ -40,7 +40,7 @@ class GeminiService:
                 formatted_prompt = web_searcher_instructions(research_topic=query)
                 
                 logger.info("Gerando conteúdo com Gemini...")
-                response = self.client.models.generate_content(
+                response = await self.client.aio.models.generate_content(
                     model=model,
                     contents=formatted_prompt,
                     config={
