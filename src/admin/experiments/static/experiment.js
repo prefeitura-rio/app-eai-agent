@@ -211,17 +211,17 @@ function renderEvaluations(annotations) {
       }
       return `
         <div class="evaluation-card">
-            <div class="score ${getScoreClass(
-              ann.score
-            )}">${ann.score.toFixed(1)}</div>
-            <div class="details">
+            <div class="main-info">
+                <div class="score ${getScoreClass(
+                  ann.score
+                )}">${ann.score.toFixed(1)}</div>
                 <p class="name">${ann.name}</p>
-                ${
-                  explanationContent
-                    ? `<div class="explanation">${explanationContent}</div>`
-                    : ""
-                }
             </div>
+            ${
+              explanationContent
+                ? `<div class="explanation">${explanationContent}</div>`
+                : ""
+            }
         </div>
         `;
     })
@@ -351,42 +351,41 @@ function calculateAndRenderSummaryMetrics(experimentData) {
       .sort(([scoreA], [scoreB]) => scoreB - scoreA)
       .map(
         ([score, count]) =>
-          `<span>${parseFloat(score).toFixed(1)}: ${count}</span>`
+          `<span class="score-distribution-tag ${getScoreClass(
+            parseFloat(score)
+          )}">${parseFloat(score).toFixed(1)} (${count})</span>`
       )
       .join("");
 
     metricsHtml += `
             <div class="summary-metric-item">
                 <h6>${name}</h6>
-                <div class="average-score">${average.toFixed(2)}</div>
-                <div class="progress-bar-summary">
-                    <div class="progress-bar-summary-inner" style="width: ${
-                      average * 100
-                    }%"></div>
+                <div class="summary-metric-bar-container">
+                    <span class="avg-score">${average.toFixed(2)}</span>
+                    <div class="progress-bar-summary">
+                        <div class="progress-bar-summary-inner" style="width: ${
+                          average * 100
+                        }%"></div>
+                    </div>
+                    <span class="run-count">${
+                      metric.scores.length
+                    } runs</span>
                 </div>
                 <div class="score-distribution">${distributionHtml}</div>
             </div>
         `;
   }
 
-  metricsHtml += `
-        <div class="summary-metric-item">
-            <h6>Run Count</h6>
-            <div class="average-score" style="font-size: 2.25rem;">${experimentData.length}</div>
-        </div>
-    `;
-
   summaryMetricsContainer.innerHTML = `
         <div class="card metadata-card">
             <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Métricas Gerais</h4>
-            <div class="summary-grid">${metricsHtml}</div>
+            <div>${metricsHtml}</div>
         </div>
     `;
 }
 
 function renderFilters(experimentData) {
   filterContainer.innerHTML = "";
-
   const filterOptions = {};
   experimentData.forEach((exp) => {
     if (exp.annotations) {

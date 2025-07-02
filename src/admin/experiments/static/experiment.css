@@ -141,16 +141,22 @@
 }
 
 
-/* Estilo para as avaliações */
+/* Estilo para as avaliações - CORREÇÃO DE LAYOUT */
 .evaluation-card {
     background: var(--surface-2);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: var(--space-md);
+    padding: var(--space-sm) var(--space-md); /* Padding reduzido */
     margin-bottom: var(--space-sm);
     display: flex;
-    align-items: baseline;
-    gap: var(--space-md);
+    flex-direction: column; /* Organiza em coluna */
+}
+
+.evaluation-card .main-info {
+    display: flex;
+    align-items: center; /* Alinha score e nome */
+    gap: var(--space-sm);
+    width: 100%;
 }
 
 .evaluation-card .details {
@@ -162,9 +168,9 @@
     margin-bottom: 0;
 }
 .evaluation-card .score {
-    font-size: 1.2rem;
+    font-size: 0.9rem; /* Tamanho do score reduzido */
     font-weight: bold;
-    padding: 0.25rem 0.75rem;
+    padding: 0.1rem 0.6rem; /* Padding do score reduzido */
     border-radius: var(--radius-sm);
     color: white;
     flex-shrink: 0;
@@ -179,8 +185,9 @@
     font-size: 0.9rem;
     color: var(--text-color-muted);
     border-top: 1px dashed var(--border-color);
-    margin-top: var(--space-md);
-    padding-top: var(--space-md);
+    margin-top: var(--space-sm); /* Espaçamento reduzido */
+    padding: var(--space-sm) 0;
+    width: 100%;
 }
 
 .explanation pre {
@@ -192,12 +199,8 @@
     font-size: 13px;
     white-space: pre-wrap;
     word-wrap: break-word;
-    margin-top: 0;
+    margin: 0;
 }
-.explanation > pre:first-child {
-    margin-top: calc(-1 * var(--space-md)); 
-}
-
 
 /* Estilos para o Modal de JSON */
 .modal-body pre {
@@ -205,18 +208,13 @@
     word-wrap: break-word;
 }
 
-/* --- NOVOS ESTILOS PARA MÉTRICAS GERAIS --- */
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-}
+/* --- NOVOS ESTILOS PARA MÉTRICAS GERAIS MINIMALISTAS --- */
 .summary-metric-item {
-    background: var(--surface-elevated);
-    padding: 1rem;
-    border-radius: var(--radius-lg);
-    text-align: center;
-    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.summary-metric-item:last-child {
+    border-bottom: none;
 }
 .summary-metric-item h6 {
     font-weight: 600;
@@ -224,34 +222,46 @@
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
 }
-.summary-metric-item .average-score {
-    font-size: 2.25rem;
-    font-weight: 700;
+.summary-metric-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.summary-metric-bar-container .avg-score {
+    font-weight: bold;
+    font-size: 1.1rem;
     color: var(--primary-color);
-    line-height: 1.2;
+    min-width: 40px;
 }
 .progress-bar-summary {
-    height: 8px;
-    background-color: var(--surface-1);
+    flex-grow: 1;
+    height: 10px;
+    background-color: var(--surface-elevated);
     border-radius: var(--radius-sm);
     overflow: hidden;
-    margin: 0.75rem 0;
 }
 .progress-bar-summary-inner {
     height: 100%;
     background-color: var(--primary-color-muted);
+    border-radius: var(--radius-sm);
+}
+.summary-metric-bar-container .run-count {
+    font-size: 0.9rem;
+    color: var(--text-color-muted);
+    min-width: 50px;
+    text-align: right;
 }
 .score-distribution {
-    font-size: 0.8rem;
-    color: var(--text-color-muted);
     display: flex;
-    justify-content: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
     flex-wrap: wrap;
 }
-.score-distribution span {
-    background: var(--surface-1);
-    padding: 0.1rem 0.4rem;
+.score-distribution-tag {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.5rem;
     border-radius: var(--radius-sm);
+    font-weight: 500;
 }
