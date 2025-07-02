@@ -41,7 +41,19 @@
     text-transform: uppercase;
 }
 
-/* NOVO: Estilo para conteúdo renderizado como Markdown */
+/* CORREÇÃO: Estilo para PRE dentro da seção de metadados */
+.metadata-item-full-width pre {
+    background-color: #2d2d2d;
+    color: #f0f0f0;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;       
+    word-wrap: break-word;  
+}
+
+/* Estilo para conteúdo renderizado como Markdown */
 .markdown-content {
     background-color: var(--surface-elevated);
     padding: var(--space-md);
@@ -125,6 +137,10 @@
     white-space: pre-wrap;
     word-wrap: break-word;
 }
+.reasoning-step .markdown-content {
+    border: 1px solid var(--border-color);
+}
+
 
 /* Estilo para as avaliações */
 .evaluation-card {
@@ -134,9 +150,14 @@
     padding: var(--space-md);
     margin-bottom: var(--space-sm);
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: flex-start; /* Alinha no topo */
+    gap: var(--space-md); /* Espaço entre score e detalhes */
 }
+
+.evaluation-card .details {
+    flex-grow: 1; /* Faz os detalhes ocuparem o espaço restante */
+}
+
 .evaluation-card .name {
     font-weight: 600;
 }
@@ -146,11 +167,12 @@
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
     color: white;
+    flex-shrink: 0; /* Impede que o score encolha */
 }
 /* Cores para as notas */
 .score-high { background-color: #28a745; } /* Verde para 1.0 */
 .score-low { background-color: #dc3545; } /* Vermelho para 0.0 */
-.score-mid { background-color: #ffc107; } /* Amarelo para notas médias */
+.score-mid { background-color: #ffc107; color: #212529 !important; } /* Amarelo para notas médias */
 
 .explanation {
     background-color: var(--surface-elevated);
@@ -161,7 +183,6 @@
     padding-top: var(--space-md);
 }
 
-/* NOVO: Estilo para PRE dentro de explanation */
 .explanation pre {
     background-color: #2d2d2d;
     color: #f0f0f0;
@@ -174,7 +195,7 @@
     margin-top: 0;
 }
 .explanation > pre:first-child {
-    margin-top: calc(-1 * var(--space-md)); /* Compensa o padding-top do pai */
+    margin-top: calc(-1 * var(--space-md)); 
 }
 
 

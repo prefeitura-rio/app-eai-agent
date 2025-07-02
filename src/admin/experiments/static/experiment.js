@@ -86,9 +86,14 @@ function getScoreClass(score) {
 function renderMetadata(metadata) {
   if (!metadata) return;
 
+  // CORREÇÃO: Trata o prompt como texto pré-formatado (código)
   const createPromptSection = (title, content, id) => {
     if (!content) return "";
-    const markdownHtml = marked.parse(content || "");
+    // Escapa o conteúdo para exibição segura em <pre>
+    const escapedContent = content
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">");
     return `
             <div class="metadata-item-full-width">
                 <div class="d-flex justify-content-between align-items-center">
@@ -98,7 +103,7 @@ function renderMetadata(metadata) {
                     </button>
                 </div>
                 <div class="collapse mt-2" id="${id}">
-                    <div class="markdown-content">${markdownHtml}</div>
+                    <pre><code>${escapedContent}</code></pre>
                 </div>
             </div>
         `;
@@ -180,7 +185,6 @@ function renderEvaluations(annotations) {
     return "<p>Nenhuma avaliação disponível.</p>";
   }
 
-  // Definir a ordem de exibição desejada
   const desiredOrder = [
     "Answer Similarity",
     "Activate Search Tools",
@@ -188,19 +192,14 @@ function renderEvaluations(annotations) {
     "Golden Link in Tool Calling",
   ];
 
-  // Criar uma cópia e ordenar as anotações
   const sortedAnnotations = [...annotations].sort((a, b) => {
     const indexA = desiredOrder.indexOf(a.name);
     const indexB = desiredOrder.indexOf(b.name);
-
-    // Se um item não estiver na lista de ordem, ele vai para o final
     const effectiveIndexA = indexA === -1 ? Infinity : indexA;
     const effectiveIndexB = indexB === -1 ? Infinity : indexB;
-
     return effectiveIndexA - effectiveIndexB;
   });
 
-  // Mapear sobre a lista ordenada para gerar o HTML
   return sortedAnnotations
     .map((ann) => {
       let explanationContent = "";
@@ -218,7 +217,10 @@ function renderEvaluations(annotations) {
 
       return `
         <div class="evaluation-card">
-            <div class="details w-100">
+            <div class="score ${getScoreClass(
+              ann.score
+            )}">${ann.score.toFixed(1)}</div>
+            <div class="details">
                 <div class="name">${ann.name}</div>
                 ${
                   explanationContent
@@ -226,9 +228,6 @@ function renderEvaluations(annotations) {
                     : ""
                 }
             </div>
-            <div class="score ${getScoreClass(
-              ann.score
-            )}">${ann.score.toFixed(1)}</div>
         </div>
         `;
     })
@@ -262,23 +261,42 @@ function renderReasoning(orderedSteps) {
         const toolReturnData = step.message.tool_return;
         let returnContentHtml = "";
 
-        if (
-          typeof toolReturnData === "object" &&
-          toolReturnData !== null &&
-          toolReturnData.text
-        ) {
-          returnContentHtml += `<div class="markdown-content mb-2">${marked.parse(
-            toolReturnData.text
-          )}</div>`;
+        if (typeof toolReturnData === "object" && toolReturnData !== null) {
+          const remainingData = { ...toolReturnData };
 
-          const otherData = { ...toolReturnData };
-          delete otherData.text;
-          if (Object.keys(otherData).length > 0) {
-            returnContentHtml += `<strong>Dados Adicionais:</strong><pre><code>${JSON.stringify(
-              otherData,
-              null,
-              2
-            )}</code></pre>`;
+          const createSubSection = (title, data, isMarkdown = false) => {
+            if (!data || (Array.isArray(data) && data.length === 0))
+              return "";
+            const content = isMarkdown
+              ? `<div class="markdown-content">${marked.parse(data)}</div>`
+              : `<pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
+            return `<div class="mt-2"><strong>${title}</strong>${content}</div>`;
+          };
+
+          returnContentHtml += createSubSection(
+            "Texto:",
+            remainingData.text,
+            true
+          );
+          delete remainingData.text;
+
+          returnContentHtml += createSubSection(
+            "Sources:",
+            remainingData.sources
+          );
+          delete remainingData.sources;
+
+          returnContentHtml += createSubSection(
+            "Web Search Queries:",
+            remainingData.web_search_queries
+          );
+          delete remainingData.web_search_queries;
+
+          if (Object.keys(remainingData).length > 0) {
+            returnContentHtml += createSubSection(
+              "Dados Adicionais:",
+              remainingData
+            );
           }
         } else {
           const toolReturnString =
