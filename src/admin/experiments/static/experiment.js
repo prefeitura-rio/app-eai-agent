@@ -89,38 +89,36 @@ function getScoreClass(score) {
 
 function renderMetadata(metadata) {
   if (!metadata) return;
-  const createPromptSection = (title, content, id) => {
-    if (!content) return "";
-    const escapedContent = content
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">");
+
+  const createPromptSectionHTML = (title, id, collapseId) => {
     return `
             <div class="metadata-item-full-width">
                 <div class="d-flex justify-content-between align-items-center">
                     <strong>${title}</strong>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="false" aria-controls="${id}">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
                         <i class="bi bi-arrows-expand"></i> Ver/Ocultar
                     </button>
                 </div>
-                <div class="collapse mt-2" id="${id}">
-                    <pre><code>${escapedContent}</code></pre>
+                <div class="collapse mt-2" id="${collapseId}">
+                    <pre><code id="${id}"></code></pre>
                 </div>
             </div>
         `;
   };
+
   const promptsHTML = `
-        ${createPromptSection(
+        ${createPromptSectionHTML(
           "System Prompt Principal",
-          metadata.system_prompt,
+          "system-prompt-code",
           "systemPromptCollapse"
         )}
-        ${createPromptSection(
+        ${createPromptSectionHTML(
           "System Prompt (Similaridade)",
-          metadata.system_prompt_answer_similatiry,
+          "system-prompt-similarity-code",
           "systemPromptSimilarityCollapse"
         )}
     `;
+
   metadataContainer.innerHTML = `
         <div class="card metadata-card">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -152,6 +150,17 @@ function renderMetadata(metadata) {
             </div>
         </div>
     `;
+
+  // **CORREÇÃO IMPORTANTE**: Atribuir o conteúdo como texto puro
+  if (metadata.system_prompt) {
+    document.getElementById("system-prompt-code").textContent =
+      metadata.system_prompt;
+  }
+  if (metadata.system_prompt_answer_similatiry) {
+    document.getElementById("system-prompt-similarity-code").textContent =
+      metadata.system_prompt_answer_similatiry;
+  }
+
   document.getElementById("viewJsonBtn").addEventListener("click", () => {
     const jsonModalContent = document.querySelector("#jsonModal pre code");
     if (jsonModalContent && originalJsonData) {
@@ -199,23 +208,31 @@ function renderEvaluations(annotations) {
     .map((ann) => {
       let explanationContent = "";
       if (ann.explanation) {
-        if (ann.name === "Answer Similarity" && typeof ann.explanation === 'string') {
-            explanationContent = marked.parse(ann.explanation);
-        } else if (typeof ann.explanation === "object" && ann.explanation !== null) {
+        if (
+          ann.name === "Answer Similarity" &&
+          typeof ann.explanation === "string"
+        ) {
+          explanationContent = marked.parse(ann.explanation);
+        } else if (
+          typeof ann.explanation === "object" &&
+          ann.explanation !== null
+        ) {
           explanationContent = `<pre><code>${JSON.stringify(
             ann.explanation,
             null,
             2
           )}</code></pre>`;
         } else {
-          explanationContent = ann.explanation;
+          explanationContent = `<pre><code>${ann.explanation}</code></pre>`;
         }
       }
       return `
         <div class="evaluation-card">
             <div class="main-info">
                 <p class="name">${ann.name}</p>
-                <div class="score ${getScoreClass(ann.score)}">${ann.score.toFixed(1)}</div>
+                <div class="score ${getScoreClass(
+                  ann.score
+                )}">${ann.score.toFixed(1)}</div>
             </div>
             ${
               explanationContent
@@ -322,8 +339,9 @@ function calculateAndRenderSummaryMetrics(experimentData) {
         metrics[ann.name] = { scores: [], counts: {} };
       }
       metrics[ann.name].scores.push(ann.score);
-      metrics[ann.name].counts[ann.score] =
-        (metrics[ann.name].counts[ann.score] || 0) + 1;
+      const scoreKey = ann.score.toFixed(1);
+      metrics[ann.name].counts[scoreKey] =
+        (metrics[ann.name].counts[scoreKey] || 0) + 1;
     });
   });
 
@@ -347,16 +365,11 @@ function calculateAndRenderSummaryMetrics(experimentData) {
     const metric = metrics[name];
     const average =
       metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
+
+    // **CORREÇÃO**: Ordenar as notas e formatar a distribuição corretamente
     const distributionHtml = Object.entries(metric.counts)
-      .sort(([scoreA], [scoreB]) => scoreB - scoreA)
-      .map(([score, count]) => {
-        const scoreF = parseFloat(score);
-        const formattedScore =
-          scoreF === 0.0 || scoreF === 1.0
-            ? scoreF.toFixed(0)
-            : scoreF.toFixed(1);
-        return `<span>${formattedScore}: ${count}</span>`;
-      })
+      .sort(([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA))
+      .map(([score, count]) => `<span>${score}: ${count}</span>`)
       .join("");
 
     metricsHtml += `

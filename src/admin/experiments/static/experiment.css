@@ -54,6 +54,43 @@
     word-wrap: break-word;  
 }
 
+/* Estilos para as Métricas Gerais */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-md);
+}
+.summary-metric-item {
+    background-color: var(--surface-elevated);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color-muted);
+}
+.summary-metric-item h6 {
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 0.5rem;
+}
+.summary-metric-item .average-score {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+.summary-metric-item .score-distribution {
+    font-size: 0.8rem;
+    color: var(--text-color-muted);
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.score-distribution span {
+    background-color: var(--surface-2);
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', monospace;
+}
+
 
 /* Estilos para o corpo do acordeão */
 .accordion-body {
