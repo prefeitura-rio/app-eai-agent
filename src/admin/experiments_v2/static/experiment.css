@@ -1,127 +1,16 @@
-/* --- ESTILOS GERAIS E LAYOUT --- */
-:root {
-    --navbar-height: 56px;
-}
+/* --- NOVOS ESTILOS PARA VISUALIZAÇÃO --- */
 
-body {
-    background-color: var(--surface-1);
-}
-
-.login-wrapper {
-    display: none; /* Escondido por padrão, exibido via JS se não houver token */
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background-color: var(--surface-1);
-}
-
-.login-container {
-    max-width: 450px;
-    width: 100%;
-}
-
-.main-container {
-    padding-top: calc(var(--navbar-height) + 2rem);
-    padding-bottom: 2rem;
-}
-
-.search-bar-row {
-    margin-bottom: 2rem;
-}
-
-
-/* --- SIDEBAR DE NAVEGAÇÃO DOS TEST RUNS --- */
-#sidebar-wrapper {
-    position: sticky;
-    top: calc(var(--navbar-height) + 1.5rem); /* Topo fixo abaixo da navbar */
-    max-height: calc(100vh - var(--navbar-height) - 3rem);
-    overflow-y: auto;
-    background-color: var(--surface-2);
-    border-radius: var(--radius-lg);
-    padding: var(--space-md);
-    border: 1px solid var(--border-color);
-}
-
-.sidebar-title {
-    color: var(--heading-color);
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-#test-runs-list .list-group-item {
-    background-color: var(--surface-elevated);
-    border: 1px solid var(--border-color-muted);
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    color: var(--text-color);
-    border-radius: var(--radius-md);
-}
-
-#test-runs-list .list-group-item:hover {
-    background-color: var(--primary-color-muted);
-    border-color: var(--primary-color);
-    transform: translateX(4px);
-}
-
-#test-runs-list .list-group-item.active {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    font-weight: 600;
-}
-
-.run-item-scores {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.run-score-badge {
-    font-size: 0.7rem;
-    padding: 0.2em 0.5em;
-    border-radius: var(--radius-sm);
-    color: white;
-    font-weight: 500;
-}
-.score-badge-high { background-color: #28a745; }
-.score-badge-low { background-color: #dc3545; }
-.score-badge-mid { background-color: #ffc107; color: #333; }
-
-/* --- ÁREA DE CONTEÚDO PRINCIPAL --- */
-#main-content-area {
-    background-color: var(--surface-2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
-}
-
-#main-content-area .content-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    text-align: center;
-    color: var(--text-color-muted);
-}
-
-#main-content-area .content-placeholder i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-
-/* --- COMPONENTES DE VISUALIZAÇÃO --- */
-
-/* Cartão de Metadados */
+/* Cartão para metadados */
 .metadata-card {
     background-color: var(--surface-2);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: var(--space-lg);
     box-shadow: var(--shadow-sm);
+}
+.metadata-card h4 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
 }
 .metadata-grid {
     display: grid;
@@ -141,21 +30,31 @@ body {
     text-transform: uppercase;
     margin-bottom: 0.25rem;
 }
+
+/* Item de metadados que ocupa a largura total */
 .metadata-item-full-width {
     grid-column: 1 / -1;
+    background-color: var(--surface-elevated);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+}
+.metadata-item-full-width strong {
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    text-transform: uppercase;
 }
 .metadata-item-full-width pre {
     background-color: #2d2d2d;
     color: #f0f0f0;
     padding: var(--space-md);
     border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    white-space: pre-wrap;       
+    word-wrap: break-word;  
 }
 
-
-/* Métricas Gerais */
+/* Estilos para as Métricas Gerais */
 .summary-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -173,7 +72,7 @@ body {
     margin-bottom: 0.5rem;
 }
 .summary-metric-item .average-score {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--primary-color);
 }
@@ -191,49 +90,55 @@ body {
     border-radius: var(--radius-sm);
 }
 
-/* Seções e Títulos */
+
+/* Estilos para o corpo do acordeão */
+.accordion-body {
+    background-color: var(--surface-1);
+}
+.accordion-button:not(.collapsed) {
+    background-color: var(--primary-color);
+    color: white;
+}
+.accordion-button:not(.collapsed)::after {
+    filter: brightness(0) invert(1);
+}
+
+/* Seções dentro de cada experimento */
 .section-title {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     color: var(--heading-color);
     border-bottom: 2px solid var(--primary-color-muted);
     padding-bottom: 0.5rem;
-    margin-top: 2rem;
-    margin-bottom: 1.5rem;
-}
-.section-title:first-child {
-    margin-top: 0;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
 }
 
-/* Caixas de Comparação */
+/* Caixas de comparação (Resposta do Agente vs. Golden) */
 .comparison-box {
     background-color: var(--surface-elevated);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: var(--space-lg);
     height: 100%;
+    white-space: pre-wrap;
     word-wrap: break-word;
 }
 .comparison-box h5 {
     font-weight: 600;
     color: var(--heading-color);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
 }
 .comparison-box .golden-answer {
-    border-left: 4px solid #ffd700;
+    border-left: 4px solid #ffd700; /* Destaque dourado */
     padding-left: 1rem;
 }
 .comparison-box .agent-answer {
-    border-left: 4px solid var(--primary-color);
+    border-left: 4px solid var(--primary-color); /* Destaque azul */
     padding-left: 1rem;
 }
-.comparison-box .markdown-content p:last-child {
-    margin-bottom: 0;
-}
 
-/* Raciocínio (Reasoning) */
+/* Estilo para o log de Raciocínio (Reasoning) */
 .reasoning-step {
-    background: var(--surface-elevated);
+    background: var(--surface-2);
     border-left: 3px solid var(--border-color-muted);
     padding: var(--space-md);
     margin-bottom: var(--space-md);
@@ -249,57 +154,71 @@ body {
     color: #f0f0f0;
     padding: var(--space-md);
     border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
     white-space: pre-wrap;
     word-wrap: break-word;
 }
 
-/* Avaliações */
-.evaluations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--space-md);
-}
-
+/* Estilo para as avaliações */
 .evaluation-card {
-    background: var(--surface-elevated);
+    background: var(--surface-2);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--space-md);
+    margin-bottom: var(--space-sm);
     display: flex;
     flex-direction: column;
+    align-items: stretch;
 }
 .evaluation-card .main-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
 }
 .evaluation-card .name {
     font-weight: 600;
+}
+.evaluation-card .main-info p.name {
     margin-bottom: 0;
 }
 .evaluation-card .score {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: bold;
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
     color: white;
-    flex-shrink: 0;
 }
-.score-high { background-color: #28a745; }
-.score-low { background-color: #dc3545; }
-.score-mid { background-color: #ffc107; color: #333; }
+/* Cores para as notas */
+.score-high { background-color: #28a745; } /* Verde para 1.0 */
+.score-low { background-color: #dc3545; } /* Vermelho para 0.0 */
+.score-mid { background-color: #ffc107; } /* Amarelo para notas médias */
 
 .explanation {
+    background-color: var(--surface-elevated);
     font-size: 0.9rem;
-    color: var(--text-color);
+    color: var(--text-color-muted);
     border-top: 1px dashed var(--border-color);
     margin-top: var(--space-md);
     padding-top: var(--space-md);
 }
+
+/* Estilos para o conteúdo renderizado do Markdown */
+.explanation h1, .explanation h2, .explanation h3, .explanation h4 {
+    font-size: 1.1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    color: var(--heading-color);
+}
+.explanation p {
+    margin-bottom: 0.5rem;
+}
 .explanation p:last-child {
     margin-bottom: 0;
+}
+.explanation ul, .explanation ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 .explanation pre {
     background-color: #2d2d2d;
@@ -309,14 +228,11 @@ body {
     white-space: pre-wrap;
     word-wrap: break-word;
 }
-.explanation code:not(pre > code) {
-    background-color: var(--surface-1);
-    padding: .2em .4em;
-    border-radius: var(--radius-sm);
-    font-size: 85%;
+.explanation code {
+    font-family: 'JetBrains Mono', monospace;
 }
 
-/* Modal de JSON */
+/* Estilos para o Modal de JSON */
 .modal-body pre {
     white-space: pre-wrap;
     word-wrap: break-word;
