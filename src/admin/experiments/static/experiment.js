@@ -151,7 +151,6 @@ function renderMetadata(metadata) {
         </div>
     `;
 
-  // **CORREÇÃO IMPORTANTE**: Atribuir o conteúdo como texto puro
   if (metadata.system_prompt) {
     document.getElementById("system-prompt-code").textContent =
       metadata.system_prompt;
@@ -339,7 +338,7 @@ function calculateAndRenderSummaryMetrics(experimentData) {
         metrics[ann.name] = { scores: [], counts: {} };
       }
       metrics[ann.name].scores.push(ann.score);
-      const scoreKey = ann.score.toFixed(1);
+      const scoreKey = ann.score; // Use o número puro como chave
       metrics[ann.name].counts[scoreKey] =
         (metrics[ann.name].counts[scoreKey] || 0) + 1;
     });
@@ -366,10 +365,16 @@ function calculateAndRenderSummaryMetrics(experimentData) {
     const average =
       metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
 
-    // **CORREÇÃO**: Ordenar as notas e formatar a distribuição corretamente
+    // **CORREÇÃO**: Lógica para formatar os números da distribuição
     const distributionHtml = Object.entries(metric.counts)
       .sort(([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA))
-      .map(([score, count]) => `<span>${score}: ${count}</span>`)
+      .map(([score, count]) => {
+        const scoreNum = parseFloat(score);
+        // Exibe como inteiro se for 0, 1, etc. Senão, com 1 casa decimal.
+        const formattedScore =
+          scoreNum % 1 === 0 ? scoreNum.toFixed(0) : scoreNum.toFixed(1);
+        return `<span>${formattedScore}: ${count}</span>`;
+      })
       .join("");
 
     metricsHtml += `
