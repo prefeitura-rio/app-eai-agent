@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Experiment page JavaScript loaded successfully");
+
   const experimentIdInput = document.getElementById("experimentIdInput");
   const fetchExperimentBtn = document.getElementById("fetchExperimentBtn");
   const resultContainer = document.getElementById("resultContainer");
@@ -6,14 +8,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadingIndicator = document.getElementById("loadingIndicator");
   const alertArea = document.getElementById("alertArea");
 
+  console.log("DOM elements found:", {
+    experimentIdInput: !!experimentIdInput,
+    fetchExperimentBtn: !!fetchExperimentBtn,
+    resultContainer: !!resultContainer,
+    resultJson: !!resultJson,
+    loadingIndicator: !!loadingIndicator,
+    alertArea: !!alertArea,
+  });
+
   let PHOENIX_ENDPOINT = "";
 
   // Função para buscar a configuração do backend. A URL relativa '/experiments/config'
   // será resolvida pelo navegador para '/admin/experiments/config'.
   const fetchConfig = async () => {
+    console.log("Fetching config...");
     try {
       const response = await axios.get("config"); // URL relativa funciona aqui
+      console.log("Config response:", response.data);
       PHOENIX_ENDPOINT = response.data.phoenix_endpoint;
+      console.log("Phoenix endpoint set to:", PHOENIX_ENDPOINT);
       if (!PHOENIX_ENDPOINT) {
         showAlert(
           "A URL do serviço Phoenix não foi configurada no backend.",
@@ -82,12 +96,18 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
   };
 
-  fetchExperimentBtn.addEventListener("click", fetchExperimentData);
+  fetchExperimentBtn.addEventListener("click", () => {
+    console.log("Button clicked");
+    fetchExperimentData();
+  });
+
   experimentIdInput.addEventListener("keypress", (event) => {
     if (event.key === "Enter") {
+      console.log("Enter key pressed");
       fetchExperimentData();
     }
   });
 
+  console.log("Event listeners attached");
   fetchConfig();
 });
