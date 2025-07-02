@@ -149,7 +149,7 @@
     padding: var(--space-md);
     margin-bottom: var(--space-sm);
     display: flex;
-    align-items: baseline; /* CORREÇÃO: Alinha score e nome pela base do texto */
+    align-items: baseline;
     gap: var(--space-md);
 }
 
@@ -159,7 +159,7 @@
 
 .evaluation-card .name {
     font-weight: 600;
-    margin-bottom: 0; /* Garante que não haja margem extra */
+    margin-bottom: 0;
 }
 .evaluation-card .score {
     font-size: 1.2rem;
@@ -203,4 +203,55 @@
 .modal-body pre {
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+/* --- NOVOS ESTILOS PARA MÉTRICAS GERAIS --- */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+.summary-metric-item {
+    background: var(--surface-elevated);
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+.summary-metric-item h6 {
+    font-weight: 600;
+    color: var(--text-color);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+.summary-metric-item .average-score {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.2;
+}
+.progress-bar-summary {
+    height: 8px;
+    background-color: var(--surface-1);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin: 0.75rem 0;
+}
+.progress-bar-summary-inner {
+    height: 100%;
+    background-color: var(--primary-color-muted);
+}
+.score-distribution {
+    font-size: 0.8rem;
+    color: var(--text-color-muted);
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.score-distribution span {
+    background: var(--surface-1);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-sm);
 }

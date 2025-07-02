@@ -6,9 +6,12 @@ const alertArea = document.getElementById("alertArea");
 const logoutBtn = document.getElementById("logoutBtn");
 const resultContainer = document.getElementById("resultContainer");
 const metadataContainer = document.getElementById("metadataContainer");
+const summaryMetricsContainer = document.getElementById(
+  "summaryMetricsContainer"
+);
+const filterContainer = document.getElementById("filterContainer");
 const experimentAccordion = document.getElementById("experimentAccordion");
 const experimentsPanel = document.getElementById("experimentsPanel");
-const filterContainer = document.getElementById("filterContainer");
 
 // --- VARIÁVEIS GLOBAIS ---
 let currentToken = localStorage.getItem("adminToken");
@@ -187,9 +190,10 @@ function renderEvaluations(annotations) {
   const sortedAnnotations = [...annotations].sort((a, b) => {
     const indexA = desiredOrder.indexOf(a.name);
     const indexB = desiredOrder.indexOf(b.name);
-    const effectiveIndexA = indexA === -1 ? Infinity : indexA;
-    const effectiveIndexB = indexB === -1 ? Infinity : indexB;
-    return effectiveIndexA - effectiveIndexB;
+    return (
+      (indexA === -1 ? Infinity : indexA) -
+      (indexB === -1 ? Infinity : indexB)
+    );
   });
   return sortedAnnotations
     .map((ann) => {
@@ -211,7 +215,7 @@ function renderEvaluations(annotations) {
               ann.score
             )}">${ann.score.toFixed(1)}</div>
             <div class="details">
-                <div class="name">${ann.name}</div>
+                <p class="name">${ann.name}</p>
                 ${
                   explanationContent
                     ? `<div class="explanation">${explanationContent}</div>`
@@ -309,11 +313,79 @@ function renderCollapsibleReasoning(orderedSteps, accordionId) {
     `;
 }
 
-// --- FUNÇÕES DE FILTRAGEM ---
+function calculateAndRenderSummaryMetrics(experimentData) {
+  const metrics = {};
+  experimentData.forEach((exp) => {
+    if (!exp.annotations) return;
+    exp.annotations.forEach((ann) => {
+      if (!metrics[ann.name]) {
+        metrics[ann.name] = { scores: [], counts: {} };
+      }
+      metrics[ann.name].scores.push(ann.score);
+      metrics[ann.name].counts[ann.score] =
+        (metrics[ann.name].counts[ann.score] || 0) + 1;
+    });
+  });
+
+  let metricsHtml = "";
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+  const sortedMetricNames = Object.keys(metrics).sort((a, b) => {
+    const indexA = desiredOrder.indexOf(a);
+    const indexB = desiredOrder.indexOf(b);
+    return (
+      (indexA === -1 ? Infinity : indexA) -
+      (indexB === -1 ? Infinity : indexB)
+    );
+  });
+
+  for (const name of sortedMetricNames) {
+    const metric = metrics[name];
+    const average =
+      metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
+    const distributionHtml = Object.entries(metric.counts)
+      .sort(([scoreA], [scoreB]) => scoreB - scoreA)
+      .map(
+        ([score, count]) =>
+          `<span>${parseFloat(score).toFixed(1)}: ${count}</span>`
+      )
+      .join("");
+
+    metricsHtml += `
+            <div class="summary-metric-item">
+                <h6>${name}</h6>
+                <div class="average-score">${average.toFixed(2)}</div>
+                <div class="progress-bar-summary">
+                    <div class="progress-bar-summary-inner" style="width: ${
+                      average * 100
+                    }%"></div>
+                </div>
+                <div class="score-distribution">${distributionHtml}</div>
+            </div>
+        `;
+  }
+
+  metricsHtml += `
+        <div class="summary-metric-item">
+            <h6>Run Count</h6>
+            <div class="average-score" style="font-size: 2.25rem;">${experimentData.length}</div>
+        </div>
+    `;
+
+  summaryMetricsContainer.innerHTML = `
+        <div class="card metadata-card">
+            <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Métricas Gerais</h4>
+            <div class="summary-grid">${metricsHtml}</div>
+        </div>
+    `;
+}
 
 function renderFilters(experimentData) {
-  const dynamicFiltersContainer = document.getElementById("dynamicFilters");
-  dynamicFiltersContainer.innerHTML = "";
+  filterContainer.innerHTML = "";
 
   const filterOptions = {};
   experimentData.forEach((exp) => {
@@ -333,8 +405,6 @@ function renderFilters(experimentData) {
     "Golden Link in Answer",
     "Golden Link in Tool Calling",
   ];
-
-  // Ordena os filtros
   const sortedFilterNames = Object.keys(filterOptions).sort((a, b) => {
     const indexA = desiredOrder.indexOf(a);
     const indexB = desiredOrder.indexOf(b);
@@ -344,6 +414,7 @@ function renderFilters(experimentData) {
     );
   });
 
+  let filtersHtml = "";
   sortedFilterNames.forEach((name) => {
     const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
     const filterId = `filter-${name.replace(/\s+/g, "-")}`;
@@ -353,7 +424,7 @@ function renderFilters(experimentData) {
       optionsHtml += `<option value="${score}">${score.toFixed(1)}</option>`;
     });
 
-    const filterHtml = `
+    filtersHtml += `
             <div class="flex-grow-1">
                 <label for="${filterId}" class="form-label small fw-bold">${name}</label>
                 <select id="${filterId}" class="form-select" data-metric-name="${name}">
@@ -361,17 +432,25 @@ function renderFilters(experimentData) {
                 </select>
             </div>
         `;
-    dynamicFiltersContainer.innerHTML += filterHtml;
   });
 
-  document
-    .getElementById("applyFiltersBtn")
-    .addEventListener("click", applyFilters);
-  document
-    .getElementById("clearFiltersBtn")
-    .addEventListener("click", clearFilters);
-
-  filterContainer.classList.remove("d-none");
+  if (filtersHtml) {
+    filterContainer.innerHTML = `
+            <div class="card metadata-card mt-4">
+                 <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Filtros de Avaliação</h4>
+                 <div id="dynamicFilters" class="d-flex flex-wrap gap-3">${filtersHtml}</div>
+                 <div class="d-flex gap-2 mt-3">
+                     <button id="applyFiltersBtn" class="btn btn-success"><i class="bi bi-funnel-fill me-1"></i> Aplicar Filtros</button>
+                     <button id="clearFiltersBtn" class="btn btn-outline-secondary">Limpar Filtros</button>
+                 </div>
+            </div>`;
+    document
+      .getElementById("applyFiltersBtn")
+      .addEventListener("click", applyFilters);
+    document
+      .getElementById("clearFiltersBtn")
+      .addEventListener("click", clearFilters);
+  }
 }
 
 function applyFilters() {
@@ -397,7 +476,6 @@ function applyFilters() {
           break;
         }
       }
-
       item.classList.toggle("d-none", !shouldShow);
     });
 }
@@ -415,9 +493,12 @@ function clearFilters() {
 
 function renderExperimentReport(data) {
   metadataContainer.innerHTML = "";
+  summaryMetricsContainer.innerHTML = "";
+  filterContainer.innerHTML = "";
   experimentAccordion.innerHTML = "";
 
   renderMetadata(data.experiment_metadata);
+  calculateAndRenderSummaryMetrics(data.experiment);
   renderFilters(data.experiment);
 
   data.experiment.forEach((exp, index) => {
@@ -439,8 +520,7 @@ function renderExperimentReport(data) {
       : "<p>N/A</p>";
 
     const accordionItem = document.createElement("div");
-    accordionItem.className = "accordion-item";
-    // Armazena as anotações no dataset do elemento para a filtragem
+    accordionItem.className = "accordion-item mt-4";
     accordionItem.dataset.annotations = JSON.stringify(exp.annotations || []);
     accordionItem.innerHTML = `
         <h2 class="accordion-header" id="heading-${accordionId}">
@@ -480,7 +560,6 @@ function renderExperimentReport(data) {
   resultContainer.classList.remove("d-none");
 }
 
-// --- FUNÇÃO DE FETCH ---
 function fetchExperimentData() {
   const expId = experimentIdInput.value.trim();
   if (!expId) {
@@ -490,7 +569,6 @@ function fetchExperimentData() {
 
   loadingIndicator.classList.remove("d-none");
   resultContainer.classList.add("d-none");
-  filterContainer.classList.add("d-none");
   alertArea.innerHTML = "";
   fetchExperimentBtn.disabled = true;
   fetchExperimentBtn.innerHTML =
@@ -523,7 +601,6 @@ function fetchExperimentData() {
       console.error("Erro ao buscar experimento:", error);
       showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
       resultContainer.classList.add("d-none");
-      filterContainer.classList.add("d-none");
     })
     .finally(() => {
       loadingIndicator.classList.add("d-none");
