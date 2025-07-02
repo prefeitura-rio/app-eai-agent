@@ -139,7 +139,7 @@ class LettaService:
                     agent_id=agent_id, messages=[letta_message]
                 )
 
-            agent_message_response = await process_stream(create_response)
+            agent_message_response = await process_stream(create_response())
             return agent_message_response or ""
 
         except Exception as error:
@@ -180,7 +180,7 @@ class LettaService:
                     agent_id=agent_id, messages=[letta_message]
                 )
 
-            agent_message_response = await process_stream(create_response)
+            agent_message_response = await process_stream(create_response())
             return agent_message_response or ""
 
         except Exception as error:
@@ -222,7 +222,7 @@ class LettaService:
                     agent_id=agent_id, messages=[letta_message]
                 )
 
-            return await process_stream_raw(create_response)
+            return await process_stream_raw(create_response())
         except Exception as error:
             logger.error(f"Erro ao enviar mensagem: {error}")
             return {
