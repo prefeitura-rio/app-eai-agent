@@ -25,10 +25,10 @@ class LettaService:
 
         # Configurar timeout personalizado para o cliente HTTP
         timeout_config = httpx.Timeout(
-            connect=30.0,  # Timeout para conectar
-            read=env.LETTA_STREAM_TIMEOUT,  # Timeout para ler a resposta (120s)
-            write=30.0,  # Timeout para escrever
-            pool=60.0,  # Timeout para pool de conexões
+            connect=120.0,  # Timeout para conectar
+            read=120.0,  # Timeout para ler a resposta
+            write=120.0,  # Timeout para escrever
+            pool=120.0,  # Timeout para pool de conexões
         )
 
         # Configurar cliente HTTP personalizado
