@@ -21,7 +21,7 @@ async def get_experiments_page(request: Request):
     Retorna a página principal de visualização de experimentos.
     A URL final será /admin/experiments/
     """
-    html_path = os.path.join(STATIC_DIR, "experiments.html")
+    html_path = os.path.join(STATIC_DIR, "experiment.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
@@ -29,7 +29,7 @@ async def get_experiments_page(request: Request):
         logger.error(f"Arquivo não encontrado: {html_path}")
         return Response(content="Página não encontrada.", status_code=404)
     except Exception as e:
-        logger.error(f"Erro ao carregar experiments.html: {str(e)}")
+        logger.error(f"Erro ao carregar experiment.html: {str(e)}")
         return HTMLResponse(
             content=f"<h1>Erro ao carregar a página de experimentos: {e}</h1>",
             status_code=500,
