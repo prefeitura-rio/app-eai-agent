@@ -1,98 +1,258 @@
-// Elementos DOM principais
+// --- ELEMENTOS DOM ---
 const experimentIdInput = document.getElementById("experimentIdInput");
 const fetchExperimentBtn = document.getElementById("fetchExperimentBtn");
-const resultContainer = document.getElementById("resultContainer");
-const resultJson = document.getElementById("resultJson");
 const loadingIndicator = document.getElementById("loadingIndicator");
 const alertArea = document.getElementById("alertArea");
-const experimentsPanel = document.getElementById("experimentsPanel");
 const logoutBtn = document.getElementById("logoutBtn");
+const resultContainer = document.getElementById("resultContainer");
+const metadataContainer = document.getElementById("metadataContainer");
+const experimentAccordion = document.getElementById("experimentAccordion");
+const experimentsPanel = document.getElementById("experimentsPanel");
 
-// Variáveis globais
+// --- VARIÁVEIS GLOBAIS ---
 let currentToken = localStorage.getItem("adminToken");
 
-// Configuração inicial
+// --- INICIALIZAÇÃO ---
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM carregado, inicializando painel de experimentos");
-
-  // Verificar se já existe um token salvo
   if (currentToken) {
     showExperimentsPanel();
   }
-
-  // Event Listeners
   if (logoutBtn) {
     logoutBtn.addEventListener("click", handleLogout);
   }
-
-  // Adicionar listener para o evento de experimentos prontos
-  document.addEventListener("experimentsReady", function (e) {
-    console.log(
-      "Evento experimentsReady recebido, inicializando funcionalidades."
-    );
-    // Aguardar um momento para garantir que os elementos estejam prontos
-    setTimeout(initializeExperimentsFunctionality, 100);
-  });
+  document.addEventListener(
+    "experimentsReady",
+    initializeExperimentsFunctionality
+  );
 });
 
-// Funções de UI
+// --- FUNÇÕES DE UI E LÓGICA ---
+
 function showExperimentsPanel() {
   if (experimentsPanel) {
     document.querySelector(".login-container").classList.add("d-none");
     experimentsPanel.classList.remove("d-none");
-    setTimeout(initializeExperimentsFunctionality, 100);
+    initializeExperimentsFunctionality();
   }
 }
 
-function showAlert(message, type = "danger") {
-  if (alertArea) {
-    alertArea.innerHTML = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
+function initializeExperimentsFunctionality() {
+  if (fetchExperimentBtn && !fetchExperimentBtn.dataset.listenerAttached) {
+    fetchExperimentBtn.addEventListener("click", fetchExperimentData);
+    fetchExperimentBtn.dataset.listenerAttached = "true";
+  }
+  if (experimentIdInput && !experimentIdInput.dataset.listenerAttached) {
+    experimentIdInput.addEventListener("keypress", (event) => {
+      if (event.key === "Enter") fetchExperimentData();
+    });
+    experimentIdInput.dataset.listenerAttached = "true";
   }
 }
 
-// Manipuladores de eventos
 function handleLogout() {
   localStorage.removeItem("adminToken");
   location.reload();
 }
 
-function initializeExperimentsFunctionality() {
-  console.log("Inicializando funcionalidades de experimentos");
-
-  if (fetchExperimentBtn) {
-    fetchExperimentBtn.addEventListener("click", fetchExperimentData);
+function showAlert(message, type = "danger") {
+  if (alertArea) {
+    const alertId = `alert-${Date.now()}`;
+    alertArea.innerHTML = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+    // Auto-dismiss success alerts
+    if (type === "success") {
+      setTimeout(() => {
+        const alertElement = document.getElementById(alertId);
+        if (alertElement) {
+          new bootstrap.Alert(alertElement).close();
+        }
+      }, 4000);
+    }
   }
-
-  if (experimentIdInput) {
-    experimentIdInput.addEventListener("keypress", function (event) {
-      if (event.key === "Enter") {
-        fetchExperimentData();
-      }
-    });
-  }
-
-  console.log("Event listeners attached");
 }
 
-// Função para buscar os dados do experimento através do proxy do backend
-function fetchExperimentData() {
-  if (!experimentIdInput || !fetchExperimentBtn) {
-    console.error("DOM elements not found");
-    return;
-  }
+function getScoreClass(score) {
+  if (score === 1.0) return "score-high";
+  if (score === 0.0) return "score-low";
+  return "score-mid";
+}
 
+// --- FUNÇÕES DE RENDERIZAÇÃO ---
+
+function renderMetadata(metadata) {
+  if (!metadata) return;
+  metadataContainer.innerHTML = `
+        <div class="card metadata-card">
+            <h4 class="section-title">Parâmetros do Experimento</h4>
+            <div class="metadata-grid">
+                <div class="metadata-item"><strong>Modelo de Avaliação:</strong> ${
+                  metadata.eval_model || "N/A"
+                }</div>
+                <div class="metadata-item"><strong>Modelo de Resposta Final:</strong> ${
+                  metadata.final_repose_model || "N/A"
+                }</div>
+                <div class="metadata-item"><strong>Temperatura:</strong> ${
+                  metadata.temperature || "N/A"
+                }</div>
+                <div class="metadata-item"><strong>Ferramentas:</strong> ${
+                  metadata.tools?.join(", ") || "N/A"
+                }</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderEvaluations(annotations) {
+  if (!annotations || annotations.length === 0)
+    return "<p>Nenhuma avaliação disponível.</p>";
+
+  return annotations
+    .map(
+      (ann) => `
+        <div class="evaluation-card">
+            <div class="details">
+                <div class="name">${ann.name}</div>
+                ${
+                  ann.explanation
+                    ? `<div class="explanation">${ann.explanation}</div>`
+                    : ""
+                }
+            </div>
+            <div class="score ${getScoreClass(
+              ann.score
+            )}">${ann.score.toFixed(1)}</div>
+        </div>
+    `
+    )
+    .join("");
+}
+
+function renderReasoning(orderedSteps) {
+  if (!orderedSteps || orderedSteps.length === 0) return "";
+
+  return orderedSteps
+    .map((step) => {
+      if (step.type === "reasoning_message") {
+        return `
+                <div class="reasoning-step">
+                    <strong>🧠 Raciocínio:</strong>
+                    <p>"${step.message.reasoning}"</p>
+                </div>`;
+      }
+      if (step.type === "tool_call_message") {
+        return `
+                <div class="reasoning-step">
+                    <strong>🔧 Chamada de Ferramenta: ${
+                      step.message.tool_call.name
+                    }</strong>
+                    <pre><code>${JSON.stringify(
+                      step.message.tool_call.arguments,
+                      null,
+                      2
+                    )}</code></pre>
+                </div>`;
+      }
+      if (step.type === "tool_return_message" && step.message.tool_return) {
+        const toolReturn =
+          typeof step.message.tool_return === "string"
+            ? step.message.tool_return
+            : JSON.stringify(step.message.tool_return, null, 2);
+
+        return `
+                <div class="reasoning-step">
+                    <strong>↪️ Retorno da Ferramenta:</strong>
+                    <pre><code>${toolReturn}</code></pre>
+                </div>`;
+      }
+      return "";
+    })
+    .join("");
+}
+
+function renderExperimentReport(data) {
+  // Limpa resultados anteriores
+  metadataContainer.innerHTML = "";
+  experimentAccordion.innerHTML = "";
+
+  // Renderiza os metadados no topo
+  renderMetadata(data.experiment_metadata);
+
+  // Renderiza cada item do experimento em um acordeão
+  data.experiment.forEach((exp, index) => {
+    const accordionId = `exp-${exp.example_id}`;
+    const output = exp.output;
+    const agentOutput = output.agent_output;
+    const reference = exp.reference_output;
+
+    const accordionItemHTML = `
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-${accordionId}">
+                    <button class="accordion-button ${
+                      index > 0 ? "collapsed" : ""
+                    }" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="${
+      index === 0
+    }" aria-controls="collapse-${accordionId}">
+                        <strong>ID do Teste:</strong> ${output.metadata.id}
+                    </button>
+                </h2>
+                <div id="collapse-${accordionId}" class="accordion-collapse collapse ${
+      index === 0 ? "show" : ""
+    }" aria-labelledby="heading-${accordionId}" data-bs-parent="#experimentAccordion">
+                    <div class="accordion-body">
+                        
+                        <h4 class="section-title">Mensagem do Usuário</h4>
+                        <div class="alert alert-secondary">${
+                          exp.input.mensagem_whatsapp_simulada
+                        }</div>
+
+                        <h4 class="section-title">Comparação de Respostas</h4>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="comparison-box">
+                                    <h5 class="agent-answer">🤖 Resposta do Agente</h5>
+                                    <p>${
+                                      agentOutput?.ordered.find(
+                                        (m) => m.type === "assistant_message"
+                                      )?.message.content || "N/A"
+                                    }</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="comparison-box">
+                                    <h5 class="golden-answer">🏆 Resposta de Referência (Golden)</h5>
+                                    <p>${reference.golden_answer}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="section-title">Avaliações</h4>
+                        ${renderEvaluations(exp.annotations)}
+                        
+                        <h4 class="section-title">Passo a Passo do Agente (Reasoning)</h4>
+                        ${renderReasoning(agentOutput?.ordered)}
+
+                    </div>
+                </div>
+            </div>
+        `;
+    experimentAccordion.innerHTML += accordionItemHTML;
+  });
+
+  resultContainer.classList.remove("d-none");
+}
+
+// --- FUNÇÃO DE FETCH ---
+function fetchExperimentData() {
   const expId = experimentIdInput.value.trim();
   if (!expId) {
     showAlert("Por favor, insira um ID de experimento.", "warning");
     return;
   }
 
-  // Prepara a UI para a requisição
   loadingIndicator.classList.remove("d-none");
   resultContainer.classList.add("d-none");
   alertArea.innerHTML = "";
@@ -100,10 +260,7 @@ function fetchExperimentData() {
   fetchExperimentBtn.innerHTML =
     '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...';
 
-  // A URL agora aponta para o nosso endpoint de proxy no backend.
-  // O navegador fará a chamada para /eai-agent/admin/experiments/data?id=...
   const url = `data?id=${encodeURIComponent(expId)}`;
-  console.log("Buscando dados via proxy do backend:", url);
 
   fetch(url, {
     headers: {
@@ -112,9 +269,8 @@ function fetchExperimentData() {
     },
   })
     .then(async (response) => {
-      // Se a resposta não for OK, tenta extrair o erro do corpo JSON
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null); // Tenta parsear JSON, se falhar retorna null
+        const errorData = await response.json().catch(() => null);
         const errorMessage =
           errorData?.detail ||
           `HTTP ${response.status}: ${response.statusText}`;
@@ -123,18 +279,15 @@ function fetchExperimentData() {
       return response.json();
     })
     .then((data) => {
-      // Sucesso
-      resultJson.textContent = JSON.stringify(data, null, 2);
-      resultContainer.classList.remove("d-none");
+      // AQUI ESTÁ A MUDANÇA PRINCIPAL
+      renderExperimentReport(data);
       showAlert("Experimento carregado com sucesso!", "success");
     })
     .catch((error) => {
-      // Erros de rede ou erros retornados pelo nosso backend
       console.error("Erro ao buscar experimento:", error);
       showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
     })
     .finally(() => {
-      // Restaura a UI
       loadingIndicator.classList.add("d-none");
       fetchExperimentBtn.disabled = false;
       fetchExperimentBtn.innerHTML =

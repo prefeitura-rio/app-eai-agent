@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 import os
 import mimetypes
 from loguru import logger
-import httpx  # Adicionando httpx para requisições HTTP assíncronas
+import httpx
 import json
 
 # Cria um novo roteador para a seção de experimentos

@@ -65,10 +65,17 @@
                         <span class="visually-hidden">Carregando...</span>
                     </div>
                 </div>
-
+                    <!-- O contêiner de resultados agora terá metadados e um acordeão para os experimentos -->
                     <div id="resultContainer" class="mt-4 d-none">
-                        <h4 class="section-title">Resultado do Experimento</h4>
-                        <pre id="resultJson" class="result-box"></pre>
+                        
+                        <!-- Seção para Metadados do Experimento -->
+                        <div id="metadataContainer" class="mb-4"></div>
+
+                        <!-- Acordeão para listar cada item do experimento -->
+                        <div class="accordion" id="experimentAccordion">
+                            <!-- Itens do experimento serão inseridos aqui via JavaScript -->
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
