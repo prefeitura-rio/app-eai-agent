@@ -41,7 +41,6 @@
     text-transform: uppercase;
 }
 
-/* CORREÇÃO: Estilo para PRE dentro da seção de metadados */
 .metadata-item-full-width pre {
     background-color: #2d2d2d;
     color: #f0f0f0;
@@ -106,11 +105,11 @@
     color: var(--heading-color);
 }
 .comparison-box .golden-answer {
-    border-left: 4px solid #ffd700; /* Destaque dourado */
+    border-left: 4px solid #ffd700;
     padding-left: 1rem;
 }
 .comparison-box .agent-answer {
-    border-left: 4px solid var(--primary-color); /* Destaque azul */
+    border-left: 4px solid var(--primary-color);
     padding-left: 1rem;
 }
 
@@ -150,16 +149,17 @@
     padding: var(--space-md);
     margin-bottom: var(--space-sm);
     display: flex;
-    align-items: flex-start; /* Alinha no topo */
-    gap: var(--space-md); /* Espaço entre score e detalhes */
+    align-items: baseline; /* CORREÇÃO: Alinha score e nome pela base do texto */
+    gap: var(--space-md);
 }
 
 .evaluation-card .details {
-    flex-grow: 1; /* Faz os detalhes ocuparem o espaço restante */
+    flex-grow: 1;
 }
 
 .evaluation-card .name {
     font-weight: 600;
+    margin-bottom: 0; /* Garante que não haja margem extra */
 }
 .evaluation-card .score {
     font-size: 1.2rem;
@@ -167,12 +167,12 @@
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
     color: white;
-    flex-shrink: 0; /* Impede que o score encolha */
+    flex-shrink: 0;
 }
 /* Cores para as notas */
-.score-high { background-color: #28a745; } /* Verde para 1.0 */
-.score-low { background-color: #dc3545; } /* Vermelho para 0.0 */
-.score-mid { background-color: #ffc107; color: #212529 !important; } /* Amarelo para notas médias */
+.score-high { background-color: #28a745; }
+.score-low { background-color: #dc3545; }
+.score-mid { background-color: #ffc107; color: #212529 !important; }
 
 .explanation {
     background-color: var(--surface-elevated);

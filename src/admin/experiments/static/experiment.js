@@ -8,10 +8,11 @@ const resultContainer = document.getElementById("resultContainer");
 const metadataContainer = document.getElementById("metadataContainer");
 const experimentAccordion = document.getElementById("experimentAccordion");
 const experimentsPanel = document.getElementById("experimentsPanel");
+const filterContainer = document.getElementById("filterContainer");
 
 // --- VARIÁVEIS GLOBAIS ---
 let currentToken = localStorage.getItem("adminToken");
-let originalJsonData = null; // Para armazenar o JSON original
+let originalJsonData = null;
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener("DOMContentLoaded", function () {
@@ -85,11 +86,8 @@ function getScoreClass(score) {
 
 function renderMetadata(metadata) {
   if (!metadata) return;
-
-  // CORREÇÃO: Trata o prompt como texto pré-formatado (código)
   const createPromptSection = (title, content, id) => {
     if (!content) return "";
-    // Escapa o conteúdo para exibição segura em <pre>
     const escapedContent = content
       .replace(/&/g, "&")
       .replace(/</g, "<")
@@ -108,7 +106,6 @@ function renderMetadata(metadata) {
             </div>
         `;
   };
-
   const promptsHTML = `
         ${createPromptSection(
           "System Prompt Principal",
@@ -121,7 +118,6 @@ function renderMetadata(metadata) {
           "systemPromptSimilarityCollapse"
         )}
     `;
-
   metadataContainer.innerHTML = `
         <div class="card metadata-card">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -153,7 +149,6 @@ function renderMetadata(metadata) {
             </div>
         </div>
     `;
-
   document.getElementById("viewJsonBtn").addEventListener("click", () => {
     const jsonModalContent = document.querySelector("#jsonModal pre code");
     if (jsonModalContent && originalJsonData) {
@@ -164,7 +159,6 @@ function renderMetadata(metadata) {
       );
     }
   });
-
   document.getElementById("downloadJsonBtn").addEventListener("click", () => {
     if (!originalJsonData) return;
     const expId = experimentIdInput.value.trim() || "experiment";
@@ -184,14 +178,12 @@ function renderEvaluations(annotations) {
   if (!annotations || annotations.length === 0) {
     return "<p>Nenhuma avaliação disponível.</p>";
   }
-
   const desiredOrder = [
     "Answer Similarity",
     "Activate Search Tools",
     "Golden Link in Answer",
     "Golden Link in Tool Calling",
   ];
-
   const sortedAnnotations = [...annotations].sort((a, b) => {
     const indexA = desiredOrder.indexOf(a.name);
     const indexB = desiredOrder.indexOf(b.name);
@@ -199,7 +191,6 @@ function renderEvaluations(annotations) {
     const effectiveIndexB = indexB === -1 ? Infinity : indexB;
     return effectiveIndexA - effectiveIndexB;
   });
-
   return sortedAnnotations
     .map((ann) => {
       let explanationContent = "";
@@ -214,7 +205,6 @@ function renderEvaluations(annotations) {
           explanationContent = ann.explanation;
         }
       }
-
       return `
         <div class="evaluation-card">
             <div class="score ${getScoreClass(
@@ -236,34 +226,27 @@ function renderEvaluations(annotations) {
 
 function renderReasoning(orderedSteps) {
   if (!orderedSteps || orderedSteps.length === 0) return "";
-
   return orderedSteps
     .map((step) => {
       let stepHtml = "";
       if (step.type === "reasoning_message") {
-        stepHtml = `
-            <strong>🧠 Raciocínio:</strong>
-            <p>"${step.message.reasoning}"</p>`;
+        stepHtml = `<strong>🧠 Raciocínio:</strong><p>"${step.message.reasoning}"</p>`;
       } else if (step.type === "tool_call_message") {
-        stepHtml = `
-            <strong>🔧 Chamada de Ferramenta: ${
-              step.message.tool_call.name
-            }</strong>
-            <pre><code>${JSON.stringify(
-              step.message.tool_call.arguments,
-              null,
-              2
-            )}</code></pre>`;
+        stepHtml = `<strong>🔧 Chamada de Ferramenta: ${
+          step.message.tool_call.name
+        }</strong><pre><code>${JSON.stringify(
+          step.message.tool_call.arguments,
+          null,
+          2
+        )}</code></pre>`;
       } else if (
         step.type === "tool_return_message" &&
         step.message.tool_return
       ) {
         const toolReturnData = step.message.tool_return;
         let returnContentHtml = "";
-
         if (typeof toolReturnData === "object" && toolReturnData !== null) {
           const remainingData = { ...toolReturnData };
-
           const createSubSection = (title, data, isMarkdown = false) => {
             if (!data || (Array.isArray(data) && data.length === 0))
               return "";
@@ -272,26 +255,22 @@ function renderReasoning(orderedSteps) {
               : `<pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
             return `<div class="mt-2"><strong>${title}</strong>${content}</div>`;
           };
-
           returnContentHtml += createSubSection(
             "Texto:",
             remainingData.text,
             true
           );
           delete remainingData.text;
-
           returnContentHtml += createSubSection(
             "Sources:",
             remainingData.sources
           );
           delete remainingData.sources;
-
           returnContentHtml += createSubSection(
             "Web Search Queries:",
             remainingData.web_search_queries
           );
           delete remainingData.web_search_queries;
-
           if (Object.keys(remainingData).length > 0) {
             returnContentHtml += createSubSection(
               "Dados Adicionais:",
@@ -299,16 +278,14 @@ function renderReasoning(orderedSteps) {
             );
           }
         } else {
-          const toolReturnString =
+          returnContentHtml = `<pre><code>${
             typeof toolReturnData === "string"
               ? toolReturnData
-              : JSON.stringify(toolReturnData, null, 2);
-          returnContentHtml = `<pre><code>${toolReturnString}</code></pre>`;
+              : JSON.stringify(toolReturnData, null, 2)
+          }</code></pre>`;
         }
-
         stepHtml = `<strong>↪️ Retorno da Ferramenta:</strong>${returnContentHtml}`;
       }
-
       return stepHtml ? `<div class="reasoning-step">${stepHtml}</div>` : "";
     })
     .join("");
@@ -318,9 +295,7 @@ function renderCollapsibleReasoning(orderedSteps, accordionId) {
   if (!orderedSteps || orderedSteps.length === 0) {
     return `<h4 class="section-title">Passo a Passo do Agente (Reasoning)</h4><p>Nenhum passo a passo disponível.</p>`;
   }
-
   const reasoningCollapseId = `reasoning-collapse-${accordionId}`;
-
   return `
         <div class="d-flex justify-content-between align-items-center mt-4">
             <h4 class="section-title mb-0" style="border-bottom: none;">Passo a Passo do Agente (Reasoning)</h4>
@@ -334,80 +309,172 @@ function renderCollapsibleReasoning(orderedSteps, accordionId) {
     `;
 }
 
+// --- FUNÇÕES DE FILTRAGEM ---
+
+function renderFilters(experimentData) {
+  const dynamicFiltersContainer = document.getElementById("dynamicFilters");
+  dynamicFiltersContainer.innerHTML = "";
+
+  const filterOptions = {};
+  experimentData.forEach((exp) => {
+    if (exp.annotations) {
+      exp.annotations.forEach((ann) => {
+        if (!filterOptions[ann.name]) {
+          filterOptions[ann.name] = new Set();
+        }
+        filterOptions[ann.name].add(ann.score);
+      });
+    }
+  });
+
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+
+  // Ordena os filtros
+  const sortedFilterNames = Object.keys(filterOptions).sort((a, b) => {
+    const indexA = desiredOrder.indexOf(a);
+    const indexB = desiredOrder.indexOf(b);
+    return (
+      (indexA === -1 ? Infinity : indexA) -
+      (indexB === -1 ? Infinity : indexB)
+    );
+  });
+
+  sortedFilterNames.forEach((name) => {
+    const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
+    const filterId = `filter-${name.replace(/\s+/g, "-")}`;
+
+    let optionsHtml = '<option value="">Qualquer Nota</option>';
+    scores.forEach((score) => {
+      optionsHtml += `<option value="${score}">${score.toFixed(1)}</option>`;
+    });
+
+    const filterHtml = `
+            <div class="flex-grow-1">
+                <label for="${filterId}" class="form-label small fw-bold">${name}</label>
+                <select id="${filterId}" class="form-select" data-metric-name="${name}">
+                    ${optionsHtml}
+                </select>
+            </div>
+        `;
+    dynamicFiltersContainer.innerHTML += filterHtml;
+  });
+
+  document
+    .getElementById("applyFiltersBtn")
+    .addEventListener("click", applyFilters);
+  document
+    .getElementById("clearFiltersBtn")
+    .addEventListener("click", clearFilters);
+
+  filterContainer.classList.remove("d-none");
+}
+
+function applyFilters() {
+  const activeFilters = {};
+  document.querySelectorAll("#dynamicFilters select").forEach((select) => {
+    if (select.value) {
+      activeFilters[select.dataset.metricName] = parseFloat(select.value);
+    }
+  });
+
+  document
+    .querySelectorAll("#experimentAccordion .accordion-item")
+    .forEach((item) => {
+      const annotations = JSON.parse(item.dataset.annotations || "[]");
+      let shouldShow = true;
+
+      for (const metricName in activeFilters) {
+        const targetScore = activeFilters[metricName];
+        const annotation = annotations.find((ann) => ann.name === metricName);
+
+        if (!annotation || annotation.score !== targetScore) {
+          shouldShow = false;
+          break;
+        }
+      }
+
+      item.classList.toggle("d-none", !shouldShow);
+    });
+}
+
+function clearFilters() {
+  document.querySelectorAll("#dynamicFilters select").forEach((select) => {
+    select.value = "";
+  });
+  document
+    .querySelectorAll("#experimentAccordion .accordion-item")
+    .forEach((item) => {
+      item.classList.remove("d-none");
+    });
+}
+
 function renderExperimentReport(data) {
   metadataContainer.innerHTML = "";
   experimentAccordion.innerHTML = "";
+
   renderMetadata(data.experiment_metadata);
+  renderFilters(data.experiment);
 
   data.experiment.forEach((exp, index) => {
     const sanitizedId = exp.example_id.replace(/[^a-zA-Z0-9_-]/g, "");
     const accordionId = `exp-${sanitizedId}`;
     const output = exp.output;
-    const agentOutput = output.agent_output;
-    const reference = exp.reference_output;
 
-    const agentAnswerContent = agentOutput?.ordered.find(
+    const agentAnswerHtml = exp.output.agent_output?.ordered.find(
       (m) => m.type === "assistant_message"
-    )?.message.content;
-    const goldenAnswerContent = reference.golden_answer;
-
-    const agentAnswerHtml = agentAnswerContent
-      ? marked.parse(agentAnswerContent)
+    )
+      ? marked.parse(
+          exp.output.agent_output.ordered.find(
+            (m) => m.type === "assistant_message"
+          ).message.content
+        )
       : "<p>N/A</p>";
-    const goldenAnswerHtml = goldenAnswerContent
-      ? marked.parse(goldenAnswerContent)
+    const goldenAnswerHtml = exp.reference_output.golden_answer
+      ? marked.parse(exp.reference_output.golden_answer)
       : "<p>N/A</p>";
 
-    const accordionItemHTML = `
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="heading-${accordionId}">
-                    <button class="accordion-button ${
-                      index > 0 ? "collapsed" : ""
-                    }" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="${
+    const accordionItem = document.createElement("div");
+    accordionItem.className = "accordion-item";
+    // Armazena as anotações no dataset do elemento para a filtragem
+    accordionItem.dataset.annotations = JSON.stringify(exp.annotations || []);
+    accordionItem.innerHTML = `
+        <h2 class="accordion-header" id="heading-${accordionId}">
+            <button class="accordion-button ${
+              index > 0 ? "collapsed" : ""
+            }" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="${
       index === 0
     }" aria-controls="collapse-${accordionId}">
-                        <strong>ID do Teste:</strong> ${output.metadata.id}
-                    </button>
-                </h2>
-                <div id="collapse-${accordionId}" class="accordion-collapse collapse ${
+                <strong>ID do Teste:</strong> ${output.metadata.id}
+            </button>
+        </h2>
+        <div id="collapse-${accordionId}" class="accordion-collapse collapse ${
       index === 0 ? "show" : ""
     }" aria-labelledby="heading-${accordionId}" data-bs-parent="#experimentAccordion">
-                    <div class="accordion-body">
-                        
-                        <h4 class="section-title">Mensagem do Usuário</h4>
-                        <div class="alert alert-secondary">${
-                          exp.input.mensagem_whatsapp_simulada
-                        }</div>
-
-                        <h4 class="section-title">Comparação de Respostas</h4>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="comparison-box">
-                                    <h5 class="agent-answer">🤖 Resposta do Agente</h5>
-                                    <div>${agentAnswerHtml}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="comparison-box">
-                                    <h5 class="golden-answer">🏆 Resposta de Referência (Golden)</h5>
-                                    <div>${goldenAnswerHtml}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <h4 class="section-title">Avaliações</h4>
-                        ${renderEvaluations(exp.annotations)}
-                        
-                        ${renderCollapsibleReasoning(
-                          agentOutput?.ordered,
-                          accordionId
-                        )}
-
-                    </div>
+            <div class="accordion-body">
+                <h4 class="section-title">Mensagem do Usuário</h4>
+                <div class="alert alert-secondary">${
+                  exp.input.mensagem_whatsapp_simulada
+                }</div>
+                <h4 class="section-title">Comparação de Respostas</h4>
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="comparison-box"><h5 class="agent-answer">🤖 Resposta do Agente</h5><div>${agentAnswerHtml}</div></div></div>
+                    <div class="col-md-6"><div class="comparison-box"><h5 class="golden-answer">🏆 Resposta de Referência (Golden)</h5><div>${goldenAnswerHtml}</div></div></div>
                 </div>
+                <h4 class="section-title">Avaliações</h4>
+                ${renderEvaluations(exp.annotations)}
+                ${renderCollapsibleReasoning(
+                  exp.output.agent_output?.ordered,
+                  accordionId
+                )}
             </div>
-        `;
-    experimentAccordion.innerHTML += accordionItemHTML;
+        </div>
+    `;
+    experimentAccordion.appendChild(accordionItem);
   });
 
   resultContainer.classList.remove("d-none");
@@ -423,6 +490,7 @@ function fetchExperimentData() {
 
   loadingIndicator.classList.remove("d-none");
   resultContainer.classList.add("d-none");
+  filterContainer.classList.add("d-none");
   alertArea.innerHTML = "";
   fetchExperimentBtn.disabled = true;
   fetchExperimentBtn.innerHTML =
@@ -439,10 +507,10 @@ function fetchExperimentData() {
     .then(async (response) => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        const errorMessage =
+        throw new Error(
           errorData?.detail ||
-          `HTTP ${response.status}: ${response.statusText}`;
-        throw new Error(errorMessage);
+            `HTTP ${response.status}: ${response.statusText}`
+        );
       }
       return response.json();
     })
@@ -455,6 +523,7 @@ function fetchExperimentData() {
       console.error("Erro ao buscar experimento:", error);
       showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
       resultContainer.classList.add("d-none");
+      filterContainer.classList.add("d-none");
     })
     .finally(() => {
       loadingIndicator.classList.add("d-none");

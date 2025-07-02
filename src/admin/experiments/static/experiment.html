@@ -39,7 +39,7 @@
         <!-- Painel Principal (escondido inicialmente) -->
         <div id="experimentsPanel" class="admin-container d-none">
             <div class="navbar">
-                <h1 class="nav-title">Visualizador de Experimentos v2</h1>
+                <h1 class="nav-title">Visualizador de Experimentos v1</h1>
                 <div class="d-flex align-items-center">
                     <button id="logoutBtn" class="btn btn-sm btn-outline-light">Sair</button>
                 </div>
@@ -49,35 +49,45 @@
                 <div class="card-body p-lg-5">
                     <p class="text-center text-muted mb-5">Insira o ID do experimento para buscar seus dados em formato JSON.</p>
                 
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control form-control-lg glass-input" id="experimentIdInput" placeholder="ID: RXhwZXJpbWVudDozNzU= (ultimo id da url do experimento)">
-                            <button class="btn btn-primary btn-lg" type="button" id="fetchExperimentBtn">
-                                <i class="bi bi-search me-1"></i> Buscar
-                            </button>
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control form-control-lg glass-input" id="experimentIdInput" placeholder="ID: RXhwZXJpbWVudDozNzU= (ultimo id da url do experimento)">
+                                <button class="btn btn-primary btn-lg" type="button" id="fetchExperimentBtn">
+                                    <i class="bi bi-search me-1"></i> Buscar
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="alertArea" class="mt-4"></div>
+                    <div id="alertArea" class="mt-4"></div>
 
-                <div id="loadingIndicator" class="d-none text-center my-5">
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                        <span class="visually-hidden">Carregando...</span>
+                    <div id="loadingIndicator" class="d-none text-center my-5">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
                     </div>
-                </div>
+
+                    <!-- Contêiner de Filtros (escondido até ter resultados) -->
+                    <div id="filterContainer" class="mt-4 d-none">
+                        <div class="card metadata-card">
+                             <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Filtros de Avaliação</h4>
+                             <div id="dynamicFilters" class="d-flex flex-wrap gap-3">
+                                 <!-- Filtros dinâmicos serão inseridos aqui -->
+                             </div>
+                             <div class="d-flex gap-2 mt-3">
+                                 <button id="applyFiltersBtn" class="btn btn-success"><i class="bi bi-funnel-fill me-1"></i> Aplicar Filtros</button>
+                                 <button id="clearFiltersBtn" class="btn btn-outline-secondary">Limpar Filtros</button>
+                             </div>
+                        </div>
+                    </div>
+
                     <!-- O contêiner de resultados agora terá metadados e um acordeão para os experimentos -->
                     <div id="resultContainer" class="mt-4 d-none">
-                        
-                        <!-- Seção para Metadados do Experimento -->
                         <div id="metadataContainer" class="mb-4"></div>
-
-                        <!-- Acordeão para listar cada item do experimento -->
                         <div class="accordion" id="experimentAccordion">
                             <!-- Itens do experimento serão inseridos aqui via JavaScript -->
                         </div>
-                    </div>
                     </div>
                 </div>
             </div>
@@ -112,17 +122,13 @@
                 e.preventDefault();
                 const token = document.getElementById('token').value;
                 
-                // Validar token
                 axios.get(`${API_BASE_URL}/api/v1/system-prompt`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
                 .then(response => {
-                    // Token válido, salvar e mostrar painel
                     localStorage.setItem('adminToken', token);
                     document.querySelector('.login-container').classList.add('d-none');
                     document.getElementById('experimentsPanel').classList.remove('d-none');
-                    
-                    // Disparar evento para inicializar funcionalidades
                     document.dispatchEvent(new Event('experimentsReady'));
                 })
                 .catch(error => {
