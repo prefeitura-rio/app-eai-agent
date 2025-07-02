@@ -22,7 +22,7 @@ async def get_experiments_page(request: Request):
     Retorna a página principal de visualização de experimentos.
     A URL final será /admin/experiments_v2/
     """
-    html_path = os.path.join(STATIC_DIR, "experiment.html")
+    html_path = os.path.join(STATIC_DIR, "experiment_v2.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
@@ -50,7 +50,7 @@ async def get_experiment_data(
     if not phoenix_endpoint.endswith("/"):
         phoenix_endpoint += "/"
 
-    url = f"{phoenix_endpoint}v1/experiments_v2/{id}/json"
+    url = f"{phoenix_endpoint}v1/experiments/{id}/json"
 
     logger.info(f"Fazendo proxy da requisição para: {url}")
 
