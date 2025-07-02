@@ -9,9 +9,10 @@
     --text-color: #212529;
     --text-color-muted: #6c757d;
     --heading-color: #343a40;
-    --green: #198754;
-    --red: #dc3545;
-    --yellow: #ffc107;
+    /* Novas cores mais sóbrias */
+    --green: #2a9d8f;  /* Verde azulado */
+    --red: #e76f51;    /* Vermelho alaranjado */
+    --yellow: #e9c46a; /* Amarelo ocre */
     --gold: #ffd700;
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
     --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
@@ -174,7 +175,7 @@ body {
 .metric-badge.score-high { background-color: var(--green); color: white; }
 .metric-badge.score-low { background-color: var(--red); color: white; }
 .metric-badge.score-mid { background-color: var(--yellow); color: var(--text-color); }
-.test-run-item.active .metric-badge.score-mid { color: white; background-color: rgba(255,193,7,0.5); }
+.test-run-item.active .metric-badge.score-mid { color: white; background-color: rgba(233,196,106,0.5); }
 
 
 /* --- COMPONENTES DO CONTEÚDO PRINCIPAL --- */
@@ -237,12 +238,12 @@ body {
     font-size: 0.9rem;
 }
 .comparison-content del {
-    background-color: rgba(220, 53, 69, 0.2);
+    background-color: rgba(231, 111, 81, 0.2);
     text-decoration: none;
     border-radius: var(--radius-sm);
 }
 .comparison-content ins {
-    background-color: rgba(25, 135, 84, 0.2);
+    background-color: rgba(42, 157, 143, 0.2);
     text-decoration: none;
     border-radius: var(--radius-sm);
 }

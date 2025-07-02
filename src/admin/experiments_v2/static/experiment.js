@@ -1,10 +1,24 @@
-// --- APP STATE ---
+// --- APP STATE & CONSTANTS ---
 const appState = {
   currentToken: localStorage.getItem("adminToken"),
   fullExperimentData: null,
   filteredRuns: [],
   selectedRunId: null,
   isDiffView: false,
+};
+
+const METRIC_ORDER = [
+  "Answer Similarity",
+  "Activate Search Tools",
+  "Golden Link in Tool Calling",
+  "Golden Link in Answer",
+];
+
+const METRIC_ABBREVIATIONS = {
+  "Answer Similarity": "Similarity",
+  "Activate Search Tools": "Activate",
+  "Golden Link in Tool Calling": "G. Tool",
+  "Golden Link in Answer": "G. Answer",
 };
 
 // --- DOM ELEMENTS ---
@@ -28,15 +42,11 @@ const elements = {
 
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
-  // MODIFICAÇÃO PRINCIPAL: Garante que a inicialização ocorra em ambos os casos.
-
-  // CASO 1: Usuário já está logado (token existe no carregamento da página)
+  // CORREÇÃO: Garante que a inicialização ocorra em ambos os casos.
   if (appState.currentToken) {
     showExperimentsPanel();
     initializeApp();
   }
-
-  // CASO 2: Novo login dispara o evento
   document.addEventListener("experimentsReady", () => {
     showExperimentsPanel();
     initializeApp();
@@ -49,13 +59,11 @@ function showExperimentsPanel() {
 }
 
 function initializeApp() {
-  // Esta função agora será chamada de forma confiável em ambos os cenários.
   elements.logoutBtn.addEventListener("click", handleLogout);
   elements.fetchExperimentBtn.addEventListener("click", fetchExperimentData);
   elements.experimentIdInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") fetchExperimentData();
   });
-  // Use event delegation for dynamically created elements
   elements.testRunList.addEventListener("click", handleTestRunSelect);
   elements.mainContentArea.addEventListener("click", handleMainContentClick);
 }
@@ -70,15 +78,18 @@ function handleTestRunSelect(event) {
   const selectedItem = event.target.closest(".test-run-item");
   if (selectedItem && selectedItem.dataset.id !== appState.selectedRunId) {
     appState.selectedRunId = selectedItem.dataset.id;
-    appState.isDiffView = false; // Reset to default view on new selection
+    appState.isDiffView = false;
     render();
   }
 }
 
 function handleMainContentClick(event) {
-  if (event.target.id === "toggleDiffBtn") {
+  if (
+    event.target.id === "toggleDiffBtn" ||
+    event.target.closest("#toggleDiffBtn")
+  ) {
     appState.isDiffView = !appState.isDiffView;
-    renderMainContent(); // Re-render only the main content area for efficiency
+    renderMainContent();
   }
 }
 
@@ -93,7 +104,6 @@ function handleFilters() {
   appState.filteredRuns = appState.fullExperimentData.experiment.filter(
     (exp) => {
       if (Object.keys(activeFilters).length === 0) return true;
-
       const annotations = exp.annotations || [];
       return Object.entries(activeFilters).every(
         ([metricName, targetScore]) => {
@@ -136,6 +146,7 @@ async function fetchExperimentData() {
   resetUI();
 
   try {
+    // A URL é relativa, então se a página está em /experiments_v2/, a requisição será correta.
     const url = `data?id=${encodeURIComponent(expId)}`;
     const response = await fetch(url, {
       headers: {
@@ -168,7 +179,7 @@ async function fetchExperimentData() {
   }
 }
 
-// --- RENDERING LOGIC ---
+// --- MAIN RENDERING LOGIC ---
 function render() {
   if (!appState.fullExperimentData) return;
 
@@ -195,12 +206,16 @@ function renderSidebar() {
     }
 
     const metricsContainer = item.querySelector(".test-metrics");
-    (run.annotations || []).slice(0, 2).forEach((ann) => {
+    const annotations = (run.annotations || []).sort(
+      (a, b) => METRIC_ORDER.indexOf(a.name) - METRIC_ORDER.indexOf(b.name)
+    );
+
+    annotations.forEach((ann) => {
       const badge = document.createElement("span");
       badge.className = `metric-badge ${getScoreClass(ann.score)}`;
-      badge.textContent = `${ann.name.split(" ")[0]}: ${ann.score.toFixed(
-        1
-      )}`;
+      badge.textContent = `${getMetricAbbreviation(
+        ann.name
+      )}: ${ann.score.toFixed(1)}`;
       metricsContainer.appendChild(badge);
     });
 
@@ -226,7 +241,6 @@ function renderMainContent() {
 
   elements.mainContentArea.innerHTML = "";
 
-  // Render each section
   elements.mainContentArea.appendChild(
     createSection(
       "Mensagem do Usuário",
@@ -235,13 +249,10 @@ function renderMainContent() {
   `
     )
   );
-
   elements.mainContentArea.appendChild(renderComparisonSection(runData));
-
   elements.mainContentArea.appendChild(
     createSection("Avaliações", renderEvaluations(runData.annotations))
   );
-
   elements.mainContentArea.appendChild(
     createSection(
       "Passo a Passo do Agente",
@@ -250,6 +261,8 @@ function renderMainContent() {
   );
 }
 
+// --- COMPONENT-SPECIFIC RENDERERS ---
+
 function renderComparisonSection(runData) {
   const agentAnswerMd =
     runData.output.agent_output?.ordered.find(
@@ -257,8 +270,7 @@ function renderComparisonSection(runData) {
     )?.message.content || "N/A";
   const goldenAnswerMd = runData.reference_output.golden_answer || "N/A";
 
-  let agentContent, goldenContent;
-  let buttonText, buttonIcon;
+  let agentContent, goldenContent, buttonText, buttonIcon;
 
   if (appState.isDiffView) {
     const diff = generateDiffHtml(goldenAnswerMd, agentAnswerMd);
@@ -275,27 +287,14 @@ function renderComparisonSection(runData) {
 
   const sectionContent = `
       <div class="row g-4">
-          <div class="col-md-6">
-              <div class="comparison-box">
-                  <h5><i class="bi bi-robot text-primary"></i> Resposta do Agente</h5>
-                  <div class="comparison-content">${agentContent}</div>
-              </div>
-          </div>
-          <div class="col-md-6">
-              <div class="comparison-box">
-                  <h5><i class="bi bi-trophy-fill" style="color:var(--gold);"></i> Resposta de Referência</h5>
-                  <div class="comparison-content">${goldenContent}</div>
-              </div>
-          </div>
-      </div>
-  `;
+          <div class="col-md-6"><div class="comparison-box"><h5><i class="bi bi-robot text-primary"></i> Resposta do Agente</h5><div class="comparison-content">${agentContent}</div></div></div>
+          <div class="col-md-6"><div class="comparison-box"><h5><i class="bi bi-trophy-fill" style="color:var(--gold);"></i> Resposta de Referência</h5><div class="comparison-content">${goldenContent}</div></div></div>
+      </div>`;
 
   const buttonHtml = `<button id="toggleDiffBtn" class="btn btn-sm btn-outline-primary"><i class="bi ${buttonIcon} me-1"></i> ${buttonText}</button>`;
 
   return createSection("Comparação de Respostas", sectionContent, buttonHtml);
 }
-
-// --- Component Rendering Functions (Largely Unchanged) ---
 
 function renderMetadata(metadata) {
   if (!metadata) return;
@@ -306,29 +305,24 @@ function renderMetadata(metadata) {
       </div>
       <div class="collapse" id="systemPromptCollapse"><pre><code>${
         metadata.system_prompt || ""
-      }</code></pre></div>
-  `;
+      }</code></pre></div>`;
   elements.metadataContainer.innerHTML = `
-      <div class="card mb-4">
-          <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                  <h4 class="card-title mb-0">Parâmetros do Experimento</h4>
-                  <div>
-                      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jsonModal"><i class="bi bi-code-slash"></i> Ver JSON</button>
-                      <button class="btn btn-sm btn-primary" id="downloadJsonBtn"><i class="bi bi-download"></i> Baixar JSON</button>
-                  </div>
+      <div class="card mb-4"><div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+              <h4 class="card-title mb-0">Parâmetros do Experimento</h4>
+              <div>
+                  <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jsonModal"><i class="bi bi-code-slash"></i> Ver JSON</button>
+                  <button class="btn btn-sm btn-primary" id="downloadJsonBtn"><i class="bi bi-download"></i> Baixar JSON</button>
               </div>
-              <hr>
-              <p class="mb-1"><strong>Modelo de Avaliação:</strong> ${
-                metadata.eval_model || "N/A"
-              }</p>
-              <p class="mb-1"><strong>Modelo de Resposta Final:</strong> ${
-                metadata.final_repose_model || "N/A"
-              }</p>
-              ${promptsHTML}
-          </div>
-      </div>
-  `;
+          </div><hr>
+          <p class="mb-1"><strong>Modelo de Avaliação:</strong> ${
+            metadata.eval_model || "N/A"
+          }</p>
+          <p class="mb-1"><strong>Modelo de Resposta Final:</strong> ${
+            metadata.final_repose_model || "N/A"
+          }</p>
+          ${promptsHTML}
+      </div></div>`;
   elements.jsonModalCode.textContent = JSON.stringify(
     appState.fullExperimentData,
     null,
@@ -355,20 +349,12 @@ function renderSummaryMetrics(experimentData) {
     (exp.annotations || []).forEach((ann) => {
       if (!metrics[ann.name]) metrics[ann.name] = { scores: [], counts: {} };
       metrics[ann.name].scores.push(ann.score);
-      const scoreKey = ann.score;
-      metrics[ann.name].counts[scoreKey] =
-        (metrics[ann.name].counts[scoreKey] || 0) + 1;
+      metrics[ann.name].counts[ann.score] =
+        (metrics[ann.name].counts[ann.score] || 0) + 1;
     });
   });
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
   const sortedMetricNames = Object.keys(metrics).sort(
-    (a, b) =>
-      (desiredOrder.indexOf(a) ?? 99) - (desiredOrder.indexOf(b) ?? 99)
+    (a, b) => METRIC_ORDER.indexOf(a) - METRIC_ORDER.indexOf(b)
   );
   let metricsHtml = `<h5 class="sidebar-section-title">Métricas Gerais (${experimentData.length} runs)</h5>`;
   sortedMetricNames.forEach((name) => {
@@ -384,12 +370,9 @@ function renderSummaryMetrics(experimentData) {
           `<span>${parseFloat(score).toFixed(1)}: ${count}</span>`
       )
       .join("");
-    metricsHtml += `
-          <div class="summary-metric-item">
-              <h6>${name}</h6>
-              <div class="average-score">${average.toFixed(2)}</div>
-              <div class="score-distribution">${distributionHtml}</div>
-          </div>`;
+    metricsHtml += `<div class="summary-metric-item"><h6>${name}</h6><div class="average-score">${average.toFixed(
+      2
+    )}</div><div class="score-distribution">${distributionHtml}</div></div>`;
   });
   elements.summaryMetricsContainer.innerHTML = metricsHtml;
 }
@@ -402,19 +385,12 @@ function renderFilters(experimentData) {
       filterOptions[ann.name].add(ann.score);
     });
   });
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
   const sortedFilterNames = Object.keys(filterOptions).sort(
-    (a, b) =>
-      (desiredOrder.indexOf(a) ?? 99) - (desiredOrder.indexOf(b) ?? 99)
+    (a, b) => METRIC_ORDER.indexOf(a) - METRIC_ORDER.indexOf(b)
   );
   let filtersHtml = sortedFilterNames
     .map((name) => {
-      const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
+      const scores = Array.from(filterOptions[name]).sort((a, b) => b - a);
       let optionsHtml =
         '<option value="">Qualquer Nota</option>' +
         scores
@@ -422,25 +398,16 @@ function renderFilters(experimentData) {
             (score) => `<option value="${score}">${score.toFixed(1)}</option>`
           )
           .join("");
-      return `
-          <div class="mb-2">
-              <label class="form-label small fw-bold">${name}</label>
-              <select class="form-select form-select-sm" data-metric-name="${name}">${optionsHtml}</select>
-          </div>`;
+      return `<div class="mb-2"><label class="form-label small fw-bold">${name}</label><select class="form-select form-select-sm" data-metric-name="${name}">${optionsHtml}</select></div>`;
     })
     .join("");
   if (filtersHtml) {
-    elements.filterContainer.innerHTML = `
-          <div class="card mt-4 mb-4">
-               <div class="card-body">
-                   <h5 class="card-title small">Filtros de Avaliação</h5>
-                   ${filtersHtml}
-                   <div class="d-flex gap-2 mt-3">
-                       <button id="applyFiltersBtn" class="btn btn-sm btn-primary w-100">Aplicar</button>
-                       <button id="clearFiltersBtn" class="btn btn-sm btn-outline-secondary w-100">Limpar</button>
-                   </div>
-               </div>
-          </div>`;
+    elements.filterContainer.innerHTML = `<div class="card mt-4 mb-4"><div class="card-body">
+          <h5 class="card-title small">Filtros de Avaliação</h5>${filtersHtml}
+          <div class="d-flex gap-2 mt-3">
+              <button id="applyFiltersBtn" class="btn btn-sm btn-primary w-100">Aplicar</button>
+              <button id="clearFiltersBtn" class="btn btn-sm btn-outline-secondary w-100">Limpar</button>
+          </div></div></div>`;
     document
       .getElementById("applyFiltersBtn")
       .addEventListener("click", handleFilters);
@@ -455,33 +422,30 @@ function renderEvaluations(annotations) {
     return "<p>Nenhuma avaliação disponível.</p>";
   const grid = document.createElement("div");
   grid.className = "evaluation-grid";
-  annotations.forEach((ann) => {
+  const sortedAnnotations = [...annotations].sort(
+    (a, b) => METRIC_ORDER.indexOf(a.name) - METRIC_ORDER.indexOf(b.name)
+  );
+  sortedAnnotations.forEach((ann) => {
     const card = document.createElement("div");
     card.className = "evaluation-card";
-    let explanationContent = "";
-    if (ann.explanation) {
-      explanationContent =
-        typeof ann.explanation === "object"
-          ? `<pre><code>${JSON.stringify(
-              ann.explanation,
-              null,
-              2
-            )}</code></pre>`
-          : marked.parse(String(ann.explanation));
-    }
-    card.innerHTML = `
-          <div class="d-flex justify-content-between align-items-center mb-2">
-              <p class="name mb-0">${ann.name}</p>
-              <div class="score ${getScoreClass(
-                ann.score
-              )}">${ann.score.toFixed(1)}</div>
-          </div>
-          ${
-            explanationContent
-              ? `<div class="explanation">${explanationContent}</div>`
-              : ""
-          }
-      `;
+    let explanationContent = ann.explanation
+      ? typeof ann.explanation === "object"
+        ? `<pre><code>${JSON.stringify(
+            ann.explanation,
+            null,
+            2
+          )}</code></pre>`
+        : marked.parse(String(ann.explanation))
+      : "";
+    card.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-2"><p class="name mb-0">${
+      ann.name
+    }</p><div class="score ${getScoreClass(ann.score)}">${ann.score.toFixed(
+      1
+    )}</div></div>${
+      explanationContent
+        ? `<div class="explanation">${explanationContent}</div>`
+        : ""
+    }`;
     grid.appendChild(card);
   });
   return grid.outerHTML;
@@ -533,7 +497,7 @@ function setLoading(isLoading) {
   elements.loadingIndicator.classList.toggle("d-none", !isLoading);
   elements.fetchExperimentBtn.disabled = isLoading;
   elements.fetchExperimentBtn.innerHTML = isLoading
-    ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...'
+    ? '<span class="spinner-border spinner-border-sm"></span> Buscando...'
     : '<i class="bi bi-search me-1"></i> Buscar';
 }
 
@@ -553,11 +517,7 @@ function resetUI() {
 
 function showAlert(message, type = "danger") {
   const alertId = `alert-${Date.now()}`;
-  elements.alertArea.innerHTML = `
-      <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
-          ${message}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>`;
+  elements.alertArea.innerHTML = `<div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
   if (type === "success") {
     setTimeout(() => document.getElementById(alertId)?.remove(), 4000);
   }
@@ -569,15 +529,14 @@ function getScoreClass(score) {
   return "score-mid";
 }
 
+function getMetricAbbreviation(metricName) {
+  return METRIC_ABBREVIATIONS[metricName] || metricName;
+}
+
 function createSection(title, content, actionsHtml = "") {
   const section = document.createElement("div");
   section.className = "section-container";
-  section.innerHTML = `
-      <div class="section-header">
-          <h3 class="section-title">${title}</h3>
-          <div>${actionsHtml}</div>
-      </div>
-      ${content}`;
+  section.innerHTML = `<div class="section-header"><h3 class="section-title">${title}</h3><div>${actionsHtml}</div></div>${content}`;
   return section;
 }
 
@@ -588,11 +547,8 @@ function generateDiffHtml(goldenMd, agentMd) {
   const cleanAgent =
     new DOMParser().parseFromString(marked.parse(agentMd), "text/html").body
       .textContent || "";
-
   const goldenLines = cleanGolden.split("\n");
   const agentLines = cleanAgent.split("\n");
-
-  // Using a standard Longest Common Subsequence algorithm
   const matrix = Array(agentLines.length + 1)
     .fill(null)
     .map(() => Array(goldenLines.length + 1).fill(0));
@@ -605,12 +561,10 @@ function generateDiffHtml(goldenMd, agentMd) {
       }
     }
   }
-
   let i = agentLines.length,
     j = goldenLines.length;
   let agentResult = [],
     goldenResult = [];
-
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && agentLines[i - 1] === goldenLines[j - 1]) {
       agentResult.unshift(agentLines[i - 1]);
@@ -627,6 +581,5 @@ function generateDiffHtml(goldenMd, agentMd) {
       break;
     }
   }
-
   return { golden: goldenResult.join("\n"), agent: agentResult.join("\n") };
 }

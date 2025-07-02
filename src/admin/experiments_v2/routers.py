@@ -50,7 +50,7 @@ async def get_experiment_data(
     if not phoenix_endpoint.endswith("/"):
         phoenix_endpoint += "/"
 
-    url = f"{phoenix_endpoint}v1/experiments/{id}/json"
+    url = f"{phoenix_endpoint}v1/experiments_v2/{id}/json"
 
     logger.info(f"Fazendo proxy da requisição para: {url}")
 
