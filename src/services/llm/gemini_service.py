@@ -8,6 +8,13 @@ import src.config.env as env
 from datetime import datetime
 import httpx
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
 
 class GeminiService:
     def __init__(self):
@@ -36,9 +43,13 @@ class GeminiService:
         )
         candidate = response.candidates[0]
 
-        resolved_urls_map = await resolve_urls(
-            urls_to_resolve=candidate.grounding_metadata.grounding_chunks
-        )
+        if candidate.grounding_metadata.grounding_chunks:
+            resolved_urls_map = await resolve_urls(
+                urls_to_resolve=candidate.grounding_metadata.grounding_chunks
+            )
+        else:
+            logger.info(f"Response: {response}")
+            raise Exception("No grounding chunks found")
 
         citations = get_citations(
             response=response, resolved_urls_map=resolved_urls_map
@@ -293,6 +304,7 @@ async def resolve_urls(urls_to_resolve: List[Any]) -> Dict[str, str]:
     Create a map of the vertex ai search urls (very long) to a short url with a unique id for each url.
     Ensures each original URL gets a consistent shortened form while maintaining uniqueness.
     """
+
     urls_to_resolve = list(set([uri.web.uri for uri in urls_to_resolve]))
     urls = [{"uri": uri} for uri in urls_to_resolve]
     headers = {
