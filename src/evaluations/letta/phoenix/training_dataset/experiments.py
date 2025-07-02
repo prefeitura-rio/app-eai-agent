@@ -125,7 +125,7 @@ async def main():
         # },
         {
             "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-06-30",
+            "experiment_name": "eai-2025-07-02-v21",
             "experiment_description": "Temperature: 0.7, Model: google_ai/gemini-2.5-flash-lite-preview-06-17",
             "evaluators": evaluators,
             "tools": ["google_search"],

@@ -361,8 +361,11 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
     )
 
     match_found = True if overall_count > 0 else False
-    explanation = f"Golden links: {golden_links}\nAnswer links: {answer_links}\nNumber of Matchs: {overall_count}"
-
+    explanation = {
+        "golden_links": golden_links,
+        "answer_links": answer_links,
+        "number_of_matches": overall_count,
+    }
     return match_found, explanation
 
 
@@ -494,7 +497,12 @@ async def golden_link_in_answer(output) -> bool | tuple:
     )
 
     match_found = True if overall_count > 0 else False
-    explanation = f"Golden links: {golden_links}\nAnswer links: {answer_links}\nNumber of Matchs: {overall_count}"
+
+    explanation = {
+        "golden_links": golden_links,
+        "answer_links": answer_links,
+        "number_of_matches": overall_count,
+    }
 
     return match_found, explanation
 

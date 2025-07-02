@@ -60,7 +60,7 @@ async def get_experiment_data(
 
         # Repassa o status e o conteúdo da resposta do Phoenix
         if response.status_code == 200:
-            return JSONResponse(content=json.loads(response.text))
+            return JSONResponse(content=parse_output(json.loads(response.text)))
         else:
             logger.error(
                 f"Erro ao buscar dados do Phoenix. Status: {response.status_code}, Resposta: {response.text}"
@@ -125,3 +125,57 @@ async def get_static_file(file_path: str):
             "Expires": "0",
         },
     )
+
+
+import json
+import ast
+
+
+def parse_json_strings_recursively(obj):
+    """
+    Percorre recursivamente um objeto Python (dicionário ou lista) e converte
+    qualquer valor de string que seja um JSON válido ou uma representação literal
+    de um objeto Python em seu objeto Python correspondente.
+    """
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = parse_json_strings_recursively(value)
+        return obj
+    elif isinstance(obj, list):
+        for i, item in enumerate(obj):
+            obj[i] = parse_json_strings_recursively(item)
+        return obj
+    elif isinstance(obj, str):
+        try:
+            cleaned_str = obj.strip()
+            if cleaned_str.startswith(("{", "[")) and cleaned_str.endswith(("}", "]")):
+                data = json.loads(obj)
+                return parse_json_strings_recursively(data)
+            else:
+                return obj
+        except json.JSONDecodeError:
+            try:
+                data = ast.literal_eval(obj)
+                return parse_json_strings_recursively(data)
+            except (ValueError, SyntaxError, TypeError):
+                return obj
+        except (TypeError, ValueError):
+            return obj
+    else:
+        return obj
+
+
+# --- Script principal (permanece o mesmo) ---
+def parse_output(output):
+    processed_output = parse_json_strings_recursively(output)
+    experiment_metadata = processed_output[0]["output"]["experiment_metadata"]
+    for item in processed_output:
+        if "experiment_metadata" in item.get("output", {}):
+            item["output"].pop("experiment_metadata")
+
+    final_output = {
+        "experiment_metadata": experiment_metadata,
+        "experiment": processed_output,
+    }
+
+    return final_output
