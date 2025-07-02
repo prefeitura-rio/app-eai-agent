@@ -4,6 +4,7 @@ const appState = {
   fullExperimentData: null,
   filteredRuns: [],
   selectedRunId: null,
+  isDiffView: false,
 };
 
 // --- DOM ELEMENTS ---
@@ -27,10 +28,19 @@ const elements = {
 
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
+  // MODIFICAÇÃO PRINCIPAL: Garante que a inicialização ocorra em ambos os casos.
+
+  // CASO 1: Usuário já está logado (token existe no carregamento da página)
   if (appState.currentToken) {
     showExperimentsPanel();
+    initializeApp();
   }
-  document.addEventListener("experimentsReady", initializeApp);
+
+  // CASO 2: Novo login dispara o evento
+  document.addEventListener("experimentsReady", () => {
+    showExperimentsPanel();
+    initializeApp();
+  });
 });
 
 function showExperimentsPanel() {
@@ -39,12 +49,15 @@ function showExperimentsPanel() {
 }
 
 function initializeApp() {
+  // Esta função agora será chamada de forma confiável em ambos os cenários.
   elements.logoutBtn.addEventListener("click", handleLogout);
   elements.fetchExperimentBtn.addEventListener("click", fetchExperimentData);
   elements.experimentIdInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") fetchExperimentData();
   });
+  // Use event delegation for dynamically created elements
   elements.testRunList.addEventListener("click", handleTestRunSelect);
+  elements.mainContentArea.addEventListener("click", handleMainContentClick);
 }
 
 // --- EVENT HANDLERS ---
@@ -57,7 +70,15 @@ function handleTestRunSelect(event) {
   const selectedItem = event.target.closest(".test-run-item");
   if (selectedItem && selectedItem.dataset.id !== appState.selectedRunId) {
     appState.selectedRunId = selectedItem.dataset.id;
+    appState.isDiffView = false; // Reset to default view on new selection
     render();
+  }
+}
+
+function handleMainContentClick(event) {
+  if (event.target.id === "toggleDiffBtn") {
+    appState.isDiffView = !appState.isDiffView;
+    renderMainContent(); // Re-render only the main content area for efficiency
   }
 }
 
@@ -134,6 +155,7 @@ async function fetchExperimentData() {
     appState.fullExperimentData = data;
     appState.filteredRuns = [...data.experiment];
     appState.selectedRunId = null;
+    appState.isDiffView = false;
 
     elements.resultContainer.classList.remove("d-none");
     render();
@@ -204,48 +226,22 @@ function renderMainContent() {
 
   elements.mainContentArea.innerHTML = "";
 
-  const userMessageSection = createSection(
-    "Mensagem do Usuário",
-    `
+  // Render each section
+  elements.mainContentArea.appendChild(
+    createSection(
+      "Mensagem do Usuário",
+      `
       <div class="alert alert-secondary">${runData.input.mensagem_whatsapp_simulada}</div>
   `
+    )
   );
-  elements.mainContentArea.appendChild(userMessageSection);
 
-  const agentAnswerHtml = marked.parse(
-    runData.output.agent_output?.ordered.find(
-      (m) => m.type === "assistant_message"
-    )?.message.content || "N/A"
-  );
-  const goldenAnswerHtml = marked.parse(
-    runData.reference_output.golden_answer || "N/A"
-  );
-  const diffHtml = generateDiffHtml(goldenAnswerHtml, agentAnswerHtml);
-
-  const comparisonSection = createSection(
-    "Comparação de Respostas",
-    `
-      <div class="row g-4">
-          <div class="col-md-6">
-              <div class="comparison-box">
-                  <h5><i class="bi bi-robot text-primary"></i> Resposta do Agente</h5>
-                  <div class="diff-output">${diffHtml.agent}</div>
-              </div>
-          </div>
-          <div class="col-md-6">
-              <div class="comparison-box">
-                  <h5><i class="bi bi-trophy-fill" style="color:var(--gold);"></i> Resposta de Referência</h5>
-                  <div class="diff-output">${diffHtml.golden}</div>
-              </div>
-          </div>
-      </div>
-  `
-  );
-  elements.mainContentArea.appendChild(comparisonSection);
+  elements.mainContentArea.appendChild(renderComparisonSection(runData));
 
   elements.mainContentArea.appendChild(
     createSection("Avaliações", renderEvaluations(runData.annotations))
   );
+
   elements.mainContentArea.appendChild(
     createSection(
       "Passo a Passo do Agente",
@@ -254,9 +250,55 @@ function renderMainContent() {
   );
 }
 
+function renderComparisonSection(runData) {
+  const agentAnswerMd =
+    runData.output.agent_output?.ordered.find(
+      (m) => m.type === "assistant_message"
+    )?.message.content || "N/A";
+  const goldenAnswerMd = runData.reference_output.golden_answer || "N/A";
+
+  let agentContent, goldenContent;
+  let buttonText, buttonIcon;
+
+  if (appState.isDiffView) {
+    const diff = generateDiffHtml(goldenAnswerMd, agentAnswerMd);
+    agentContent = `<pre>${diff.agent}</pre>`;
+    goldenContent = `<pre>${diff.golden}</pre>`;
+    buttonText = "Ver Lado a Lado";
+    buttonIcon = "bi-files";
+  } else {
+    agentContent = marked.parse(agentAnswerMd);
+    goldenContent = marked.parse(goldenAnswerMd);
+    buttonText = "Ver Diferenças";
+    buttonIcon = "bi-file-diff";
+  }
+
+  const sectionContent = `
+      <div class="row g-4">
+          <div class="col-md-6">
+              <div class="comparison-box">
+                  <h5><i class="bi bi-robot text-primary"></i> Resposta do Agente</h5>
+                  <div class="comparison-content">${agentContent}</div>
+              </div>
+          </div>
+          <div class="col-md-6">
+              <div class="comparison-box">
+                  <h5><i class="bi bi-trophy-fill" style="color:var(--gold);"></i> Resposta de Referência</h5>
+                  <div class="comparison-content">${goldenContent}</div>
+              </div>
+          </div>
+      </div>
+  `;
+
+  const buttonHtml = `<button id="toggleDiffBtn" class="btn btn-sm btn-outline-primary"><i class="bi ${buttonIcon} me-1"></i> ${buttonText}</button>`;
+
+  return createSection("Comparação de Respostas", sectionContent, buttonHtml);
+}
+
+// --- Component Rendering Functions (Largely Unchanged) ---
+
 function renderMetadata(metadata) {
   if (!metadata) return;
-
   const promptsHTML = `
       <div class="d-flex justify-content-between align-items-center mt-3">
           <strong>System Prompt Principal</strong>
@@ -266,7 +308,6 @@ function renderMetadata(metadata) {
         metadata.system_prompt || ""
       }</code></pre></div>
   `;
-
   elements.metadataContainer.innerHTML = `
       <div class="card mb-4">
           <div class="card-body">
@@ -288,7 +329,6 @@ function renderMetadata(metadata) {
           </div>
       </div>
   `;
-
   elements.jsonModalCode.textContent = JSON.stringify(
     appState.fullExperimentData,
     null,
@@ -320,7 +360,6 @@ function renderSummaryMetrics(experimentData) {
         (metrics[ann.name].counts[scoreKey] || 0) + 1;
     });
   });
-
   const desiredOrder = [
     "Answer Similarity",
     "Activate Search Tools",
@@ -331,7 +370,6 @@ function renderSummaryMetrics(experimentData) {
     (a, b) =>
       (desiredOrder.indexOf(a) ?? 99) - (desiredOrder.indexOf(b) ?? 99)
   );
-
   let metricsHtml = `<h5 class="sidebar-section-title">Métricas Gerais (${experimentData.length} runs)</h5>`;
   sortedMetricNames.forEach((name) => {
     const metric = metrics[name];
@@ -346,7 +384,6 @@ function renderSummaryMetrics(experimentData) {
           `<span>${parseFloat(score).toFixed(1)}: ${count}</span>`
       )
       .join("");
-
     metricsHtml += `
           <div class="summary-metric-item">
               <h6>${name}</h6>
@@ -365,7 +402,6 @@ function renderFilters(experimentData) {
       filterOptions[ann.name].add(ann.score);
     });
   });
-
   const desiredOrder = [
     "Answer Similarity",
     "Activate Search Tools",
@@ -376,7 +412,6 @@ function renderFilters(experimentData) {
     (a, b) =>
       (desiredOrder.indexOf(a) ?? 99) - (desiredOrder.indexOf(b) ?? 99)
   );
-
   let filtersHtml = sortedFilterNames
     .map((name) => {
       const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
@@ -394,7 +429,6 @@ function renderFilters(experimentData) {
           </div>`;
     })
     .join("");
-
   if (filtersHtml) {
     elements.filterContainer.innerHTML = `
           <div class="card mt-4 mb-4">
@@ -419,14 +453,11 @@ function renderFilters(experimentData) {
 function renderEvaluations(annotations) {
   if (!annotations || annotations.length === 0)
     return "<p>Nenhuma avaliação disponível.</p>";
-
   const grid = document.createElement("div");
   grid.className = "evaluation-grid";
-
   annotations.forEach((ann) => {
     const card = document.createElement("div");
     card.className = "evaluation-card";
-
     let explanationContent = "";
     if (ann.explanation) {
       explanationContent =
@@ -438,7 +469,6 @@ function renderEvaluations(annotations) {
             )}</code></pre>`
           : marked.parse(String(ann.explanation));
     }
-
     card.innerHTML = `
           <div class="d-flex justify-content-between align-items-center mb-2">
               <p class="name mb-0">${ann.name}</p>
@@ -460,16 +490,13 @@ function renderEvaluations(annotations) {
 function renderReasoningTimeline(orderedSteps) {
   if (!orderedSteps || orderedSteps.length === 0)
     return "<p>Nenhum passo a passo disponível.</p>";
-
   const timeline = document.createElement("div");
   timeline.className = "reasoning-timeline";
-
   orderedSteps.forEach((step) => {
     const stepEl = document.createElement("div");
     let title = "",
       content = "",
       typeClass = "";
-
     if (step.type === "reasoning_message") {
       typeClass = "type-reasoning";
       title = "🧠 Raciocínio";
@@ -492,7 +519,6 @@ function renderReasoningTimeline(orderedSteps) {
           : String(returnData);
       content = `<div class="step-content"><pre><code>${contentData}</code></pre></div>`;
     }
-
     if (title) {
       stepEl.className = `reasoning-step ${typeClass}`;
       stepEl.innerHTML = `<div class="step-title">${title}</div>${content}`;
@@ -515,6 +541,7 @@ function resetUI() {
   appState.fullExperimentData = null;
   appState.filteredRuns = [];
   appState.selectedRunId = null;
+  appState.isDiffView = false;
   elements.alertArea.innerHTML = "";
   elements.resultContainer.classList.add("d-none");
   elements.metadataContainer.innerHTML = "";
@@ -542,23 +569,30 @@ function getScoreClass(score) {
   return "score-mid";
 }
 
-function createSection(title, content) {
+function createSection(title, content, actionsHtml = "") {
   const section = document.createElement("div");
-  section.innerHTML = `<h3 class="section-title">${title}</h3>${content}`;
+  section.className = "section-container";
+  section.innerHTML = `
+      <div class="section-header">
+          <h3 class="section-title">${title}</h3>
+          <div>${actionsHtml}</div>
+      </div>
+      ${content}`;
   return section;
 }
 
-function generateDiffHtml(goldenText, agentText) {
+function generateDiffHtml(goldenMd, agentMd) {
   const cleanGolden =
-    new DOMParser().parseFromString(goldenText, "text/html").body
+    new DOMParser().parseFromString(marked.parse(goldenMd), "text/html").body
       .textContent || "";
   const cleanAgent =
-    new DOMParser().parseFromString(agentText, "text/html").body
+    new DOMParser().parseFromString(marked.parse(agentMd), "text/html").body
       .textContent || "";
 
   const goldenLines = cleanGolden.split("\n");
   const agentLines = cleanAgent.split("\n");
 
+  // Using a standard Longest Common Subsequence algorithm
   const matrix = Array(agentLines.length + 1)
     .fill(null)
     .map(() => Array(goldenLines.length + 1).fill(0));
@@ -584,24 +618,15 @@ function generateDiffHtml(goldenText, agentText) {
       i--;
       j--;
     } else if (j > 0 && (i === 0 || matrix[i][j - 1] >= matrix[i - 1][j])) {
-      goldenResult.unshift(`<del>${goldenLines[j - 1]}</del>`);
-      agentResult.unshift("");
+      goldenResult.unshift(`<del>${goldenLines[j - 1] || " "}</del>`);
       j--;
     } else if (i > 0 && (j === 0 || matrix[i][j - 1] < matrix[i - 1][j])) {
-      agentResult.unshift(`<ins>${agentLines[i - 1]}</ins>`);
-      goldenResult.unshift("");
+      agentResult.unshift(`<ins>${agentLines[i - 1] || " "}</ins>`);
       i--;
     } else {
       break;
     }
   }
 
-  // Filter out empty lines that were placeholders for alignment
-  const finalGolden = goldenResult.filter((line) => line !== "").join("\n");
-  const finalAgent = agentResult.filter((line) => line !== "").join("\n");
-
-  return {
-    golden: `<pre>${finalGolden}</pre>`,
-    agent: `<pre>${finalAgent}</pre>`,
-  };
+  return { golden: goldenResult.join("\n"), agent: agentResult.join("\n") };
 }
