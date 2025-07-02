@@ -32,37 +32,56 @@ class GeminiService:
         model: str = "gemini-2.5-flash-lite-preview-06-17",
         temperature: float = 0.0,
     ):
-        formatted_prompt = web_searcher_instructions(research_topic=query)
-        response = self.client.models.generate_content(
-            model=model,
-            contents=formatted_prompt,
-            config={
-                "tools": [{"google_search": {}}],
-                "temperature": temperature,
-            },
-        )
-        logger.info(f"Response: {response}")
-        candidate = response.candidates[0]
-        if candidate.grounding_metadata.grounding_chunks:
-            resolved_urls_map = await resolve_urls(
-                urls_to_resolve=candidate.grounding_metadata.grounding_chunks
-            )
-        else:
-            logger.info(f"Candidate: {candidate}")
-            raise Exception("No grounding chunks found")
+        logger.info(f"Iniciando pesquisa Google para: {query}")
+        
+        try:
+            # Timeout total para toda a operação
+            async with asyncio.timeout(90):  # 90 segundos para toda a operação
+                formatted_prompt = web_searcher_instructions(research_topic=query)
+                
+                logger.info("Gerando conteúdo com Gemini...")
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=formatted_prompt,
+                    config={
+                        "tools": [{"google_search": {}}],
+                        "temperature": temperature,
+                    },
+                )
+                
+                logger.info("Resposta recebida do Gemini")
+                candidate = response.candidates[0]
+                
+                if candidate.grounding_metadata.grounding_chunks:
+                    logger.info("Resolvendo URLs das fontes...")
+                    resolved_urls_map = await resolve_urls(
+                        urls_to_resolve=candidate.grounding_metadata.grounding_chunks
+                    )
+                else:
+                    logger.warning("Nenhum grounding chunk encontrado")
+                    raise Exception("No grounding chunks found")
 
-        citations = get_citations(
-            response=response, resolved_urls_map=resolved_urls_map
-        )
-        modified_text = format_text_with_citations(response.text, citations)
-        sources_gathered = get_sources_list(citations, modified_text)
-        web_search_queries = candidate.grounding_metadata.web_search_queries
+                logger.info("Processando citações...")
+                citations = get_citations(
+                    response=response, resolved_urls_map=resolved_urls_map
+                )
+                modified_text = format_text_with_citations(response.text, citations)
+                sources_gathered = get_sources_list(citations, modified_text)
+                web_search_queries = candidate.grounding_metadata.web_search_queries
 
-        return {
-            "text": modified_text,
-            "sources": sources_gathered,
-            "web_search_queries": web_search_queries,
-        }
+                logger.info(f"Pesquisa concluída com {len(sources_gathered)} fontes")
+                return {
+                    "text": modified_text,
+                    "sources": sources_gathered,
+                    "web_search_queries": web_search_queries,
+                }
+                
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout na pesquisa Google após 90 segundos para query: {query}")
+            raise Exception("Pesquisa Google demorou muito tempo (timeout de 90s)")
+        except Exception as e:
+            logger.error(f"Erro na pesquisa Google: {e}")
+            raise
 
     async def generate_content(
         self,
@@ -269,33 +288,45 @@ gemini_service = GeminiService()
 
 async def process_link(session, link: dict):
     uri = link.get("uri")
+    
+    # Timeout específico por requisição (menor que o timeout geral)
+    link_timeout = 10
+    
     try:
-        response = await session.head(uri, follow_redirects=True)
+        # Primeiro tenta HEAD request (mais rápido)
+        response = await session.head(uri, follow_redirects=True, timeout=link_timeout)
         response.raise_for_status()
         link["url"] = str(response.url)
         link["error"] = None
         return link
     except Exception as e:
         try:
-            response = await session.get(uri, follow_redirects=True)
+            # Se HEAD falhar, tenta GET request
+            response = await session.get(uri, follow_redirects=True, timeout=link_timeout)
             response.raise_for_status()
             link["url"] = str(response.url)
             link["error"] = None
             return link
 
         except Exception as e2:
-            e2 = str(e2)
-            sulfix = "For more information check: https://developer.mozilla.org/"
-            if sulfix in e2:
-                msg = e2.replace(sulfix, "")
-                msg = msg.split("http")[1]
-                msg = msg.split("'\n")[0]
-                msg = "http" + msg
-                link["url"] = msg
-                link["error"] = None
+            error_msg = str(e2)
+            # Trata erro específico do Mozilla
+            mozilla_suffix = "For more information check: https://developer.mozilla.org/"
+            if mozilla_suffix in error_msg:
+                try:
+                    msg = error_msg.replace(mozilla_suffix, "")
+                    msg = msg.split("http")[1]
+                    msg = msg.split("'\n")[0]
+                    msg = "http" + msg
+                    link["url"] = msg
+                    link["error"] = None
+                except:
+                    # Se parsing falhar, usa URI original
+                    link["url"] = uri
+                    link["error"] = f"Timeout ou erro de conexão: {error_msg[:100]}"
             else:
                 link["url"] = uri
-                link["error"] = e2
+                link["error"] = f"Erro ao resolver URL: {error_msg[:100]}"
             return link
 
 
@@ -304,20 +335,45 @@ async def resolve_urls(urls_to_resolve: List[Any]) -> Dict[str, str]:
     Create a map of the vertex ai search urls (very long) to a short url with a unique id for each url.
     Ensures each original URL gets a consistent shortened form while maintaining uniqueness.
     """
-
-    urls_to_resolve = list(set([uri.web.uri for uri in urls_to_resolve]))
-    urls = [{"uri": uri} for uri in urls_to_resolve]
+    unique_urls = list(set([uri.web.uri for uri in urls_to_resolve]))
+    urls = [{"uri": uri} for uri in unique_urls]
+    
+    logger.info(f"Resolvendo {len(urls)} URLs únicas")
+    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
     }
+    
     async with httpx.AsyncClient(
-        follow_redirects=True, timeout=5, verify=False, headers=headers
+        follow_redirects=True, timeout=30, verify=False, headers=headers
     ) as session:
-        await asyncio.gather(*(process_link(session, link) for link in urls))
+        # Limita concorrência para evitar sobrecarga
+        semaphore = asyncio.Semaphore(5)  # Máximo 5 requisições simultâneas
+        
+        async def process_with_semaphore(link):
+            async with semaphore:
+                return await process_link(session, link)
+        
+        results = await asyncio.gather(
+            *(process_with_semaphore(link) for link in urls),
+            return_exceptions=True
+        )
+        
+        # Trata exceções não capturadas
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Erro não tratado ao processar URL {urls[i]['uri']}: {result}")
+                urls[i]["url"] = urls[i]["uri"]
+                urls[i]["error"] = str(result)
+            else:
+                urls[i] = result
 
     resolved_map = {
         link["uri"]: {"url": link["url"], "error": link["error"]} for link in urls
     }
+
+    successful_resolutions = sum(1 for link in urls if link["error"] is None)
+    logger.info(f"URLs resolvidas com sucesso: {successful_resolutions}/{len(urls)}")
 
     return resolved_map
 

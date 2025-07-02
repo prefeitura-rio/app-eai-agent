@@ -10,4 +10,4 @@ ADD . /app
 
 RUN uv sync
 
-CMD ["uv", "run", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "src.main:app", "--bind", "0.0.0.0:80", "--workers", "1", "--threads", "4"]
+CMD ["uv", "run", "gunicorn", "-c", "gunicorn_config.py", "src.main:app"]

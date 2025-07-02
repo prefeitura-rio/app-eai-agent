@@ -11,7 +11,6 @@ if os.path.exists("src/config/.env"):
 LETTA_API_URL = getenv_or_action("LETTA_API_URL")
 LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN")
 
-# Configurações de timeout e retry para Letta
 LETTA_STREAM_TIMEOUT = 300
 LETTA_STREAM_RETRY_ATTEMPTS = 3
 LETTA_STREAM_RETRY_DELAY = 2.0
