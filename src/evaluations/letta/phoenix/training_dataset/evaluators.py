@@ -3,6 +3,7 @@ import re
 from typing import List, Union
 import httpx
 import pandas as pd
+import json
 from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
@@ -30,8 +31,6 @@ from src.evaluations.letta.phoenix.training_dataset.utils import (
     empty_agent_core_memory,
     experiment_eval,
     final_response,
-    get_redirect_links,
-    process_link,
     tool_returns,
 )
 
@@ -298,6 +297,28 @@ async def activate_search(output) -> bool | tuple:
     return len(activated_tools) > 0, explanation
 
 
+def get_answer_links(output):
+    grouped = output.get("agent_output", {}).get("grouped", {})
+    tool_msgs = grouped.get("tool_return_messages", [])
+    answer_links = []
+    for msg in tool_msgs:
+        tool_return = msg.get("tool_return", "{}")
+        tool_return = json.loads(tool_return)
+        answer_links.extend(tool_return.get("sources", []))
+
+    answer_links_unique = []
+    answer_links_set = set()
+    for link in answer_links:
+        if link.get("url") not in answer_links_set:
+            answer_links_set.add(link.get("url"))
+            answer_links_unique.append(link)
+
+    return [
+        {"label": link.get("label"), "uri": link.get("uri"), "url": link.get("url")}
+        for link in answer_links_unique
+    ]
+
+
 @create_evaluator(name="Golden Link in Tool Calling")
 async def golden_link_in_tool_calling(output) -> bool | tuple:
     """
@@ -330,28 +351,7 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
 
     # golden_field = output.get("metadata", {}).get("Golden links", "")
     # golden_links = _parse_golden(golden_field)
-
-    answer_links: list[str] = []
-    link_dicts = []
-
-    if "links" in output.get("agent_output", {}):
-        link_dicts = [
-            {"uri": link.get("uri") or link.get("url")}
-            for link in output["agent_output"]["links"]
-        ]
-
-        async with httpx.AsyncClient(
-            follow_redirects=True, timeout=2, verify=False
-        ) as session:
-            await asyncio.gather(*(process_link(session, link) for link in link_dicts))
-
-        answer_links = [
-            {"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")}
-            for l in link_dicts
-        ]
-
-    else:
-        answer_links = await get_redirect_links(output)
+    answer_links = get_answer_links(output=output)
 
     if not answer_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
@@ -397,7 +397,6 @@ def match_golden_link(answer_links, golden_links):
             "golden_link": item.get("golden_link"),
             "url": item.get("url"),
             "uri": item.get("uri"),
-            "error": item.get("error"),
         }
         for item in answer_links
     ]
@@ -474,19 +473,19 @@ async def golden_link_in_answer(output) -> bool | tuple:
         dict.fromkeys([link for link in normalized_links if isinstance(link, str)])
     )
 
-    link_dicts = [{"uri": uri} for uri in unique_links]
+    link_dicts = [{"url": url} for url in unique_links]
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
+    answer_links_tool_calling = get_answer_links(output=output)
+
+    answer_links_tool_calling_map = {
+        link.get("url"): link.get("uri") for link in answer_links_tool_calling
     }
 
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=5, verify=False, headers=headers
-    ) as session:
-        await asyncio.gather(*(process_link(session, link) for link in link_dicts))
-
     answer_links = [
-        {"url": l.get("url"), "uri": l.get("uri"), "error": l.get("error")}
+        {
+            "url": l.get("url"),
+            "uri": answer_links_tool_calling_map.get(l.get("url")),
+        }
         for l in link_dicts
     ]
 

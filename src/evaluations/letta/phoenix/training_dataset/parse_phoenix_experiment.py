@@ -6,7 +6,7 @@ import ast
 import requests
 from src.config import env
 
-exp_id = "RXhwZXJpbWVudDozNjU="
+exp_id = "RXhwZXJpbWVudDozNzU="
 url = f"{env.PHOENIX_ENDPOINT}v1/experiments/{exp_id}/json"
 
 r = requests.get(url)
@@ -88,10 +88,38 @@ report_parts.append(f"| **Tools Provided** | `{tools}` |")  # Tools can be long
 report_parts.append("-" * 100)  # Visual separator for the main content
 
 # Process each item in the data
-for i, item in enumerate(data):
+for i, item in enumerate(data[:1]):
     # Extract item-specific data using safe access
     msg_id = get_safe(item, "output.metadata.id", f"Unknown_ID_{i+1}")
     msg = get_safe(item, "input.mensagem_whatsapp_simulada", "No message found.")
+
+    reasoning_items = get_safe(item, "output.agent_output.ordered", [])
+    reasoning_messages = []
+    for reasoning_item in reasoning_items:
+        if reasoning_item.get("type") == "reasoning_message":
+            reasoning_message = get_safe(reasoning_item, "message.reasoning", "")
+            reasoning_messages.append(f"**Reasoning:**\n{reasoning_message}\n")
+        elif reasoning_item.get("type") == "tool_call_message":
+            tool_call = get_safe(reasoning_item, "message.tool_call", {})
+            tool_call_name = tool_call.get("name", "")
+            tool_call_args = tool_call.get("arguments", {})
+            tool_call_args = json.loads(tool_call_args)
+            tool_call_args_str = json.dumps(
+                tool_call_args, indent=2, ensure_ascii=False
+            )
+            reasoning_messages.append(
+                f"**Tool Call:** `{tool_call_name}`\n```json\n{tool_call_args_str}\n```"
+            )
+        elif reasoning_item.get("type") == "tool_return_message":
+            tool_return = get_safe(reasoning_item, "message.tool_return", {})
+            tool_return = json.loads(tool_return)
+            tool_return_str = json.dumps(tool_return, indent=2, ensure_ascii=False)
+            reasoning_messages.append(
+                f"**Tool Return:**\n```json\n{tool_return_str}\n```"
+            )
+        elif reasoning_item.get("type") == "assistant_message":
+            assistant_message = get_safe(reasoning_item, "message.content", "")
+            reasoning_messages.append(f"**Assistant Message:**\n{assistant_message}\n")
 
     # Safely get the assistant's answer
     assistant_messages = get_safe(
@@ -116,11 +144,18 @@ for i, item in enumerate(data):
     report_parts.append("\n### Agent Answer")
     report_parts.append(answer)
 
+    # Agent Messages collapsed
+    report_parts.append("\n### Agent Reasoning")
+    report_parts.append("\n".join(reasoning_messages))
+
+    # Agent Answer
+    report_parts.append("\n### Agent Answer")
+    report_parts.append(answer)
+
     report_parts.append("\n### Golden Answer")
     report_parts.append(golden_answer)
     # Annotations
     report_parts.append("\n### Evaluations")
-
     show_annotations = [
         "Answer Similarity",
         "Golden Link in Answer",
@@ -147,7 +182,9 @@ for i, item in enumerate(data):
                 # Format explanation differently based on content type
                 if "Link" in ann_name:
                     parsed_explanation = parse_links(input_string=ann_explanation)
-                    formatted_explanation = json.dumps(parsed_explanation, indent=2)
+                    formatted_explanation = json.dumps(
+                        parsed_explanation, indent=2, ensure_ascii=False
+                    )
                     report_parts.append("**Explanation:**")
                     report_parts.append(f"```json\n{formatted_explanation}\n```")
                 else:
@@ -168,6 +205,10 @@ report_parts.append(f"```text\n{system_prompt}\n```")
 # Answer Similarity Prompt
 report_parts.append("\n## Answer Similarity System Prompt")
 report_parts.append(f"```text\n{system_prompt_answer_similarity}\n```")
+
+for part in report_parts:
+    if isinstance(part, dict):
+        print(part)
 
 # --- 4. Write to File ---
 final_report = "\n".join(report_parts)

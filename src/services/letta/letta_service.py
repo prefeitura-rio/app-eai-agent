@@ -8,10 +8,10 @@ from letta_client.types import MessageCreate, TextContent
 
 import src.config.env as env
 from src.services.letta.message_wrapper import (
-    process_stream, 
-    process_stream_raw, 
-    process_stream_with_retry, 
-    process_stream_raw_with_retry
+    process_stream,
+    process_stream_raw,
+    process_stream_with_retry,
+    process_stream_raw_with_retry,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,29 +22,25 @@ class LettaService:
         """Inicializa o cliente Letta com as configurações do ambiente."""
         self.token = env.LETTA_API_TOKEN
         self.base_url = env.LETTA_API_URL
-        
+
         # Configurar timeout personalizado para o cliente HTTP
         timeout_config = httpx.Timeout(
             connect=30.0,  # Timeout para conectar
             read=env.LETTA_STREAM_TIMEOUT,  # Timeout para ler a resposta (120s)
             write=30.0,  # Timeout para escrever
-            pool=60.0   # Timeout para pool de conexões
+            pool=60.0,  # Timeout para pool de conexões
         )
-        
+
         # Configurar cliente HTTP personalizado
         httpx_client = httpx.Client(timeout=timeout_config)
         httpx_async_client = httpx.AsyncClient(timeout=timeout_config)
-        
+
         # Inicializar clientes Letta com configurações personalizadas
         self.client = Letta(
-            token=self.token, 
-            base_url=self.base_url,
-            httpx_client=httpx_client
+            token=self.token, base_url=self.base_url, httpx_client=httpx_client
         )
         self.client_async = AsyncLetta(
-            token=self.token, 
-            base_url=self.base_url,
-            httpx_client=httpx_async_client
+            token=self.token, base_url=self.base_url, httpx_client=httpx_async_client
         )
 
     def get_client(self):
@@ -139,6 +135,7 @@ class LettaService:
         )
 
         try:
+
             def create_response():
                 return client.agents.messages.create_stream(
                     agent_id=agent_id, messages=[letta_message]
@@ -146,7 +143,7 @@ class LettaService:
 
             agent_message_response = await process_stream_with_retry(create_response)
             return agent_message_response or ""
-            
+
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar timer message: {error}")
             logger.error(f"Traceback: {traceback.format_exc()}")
@@ -179,6 +176,7 @@ class LettaService:
         letta_message = MessageCreate(**message_params)
 
         try:
+
             def create_response():
                 return client.agents.messages.create_stream(
                     agent_id=agent_id, messages=[letta_message]
@@ -186,7 +184,7 @@ class LettaService:
 
             agent_message_response = await process_stream_with_retry(create_response)
             return agent_message_response or ""
-            
+
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar message: {error}")
             logger.error(f"Traceback: {traceback.format_exc()}")
@@ -220,6 +218,7 @@ class LettaService:
         letta_message = MessageCreate(**message_params)
 
         try:
+
             def create_response():
                 return client.agents.messages.create_stream(
                     agent_id=agent_id, messages=[letta_message]

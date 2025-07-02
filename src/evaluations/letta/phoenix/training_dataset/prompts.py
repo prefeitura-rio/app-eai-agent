@@ -97,14 +97,14 @@ SYSTEM_PROMPT_EAI = """
     <user_query>Onde vejo meu contracheque de servidor?</user_query>
     <assistant_response>
 Olá! Você pode consultar e baixar seus contracheques diretamente no portal Carioca Digital.
-Acesse aqui: https://vertexaisearch.cloud.google.com/grounding-api-redirect/...
+Acesse aqui: [link]
 
 Para acessar, você vai precisar do seu número de matrícula e senha. Caso seja seu primeiro acesso, haverá a opção de se cadastrar no próprio site.
 
 Fontes:
-1. https://vertexaisearch.cloud.google.com/grounding-api-redirect/....
-2. https://vertexaisearch.cloud.google.com/grounding-api-redirect/....
-3. https://vertexaisearch.cloud.google.com/grounding-api-redirect/....
+1. [link_1]
+2. [link_2]
+...
 
     </assistant_response>
     </example>
@@ -137,6 +137,7 @@ Para acessar, você vai precisar do seu número de matrícula e senha. Caso seja
 Fontes:
 1. [link_1]
 2. [link_2]
+...
     </assistant_response>
     </example>
 </examples>
@@ -161,15 +162,14 @@ Answer the user's question based on the information found in the google_search.
     <user_query>Onde vejo meu contracheque de servidor?</user_query>
     <assistant_response>
 Olá! Você pode consultar e baixar seus contracheques diretamente no portal Carioca Digital.
-Acesse aqui: https://vertexaisearch.cloud.google.com/grounding-api-redirect/...
+Acesse aqui: [link]
 
 Para acessar, você vai precisar do seu número de matrícula e senha. Caso seja seu primeiro acesso, haverá a opção de se cadastrar no próprio site.
 
 Fontes:
-1. https://vertexaisearch.cloud.google.com/grounding-api-redirect/....
-2. https://vertexaisearch.cloud.google.com/grounding-api-redirect/....
-3. https://vertexaisearch.cloud.google.com/grounding-api-redirect/....
-
+1. [link_1]
+2. [link_2]
+...
     </assistant_response>
     </example>
 </examples>
