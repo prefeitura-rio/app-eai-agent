@@ -16,11 +16,36 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
-    <div class="container my-5">
-        <div class="card glass-card">
-            <div class="card-body p-lg-5">
-                <h1 class="nav-title text-center mb-4">Visualizador de Experimentos v1</h1>
-                <p class="text-center text-muted mb-5">Insira o ID do experimento para buscar seus dados em formato JSON.</p>
+    <div class="container mt-5">
+        <!-- Tela de Login -->
+        <div class="card login-container">
+            <div class="card-body">
+                <h2 class="mb-4 text-center">Painel Administrativo</h2>
+                <p class="text-center text-muted mb-4">Visualizador de Experimentos</p>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="token" class="form-label">Token de Autenticação</label>
+                        <input type="password" class="form-control" id="token" 
+                               placeholder="Insira o token de autenticação" required autocomplete="new-password">
+                    </div>
+                    <div id="errorMsg" class="alert alert-danger d-none" role="alert"></div>
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Painel Principal (escondido inicialmente) -->
+        <div id="experimentsPanel" class="admin-container d-none">
+            <div class="navbar">
+                <h1 class="nav-title">Visualizador de Experimentos v2</h1>
+                <div class="d-flex align-items-center">
+                    <button id="logoutBtn" class="btn btn-sm btn-outline-light">Sair</button>
+                </div>
+            </div>
+            
+            <div class="card glass-card mt-4">
+                <div class="card-body p-lg-5">
+                    <p class="text-center text-muted mb-5">Insira o ID do experimento para buscar seus dados em formato JSON.</p>
                 
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
@@ -41,9 +66,10 @@
                     </div>
                 </div>
 
-                <div id="resultContainer" class="mt-4 d-none">
-                    <h4 class="section-title">Resultado do Experimento</h4>
-                    <pre id="resultJson" class="result-box"></pre>
+                    <div id="resultContainer" class="mt-4 d-none">
+                        <h4 class="section-title">Resultado do Experimento</h4>
+                        <pre id="resultJson" class="result-box"></pre>
+                    </div>
                 </div>
             </div>
         </div>
