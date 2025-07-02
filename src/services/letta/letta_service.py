@@ -10,8 +10,6 @@ import src.config.env as env
 from src.services.letta.message_wrapper import (
     process_stream,
     process_stream_raw,
-    process_stream_with_retry,
-    process_stream_raw_with_retry,
 )
 
 logger = logging.getLogger(__name__)
@@ -141,7 +139,7 @@ class LettaService:
                     agent_id=agent_id, messages=[letta_message]
                 )
 
-            agent_message_response = await process_stream_with_retry(create_response)
+            agent_message_response = await process_stream(create_response)
             return agent_message_response or ""
 
         except Exception as error:
@@ -182,7 +180,7 @@ class LettaService:
                     agent_id=agent_id, messages=[letta_message]
                 )
 
-            agent_message_response = await process_stream_with_retry(create_response)
+            agent_message_response = await process_stream(create_response)
             return agent_message_response or ""
 
         except Exception as error:
@@ -224,7 +222,7 @@ class LettaService:
                     agent_id=agent_id, messages=[letta_message]
                 )
 
-            return await process_stream_raw_with_retry(create_response)
+            return await process_stream_raw(create_response)
         except Exception as error:
             logger.error(f"Erro ao enviar mensagem: {error}")
             return {
