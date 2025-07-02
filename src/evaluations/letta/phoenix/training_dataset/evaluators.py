@@ -304,10 +304,16 @@ def get_answer_links(output):
     for msg in tool_msgs:
         tool_return = msg.get("tool_return")
         if tool_return:
-            tool_return = json.loads(tool_return)
+            try:
+                tool_return = json.loads(tool_return)
+            except json.JSONDecodeError:
+                tool_return = {}
         else:
             tool_return = {}
         answer_links.extend(tool_return.get("sources", []))
+
+    if not answer_links:
+        return []
 
     answer_links_unique = []
     answer_links_set = set()
