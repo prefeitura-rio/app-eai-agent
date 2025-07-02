@@ -33,12 +33,12 @@ class GeminiService:
         temperature: float = 0.0,
     ):
         logger.info(f"Iniciando pesquisa Google para: {query}")
-        
+
         try:
             # Timeout total para toda a operação
             async with asyncio.timeout(90):  # 90 segundos para toda a operação
                 formatted_prompt = web_searcher_instructions(research_topic=query)
-                
+
                 logger.info("Gerando conteúdo com Gemini...")
                 response = await self.client.aio.models.generate_content(
                     model=model,
@@ -48,20 +48,22 @@ class GeminiService:
                         "temperature": temperature,
                     },
                 )
-                
+
                 logger.info("Resposta recebida do Gemini")
                 candidate = response.candidates[0]
-                
+
                 if candidate.grounding_metadata.grounding_chunks:
                     logger.info("Resolvendo URLs das fontes...")
                     resolved_urls_map = await resolve_urls(
                         urls_to_resolve=candidate.grounding_metadata.grounding_chunks
                     )
                 else:
-                    logger.warning(f"No grounding chunks found for query: '{query}'. Candidate: {candidate}")
+                    logger.warning(
+                        f"No grounding chunks found for query: '{query}'. Candidate: {candidate}"
+                    )
                     # Em vez de lançar uma exceção, retorne uma resposta vazia ou informativa
                     return {
-                        "text": response.text or "A pesquisa não retornou resultados fundamentados.",
+                        "text": response.text or "Falha na busca! Tente novamente.",
                         "sources": [],
                         "web_search_queries": [],
                     }
@@ -72,9 +74,12 @@ class GeminiService:
                 )
                 modified_text = format_text_with_citations(response.text, citations)
                 sources_gathered = get_sources_list(citations, modified_text)
-                
+
                 web_search_queries = []
-                if candidate.grounding_metadata and candidate.grounding_metadata.web_search_queries:
+                if (
+                    candidate.grounding_metadata
+                    and candidate.grounding_metadata.web_search_queries
+                ):
                     web_search_queries = candidate.grounding_metadata.web_search_queries
 
                 logger.info(f"Pesquisa concluída com {len(sources_gathered)} fontes")
@@ -83,9 +88,11 @@ class GeminiService:
                     "sources": sources_gathered,
                     "web_search_queries": web_search_queries,
                 }
-                
+
         except asyncio.TimeoutError:
-            logger.error(f"Timeout na pesquisa Google após 90 segundos para query: {query}")
+            logger.error(
+                f"Timeout na pesquisa Google após 90 segundos para query: {query}"
+            )
             raise Exception("Pesquisa Google demorou muito tempo (timeout de 90s)")
         except Exception as e:
             logger.error(f"Erro na pesquisa Google: {e}")
@@ -296,10 +303,10 @@ gemini_service = GeminiService()
 
 async def process_link(session, link: dict):
     uri = link.get("uri")
-    
+
     # Timeout específico por requisição (menor que o timeout geral)
     link_timeout = 10
-    
+
     try:
         # Primeiro tenta HEAD request (mais rápido)
         response = await session.head(uri, follow_redirects=True, timeout=link_timeout)
@@ -310,7 +317,9 @@ async def process_link(session, link: dict):
     except Exception as e:
         try:
             # Se HEAD falhar, tenta GET request
-            response = await session.get(uri, follow_redirects=True, timeout=link_timeout)
+            response = await session.get(
+                uri, follow_redirects=True, timeout=link_timeout
+            )
             response.raise_for_status()
             link["url"] = str(response.url)
             link["error"] = None
@@ -319,7 +328,9 @@ async def process_link(session, link: dict):
         except Exception as e2:
             error_msg = str(e2)
             # Trata erro específico do Mozilla
-            mozilla_suffix = "For more information check: https://developer.mozilla.org/"
+            mozilla_suffix = (
+                "For more information check: https://developer.mozilla.org/"
+            )
             if mozilla_suffix in error_msg:
                 try:
                     msg = error_msg.replace(mozilla_suffix, "")
@@ -345,32 +356,33 @@ async def resolve_urls(urls_to_resolve: List[Any]) -> Dict[str, str]:
     """
     unique_urls = list(set([uri.web.uri for uri in urls_to_resolve]))
     urls = [{"uri": uri} for uri in unique_urls]
-    
+
     logger.info(f"Resolvendo {len(urls)} URLs únicas")
-    
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
     }
-    
+
     async with httpx.AsyncClient(
         follow_redirects=True, timeout=30, verify=False, headers=headers
     ) as session:
         # Limita concorrência para evitar sobrecarga
         semaphore = asyncio.Semaphore(5)  # Máximo 5 requisições simultâneas
-        
+
         async def process_with_semaphore(link):
             async with semaphore:
                 return await process_link(session, link)
-        
+
         results = await asyncio.gather(
-            *(process_with_semaphore(link) for link in urls),
-            return_exceptions=True
+            *(process_with_semaphore(link) for link in urls), return_exceptions=True
         )
-        
+
         # Trata exceções não capturadas
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                logger.error(f"Erro não tratado ao processar URL {urls[i]['uri']}: {result}")
+                logger.error(
+                    f"Erro não tratado ao processar URL {urls[i]['uri']}: {result}"
+                )
                 urls[i]["url"] = urls[i]["uri"]
                 urls[i]["error"] = str(result)
             else:
