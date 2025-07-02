@@ -12,9 +12,6 @@ const logoutBtn = document.getElementById("logoutBtn");
 let currentToken = localStorage.getItem("adminToken");
 let PHOENIX_ENDPOINT = "";
 
-// API base URL - ajustar de acordo com o ambiente
-const API_BASE_URL = "https://services.staging.app.dados.rio/eai-agent";
-
 // Configuração inicial
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM carregado, inicializando painel de experimentos");
@@ -103,15 +100,31 @@ function fetchConfig() {
     headers: { Authorization: `Bearer ${currentToken}` },
   })
     .then((response) => {
+      console.log("Config response status:", response.status);
       if (!response.ok) {
-        throw new Error("Erro ao buscar configuração");
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       return response.json();
     })
     .then((data) => {
-      console.log("Config response:", data);
+      console.log("Config response data:", data);
       PHOENIX_ENDPOINT = data.phoenix_endpoint;
-      console.log("Phoenix endpoint set to:", PHOENIX_ENDPOINT);
+
+      // Corrigir protocolo se necessário para evitar Mixed Content
+      if (
+        PHOENIX_ENDPOINT &&
+        PHOENIX_ENDPOINT.startsWith("http://") &&
+        window.location.protocol === "https:"
+      ) {
+        console.warn(
+          "Converting HTTP endpoint to HTTPS to avoid Mixed Content error"
+        );
+        PHOENIX_ENDPOINT = PHOENIX_ENDPOINT.replace("http://", "https://");
+      }
+
+      console.log("Phoenix endpoint final:", PHOENIX_ENDPOINT);
+      console.log("Current page protocol:", window.location.protocol);
+      console.log("Current page URL:", window.location.href);
 
       if (!PHOENIX_ENDPOINT) {
         showAlert(
@@ -124,9 +137,10 @@ function fetchConfig() {
       }
     })
     .catch((error) => {
-      console.error("Erro ao buscar configuração:", error);
+      console.error("Erro detalhado ao buscar configuração:", error);
+      console.error("Error stack:", error.stack);
       showAlert(
-        "Não foi possível obter a configuração do servidor.",
+        `Não foi possível obter a configuração do servidor: ${error.message}`,
         "danger"
       );
       if (fetchExperimentBtn) {
