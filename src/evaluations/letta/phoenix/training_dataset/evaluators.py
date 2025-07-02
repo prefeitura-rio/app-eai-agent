@@ -302,8 +302,11 @@ def get_answer_links(output):
     tool_msgs = grouped.get("tool_return_messages", [])
     answer_links = []
     for msg in tool_msgs:
-        tool_return = msg.get("tool_return", "{}")
-        tool_return = json.loads(tool_return)
+        tool_return = msg.get("tool_return")
+        if tool_return:
+            tool_return = json.loads(tool_return)
+        else:
+            tool_return = {}
         answer_links.extend(tool_return.get("sources", []))
 
     answer_links_unique = []

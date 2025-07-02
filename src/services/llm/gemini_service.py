@@ -305,7 +305,7 @@ async def process_link(session, link: dict):
     uri = link.get("uri")
 
     # Timeout específico por requisição (menor que o timeout geral)
-    link_timeout = 10
+    link_timeout = 5
 
     try:
         # Primeiro tenta HEAD request (mais rápido)
@@ -367,7 +367,7 @@ async def resolve_urls(urls_to_resolve: List[Any]) -> Dict[str, str]:
         follow_redirects=True, timeout=30, verify=False, headers=headers
     ) as session:
         # Limita concorrência para evitar sobrecarga
-        semaphore = asyncio.Semaphore(5)  # Máximo 5 requisições simultâneas
+        semaphore = asyncio.Semaphore(20)
 
         async def process_with_semaphore(link):
             async with semaphore:
