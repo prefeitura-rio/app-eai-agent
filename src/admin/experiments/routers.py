@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
+import mimetypes
 from loguru import logger
 
 
@@ -52,5 +53,45 @@ async def get_experiments_config():
     return JSONResponse(content={"phoenix_endpoint": phoenix_endpoint})
 
 
-# Monta o diretório estático. A URL final será /admin/experiments/static/
-router.mount("/static", StaticFiles(directory=STATIC_DIR), name="experiments_static")
+@router.get("/static/{file_path:path}")
+async def get_static_file(file_path: str):
+    """
+    Serve arquivos estáticos com MIME types corretos
+    """
+    file_full_path = os.path.join(STATIC_DIR, file_path)
+
+    if not os.path.exists(file_full_path):
+        logger.error(f"Arquivo estático não encontrado: {file_full_path}")
+        return Response(content="Arquivo não encontrado", status_code=404)
+
+    # Determinar MIME type baseado na extensão
+    mime_type, _ = mimetypes.guess_type(file_full_path)
+
+    # Forçar MIME types específicos para garantir compatibilidade
+    if file_path.endswith(".css"):
+        mime_type = "text/css"
+    elif file_path.endswith(".js"):
+        mime_type = "application/javascript"
+    elif file_path.endswith(".html"):
+        mime_type = "text/html"
+    elif file_path.endswith(".ico"):
+        mime_type = "image/x-icon"
+
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
+    logger.info(f"Servindo arquivo: {file_path} com MIME type: {mime_type}")
+
+    return FileResponse(
+        file_full_path,
+        media_type=mime_type,
+        headers={
+            "Cache-Control": "no-cache, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
+# Comentando o mount padrão para usar endpoint customizado
+# router.mount("/static", StaticFiles(directory=STATIC_DIR), name="experiments_static")
