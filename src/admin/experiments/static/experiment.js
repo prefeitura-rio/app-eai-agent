@@ -110,21 +110,25 @@ function fetchConfig() {
       console.log("Config response data:", data);
       PHOENIX_ENDPOINT = data.phoenix_endpoint;
 
-      // Corrigir protocolo se necessário para evitar Mixed Content
+      console.log("Phoenix endpoint original:", PHOENIX_ENDPOINT);
+      console.log("Current page protocol:", window.location.protocol);
+      console.log("Current page URL:", window.location.href);
+
+      // Avisar sobre possível problema de Mixed Content mas não converter automaticamente
       if (
         PHOENIX_ENDPOINT &&
         PHOENIX_ENDPOINT.startsWith("http://") &&
         window.location.protocol === "https:"
       ) {
+        console.warn("⚠️  AVISO: Mixed Content detectado!");
         console.warn(
-          "Converting HTTP endpoint to HTTPS to avoid Mixed Content error"
+          "Phoenix endpoint está em HTTP mas a página está em HTTPS"
         );
-        PHOENIX_ENDPOINT = PHOENIX_ENDPOINT.replace("http://", "https://");
+        console.warn("Isso pode causar erros de Mixed Content no navegador");
+        console.warn(
+          "Recomenda-se configurar HTTPS no Phoenix ou usar proxy reverso"
+        );
       }
-
-      console.log("Phoenix endpoint final:", PHOENIX_ENDPOINT);
-      console.log("Current page protocol:", window.location.protocol);
-      console.log("Current page URL:", window.location.href);
 
       if (!PHOENIX_ENDPOINT) {
         showAlert(
@@ -186,26 +190,91 @@ function fetchExperimentData() {
 
   const url = `${PHOENIX_ENDPOINT}v1/experiments/${expId}/json`;
 
+  console.log("=== FETCH EXPERIMENT DEBUG ===");
+  console.log("Experiment ID:", expId);
+  console.log("Phoenix Endpoint:", PHOENIX_ENDPOINT);
+  console.log("Final URL:", url);
+  console.log("Page Protocol:", window.location.protocol);
+  console.log(
+    "URL Protocol:",
+    url.startsWith("https://")
+      ? "HTTPS"
+      : url.startsWith("http://")
+      ? "HTTP"
+      : "Unknown"
+  );
+  console.log("===============================");
+
   fetch(url, {
-    headers: { Authorization: `Bearer ${currentToken}` },
+    headers: {
+      Authorization: `Bearer ${currentToken}`,
+      "Content-Type": "application/json",
+    },
+    mode: "cors",
   })
     .then((response) => {
+      console.log("=== RESPONSE DEBUG ===");
+      console.log("Response status:", response.status);
+      console.log("Response statusText:", response.statusText);
+      console.log("Response headers:", response.headers);
+      console.log("Response URL:", response.url);
+      console.log("Response type:", response.type);
+      console.log("======================");
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          `HTTP ${response.status}: ${response.statusText} - URL: ${response.url}`
+        );
       }
       return response.json();
     })
     .then((data) => {
+      console.log("=== SUCCESS DEBUG ===");
+      console.log("Data received:", data);
+      console.log("Data type:", typeof data);
+      console.log("Data keys:", Object.keys(data || {}));
+      console.log("====================");
+
       if (resultJson) {
         resultJson.textContent = JSON.stringify(data, null, 2);
       }
       if (resultContainer) {
         resultContainer.classList.remove("d-none");
       }
+
+      showAlert("Experimento carregado com sucesso!", "success");
     })
     .catch((error) => {
-      console.error("Erro ao buscar dados do experimento:", error);
-      const errorMessage = error.message || "Erro desconhecido.";
+      console.error("=== ERROR DEBUG ===");
+      console.error("Error message:", error.message);
+      console.error("Error name:", error.name);
+      console.error("Error stack:", error.stack);
+      console.error("Error object:", error);
+      console.error("==================");
+
+      let errorMessage = "Erro desconhecido";
+
+      if (
+        error.name === "TypeError" &&
+        error.message.includes("Failed to fetch")
+      ) {
+        if (
+          url.includes("ERR_SSL_PROTOCOL_ERROR") ||
+          (url.startsWith("https://") && PHOENIX_ENDPOINT.includes(":6006"))
+        ) {
+          errorMessage = `Erro SSL: O servidor Phoenix em ${PHOENIX_ENDPOINT} não suporta HTTPS. Configure o servidor para usar HTTPS ou use um proxy reverso.`;
+        } else if (
+          url.startsWith("http://") &&
+          window.location.protocol === "https:"
+        ) {
+          errorMessage = `Erro de Mixed Content: O endpoint Phoenix está em HTTP (${url}) mas a página está em HTTPS. Configure HTTPS no Phoenix ou use um proxy reverso.`;
+        } else {
+          errorMessage = `Erro de rede: Não foi possível conectar ao endpoint ${url}. Verifique se o serviço está rodando e acessível.`;
+        }
+      } else {
+        errorMessage = `${error.message}`;
+      }
+
       showAlert(`Falha ao buscar o experimento: ${errorMessage}`, "danger");
     })
     .finally(() => {
