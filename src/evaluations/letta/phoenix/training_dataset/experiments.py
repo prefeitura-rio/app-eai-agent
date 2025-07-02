@@ -130,7 +130,7 @@ async def main():
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 1,
+            "batch_size": 5,
             "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
         },

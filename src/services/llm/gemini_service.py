@@ -58,8 +58,13 @@ class GeminiService:
                         urls_to_resolve=candidate.grounding_metadata.grounding_chunks
                     )
                 else:
-                    logger.warning("Nenhum grounding chunk encontrado")
-                    raise Exception("No grounding chunks found")
+                    logger.warning(f"No grounding chunks found for query: '{query}'. Candidate: {candidate}")
+                    # Em vez de lançar uma exceção, retorne uma resposta vazia ou informativa
+                    return {
+                        "text": response.text or "A pesquisa não retornou resultados fundamentados.",
+                        "sources": [],
+                        "web_search_queries": [],
+                    }
 
                 logger.info("Processando citações...")
                 citations = get_citations(
@@ -67,7 +72,10 @@ class GeminiService:
                 )
                 modified_text = format_text_with_citations(response.text, citations)
                 sources_gathered = get_sources_list(citations, modified_text)
-                web_search_queries = candidate.grounding_metadata.web_search_queries
+                
+                web_search_queries = []
+                if candidate.grounding_metadata and candidate.grounding_metadata.web_search_queries:
+                    web_search_queries = candidate.grounding_metadata.web_search_queries
 
                 logger.info(f"Pesquisa concluída com {len(sources_gathered)} fontes")
                 return {
