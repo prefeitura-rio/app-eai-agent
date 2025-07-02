@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Request, Response, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 import os
 import mimetypes
 from loguru import logger
-
+import httpx  # Adicionando httpx para requisições HTTP assíncronas
+import json
 
 # Cria um novo roteador para a seção de experimentos
 router = APIRouter()
@@ -37,20 +37,54 @@ async def get_experiments_page(request: Request):
         )
 
 
-@router.get("/config")
-async def get_experiments_config():
+@router.get("/data")
+async def get_experiment_data(
+    id: str = Query(..., description="O ID do experimento para buscar.")
+):
     """
-    Endpoint que fornece configurações do backend para o frontend.
-    A URL final será /admin/experiments/config
+    Endpoint proxy para buscar dados de um experimento do serviço Phoenix.
+    Evita problemas de Mixed Content no frontend.
+    A URL final será /admin/experiments/data?id=...
     """
-    phoenix_endpoint = os.getenv("PHOENIX_ENDPOINT")
-    if not phoenix_endpoint:
-        logger.warning(
-            "A variável de ambiente PHOENIX_ENDPOINT não está definida. Usando fallback."
-        )
-        phoenix_endpoint = "http://localhost:8001/"
+    phoenix_endpoint = os.getenv("PHOENIX_ENDPOINT", "http://localhost:8001/")
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
 
-    return JSONResponse(content={"phoenix_endpoint": phoenix_endpoint})
+    url = f"{phoenix_endpoint}v1/experiments/{id}/json"
+
+    logger.info(f"Fazendo proxy da requisição para: {url}")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=30.0)
+
+        # Repassa o status e o conteúdo da resposta do Phoenix
+        if response.status_code == 200:
+            return JSONResponse(content=json.loads(response.text))
+        else:
+            logger.error(
+                f"Erro ao buscar dados do Phoenix. Status: {response.status_code}, Resposta: {response.text}"
+            )
+            # Retorna um erro formatado que o frontend pode exibir
+            return JSONResponse(
+                status_code=response.status_code,
+                content={
+                    "detail": f"Erro ao contatar o serviço Phoenix (Status {response.status_code}): {response.text}"
+                },
+            )
+
+    except httpx.RequestError as e:
+        logger.error(f"Erro de conexão ao tentar acessar o Phoenix em {url}: {str(e)}")
+        raise HTTPException(
+            status_code=502,  # Bad Gateway
+            detail=f"Não foi possível conectar ao serviço Phoenix em {phoenix_endpoint}. Verifique se o serviço está no ar e a URL está correta. Detalhe: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Erro inesperado no proxy para o Phoenix: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ocorreu um erro interno no servidor ao processar a requisição. Detalhe: {str(e)}",
+        )
 
 
 @router.get("/static/{file_path:path}")
@@ -91,7 +125,3 @@ async def get_static_file(file_path: str):
             "Expires": "0",
         },
     )
-
-
-# Comentando o mount padrão para usar endpoint customizado
-# router.mount("/static", StaticFiles(directory=STATIC_DIR), name="experiments_static")
