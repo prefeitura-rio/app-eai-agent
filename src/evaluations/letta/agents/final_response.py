@@ -32,17 +32,18 @@ ANSWER_SIMILARITY_PROMPT = """
 In this task, you will evaluate how well a model's response captures the core topics and essential concepts present in an ideal (gold standard) response.
 
 The evaluation is based on content coverage, not stylistic similarity or phrasing.
+Focus on whether the model response includes the *key points* that matter most. Minor omissions or differences in wording should not count agains the response if the main substance is captured.
 
 Assign one of the following labels:
-- "equivalent": The model's response fully covers the core topics and essential information from the ideal response.
-- "similar": The model's response covers some, but not all, of the core topics and essential information.
-- "different": The model's response misses most or all core topics, with significant divergence in substance.
+- "equivalent": The model's response captures all or nearly all important concepts from the ideal response. Minor missing details are acceptable if the main points are clearly conveyed.
+- "similar": The model's response includes some important concepts but omits or misrepresents others.
+- "different": The model's response misses most key ideas or diverges substantially in meaning.
 
 Your response must be a single word: "equivalent", "similar", or "different", with no other text.
 
 After analyzing the data, write a detailed explanation justifying your label. Your explanation should:
-- List the key topics or concepts from the ideal response.
-- Considering the model's reponse, assess how many and which of the topics from the ideal response ARE NOT covered.
+- Briefly list the key topics or concepts from the ideal response.
+- If any of the important key topics is missing, explain what it is and how that impacts understanding.
 
 [BEGIN DATA]
 Query: {query}
@@ -52,7 +53,7 @@ Ideal Response: {ideal_response}
 
 Please analyze the data carefully and then provide:
 
-explanation: Your reasoning step by step, comparing the model response to the ideal response.
+explanation: Your reasoning step by step, comparing the model response to the ideal response, and mentioning what (if anything) was missing.
 label: "equivalent", "similar", or "different"
 """
 
