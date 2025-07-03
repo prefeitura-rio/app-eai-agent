@@ -14,7 +14,7 @@ from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
 )
-from src.evaluations.letta.agents.final_response import ANSWER_SIMILARITY_PROMPT
+from src.evaluations.letta.agents.final_response import ANSWER_COMPLETENESS_PROMPT
 
 os.environ["PHOENIX_HOST"] = env.PHOENIX_HOST
 os.environ["PHOENIX_PORT"] = env.PHOENIX_PORT
@@ -73,7 +73,7 @@ async def executar_avaliacao_phoenix(
             }
         else:
             df = pd.read_csv(
-                "respostas_formatadas.csv"
+                "src/evaluations/letta/phoenix/training_dataset/respostas_formatadas.csv"
             )  # colunas necessárias: "pergunta", "resposta_gpt", e "fontes" (list)
             linha = df.loc[
                 df["pergunta"] == example.input["mensagem_whatsapp_simulada"]
@@ -123,20 +123,20 @@ async def main():
         golden_link_in_tool_calling,
         golden_link_in_answer,
         activate_search,
-        answer_similarity,
+        answer_completeness,
     ]
     experiments_configs = [
-        {
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "baseline-4o-2025-07-03",
-            "evaluators": evaluators,
-            "experiment_description": "Temperature: 0.7, Model: gpt-4o",
-            "tools": ["gpt_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "temperature": 0.7,
-            "system_prompt": SYSTEM_PROMPT_BASELINE_4O,
-        },
+        # {
+        #     "dataset_name": "golden_dataset_v4_small_sample",
+        #     "experiment_name": "baseline-4o-2025-07-03",
+        #     "evaluators": evaluators,
+        #     "experiment_description": "Temperature: 0.7, Model: gpt-4o",
+        #     "tools": ["gpt_search"],
+        #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+        #     "batch_size": 10,
+        #     "temperature": 0.7,
+        #     "system_prompt": SYSTEM_PROMPT_BASELINE_4O,
+        # },
         # {
         #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-gemini-2025-07-01",
@@ -160,17 +160,17 @@ async def main():
         #     "temperature": 0.7,
         #     "system_prompt": SYSTEM_PROMPT_EAI,
         # },
-        # {
-        #     "dataset_name": "golden_dataset_v4",
-        #     "experiment_name": "baseline-gpt-2025-07-02",
-        #     "experiment_description": "Respostas geradas usando o ChatGPT",
-        #     "evaluators": [golden_link_in_answer, golden_link_in_tool_calling, answer_similarity],
-        #     "tools": None,
-        #     "model_name": "gpt-4o",
-        #     "batch_size": None,
-        #     "temperature": None,
-        #     "system_prompt": None,
-        # }
+        {
+            "dataset_name": "golden_dataset_v4",
+            "experiment_name": "baseline-gpt-2025-07-03",
+            "experiment_description": "Respostas geradas usando o ChatGPT",
+            "evaluators": [golden_link_in_answer, golden_link_in_tool_calling, answer_completeness],
+            "tools": None,
+            "model_name": "gpt-4o",
+            "batch_size": None,
+            "temperature": None,
+            "system_prompt": None,
+        }
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
@@ -223,7 +223,7 @@ async def main():
                 "batch_size": experiment_config.get("batch_size"),
                 "temperature": experiment_config.get("temperature"),
                 "system_prompt": experiment_config.get("system_prompt"),
-                "system_prompt_answer_similatiry": ANSWER_SIMILARITY_PROMPT,
+                "system_prompt_answer_similatiry": ANSWER_COMPLETENESS_PROMPT,
             },
         )
 
