@@ -10,7 +10,7 @@ from src.evaluations.letta.agents.final_response import (
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
     FEEDBACK_HANDLING_COMPLIANCE_JUDGE_PROMPT,
-    ANSWER_SIMILARITY_PROMPT,
+    ANSWER_COMPLETENESS_PROMPT,
     GROUNDEDNESS_LLM_JUDGE_PROMPT,
     LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
     SECURITY_PRIVACY_COMPLIANCE_JUDGE_PROMPT,
@@ -521,14 +521,14 @@ async def golden_link_in_answer(output) -> bool | tuple:
 
 
 @create_evaluator(name="Answer Completeness", kind="LLM")
-async def answer_similarity(input, output, expected) -> tuple:
+async def answer_completeness(input, output, expected) -> tuple:
     rails = ["equivalent", "similar", "different"]
     mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
 
     response = await experiment_eval(
         input=input,
         output=output,
-        prompt=ANSWER_SIMILARITY_PROMPT,
+        prompt=ANSWER_COMPLETENESS_PROMPT,
         rails=rails,
         expected=expected,
     )

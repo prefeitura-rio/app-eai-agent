@@ -14,7 +14,7 @@ from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
 )
-from src.evaluations.letta.agents.final_response import ANSWER_SIMILARITY_PROMPT
+from src.evaluations.letta.agents.final_response import ANSWER_COMPLETENESS_PROMPT
 
 os.environ["PHOENIX_HOST"] = env.PHOENIX_HOST
 os.environ["PHOENIX_PORT"] = env.PHOENIX_PORT
@@ -123,7 +123,7 @@ async def main():
         golden_link_in_tool_calling,
         golden_link_in_answer,
         activate_search,
-        answer_similarity,
+        answer_completeness,
     ]
     experiments_configs = [
         # {
@@ -164,7 +164,7 @@ async def main():
             "dataset_name": "golden_dataset_v4",
             "experiment_name": "baseline-gpt-2025-07-03",
             "experiment_description": "Respostas geradas usando o ChatGPT",
-            "evaluators": [golden_link_in_answer, golden_link_in_tool_calling, answer_similarity],
+            "evaluators": [golden_link_in_answer, golden_link_in_tool_calling, answer_completeness],
             "tools": None,
             "model_name": "gpt-4o",
             "batch_size": None,
@@ -223,7 +223,7 @@ async def main():
                 "batch_size": experiment_config.get("batch_size"),
                 "temperature": experiment_config.get("temperature"),
                 "system_prompt": experiment_config.get("system_prompt"),
-                "system_prompt_answer_similatiry": ANSWER_SIMILARITY_PROMPT,
+                "system_prompt_answer_similatiry": ANSWER_COMPLETENESS_PROMPT,
             },
         )
 
