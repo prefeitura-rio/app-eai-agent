@@ -42,7 +42,7 @@ Your response must be a single word: "equivalent", "similar", or "different", wi
 
 After analyzing the data, write a detailed explanation justifying your label. Your explanation should:
 - List the key topics or concepts from the ideal response.
-- Indicate whether each is fully present, partially present, or missing in the model response.
+- Considering the model's reponse, assess how many and which of the topics from the ideal response ARE NOT covered.
 
 [BEGIN DATA]
 Query: {query}
