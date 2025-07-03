@@ -428,6 +428,11 @@ function renderEvaluations(annotations) {
  * MODIFIED: Added global step numbering prefix for all timeline items, grouped by step_id.
  * NEW: Added specific icons and colors for assistant messages and usage statistics.
  * MODIFIED: "Fontes (Sources)" section within tool return is now expandable and starts collapsed, with corrected positioning and styling.
+ *
+ * FIX: The logic for `sequenceCounter` was refined to correctly number distinct logical turns.
+ * The `sequenceCounter` now increments for `reasoning_message` and `assistant_message` types,
+ * and `tool_call_message` and `tool_return_message` use the current prefix from the most recent
+ * reasoning/assistant message. `letta_usage_statistics` does not receive a prefix.
  */
 function renderReasoningTimeline(orderedSteps) {
   const parentHeader =
@@ -463,105 +468,58 @@ function renderReasoningTimeline(orderedSteps) {
     parentHeader.insertAdjacentHTML("beforeend", summaryHtml);
   }
 
-  // Group steps by their step_id to apply sequential numbering to logical flows
-  let groupedSequences = [];
-  let currentSequenceGroup = [];
-  let lastStepId = null;
-
-  orderedSteps.forEach((step) => {
-    // Handle usage statistics as a separate, non-numbered sequence
-    if (step.type === "letta_usage_statistics") {
-      if (currentSequenceGroup.length > 0) {
-        groupedSequences.push(currentSequenceGroup);
-      }
-      groupedSequences.push([step]); // Add usage stats as its own group
-      currentSequenceGroup = []; // Reset for next main sequence
-      lastStepId = null; // Ensure next non-stats step starts a new sequence number
-    } else {
-      const currentStepId = step.step_id;
-
-      // If step_id changes, or it's the very first main step, start a new group
-      if (currentStepId !== lastStepId && currentSequenceGroup.length > 0) {
-        groupedSequences.push(currentSequenceGroup);
-        currentSequenceGroup = [];
-      }
-      currentSequenceGroup.push(step);
-      lastStepId = currentStepId;
-    }
-  });
-
-  // Push the last remaining sequence if any
-  if (currentSequenceGroup.length > 0) {
-    groupedSequences.push(currentSequenceGroup);
-  }
-
   let sequenceCounter = 0; // For numbering logical sequences (e.g., 1., 2., 3.)
+  let currentStepPrefix = ""; // Stores the prefix (e.g., "1. ") for the current logical sequence
 
-  const timelineItemsHtml = groupedSequences
-    .map((group) => {
-      // Determine if this group contributes to the main sequence numbering
-      const isMainSequenceGroup = group.some((s) =>
-        [
-          "reasoning_message",
-          "tool_call_message",
-          "tool_return_message",
-          "assistant_message",
-        ].includes(s.type)
-      );
+  const timelineItemsHtml = orderedSteps
+    .map((step, index) => {
+      let iconClass = "";
+      let icon = "";
+      let title = "";
+      let content = "";
+      let isNumberedStep = true; // Flag to determine if step should get a number prefix
 
-      let groupHtml = "";
-      if (isMainSequenceGroup) {
-        sequenceCounter++;
-      }
+      switch (step.type) {
+        case "reasoning_message":
+          sequenceCounter++; // Increment for each new reasoning turn
+          currentStepPrefix = `${sequenceCounter}. `;
+          iconClass = "timeline-icon-reasoning";
+          icon = "bi-lightbulb";
+          title = `${currentStepPrefix}Raciocínio`;
+          content = `<p class="mb-0 fst-italic">"${step.message.reasoning}"</p>`;
+          break;
+        case "tool_call_message":
+          iconClass = "timeline-icon-toolcall";
+          icon = "bi-tools";
+          title = `${currentStepPrefix}Chamada de Ferramenta: ${step.message.tool_call.name}`; // Use current sequence prefix
+          content = `<pre><code>${JSON.stringify(
+            step.message.tool_call.arguments,
+            null,
+            2
+          )}</code></pre>`;
+          break;
+        case "tool_return_message":
+          iconClass = "timeline-icon-return";
+          icon = "bi-box-arrow-in-left";
+          title = `${currentStepPrefix}Retorno da Ferramenta: ${step.message.name}`; // Use current sequence prefix
+          const toolReturn = step.message.tool_return;
 
-      group.forEach((step, indexInGroup) => {
-        let iconClass = "";
-        let icon = "";
-        let title = "";
-        let content = "";
-
-        // Add the global step number if it's a main sequence group
-        const stepPrefix = isMainSequenceGroup ? `${sequenceCounter}. ` : "";
-
-        switch (step.type) {
-          case "reasoning_message":
-            iconClass = "timeline-icon-reasoning";
-            icon = "bi-lightbulb";
-            title = `${stepPrefix}Raciocínio`;
-            content = `<p class="mb-0 fst-italic">"${step.message.reasoning}"</p>`;
-            break;
-          case "tool_call_message":
-            iconClass = "timeline-icon-toolcall";
-            icon = "bi-tools";
-            title = `${stepPrefix}Chamada de Ferramenta: ${step.message.tool_call.name}`;
-            content = `<pre><code>${JSON.stringify(
-              step.message.tool_call.arguments,
-              null,
-              2
-            )}</code></pre>`;
-            break;
-          case "tool_return_message":
-            iconClass = "timeline-icon-return";
-            icon = "bi-box-arrow-in-left";
-            title = `${stepPrefix}Retorno da Ferramenta: ${step.message.name}`;
-            const toolReturn = step.message.tool_return;
-
-            let returnSections = [];
-            if (typeof toolReturn === "object" && toolReturn !== null) {
-              if (toolReturn.text) {
-                returnSections.push(`
+          let returnSections = [];
+          if (typeof toolReturn === "object" && toolReturn !== null) {
+            if (toolReturn.text) {
+              returnSections.push(`
                               <div class="tool-return-section">
                                   <h6>Texto:</h6>
                                   <div class="p-2 bg-light border rounded mt-1">${marked.parse(
                                     String(toolReturn.text)
                                   )}</div>
                               </div>`);
-              }
-              if (toolReturn.sources && toolReturn.sources.length > 0) {
-                // MODIFIED: Add collapse for Sources with consistent styling and new line positioning
-                // Robust ID generation using selectedRunId and indexInGroup
-                const collapseId = `collapse-sources-${appState.selectedRunId}-${indexInGroup}`;
-                returnSections.push(`
+            }
+            if (toolReturn.sources && toolReturn.sources.length > 0) {
+              // MODIFIED: Add collapse for Sources with consistent styling and new line positioning
+              // Robust ID generation using selectedRunId and actual step index
+              const collapseId = `collapse-sources-${appState.selectedRunId}-${index}`;
+              returnSections.push(`
                               <div class="tool-return-section">
                                   <h6>Fontes (Sources):</h6>
                                   <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
@@ -575,12 +533,12 @@ function renderReasoningTimeline(orderedSteps) {
                                       )}</code></pre>
                                   </div>
                               </div>`);
-              }
-              if (
-                toolReturn.web_search_queries &&
-                toolReturn.web_search_queries.length > 0
-              ) {
-                returnSections.push(`
+            }
+            if (
+              toolReturn.web_search_queries &&
+              toolReturn.web_search_queries.length > 0
+            ) {
+              returnSections.push(`
                               <div class="tool-return-section">
                                   <h6>Consultas de Busca Web (Web Search Queries):</h6>
                                   <pre><code>${JSON.stringify(
@@ -589,34 +547,40 @@ function renderReasoningTimeline(orderedSteps) {
                                     2
                                   )}</code></pre>
                               </div>`);
-              }
             }
+          }
 
-            content =
-              returnSections.join("") ||
-              '<div class="p-2 bg-light border rounded">Nenhum retorno detalhado.</div>';
-            break;
-          case "assistant_message":
-            iconClass = "timeline-icon-assistant"; // Specific icon class for assistant message
-            icon = "bi-chat-text"; // A chat icon for assistant message
-            title = `${stepPrefix}Mensagem do Assistente`;
-            content = marked.parse(step.message.content);
-            break;
-          case "letta_usage_statistics":
-            iconClass = "timeline-icon-stats"; // Specific icon class for stats
-            icon = "bi-bar-chart-fill";
-            title = "Estatísticas de Uso"; // Simplified title (no step prefix for stats)
-            content = `
+          content =
+            returnSections.join("") ||
+            '<div class="p-2 bg-light border rounded">Nenhum retorno detalhado.</div>';
+          break;
+        case "assistant_message":
+          sequenceCounter++; // Increment for each new assistant message turn
+          currentStepPrefix = `${sequenceCounter}. `;
+          iconClass = "timeline-icon-assistant"; // Specific icon class for assistant message
+          icon = "bi-chat-text"; // A chat icon for assistant message
+          title = `Mensagem do Assistente`;
+          content = marked.parse(step.message.content);
+          break;
+        case "letta_usage_statistics":
+          isNumberedStep = false; // This step should not be numbered
+          iconClass = "timeline-icon-stats"; // Specific icon class for stats
+          icon = "bi-bar-chart-fill";
+          title = "Estatísticas de Uso"; // No step prefix for stats
+          content = `
                       <p class="mb-0"><strong>Tokens Totais:</strong> ${step.message.total_tokens}</p>
                       <p class="mb-0"><strong>Tokens de Prompt:</strong> ${step.message.prompt_tokens}</p>
                       <p class="mb-0"><strong>Tokens de Conclusão:</strong> ${step.message.completion_tokens}</p>
                   `;
-            break;
-          default:
-            return ""; // Ignore other step types
-        }
+          break;
+        default:
+          return ""; // Ignore other step types
+      }
 
-        groupHtml += `
+      // Determine the prefix to use for the current step's title
+      const actualStepPrefix = isNumberedStep ? currentStepPrefix : "";
+
+      return `
               <div class="timeline-item">
                   <div class="timeline-icon ${iconClass}">
                       <i class="bi ${icon}"></i>
@@ -627,8 +591,6 @@ function renderReasoningTimeline(orderedSteps) {
                   </div>
               </div>
           `;
-      });
-      return groupHtml;
     })
     .join("");
 

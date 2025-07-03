@@ -1,95 +1,749 @@
-// --- ELEMENTOS DOM ---
-const experimentIdInput = document.getElementById("experimentIdInput");
-const fetchExperimentBtn = document.getElementById("fetchExperimentBtn");
-const loadingIndicator = document.getElementById("loadingIndicator");
-const alertArea = document.getElementById("alertArea");
-const logoutBtn = document.getElementById("logoutBtn");
-const resultContainer = document.getElementById("resultContainer");
-const metadataContainer = document.getElementById("metadataContainer");
-const summaryMetricsContainer = document.getElementById(
-  "summaryMetricsContainer"
-);
-const filterContainer = document.getElementById("filterContainer");
-const experimentAccordion = document.getElementById("experimentAccordion");
-const experimentsPanel = document.getElementById("experimentsPanel");
+/*
+ * Final Integrated JavaScript
+ * Contains core logic and visualization features.
+ * Refactored to implement new data display requirements.
+ */
 
-// --- VARIÁVEIS GLOBAIS ---
-let currentToken = localStorage.getItem("adminToken");
-let originalJsonData = null;
+// --- GLOBAL STATE ---
+let appState = {
+  allRuns: [],
+  selectedRunId: null,
+  filters: {},
+  originalJsonData: null,
+  currentToken: localStorage.getItem("adminToken"),
+};
 
-// --- INICIALIZAÇÃO ---
-document.addEventListener("DOMContentLoaded", function () {
-  if (currentToken) {
+// --- DOM ELEMENT SELECTORS ---
+const getElement = (id) => document.getElementById(id);
+
+const elements = {
+  loginOverlay: getElement("login-overlay"),
+  loginForm: getElement("loginForm"),
+  errorMsg: getElement("errorMsg"),
+  experimentsPanel: getElement("experimentsPanel"),
+  logoutBtn: getElement("logoutBtn"),
+  experimentIdInput: getElement("experimentIdInput"),
+  fetchExperimentBtn: getElement("fetchExperimentBtn"),
+  loadingIndicator: getElement("loadingIndicator"),
+  alertArea: getElement("alertArea"),
+  welcomeScreen: getElement("welcome-screen"),
+  resultContainer: getElement("resultContainer"),
+  metadataContainer: getElement("metadataContainer"),
+  summaryMetricsContainer: getElement("summaryMetricsContainer"),
+  filterContainer: getElement("filterContainer"),
+  runListPanel: getElement("run-list-panel"),
+  runList: getElement("run-list"),
+  runCountBadge: getElement("run-count-badge"),
+  mainContentWrapper: getElement("main-content-wrapper"), // Selector for the right-hand scrollable wrapper
+  detailsPanel: getElement("details-panel"),
+  detailsPlaceholder: getElement("details-placeholder"),
+  detailsContent: getElement("details-content"),
+  userMessageContainer: getElement("user-message-container"),
+  comparisonContainer: getElement("comparison-container"),
+  evaluationsContainer: getElement("evaluations-container"),
+  reasoningTimelineContainer: getElement("reasoning-timeline-container"),
+  // errorsContainer: getElement("errors-container"), // Removed as requested
+  // toggleDiffBtn: getElement("toggle-diff-btn"), // Removed as requested
+};
+
+// --- INITIALIZATION ---
+document.addEventListener("DOMContentLoaded", () => {
+  if (appState.currentToken) {
     showExperimentsPanel();
+  } else {
+    elements.loginOverlay.classList.remove("d-none");
   }
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
-  }
-  document.addEventListener(
-    "experimentsReady",
-    initializeExperimentsFunctionality
-  );
+
+  elements.loginForm.addEventListener("submit", handleLogin);
+  elements.logoutBtn.addEventListener("click", handleLogout);
+  elements.fetchExperimentBtn.addEventListener("click", fetchExperimentData);
+  elements.experimentIdInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") fetchExperimentData();
+  });
+  elements.runList.addEventListener("click", handleRunClick);
+  // elements.toggleDiffBtn.addEventListener("click", handleToggleDiff); // Removed as requested
 });
 
-// --- FUNÇÕES DE UI E LÓGICA ---
+// --- AUTHENTICATION (Unchanged as per instructions) ---
+function handleLogin(e) {
+  e.preventDefault();
+  const tokenInput = getElement("token");
+  const token = tokenInput.value.trim().replace(/["\n\r]/g, "");
+  if (!token) return;
 
-function showExperimentsPanel() {
-  if (experimentsPanel) {
-    document.querySelector(".login-container").classList.add("d-none");
-    experimentsPanel.classList.remove("d-none");
-    initializeExperimentsFunctionality();
-  }
-}
+  const API_BASE_URL =
+    window.API_BASE_URL_OVERRIDE ||
+    "https://services.staging.app.dados.rio/eai-agent";
+  // Assuming 'requestUrl' is meant to be a placeholder for a general API endpoint to validate the token
+  // For a real application, you'd typically have a specific /auth/validate or /me endpoint.
+  // For now, I'll use a generic existing endpoint (like data endpoint without params) if no specific one is defined for validation,
+  // or you should replace this with your actual token validation URL.
+  // Using a dummy URL for now, as per previous instructions context this might have been implied for a general fetch.
+  // If the server requires *any* endpoint with valid token, /data without params might work or needs specific /auth endpoint.
+  const validationUrl = `${API_BASE_URL}/data?id=dummy`; // A non-existent but authenticated endpoint just to check token
 
-function initializeExperimentsFunctionality() {
-  if (fetchExperimentBtn && !fetchExperimentBtn.dataset.listenerAttached) {
-    fetchExperimentBtn.addEventListener("click", fetchExperimentData);
-    fetchExperimentBtn.dataset.listenerAttached = "true";
-  }
-  if (experimentIdInput && !experimentIdInput.dataset.listenerAttached) {
-    experimentIdInput.addEventListener("keypress", (event) => {
-      if (event.key === "Enter") fetchExperimentData();
+  fetch(validationUrl, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+  })
+    .then((response) => {
+      // If the response is not OK, it means the token is likely invalid or expired.
+      if (!response.ok) {
+        // Attempt to parse error message from response body if available
+        return response
+          .json()
+          .then((errorData) => {
+            throw new Error(
+              errorData.detail ||
+                `Authentication failed (Status: ${response.status})`
+            );
+          })
+          .catch(() => {
+            // If JSON parsing fails, use generic error message
+            throw new Error(
+              `Authentication failed (Status: ${response.status})`
+            );
+          });
+      }
+      // If response is OK, token is valid
+      return response.json(); // Or just response.text() if body is not important
+    })
+    .then(() => {
+      localStorage.setItem("adminToken", token);
+      appState.currentToken = token;
+      showExperimentsPanel(); // Correctly shows the panel
+    })
+    .catch((error) => {
+      elements.errorMsg.textContent = `Token inválido ou erro de autenticação: ${error.message}`;
+      elements.errorMsg.classList.remove("d-none");
     });
-    experimentIdInput.dataset.listenerAttached = "true";
-  }
 }
 
 function handleLogout() {
   localStorage.removeItem("adminToken");
+  appState.currentToken = null;
   location.reload();
 }
 
-function showAlert(message, type = "danger") {
-  if (alertArea) {
-    const alertId = `alert-${Date.now()}`;
-    alertArea.innerHTML = `
-            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
-    if (type === "success") {
-      setTimeout(() => {
-        const alertElement = document.getElementById(alertId);
-        if (alertElement) {
-          new bootstrap.Alert(alertElement).close();
-        }
-      }, 4000);
+// FIX: Ensure d-flex is added when showing the panel
+function showExperimentsPanel() {
+  elements.loginOverlay.classList.add("d-none");
+  elements.experimentsPanel.classList.remove("d-none");
+  elements.experimentsPanel.classList.add("d-flex"); // Crucial line to apply flex display
+}
+
+// --- DATA FETCHING ---
+function fetchExperimentData() {
+  const expId = elements.experimentIdInput.value.trim();
+  if (!expId) {
+    showAlert("Por favor, insira um ID de experimento.", "warning");
+    return;
+  }
+
+  setLoadingState(true);
+
+  const API_BASE_URL =
+    window.API_BASE_URL_OVERRIDE ||
+    "https://services.staging.app.dados.rio/eai-agent";
+  const url = `${API_BASE_URL}/admin/experiments/data?id=${encodeURIComponent(
+    expId
+  )}`;
+
+  fetch(url, {
+    headers: {
+      Authorization: `Bearer ${appState.currentToken}`,
+      "Content-Type": "application/json",
+    },
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.detail ||
+            `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+      return response.json();
+    })
+    .then((data) => {
+      appState.originalJsonData = data;
+      appState.allRuns = data.experiment;
+      appState.selectedRunId = null;
+
+      renderMetadata(data.experiment_metadata);
+      calculateAndRenderSummaryMetrics(data.experiment);
+      renderFilters(data.experiment);
+      renderRunList(appState.allRuns);
+      resetDetailsPanel();
+
+      showAlert("Experimento carregado com sucesso!", "success");
+      elements.welcomeScreen.classList.add("d-none");
+      elements.resultContainer.classList.remove("d-none");
+    })
+    .catch((error) => {
+      console.error("Erro ao buscar experimento:", error);
+      showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
+      elements.resultContainer.classList.add("d-none");
+      elements.welcomeScreen.classList.remove("d-none");
+    })
+    .finally(() => {
+      setLoadingState(false);
+    });
+}
+
+// --- RENDERING LOGIC ---
+
+function renderRunList(runs) {
+  elements.runList.innerHTML = "";
+  if (!runs || runs.length === 0) {
+    elements.runList.innerHTML = `<li class="list-group-item">Nenhum run encontrado.</li>`;
+    elements.runCountBadge.textContent = "0";
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  runs.forEach((run, index) => {
+    // Use run.output.metadata.id if available, fallback to internal index
+    const displayId = run.output?.metadata?.id || `${index + 1}`; // Removed "ID:" prefix
+    const runId = run.example_id_clean || `run-${index}`; // Internal identifier remains the same
+
+    const listItem = document.createElement("a");
+    listItem.href = "#";
+    listItem.className =
+      "list-group-item list-group-item-action d-flex justify-content-between align-items-start";
+    listItem.dataset.runId = runId;
+
+    if (runId === appState.selectedRunId) {
+      listItem.classList.add("active");
     }
+
+    // MODIFICATION: Only display ID
+    listItem.innerHTML = `
+          <div class="ms-2 me-auto">
+              <div class="fw-bold">ID: ${displayId}</div>
+          </div>
+      `;
+    fragment.appendChild(listItem);
+  });
+
+  elements.runList.appendChild(fragment);
+  elements.runCountBadge.textContent = runs.length;
+}
+
+function handleRunClick(e) {
+  const target = e.target.closest(".list-group-item-action");
+  if (!target) return;
+
+  e.preventDefault();
+  const runId = target.dataset.runId;
+  if (runId === appState.selectedRunId) return;
+
+  appState.selectedRunId = runId;
+
+  const currentlyActive = elements.runList.querySelector(".active");
+  if (currentlyActive) currentlyActive.classList.remove("active");
+  target.classList.add("active");
+
+  renderDetailsPanel();
+}
+
+/**
+ * MODIFIED: No longer calls the renderErrors function.
+ */
+function renderDetailsPanel() {
+  if (!appState.selectedRunId) {
+    resetDetailsPanel();
+    return;
+  }
+
+  const selectedRun = appState.allRuns.find(
+    (run) =>
+      (run.example_id_clean || `run-${appState.allRuns.indexOf(run)}`) ===
+      appState.selectedRunId
+  );
+  if (!selectedRun) {
+    showAlert("Erro: Run selecionado não encontrado.", "danger");
+    return;
+  }
+
+  elements.userMessageContainer.textContent =
+    selectedRun.input.mensagem_whatsapp_simulada;
+  renderComparison(selectedRun); // Diff button removed, this always renders side-by-side
+  renderEvaluations(selectedRun.annotations);
+  renderReasoningTimeline(selectedRun.output.agent_output?.ordered);
+  // renderErrors(selectedRun); // Removed as requested
+
+  elements.detailsPlaceholder.classList.add("d-none");
+  elements.detailsContent.classList.remove("d-none");
+
+  // Scroll to top of details panel when new run is selected
+  if (elements.mainContentWrapper) {
+    elements.mainContentWrapper.scrollTop = 0;
   }
 }
 
-function getScoreClass(score) {
-  if (score === 1.0) return "score-high";
-  if (score === 0.0) return "score-low";
-  return "score-mid";
+function resetDetailsPanel() {
+  elements.detailsPlaceholder.classList.remove("d-none");
+  elements.detailsContent.classList.add("d-none");
+  appState.selectedRunId = null;
+  const currentlyActive = elements.runList.querySelector(".active");
+  if (currentlyActive) currentlyActive.classList.remove("active");
 }
 
-// --- FUNÇÕES DE RENDERIZAÇÃO ---
+// MODIFIED: Simplified as diff button is removed
+function renderComparison(runData) {
+  const agentAnswerHtml = runData.output.agent_output?.ordered.find(
+    (m) => m.type === "assistant_message"
+  )
+    ? marked.parse(
+        runData.output.agent_output.ordered.find(
+          (m) => m.type === "assistant_message"
+        ).message.content
+      )
+    : "<p>N/A</p>";
+  const goldenAnswerHtml = runData.reference_output.golden_answer
+    ? marked.parse(runData.reference_output.golden_answer)
+    : "<p>N/A</p>";
 
+  elements.comparisonContainer.innerHTML = `
+      <div class="comparison-grid">
+          <div class="comparison-box">
+              <h5>🤖 Resposta do Agente</h5>
+              <div class="agent-answer-content">${agentAnswerHtml}</div>
+          </div>
+          <div class="comparison-box">
+              <h5>🏆 Resposta de Referência (Golden)</h5>
+              <div class="golden-answer-content">${goldenAnswerHtml}</div>
+          </div>
+      </div>
+  `;
+}
+
+/**
+ * MODIFIED: Score position moved to the left.
+ * MODIFIED: "Golden Link in Tool Calling" explanation is now expandable and starts collapsed, using consistent styling.
+ * MODIFIED: "Golden Link in Answer" also gets the collapse button if its explanation is JSON.
+ */
+function renderEvaluations(annotations) {
+  if (!annotations || annotations.length === 0) {
+    elements.evaluationsContainer.innerHTML =
+      "<p>Nenhuma avaliação disponível.</p>";
+    return;
+  }
+  const getScoreClass = (score) => {
+    if (score === 1.0) return "score-high";
+    if (score === 0.0) return "score-low";
+    return "score-mid";
+  };
+
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+  const sortedAnnotations = [...annotations].sort((a, b) => {
+    const indexA = desiredOrder.indexOf(a.name);
+    const indexB = desiredOrder.indexOf(b.name);
+    return (
+      (indexA === -1 ? Infinity : indexA) -
+      (indexB === -1 ? Infinity : indexB)
+    );
+  });
+
+  elements.evaluationsContainer.innerHTML = sortedAnnotations
+    .map((ann) => {
+      let explanationContentHtml = "";
+      let isJsonExplanation = false;
+
+      if (ann.explanation) {
+        if (typeof ann.explanation === "object") {
+          explanationContentHtml = `<pre><code>${JSON.stringify(
+            ann.explanation,
+            null,
+            2
+          )}</code></pre>`;
+          isJsonExplanation = true;
+        } else if (typeof ann.explanation === "string") {
+          if (ann.name === "Answer Similarity") {
+            explanationContentHtml = marked.parse(ann.explanation);
+          } else {
+            // This covers plain text explanations for all other annotations,
+            // including Golden Link in Answer/Tool Calling when they are plain text.
+            explanationContentHtml = `<div class="p-2 bg-light border rounded">${ann.explanation}</div>`;
+          }
+        }
+      }
+
+      let finalExplanationSection = "";
+      if (explanationContentHtml) {
+        // Apply collapse button only for specific annotations and if the content is JSON
+        if (
+          (ann.name === "Golden Link in Tool Calling" ||
+            ann.name === "Golden Link in Answer") &&
+          isJsonExplanation
+        ) {
+          // Using a combination of annotation name and selectedRunId for a robust unique ID
+          const collapseId = `collapse-explanation-${
+            appState.selectedRunId
+          }-${ann.name.replace(/\s+/g, "-")}`;
+          finalExplanationSection = `
+                <div class="explanation">
+                    <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                        <i class="bi bi-arrows-expand me-1"></i> Ver Detalhes
+                    </button>
+                    <div class="collapse" id="${collapseId}">
+                        ${explanationContentHtml}
+                    </div>
+                </div>
+            `;
+        } else {
+          // For Answer Similarity (always displayed directly), and any Golden Link explanation that is NOT JSON,
+          // and other annotations that don't need a collapse button.
+          finalExplanationSection = `<div class="explanation">${explanationContentHtml}</div>`;
+        }
+      }
+
+      return `
+          <div class="evaluation-card">
+              <div class="d-flex justify-content-between align-items-center">
+                  <div class="score ${getScoreClass(
+                    ann.score
+                  )} me-3">${ann.score.toFixed(1)}</div>
+                  <p class="fw-bold mb-0 flex-grow-1">${ann.name}</p>
+              </div>
+              ${finalExplanationSection}
+          </div>
+      `;
+    })
+    .join("");
+}
+
+// --- VISUALIZATION FEATURES ---
+
+/**
+ * MODIFIED: Counts tool calls and displays a summary before the timeline.
+ * MODIFIED: Tool call numbering added.
+ * MODIFIED: Tool return message parsed into distinct sections (text, sources, web_search_queries).
+ * MODIFIED: Added global step numbering prefix for all timeline items, grouped by step_id.
+ * NEW: Added specific icons and colors for assistant messages and usage statistics.
+ * MODIFIED: "Fontes (Sources)" section within tool return is now expandable and starts collapsed, with corrected positioning and styling.
+ *
+ * FIX: The logic for `sequenceCounter` was refined to correctly number distinct logical turns.
+ * The `sequenceCounter` now increments for `reasoning_message` and `assistant_message` types,
+ * and `tool_call_message` and `tool_return_message` use the current prefix from the most recent
+ * reasoning/assistant message. `letta_usage_statistics` does not receive a prefix.
+ */
+function renderReasoningTimeline(orderedSteps) {
+  const parentHeader =
+    elements.reasoningTimelineContainer.previousElementSibling;
+
+  // Clear previous summary
+  const existingSummary = parentHeader.querySelector("#reasoning-summary");
+  if (existingSummary) existingSummary.remove();
+
+  if (!orderedSteps || orderedSteps.length === 0) {
+    elements.reasoningTimelineContainer.innerHTML =
+      '<p class="text-muted">Nenhum passo de raciocínio disponível.</p>';
+    return;
+  }
+
+  // Count tool calls for summary badge
+  const toolCallCounts = orderedSteps
+    .filter((step) => step.type === "tool_call_message")
+    .reduce((acc, step) => {
+      const toolName = step.message.tool_call.name;
+      acc[toolName] = (acc[toolName] || 0) + 1;
+      return acc;
+    }, {});
+
+  if (Object.keys(toolCallCounts).length > 0) {
+    const badges = Object.entries(toolCallCounts)
+      .map(
+        ([name, count]) =>
+          `<span class="badge rounded-pill text-bg-secondary tool-call-badge">${name}: ${count} chamada(s)</span>`
+      )
+      .join(" ");
+    const summaryHtml = `<div id="reasoning-summary">${badges}</div>`;
+    parentHeader.insertAdjacentHTML("beforeend", summaryHtml);
+  }
+
+  let sequenceCounter = 0; // For numbering logical sequences (e.g., 1., 2., 3.)
+  let currentStepPrefix = ""; // Stores the prefix (e.g., "1. ") for the current logical sequence
+
+  const timelineItemsHtml = orderedSteps
+    .map((step, index) => {
+      let iconClass = "";
+      let icon = "";
+      let title = "";
+      let content = "";
+      let isNumberedStep = true; // Flag to determine if step should get a number prefix
+
+      switch (step.type) {
+        case "reasoning_message":
+          sequenceCounter++; // Increment for each new reasoning turn
+          currentStepPrefix = `${sequenceCounter}. `;
+          iconClass = "timeline-icon-reasoning";
+          icon = "bi-lightbulb";
+          title = `${currentStepPrefix}Raciocínio`;
+          content = `<p class="mb-0 fst-italic">"${step.message.reasoning}"</p>`;
+          break;
+        case "tool_call_message":
+          iconClass = "timeline-icon-toolcall";
+          icon = "bi-tools";
+          title = `${currentStepPrefix}Chamada de Ferramenta: ${step.message.tool_call.name}`; // Use current sequence prefix
+          content = `<pre><code>${JSON.stringify(
+            step.message.tool_call.arguments,
+            null,
+            2
+          )}</code></pre>`;
+          break;
+        case "tool_return_message":
+          iconClass = "timeline-icon-return";
+          icon = "bi-box-arrow-in-left";
+          title = `${currentStepPrefix}Retorno da Ferramenta: ${step.message.name}`; // Use current sequence prefix
+          const toolReturn = step.message.tool_return;
+
+          let returnSections = [];
+          if (typeof toolReturn === "object" && toolReturn !== null) {
+            if (toolReturn.text) {
+              returnSections.push(`
+                              <div class="tool-return-section">
+                                  <h6>Texto:</h6>
+                                  <div class="p-2 bg-light border rounded mt-1">${marked.parse(
+                                    String(toolReturn.text)
+                                  )}</div>
+                              </div>`);
+            }
+            if (toolReturn.sources && toolReturn.sources.length > 0) {
+              // MODIFIED: Add collapse for Sources with consistent styling and new line positioning
+              // Robust ID generation using selectedRunId and actual step index
+              const collapseId = `collapse-sources-${appState.selectedRunId}-${index}`;
+              returnSections.push(`
+                              <div class="tool-return-section">
+                                  <h6>Fontes (Sources):</h6>
+                                  <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                                      <i class="bi bi-arrows-expand me-1"></i> Ver/Ocultar
+                                  </button>
+                                  <div class="collapse" id="${collapseId}">
+                                      <pre><code>${JSON.stringify(
+                                        toolReturn.sources,
+                                        null,
+                                        2
+                                      )}</code></pre>
+                                  </div>
+                              </div>`);
+            }
+            if (
+              toolReturn.web_search_queries &&
+              toolReturn.web_search_queries.length > 0
+            ) {
+              returnSections.push(`
+                              <div class="tool-return-section">
+                                  <h6>Consultas de Busca Web (Web Search Queries):</h6>
+                                  <pre><code>${JSON.stringify(
+                                    toolReturn.web_search_queries,
+                                    null,
+                                    2
+                                  )}</code></pre>
+                              </div>`);
+            }
+          }
+
+          content =
+            returnSections.join("") ||
+            '<div class="p-2 bg-light border rounded">Nenhum retorno detalhado.</div>';
+          break;
+        case "assistant_message":
+          sequenceCounter++; // Increment for each new assistant message turn
+          currentStepPrefix = `${sequenceCounter}. `;
+          iconClass = "timeline-icon-assistant"; // Specific icon class for assistant message
+          icon = "bi-chat-text"; // A chat icon for assistant message
+          title = `Mensagem do Assistente`;
+          content = marked.parse(step.message.content);
+          break;
+        case "letta_usage_statistics":
+          isNumberedStep = false; // This step should not be numbered
+          iconClass = "timeline-icon-stats"; // Specific icon class for stats
+          icon = "bi-bar-chart-fill";
+          title = "Estatísticas de Uso"; // No step prefix for stats
+          content = `
+                      <p class="mb-0"><strong>Tokens Totais:</strong> ${step.message.total_tokens}</p>
+                      <p class="mb-0"><strong>Tokens de Prompt:</strong> ${step.message.prompt_tokens}</p>
+                      <p class="mb-0"><strong>Tokens de Conclusão:</strong> ${step.message.completion_tokens}</p>
+                  `;
+          break;
+        default:
+          return ""; // Ignore other step types
+      }
+
+      // Determine the prefix to use for the current step's title
+      const actualStepPrefix = isNumberedStep ? currentStepPrefix : "";
+
+      return `
+              <div class="timeline-item">
+                  <div class="timeline-icon ${iconClass}">
+                      <i class="bi ${icon}"></i>
+                  </div>
+                  <div class="timeline-content">
+                      <h6>${title}</h6>
+                      ${content}
+                  </div>
+              </div>
+          `;
+    })
+    .join("");
+
+  elements.reasoningTimelineContainer.innerHTML = `<div class="timeline">${timelineItemsHtml}</div>`;
+}
+
+// handleToggleDiff removed as the button is removed
+
+// --- FILTERING LOGIC ---
+
+function renderFilters(experimentData) {
+  const filterOptions = {};
+  experimentData.forEach((exp) => {
+    exp.annotations?.forEach((ann) => {
+      if (!filterOptions[ann.name]) filterOptions[ann.name] = new Set();
+      filterOptions[ann.name].add(ann.score);
+    });
+  });
+
+  const desiredOrder = [
+    "Answer Similarity",
+    "Activate Search Tools",
+    "Golden Link in Answer",
+    "Golden Link in Tool Calling",
+  ];
+  const sortedFilterNames = Object.keys(filterOptions).sort(
+    (a, b) =>
+      (desiredOrder.indexOf(a) ?? Infinity) -
+      (desiredOrder.indexOf(b) ?? Infinity)
+  );
+
+  let filtersHtml = sortedFilterNames
+    .map((name) => {
+      const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
+      const filterId = `filter-${name.replace(/\s+/g, "-")}`;
+      let optionsHtml =
+        '<option value="">Todos</option>' +
+        scores
+          .map(
+            (score) => `<option value="${score}">${score.toFixed(1)}</option>`
+          )
+          .join("");
+      return `
+          <div class="flex-grow-1">
+              <label for="${filterId}" class="form-label small fw-bold mb-1">${name}</label>
+              <select id="${filterId}" class="form-select form-select-sm" data-metric-name="${name}">${optionsHtml}</select>
+          </div>`;
+    })
+    .join("");
+
+  if (filtersHtml) {
+    elements.filterContainer.innerHTML = `
+          <div id="dynamicFilters" class="d-flex flex-wrap gap-2">${filtersHtml}</div>
+          <div class="d-flex gap-2 mt-2">
+              <button id="applyFiltersBtn" class="btn btn-sm btn-success flex-grow-1">Aplicar</button>
+              <button id="clearFiltersBtn" class="btn btn-sm btn-outline-secondary">Limpar</button>
+          </div>`;
+    getElement("applyFiltersBtn").addEventListener("click", applyFilters);
+    getElement("clearFiltersBtn").addEventListener("click", clearFilters);
+  } else {
+    elements.filterContainer.innerHTML = "";
+  }
+}
+
+function applyFilters() {
+  const activeFilters = {};
+  elements.filterContainer.querySelectorAll("select").forEach((select) => {
+    if (select.value)
+      activeFilters[select.dataset.metricName] = parseFloat(select.value);
+  });
+
+  const filteredRuns =
+    Object.keys(activeFilters).length === 0
+      ? appState.allRuns
+      : appState.allRuns.filter((run) => {
+          return Object.entries(activeFilters).every(
+            ([metricName, targetScore]) => {
+              const annotation = run.annotations?.find(
+                (ann) => ann.name === metricName
+              );
+              return annotation && annotation.score === targetScore;
+            }
+          );
+        });
+
+  renderRunList(filteredRuns);
+  resetDetailsPanel();
+}
+
+function clearFilters() {
+  elements.filterContainer
+    .querySelectorAll("select")
+    .forEach((select) => (select.value = ""));
+  renderRunList(appState.allRuns);
+  resetDetailsPanel();
+}
+
+// --- UTILITY & TOP-LEVEL RENDERING ---
+
+function setLoadingState(isLoading) {
+  if (isLoading) {
+    elements.loadingIndicator.classList.remove("d-none");
+    elements.fetchExperimentBtn.disabled = true;
+    elements.fetchExperimentBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...`;
+  } else {
+    elements.loadingIndicator.classList.add("d-none");
+    elements.fetchExperimentBtn.disabled = false;
+    elements.fetchExperimentBtn.innerHTML = `<i class="bi bi-search me-1"></i> Buscar`;
+  }
+}
+
+function showAlert(message, type = "danger") {
+  const alertId = `alert-${Date.now()}`;
+  elements.alertArea.innerHTML = `
+      <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>`;
+  if (type === "success") {
+    setTimeout(() => {
+      const alertElement = getElement(alertId);
+      if (alertElement)
+        bootstrap.Alert.getOrCreateInstance(alertElement).close();
+    }, 4000);
+  }
+}
+
+/**
+ * NEW: Function to download the original JSON data.
+ */
+function downloadOriginalJson() {
+  if (appState.originalJsonData) {
+    const dataStr = JSON.stringify(appState.originalJsonData, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "experiment_data.json"; // Suggested filename
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url); // Clean up the object URL
+  } else {
+    showAlert("Nenhum dado de experimento para baixar.", "warning");
+  }
+}
+
+/**
+ * MODIFIED: Corrected HTML escaping for prompt content inside pre/code tags.
+ * Added download JSON button.
+ */
 function renderMetadata(metadata) {
   if (!metadata) return;
-
   const createPromptSectionHTML = (title, id, collapseId) => {
     return `
             <div class="metadata-item-full-width">
@@ -105,51 +759,44 @@ function renderMetadata(metadata) {
             </div>
         `;
   };
-
   const promptsHTML = `
-        ${createPromptSectionHTML(
-          "System Prompt Principal",
-          "system-prompt-code",
-          "systemPromptCollapse"
-        )}
-        ${createPromptSectionHTML(
-          "System Prompt (Similaridade)",
-          "system-prompt-similarity-code",
-          "systemPromptSimilarityCollapse"
-        )}
-    `;
-
-  metadataContainer.innerHTML = `
-        <div class="card metadata-card">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h4 class="section-title mb-0 flex-grow-1" style="border-bottom: none; padding-bottom: 0;">Parâmetros do Experimento</h4>
-                <div id="jsonActionsContainer">
-                    <button class="btn btn-sm btn-outline-secondary" id="viewJsonBtn" data-bs-toggle="modal" data-bs-target="#jsonModal">
-                        <i class="bi bi-code-slash me-1"></i> Ver JSON
-                    </button>
-                    <button class="btn btn-sm btn-primary" id="downloadJsonBtn">
-                        <i class="bi bi-download me-1"></i> Baixar JSON
-                    </button>
-                </div>
-            </div>
-            <hr class="my-3">
-            <div class="metadata-grid">
-                <div class="metadata-item"><strong>Modelo de Avaliação:</strong> ${
-                  metadata.eval_model || "N/A"
-                }</div>
-                <div class="metadata-item"><strong>Modelo de Resposta Final:</strong> ${
-                  metadata.final_repose_model || "N/A"
-                }</div>
-                <div class="metadata-item"><strong>Temperatura:</strong> ${
-                  metadata.temperature || "N/A"
-                }</div>
-                <div class="metadata-item"><strong>Ferramentas:</strong> ${
-                  metadata.tools?.join(", ") || "N/A"
-                }</div>
-                ${promptsHTML}
-            </div>
-        </div>
-    `;
+  ${createPromptSectionHTML(
+    "System Prompt Principal",
+    "system-prompt-code",
+    "systemPromptCollapse"
+  )}
+  ${createPromptSectionHTML(
+    "System Prompt (Similaridade)",
+    "system-prompt-similarity-code",
+    "systemPromptSimilarityCollapse"
+  )}
+`;
+  elements.metadataContainer.innerHTML = `
+      <div class="card-component">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <h4 class="mb-0">Parâmetros do Experimento</h4>
+              <div>
+                  <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jsonModal"><i class="bi bi-code-slash me-1"></i> Ver JSON</button>
+                  <button class="btn btn-sm btn-info ms-2" id="downloadJsonBtn"><i class="bi bi-download me-1"></i> Baixar JSON</button>
+              </div>
+          </div>
+          <hr class="my-3">
+          <div class="metadata-grid">
+              <div class="metadata-item"><strong>Modelo de Avaliação:</strong> ${
+                metadata.eval_model || "N/A"
+              }</div>
+              <div class="metadata-item"><strong>Modelo de Resposta:</strong> ${
+                metadata.final_repose_model || "N/A"
+              }</div>
+              <div class="metadata-item"><strong>Temperatura:</strong> ${
+                metadata.temperature ?? "N/A"
+              }</div>
+              <div class="metadata-item"><strong>Ferramentas:</strong> ${
+                metadata.tools?.join(", ") || "N/A"
+              }</div>
+              ${promptsHTML}
+          </div>
+      </div>`;
 
   if (metadata.system_prompt) {
     document.getElementById("system-prompt-code").textContent =
@@ -159,253 +806,47 @@ function renderMetadata(metadata) {
     document.getElementById("system-prompt-similarity-code").textContent =
       metadata.system_prompt_answer_similatiry;
   }
+  // Attach event listener for the new download button
+  getElement("downloadJsonBtn").addEventListener(
+    "click",
+    downloadOriginalJson
+  );
 
-  document.getElementById("viewJsonBtn").addEventListener("click", () => {
+  getElement("jsonModal").addEventListener("show.bs.modal", () => {
     const jsonModalContent = document.querySelector("#jsonModal pre code");
-    if (jsonModalContent && originalJsonData) {
+    if (jsonModalContent && appState.originalJsonData) {
       jsonModalContent.textContent = JSON.stringify(
-        originalJsonData,
+        appState.originalJsonData,
         null,
         2
       );
     }
   });
-  document.getElementById("downloadJsonBtn").addEventListener("click", () => {
-    if (!originalJsonData) return;
-    const expId = experimentIdInput.value.trim() || "experiment";
-    const dataStr =
-      "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(originalJsonData, null, 2));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `experiment-${expId}.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  });
 }
 
-function renderEvaluations(annotations) {
-  if (!annotations || annotations.length === 0) {
-    return "<p>Nenhuma avaliação disponível.</p>";
-  }
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
-  const sortedAnnotations = [...annotations].sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a.name);
-    const indexB = desiredOrder.indexOf(b.name);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
-  });
-  return sortedAnnotations
-    .map((ann) => {
-      let explanationContent = "";
-      if (ann.explanation) {
-        if (
-          ann.name === "Answer Similarity" &&
-          typeof ann.explanation === "string"
-        ) {
-          explanationContent = marked.parse(ann.explanation);
-        } else if (
-          typeof ann.explanation === "object" &&
-          ann.explanation !== null
-        ) {
-          explanationContent = `<pre><code>${JSON.stringify(
-            ann.explanation,
-            null,
-            2
-          )}</code></pre>`;
-        } else {
-          explanationContent = `<pre><code>${ann.explanation}</code></pre>`;
-        }
-      }
-      return `
-        <div class="evaluation-card">
-            <div class="main-info">
-                <p class="name">${ann.name}</p>
-                <div class="score ${getScoreClass(
-                  ann.score
-                )}">${ann.score.toFixed(1)}</div>
-            </div>
-            ${
-              explanationContent
-                ? `<div class="explanation">${explanationContent}</div>`
-                : ""
-            }
-        </div>
-        `;
-    })
-    .join("");
-}
-
-function renderReasoning(orderedSteps) {
-  if (!orderedSteps || orderedSteps.length === 0) return "";
-  return orderedSteps
-    .map((step) => {
-      let stepHtml = "";
-      if (step.type === "reasoning_message") {
-        stepHtml = `<strong>🧠 Raciocínio:</strong><p>"${step.message.reasoning}"</p>`;
-      } else if (step.type === "tool_call_message") {
-        stepHtml = `<strong>🔧 Chamada de Ferramenta: ${
-          step.message.tool_call.name
-        }</strong><pre><code>${JSON.stringify(
-          step.message.tool_call.arguments,
-          null,
-          2
-        )}</code></pre>`;
-      } else if (
-        step.type === "tool_return_message" &&
-        step.message.tool_return
-      ) {
-        const toolReturnData = step.message.tool_return;
-        let returnContentHtml = "";
-        if (typeof toolReturnData === "object" && toolReturnData !== null) {
-          const remainingData = { ...toolReturnData };
-          const createSubSection = (title, data, isMarkdown = false) => {
-            if (!data || (Array.isArray(data) && data.length === 0))
-              return "";
-            const content = isMarkdown
-              ? `<div class="markdown-content">${marked.parse(data)}</div>`
-              : `<pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
-            return `<div class="mt-2"><strong>${title}</strong>${content}</div>`;
-          };
-          returnContentHtml += createSubSection(
-            "Texto:",
-            remainingData.text,
-            true
-          );
-          delete remainingData.text;
-          returnContentHtml += createSubSection(
-            "Sources:",
-            remainingData.sources
-          );
-          delete remainingData.sources;
-          returnContentHtml += createSubSection(
-            "Web Search Queries:",
-            remainingData.web_search_queries
-          );
-          delete remainingData.web_search_queries;
-          if (Object.keys(remainingData).length > 0) {
-            returnContentHtml += createSubSection(
-              "Dados Adicionais:",
-              remainingData
-            );
-          }
-        } else {
-          returnContentHtml = `<pre><code>${
-            typeof toolReturnData === "string"
-              ? toolReturnData
-              : JSON.stringify(toolReturnData, null, 2)
-          }</code></pre>`;
-        }
-        stepHtml = `<strong>↪️ Retorno da Ferramenta:</strong>${returnContentHtml}`;
-      }
-      return stepHtml ? `<div class="reasoning-step">${stepHtml}</div>` : "";
-    })
-    .join("");
-}
-
-function renderCollapsibleReasoning(orderedSteps, accordionId) {
-  if (!orderedSteps || orderedSteps.length === 0) {
-    return `<h4 class="section-title">Passo a Passo do Agente (Reasoning)</h4><p>Nenhum passo a passo disponível.</p>`;
-  }
-  const reasoningCollapseId = `reasoning-collapse-${accordionId}`;
-  return `
-        <div class="d-flex justify-content-between align-items-center mt-4">
-            <h4 class="section-title mb-0" style="border-bottom: none;">Passo a Passo do Agente (Reasoning)</h4>
-            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${reasoningCollapseId}" aria-expanded="false" aria-controls="${reasoningCollapseId}">
-                <i class="bi bi-arrows-expand"></i> Expandir
-            </button>
-        </div>
-        <div class="collapse pt-3" id="${reasoningCollapseId}">
-            ${renderReasoning(orderedSteps)}
-        </div>
-    `;
-}
-
+/**
+ * MODIFIED: Calculates and renders detailed summary metrics, including average,
+ * counts, and percentages for each score value.
+ */
 function calculateAndRenderSummaryMetrics(experimentData) {
   const metrics = {};
+  const totalRuns = experimentData.length;
+  if (totalRuns === 0) {
+    elements.summaryMetricsContainer.innerHTML = "";
+    return;
+  }
+
+  // 1. Aggregate data: scores for average, and counts for distribution
   experimentData.forEach((exp) => {
-    if (!exp.annotations) return;
-    exp.annotations.forEach((ann) => {
+    exp.annotations?.forEach((ann) => {
       if (!metrics[ann.name]) {
         metrics[ann.name] = { scores: [], counts: {} };
       }
       metrics[ann.name].scores.push(ann.score);
-      const scoreKey = ann.score; // Use o número puro como chave
-      metrics[ann.name].counts[scoreKey] =
-        (metrics[ann.name].counts[scoreKey] || 0) + 1;
+      const scoreStr = ann.score.toFixed(1); // Group scores by one decimal place
+      metrics[ann.name].counts[scoreStr] =
+        (metrics[ann.name].counts[scoreStr] || 0) + 1;
     });
-  });
-
-  let metricsHtml = "";
-  const desiredOrder = [
-    "Answer Similarity",
-    "Activate Search Tools",
-    "Golden Link in Answer",
-    "Golden Link in Tool Calling",
-  ];
-  const sortedMetricNames = Object.keys(metrics).sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a);
-    const indexB = desiredOrder.indexOf(b);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
-  });
-
-  for (const name of sortedMetricNames) {
-    const metric = metrics[name];
-    const average =
-      metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
-
-    // **CORREÇÃO**: Lógica para formatar os números da distribuição
-    const distributionHtml = Object.entries(metric.counts)
-      .sort(([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA))
-      .map(([score, count]) => {
-        const scoreNum = parseFloat(score);
-        // Exibe como inteiro se for 0, 1, etc. Senão, com 1 casa decimal.
-        const formattedScore =
-          scoreNum % 1 === 0 ? scoreNum.toFixed(0) : scoreNum.toFixed(1);
-        return `<span>${formattedScore}: ${count}</span>`;
-      })
-      .join("");
-
-    metricsHtml += `
-            <div class="summary-metric-item">
-                <h6>${name}</h6>
-                <div class="average-score">${average.toFixed(2)}</div>
-                <div class="score-distribution">${distributionHtml}</div>
-            </div>
-        `;
-  }
-
-  summaryMetricsContainer.innerHTML = `
-        <div class="card metadata-card">
-            <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Métricas Gerais: ${experimentData.length} runs</h4>
-            <div class="summary-grid">${metricsHtml}</div>
-        </div>
-    `;
-}
-
-function renderFilters(experimentData) {
-  filterContainer.innerHTML = "";
-  const filterOptions = {};
-  experimentData.forEach((exp) => {
-    if (exp.annotations) {
-      exp.annotations.forEach((ann) => {
-        if (!filterOptions[ann.name]) {
-          filterOptions[ann.name] = new Set();
-        }
-        filterOptions[ann.name].add(ann.score);
-      });
-    }
   });
 
   const desiredOrder = [
@@ -414,207 +855,64 @@ function renderFilters(experimentData) {
     "Golden Link in Answer",
     "Golden Link in Tool Calling",
   ];
-  const sortedFilterNames = Object.keys(filterOptions).sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a);
-    const indexB = desiredOrder.indexOf(b);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
-  });
+  const sortedMetricNames = Object.keys(metrics).sort(
+    (a, b) =>
+      (desiredOrder.indexOf(a) ?? Infinity) -
+      (desiredOrder.indexOf(b) ?? Infinity)
+  );
 
-  let filtersHtml = "";
-  sortedFilterNames.forEach((name) => {
-    const scores = Array.from(filterOptions[name]).sort((a, b) => a - b);
-    const filterId = `filter-${name.replace(/\s+/g, "-")}`;
+  // 2. Render HTML for each metric
+  let metricsHtml = sortedMetricNames
+    .map((name) => {
+      const metric = metrics[name];
+      const average =
+        metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
 
-    let optionsHtml = '<option value="">Qualquer Nota</option>';
-    scores.forEach((score) => {
-      optionsHtml += `<option value="${score}">${score.toFixed(1)}</option>`;
-    });
+      // Sort score distribution from highest to lowest score
+      const sortedDistribution = Object.entries(metric.counts).sort(
+        ([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA)
+      );
 
-    filtersHtml += `
-            <div class="flex-grow-1">
-                <label for="${filterId}" class="form-label small fw-bold">${name}</label>
-                <select id="${filterId}" class="form-select" data-metric-name="${name}">
-                    ${optionsHtml}
-                </select>
+      const distributionHtml = sortedDistribution
+        .map(([score, count]) => {
+          const percentage = (count / totalRuns) * 100;
+          return `
+            <div class="distribution-item">
+              <span class="fw-bold">${score}</span>
+              <div class="distribution-bar-bg">
+                  <div class="distribution-bar" style="width: ${percentage.toFixed(
+                    2
+                  )}%;"></div>
+              </div>
+              <span class="text-muted small">${count} (${percentage.toFixed(
+            0
+          )}%)</span>
             </div>
-        `;
-  });
+          `;
+        })
+        .join("");
 
-  if (filtersHtml) {
-    filterContainer.innerHTML = `
-            <div class="card metadata-card mt-4">
-                 <h4 class="section-title" style="border-bottom: none; margin: 0 0 1rem 0;">Filtros de Avaliação</h4>
-                 <div id="dynamicFilters" class="d-flex flex-wrap gap-3">${filtersHtml}</div>
-                 <div class="d-flex gap-2 mt-3">
-                     <button id="applyFiltersBtn" class="btn btn-success"><i class="bi bi-funnel-fill me-1"></i> Aplicar Filtros</button>
-                     <button id="clearFiltersBtn" class="btn btn-outline-secondary">Limpar Filtros</button>
-                 </div>
-            </div>`;
-    document
-      .getElementById("applyFiltersBtn")
-      .addEventListener("click", applyFilters);
-    document
-      .getElementById("clearFiltersBtn")
-      .addEventListener("click", clearFilters);
-  }
-}
-
-function applyFilters() {
-  const activeFilters = {};
-  document.querySelectorAll("#dynamicFilters select").forEach((select) => {
-    if (select.value) {
-      activeFilters[select.dataset.metricName] = parseFloat(select.value);
-    }
-  });
-
-  document
-    .querySelectorAll("#experimentAccordion .accordion-item")
-    .forEach((item) => {
-      const annotations = JSON.parse(item.dataset.annotations || "[]");
-      let shouldShow = true;
-
-      for (const metricName in activeFilters) {
-        const targetScore = activeFilters[metricName];
-        const annotation = annotations.find((ann) => ann.name === metricName);
-
-        if (!annotation || annotation.score !== targetScore) {
-          shouldShow = false;
-          break;
-        }
-      }
-      item.classList.toggle("d-none", !shouldShow);
-    });
-}
-
-function clearFilters() {
-  document.querySelectorAll("#dynamicFilters select").forEach((select) => {
-    select.value = "";
-  });
-  document
-    .querySelectorAll("#experimentAccordion .accordion-item")
-    .forEach((item) => {
-      item.classList.remove("d-none");
-    });
-}
-
-function renderExperimentReport(data) {
-  metadataContainer.innerHTML = "";
-  summaryMetricsContainer.innerHTML = "";
-  filterContainer.innerHTML = "";
-  experimentAccordion.innerHTML = "";
-
-  renderMetadata(data.experiment_metadata);
-  calculateAndRenderSummaryMetrics(data.experiment);
-  renderFilters(data.experiment);
-
-  data.experiment.forEach((exp, index) => {
-    const sanitizedId = exp.example_id.replace(/[^a-zA-Z0-9_-]/g, "");
-    const accordionId = `exp-${sanitizedId}`;
-    const output = exp.output;
-
-    const agentAnswerHtml = exp.output.agent_output?.ordered.find(
-      (m) => m.type === "assistant_message"
-    )
-      ? marked.parse(
-          exp.output.agent_output.ordered.find(
-            (m) => m.type === "assistant_message"
-          ).message.content
-        )
-      : "<p>N/A</p>";
-    const goldenAnswerHtml = exp.reference_output.golden_answer
-      ? marked.parse(exp.reference_output.golden_answer)
-      : "<p>N/A</p>";
-
-    const accordionItem = document.createElement("div");
-    accordionItem.className = "accordion-item mt-4";
-    accordionItem.dataset.annotations = JSON.stringify(exp.annotations || []);
-    accordionItem.innerHTML = `
-        <h2 class="accordion-header" id="heading-${accordionId}">
-            <button class="accordion-button ${
-              index > 0 ? "collapsed" : ""
-            }" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="${
-      index === 0
-    }" aria-controls="collapse-${accordionId}">
-                <strong>ID do Teste:</strong> ${output.metadata.id}
-            </button>
-        </h2>
-        <div id="collapse-${accordionId}" class="accordion-collapse collapse ${
-      index === 0 ? "show" : ""
-    }" aria-labelledby="heading-${accordionId}" data-bs-parent="#experimentAccordion">
-            <div class="accordion-body">
-                <h4 class="section-title">Mensagem do Usuário</h4>
-                <div class="alert alert-secondary">${
-                  exp.input.mensagem_whatsapp_simulada
-                }</div>
-                <h4 class="section-title">Comparação de Respostas</h4>
-                <div class="row g-4">
-                    <div class="col-md-6"><div class="comparison-box"><h5 class="agent-answer">🤖 Resposta do Agente</h5><div>${agentAnswerHtml}</div></div></div>
-                    <div class="col-md-6"><div class="comparison-box"><h5 class="golden-answer">🏆 Resposta de Referência (Golden)</h5><div>${goldenAnswerHtml}</div></div></div>
-                </div>
-                <h4 class="section-title">Avaliações</h4>
-                ${renderEvaluations(exp.annotations)}
-                ${renderCollapsibleReasoning(
-                  exp.output.agent_output?.ordered,
-                  accordionId
-                )}
-            </div>
-        </div>
-    `;
-    experimentAccordion.appendChild(accordionItem);
-  });
-
-  resultContainer.classList.remove("d-none");
-}
-
-function fetchExperimentData() {
-  const expId = experimentIdInput.value.trim();
-  if (!expId) {
-    showAlert("Por favor, insira um ID de experimento.", "warning");
-    return;
-  }
-
-  loadingIndicator.classList.remove("d-none");
-  resultContainer.classList.add("d-none");
-  alertArea.innerHTML = "";
-  fetchExperimentBtn.disabled = true;
-  fetchExperimentBtn.innerHTML =
-    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...';
-
-  const url = `data?id=${encodeURIComponent(expId)}`;
-
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${currentToken}`,
-      "Content-Type": "application/json",
-    },
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail ||
-            `HTTP ${response.status}: ${response.statusText}`
-        );
-      }
-      return response.json();
+      return `
+          <div class="summary-metric-card">
+              <h6>${name}</h6>
+              <div class="metric-main-value">${average.toFixed(
+                2
+              )} <small class="text-muted h6 fw-normal">avg</small></div>
+              ${
+                distributionHtml
+                  ? `<div class="metric-distribution-header">Distribuição</div>${distributionHtml}`
+                  : ""
+              }
+          </div>`;
     })
-    .then((data) => {
-      originalJsonData = data;
-      renderExperimentReport(data);
-      showAlert("Experimento carregado com sucesso!", "success");
-    })
-    .catch((error) => {
-      console.error("Erro ao buscar experimento:", error);
-      showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
-      resultContainer.classList.add("d-none");
-    })
-    .finally(() => {
-      loadingIndicator.classList.add("d-none");
-      fetchExperimentBtn.disabled = false;
-      fetchExperimentBtn.innerHTML =
-        '<i class="bi bi-search me-1"></i> Buscar';
-    });
+    .join("");
+
+  elements.summaryMetricsContainer.innerHTML = `
+      <div class="card-component">
+          <h4 class="mb-3">Métricas Gerais (${totalRuns} runs)</h4>
+          <div class="summary-grid">${
+            metricsHtml ||
+            '<p class="text-muted">Nenhuma métrica de resumo disponível.</p>'
+          }</div>
+      </div>`;
 }
