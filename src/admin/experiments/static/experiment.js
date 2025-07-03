@@ -71,8 +71,7 @@ function handleLogin(e) {
   const token = tokenInput.value.trim().replace(/["\n\r]/g, "");
   if (!token) return;
 
-  const API_BASE_URL =
-    window.API_BASE_URL_OVERRIDE ||
+  const API_BASE_URL_AUTH =
     "https://services.staging.app.dados.rio/eai-agent";
   // Assuming 'requestUrl' is meant to be a placeholder for a general API endpoint to validate the token
   // For a real application, you'd typically have a specific /auth/validate or /me endpoint.
@@ -80,7 +79,7 @@ function handleLogin(e) {
   // or you should replace this with your actual token validation URL.
   // Using a dummy URL for now, as per previous instructions context this might have been implied for a general fetch.
   // If the server requires *any* endpoint with valid token, /data without params might work or needs specific /auth endpoint.
-  const validationUrl = `${API_BASE_URL}/data?id=dummy`; // A non-existent but authenticated endpoint just to check token
+  const validationUrl = `${API_BASE_URL_AUTH}/api/v1/system-prompt`; // A non-existent but authenticated endpoint just to check token
 
   fetch(validationUrl, {
     method: "GET",
@@ -142,16 +141,13 @@ function fetchExperimentData() {
 
   setLoadingState(true);
 
-  const API_BASE_URL =
-    window.API_BASE_URL_OVERRIDE ||
-    "https://services.staging.app.dados.rio/eai-agent";
+  const API_BASE_URL = window.API_BASE_URL_OVERRIDE;
   const url = `${API_BASE_URL}/admin/experiments/data?id=${encodeURIComponent(
     expId
   )}`;
 
   fetch(url, {
     headers: {
-      Authorization: `Bearer ${appState.currentToken}`,
       "Content-Type": "application/json",
     },
   })
@@ -292,15 +288,14 @@ function resetDetailsPanel() {
 
 // MODIFIED: Simplified as diff button is removed
 function renderComparison(runData) {
-  const agentAnswerHtml = runData.output.agent_output?.ordered.find(
+  // Use a variable to store the found message and then safely access its properties
+  const agentMessage = runData.output.agent_output?.ordered?.find(
     (m) => m.type === "assistant_message"
-  )
-    ? marked.parse(
-        runData.output.agent_output.ordered.find(
-          (m) => m.type === "assistant_message"
-        ).message.content
-      )
+  );
+  const agentAnswerHtml = agentMessage?.message?.content
+    ? marked.parse(agentMessage.message.content)
     : "<p>N/A</p>";
+
   const goldenAnswerHtml = runData.reference_output.golden_answer
     ? marked.parse(runData.reference_output.golden_answer)
     : "<p>N/A</p>";
@@ -827,6 +822,7 @@ function renderMetadata(metadata) {
 /**
  * MODIFIED: Calculates and renders detailed summary metrics, including average,
  * counts, and percentages for each score value.
+ * MODIFIED: Now explicitly checks for desired metrics and displays a "not available" message if a metric has no data.
  */
 function calculateAndRenderSummaryMetrics(experimentData) {
   const metrics = {};
@@ -855,16 +851,22 @@ function calculateAndRenderSummaryMetrics(experimentData) {
     "Golden Link in Answer",
     "Golden Link in Tool Calling",
   ];
-  const sortedMetricNames = Object.keys(metrics).sort(
-    (a, b) =>
-      (desiredOrder.indexOf(a) ?? Infinity) -
-      (desiredOrder.indexOf(b) ?? Infinity)
-  );
 
-  // 2. Render HTML for each metric
-  let metricsHtml = sortedMetricNames
+  // 2. Render HTML for each metric, checking if it exists in the data
+  let metricsHtml = desiredOrder
     .map((name) => {
       const metric = metrics[name];
+      if (!metric) {
+        // Metric not found in any run, display "not available" card
+        return `
+            <div class="summary-metric-card">
+                <h6>${name}</h6>
+                <p class="text-muted mb-0">Métrica não disponível para este experimento.</p>
+            </div>
+        `;
+      }
+
+      // Existing rendering logic for available metrics
       const average =
         metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
 

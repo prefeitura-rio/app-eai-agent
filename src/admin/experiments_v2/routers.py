@@ -55,7 +55,6 @@ async def get_experiment_data(
     url = f"{phoenix_endpoint}v1/experiments/{id}/json"
 
     logger.info(f"Fazendo proxy da requisição para: {url}")
-    print(f"Fazendo proxy da requisição para: {url}")
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(url, timeout=30.0)
@@ -177,11 +176,40 @@ def parse_output(output):
         item["example_id_clean"] = item["example_id"].replace("==", "")
         if "experiment_metadata" in item.get("output", {}):
             item["output"].pop("experiment_metadata")
+        if "resposta_gpt" in item["output"]["agent_output"]:
+            logger.info("resposta_gpt found")
+            agent_output = item["output"]["agent_output"]
+            new_agent_output = {
+                "grouped": {
+                    "assistant_messages": {"content": agent_output["resposta_gpt"]},
+                },
+                "tool_return_messages": [
+                    {"tool_return": {"text": "", "sources": agent_output["fontes"]}}
+                ],
+                "ordered": [
+                    {
+                        "type": "tool_return_message",
+                        "message": {
+                            "tool_return": {
+                                "text": "",
+                                "sources": agent_output["fontes"],
+                                "message_type": "tool_return_message",
+                            }
+                        },
+                    },
+                    {
+                        "type": "assistant_message",
+                        "message": {
+                            "content": agent_output["resposta_gpt"],
+                            "message_type": "assistant_message",
+                        },
+                    },
+                ],
+            }
+            item["output"]["agent_output"] = new_agent_output
 
     final_output = {
         "experiment_metadata": experiment_metadata,
         "experiment": processed_output,
     }
-    with open("processed_output.json", "w") as f:
-        json.dump(final_output, f, indent=4)
     return final_output
