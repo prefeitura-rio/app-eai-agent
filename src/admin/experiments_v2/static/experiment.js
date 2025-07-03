@@ -332,6 +332,7 @@ function renderEvaluations(annotations) {
   };
 
   const desiredOrder = [
+    "Answer Completeness",
     "Answer Similarity",
     "Activate Search Tools",
     "Golden Link in Answer",
@@ -360,7 +361,10 @@ function renderEvaluations(annotations) {
           )}</code></pre>`;
           isJsonExplanation = true;
         } else if (typeof ann.explanation === "string") {
-          if (ann.name === "Answer Similarity") {
+          if (
+            ann.name === "Answer Similarity" ||
+            ann.name === "Answer Completeness"
+          ) {
             explanationContentHtml = marked.parse(ann.explanation);
           } else {
             // This covers plain text explanations for all other annotations,
@@ -606,6 +610,7 @@ function renderFilters(experimentData) {
   });
 
   const desiredOrder = [
+    "Answer Completeness",
     "Answer Similarity",
     "Activate Search Tools",
     "Golden Link in Answer",
@@ -846,6 +851,7 @@ function calculateAndRenderSummaryMetrics(experimentData) {
   });
 
   const desiredOrder = [
+    "Answer Completeness",
     "Answer Similarity",
     "Activate Search Tools",
     "Golden Link in Answer",
