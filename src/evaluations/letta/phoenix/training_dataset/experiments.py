@@ -67,15 +67,21 @@ async def executar_avaliacao_phoenix(
     async def get_cached_responses(example: Example) -> dict:
         if respostas_coletadas:
             return {
-            "agent_output": respostas_coletadas.get(example.id, {}),
-            "metadata": example.metadata,
-            "experiment_metadata": experiment_metadata,
-        }
+                "agent_output": respostas_coletadas.get(example.id, {}),
+                "metadata": example.metadata,
+                "experiment_metadata": experiment_metadata,
+            }
         else:
-            df = pd.read_csv("respostas_formatadas.csv") # colunas necessárias: "pergunta", "resposta_gpt", e "fontes" (list)
-            linha = df.loc[df['pergunta'] == example.input['mensagem_whatsapp_simulada']]
+            df = pd.read_csv(
+                "respostas_formatadas.csv"
+            )  # colunas necessárias: "pergunta", "resposta_gpt", e "fontes" (list)
+            linha = df.loc[
+                df["pergunta"] == example.input["mensagem_whatsapp_simulada"]
+            ]
             if linha.empty:
-                logger.warning(f"Nenhuma resposta encontrada para a pergunta: {example.input['mensagem_whatsapp_simulada']}")
+                logger.warning(
+                    f"Nenhuma resposta encontrada para a pergunta: {example.input['mensagem_whatsapp_simulada']}"
+                )
                 return {
                     "agent_output": {},
                     "metadata": example.metadata,
@@ -83,7 +89,9 @@ async def executar_avaliacao_phoenix(
                 }
             else:
                 return {
-                    "agent_output": linha.iloc[0].to_dict(),#respostas_coletadas.get(example.id, {}),
+                    "agent_output": linha.iloc[
+                        0
+                    ].to_dict(),  # respostas_coletadas.get(example.id, {}),
                     "metadata": example.metadata,
                     "experiment_metadata": experiment_metadata,
                 }
@@ -118,17 +126,17 @@ async def main():
         answer_similarity,
     ]
     experiments_configs = [
-        # {
-        #     "dataset_name": "golden_dataset_v4",
-        #     "experiment_name": "baseline-4o-2025-06-27-v12",
-        #     "evaluators": evaluators,
-        #     "experiment_description": "Temperature: 0.7, Model: gpt-4o",
-        #     "tools": ["gpt_search"],
-        #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-        #     "batch_size": 10,
-        #     "temperature": 0.7,
-        #     "system_prompt": SYSTEM_PROMPT_BASELINE_4O,
-        # },
+        {
+            "dataset_name": "golden_dataset_v4_small_sample",
+            "experiment_name": "baseline-4o-2025-07-03",
+            "evaluators": evaluators,
+            "experiment_description": "Temperature: 0.7, Model: gpt-4o",
+            "tools": ["gpt_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 10,
+            "temperature": 0.7,
+            "system_prompt": SYSTEM_PROMPT_BASELINE_4O,
+        },
         # {
         #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-gemini-2025-07-01",
@@ -140,18 +148,18 @@ async def main():
         #     "temperature": 0.7,
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
-        {
-            # "dataset_name": "golden_dataset_v4",
-            "dataset_name": "golden_dataset_v4_small_sample",
-            "experiment_name": "eai-2025-07-02-v21",
-            "experiment_description": "Temperature: 0.7, Model: google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 5,
-            "temperature": 0.7,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-        },
+        # {
+        #     # "dataset_name": "golden_dataset_v4",
+        #     "dataset_name": "golden_dataset_v4_small_sample",
+        #     "experiment_name": "eai-2025-07-02-v21",
+        #     "experiment_description": "Temperature: 0.7, Model: google_ai/gemini-2.5-flash-lite-preview-06-17",
+        #     "evaluators": evaluators,
+        #     "tools": ["google_search"],
+        #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+        #     "batch_size": 5,
+        #     "temperature": 0.7,
+        #     "system_prompt": SYSTEM_PROMPT_EAI,
+        # },
         # {
         #     "dataset_name": "golden_dataset_v4",
         #     "experiment_name": "baseline-gpt-2025-07-02",
@@ -190,7 +198,7 @@ async def main():
                 system_prompt=experiment_config.get("system_prompt"),
                 temperature=experiment_config.get("temperature", 0.7),
             )
-        else: # respostas foram geradas pelo ChatGPT
+        else:  # respostas foram geradas pelo ChatGPT
             logger.info("Respostas já coletadas, não será necessário coletar novamente")
             respostas = None
 
