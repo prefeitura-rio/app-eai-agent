@@ -828,6 +828,7 @@ function renderMetadata(metadata) {
  * MODIFIED: Calculates and renders detailed summary metrics, including average,
  * counts, and percentages for each score value.
  * MODIFIED: Now explicitly checks for desired metrics and displays a "not available" message if a metric has no data.
+ * ALTERED: Now, if a metric has no data, its card is not rendered at all (instead of showing "not available").
  */
 function calculateAndRenderSummaryMetrics(experimentData) {
   const metrics = {};
@@ -840,13 +841,16 @@ function calculateAndRenderSummaryMetrics(experimentData) {
   // 1. Aggregate data: scores for average, and counts for distribution
   experimentData.forEach((exp) => {
     exp.annotations?.forEach((ann) => {
-      if (!metrics[ann.name]) {
-        metrics[ann.name] = { scores: [], counts: {} };
+      // Only process if score is a valid number, otherwise it might skew calculations
+      if (typeof ann.score === "number" && !isNaN(ann.score)) {
+        if (!metrics[ann.name]) {
+          metrics[ann.name] = { scores: [], counts: {} };
+        }
+        metrics[ann.name].scores.push(ann.score);
+        const scoreStr = ann.score.toFixed(1); // Group scores by one decimal place
+        metrics[ann.name].counts[scoreStr] =
+          (metrics[ann.name].counts[scoreStr] || 0) + 1;
       }
-      metrics[ann.name].scores.push(ann.score);
-      const scoreStr = ann.score.toFixed(1); // Group scores by one decimal place
-      metrics[ann.name].counts[scoreStr] =
-        (metrics[ann.name].counts[scoreStr] || 0) + 1;
     });
   });
 
@@ -858,18 +862,13 @@ function calculateAndRenderSummaryMetrics(experimentData) {
     "Golden Link in Tool Calling",
   ];
 
-  // 2. Render HTML for each metric, checking if it exists in the data
+  // 2. Render HTML only for available metrics, in desired order
   let metricsHtml = desiredOrder
     .map((name) => {
       const metric = metrics[name];
-      if (!metric) {
-        // Metric not found in any run, display "not available" card
-        return `
-            <div class="summary-metric-card">
-                <h6>${name}</h6>
-                <p class="text-muted mb-0">Métrica não disponível para este experimento.</p>
-            </div>
-        `;
+      // ALTERED LOGIC: If metric does not exist in the data OR has no scores, return null to be filtered out
+      if (!metric || metric.scores.length === 0) {
+        return null; // This will be filtered out later
       }
 
       // Existing rendering logic for available metrics
@@ -913,6 +912,7 @@ function calculateAndRenderSummaryMetrics(experimentData) {
               }
           </div>`;
     })
+    .filter(Boolean) // Filter out null values
     .join("");
 
   elements.summaryMetricsContainer.innerHTML = `
