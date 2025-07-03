@@ -46,14 +46,16 @@ async def get_experiment_data(
     Evita problemas de Mixed Content no frontend.
     A URL final será /admin/experiments_v2/data?id=...
     """
-    phoenix_endpoint = os.getenv("PHOENIX_ENDPOINT", "http://localhost:8001/")
+    from src.config import env
+
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
     if not phoenix_endpoint.endswith("/"):
         phoenix_endpoint += "/"
 
     url = f"{phoenix_endpoint}v1/experiments/{id}/json"
 
     logger.info(f"Fazendo proxy da requisição para: {url}")
-
+    print(f"Fazendo proxy da requisição para: {url}")
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(url, timeout=30.0)
@@ -170,7 +172,9 @@ def parse_json_strings_recursively(obj):
 def parse_output(output):
     processed_output = parse_json_strings_recursively(output)
     experiment_metadata = processed_output[0]["output"]["experiment_metadata"]
+
     for item in processed_output:
+        item["example_id_clean"] = item["example_id"].replace("==", "")
         if "experiment_metadata" in item.get("output", {}):
             item["output"].pop("experiment_metadata")
 
@@ -178,5 +182,6 @@ def parse_output(output):
         "experiment_metadata": experiment_metadata,
         "experiment": processed_output,
     }
-
+    with open("processed_output.json", "w") as f:
+        json.dump(final_output, f, indent=4)
     return final_output
