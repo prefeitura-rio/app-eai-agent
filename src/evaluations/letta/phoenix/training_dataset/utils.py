@@ -437,10 +437,8 @@ async def experiment_eval(
     df = pd.DataFrame(
         {
             "query": [input.get("mensagem_whatsapp_simulada")],
-            "model_response": [
-                final_response(output["agent_output"]).get("content", "")
-            ],
-            "ideal_response": [expected.get("golden_answer", "") if expected else ""],
+            "model_response": [output.get("agent_output").get("resposta_gpt") or final_response(output["agent_output"]).get("content", "")],
+            "ideal_response": [expected.get("golden_answer") if expected else ""],
         }
     )
 

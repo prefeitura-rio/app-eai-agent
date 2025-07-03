@@ -65,11 +65,28 @@ async def executar_avaliacao_phoenix(
     )
 
     async def get_cached_responses(example: Example) -> dict:
-        return {
+        if respostas_coletadas:
+            return {
             "agent_output": respostas_coletadas.get(example.id, {}),
             "metadata": example.metadata,
             "experiment_metadata": experiment_metadata,
         }
+        else:
+            df = pd.read_csv("respostas_formatadas.csv") # colunas necessárias: "pergunta", "resposta_gpt", e "fontes" (list)
+            linha = df.loc[df['pergunta'] == example.input['mensagem_whatsapp_simulada']]
+            if linha.empty:
+                logger.warning(f"Nenhuma resposta encontrada para a pergunta: {example.input['mensagem_whatsapp_simulada']}")
+                return {
+                    "agent_output": {},
+                    "metadata": example.metadata,
+                    "experiment_metadata": experiment_metadata,
+                }
+            else:
+                return {
+                    "agent_output": linha.iloc[0].to_dict(),#respostas_coletadas.get(example.id, {}),
+                    "metadata": example.metadata,
+                    "experiment_metadata": experiment_metadata,
+                }
 
     experiment = run_experiment(
         dataset,
@@ -135,6 +152,17 @@ async def main():
             "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
         },
+        # {
+        #     "dataset_name": "golden_dataset_v4",
+        #     "experiment_name": "baseline-gpt-2025-07-02",
+        #     "experiment_description": "Respostas geradas usando o ChatGPT",
+        #     "evaluators": [golden_link_in_answer, golden_link_in_tool_calling, answer_similarity],
+        #     "tools": None,
+        #     "model_name": "gpt-4o",
+        #     "batch_size": None,
+        #     "temperature": None,
+        #     "system_prompt": None,
+        # }
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
@@ -152,15 +180,19 @@ async def main():
         dataset = phoenix_client.get_dataset(name=dataset_name)
 
         # Etapa 1: Coletar todas as respostas em batches
-        logger.info("Iniciando coleta de respostas em batches")
-        respostas = await coletar_todas_respostas(
-            dataset=dataset,
-            tools=experiment_config.get("tools"),
-            model_name=experiment_config.get("model_name"),
-            batch_size=experiment_config.get("batch_size", 10),
-            system_prompt=experiment_config.get("system_prompt"),
-            temperature=experiment_config.get("temperature", 0.7),
-        )
+        if experiment_config.get("system_prompt"):
+            logger.info("Iniciando coleta de respostas em batches")
+            respostas = await coletar_todas_respostas(
+                dataset=dataset,
+                tools=experiment_config.get("tools"),
+                model_name=experiment_config.get("model_name"),
+                batch_size=experiment_config.get("batch_size", 10),
+                system_prompt=experiment_config.get("system_prompt"),
+                temperature=experiment_config.get("temperature", 0.7),
+            )
+        else: # respostas foram geradas pelo ChatGPT
+            logger.info("Respostas já coletadas, não será necessário coletar novamente")
+            respostas = None
 
         # Etapa 2: Executar avaliação Phoenix
         logger.info("Iniciando avaliação Phoenix")

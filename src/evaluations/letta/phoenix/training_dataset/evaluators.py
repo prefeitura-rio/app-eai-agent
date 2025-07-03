@@ -360,7 +360,11 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
 
     # golden_field = output.get("metadata", {}).get("Golden links", "")
     # golden_links = _parse_golden(golden_field)
-    answer_links = get_answer_links(output=output)
+    
+    answer_links = output.get("agent_output").get("fontes") or get_answer_links(output=output)
+    
+    if output.get("agent_output", {}).get("resposta_gpt"):
+        answer_links = [{"uri": link, "url": link} for link in ast.literal_eval(answer_links)]
 
     if not answer_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
@@ -467,7 +471,7 @@ async def golden_link_in_answer(output) -> bool | tuple:
     except (ValueError, SyntaxError):
         golden_links = []
 
-    resposta = output.get("agent_output", {}).get("texto") or final_response(
+    resposta = output.get("agent_output").get("resposta_gpt") or output.get("agent_output", {}).get("texto") or final_response(
         output["agent_output"]
     ).get("content", "")
 
