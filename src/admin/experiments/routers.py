@@ -769,6 +769,6 @@ def parse_output(output):
         "experiment_metadata": experiment_metadata,
         "experiment": processed_output,
     }
-    with open("processed_output.json", "w") as f:
-        json.dump(final_output, f, indent=4)
+    # with open("processed_output.json", "w") as f:
+    #     json.dump(final_output, f, indent=4)
     return final_output
