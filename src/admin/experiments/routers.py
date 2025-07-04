@@ -1,94 +1,25 @@
-from fastapi import APIRouter, Request, Response, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+import ast
 import os
-import mimetypes
-from loguru import logger
 import httpx
 import json
+import mimetypes
+
+from fastapi import APIRouter, Request, Response, HTTPException, Query
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+
+from src.config import env
+from loguru import logger
 
 # Cria um novo roteador para a seção de experimentos
 router = APIRouter()
 
-# O BASE_DIR agora aponta para /admin/experiments/
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 logger.info(f"Diretório estático de experimentos: {STATIC_DIR}")
 
 
-@router.get("/", response_class=HTMLResponse)
-async def get_experiments_page(request: Request):
-    """
-    Retorna a página principal de visualização de experimentos.
-    A URL final será /admin/experiments/
-    """
-    html_path = os.path.join(STATIC_DIR, "experiment.html")
-    try:
-        with open(html_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    except FileNotFoundError:
-        logger.error(f"Arquivo não encontrado: {html_path}")
-        return Response(content="Página não encontrada.", status_code=404)
-    except Exception as e:
-        logger.error(f"Erro ao carregar experiment.html: {str(e)}")
-        return HTMLResponse(
-            content=f"<h1>Erro ao carregar a página de experimentos: {e}</h1>",
-            status_code=500,
-        )
-
-
-@router.get("/data")
-async def get_experiment_data(
-    id: str = Query(..., description="O ID do experimento para buscar.")
-):
-    """
-    Endpoint proxy para buscar dados de um experimento do serviço Phoenix.
-    Evita problemas de Mixed Content no frontend.
-    A URL final será /admin/experiments/data?id=...
-    """
-    from src.config import env
-
-    phoenix_endpoint = env.PHOENIX_ENDPOINT
-    if not phoenix_endpoint.endswith("/"):
-        phoenix_endpoint += "/"
-
-    url = f"{phoenix_endpoint}v1/experiments/{id}/json"
-
-    logger.info(f"Fazendo proxy da requisição para: {url}")
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, timeout=30.0)
-
-        # Repassa o status e o conteúdo da resposta do Phoenix
-        if response.status_code == 200:
-            response_content = parse_output(json.loads(response.text))
-            return JSONResponse(content=response_content)
-        else:
-            logger.error(
-                f"Erro ao buscar dados do Phoenix. Status: {response.status_code}, Resposta: {response.text}"
-            )
-            # Retorna um erro formatado que o frontend pode exibir
-            return JSONResponse(
-                status_code=response.status_code,
-                content={
-                    "detail": f"Erro ao contatar o serviço Phoenix (Status {response.status_code}): {response.text}"
-                },
-            )
-
-    except httpx.RequestError as e:
-        logger.error(f"Erro de conexão ao tentar acessar o Phoenix em {url}: {str(e)}")
-        raise HTTPException(
-            status_code=502,  # Bad Gateway
-            detail=f"Não foi possível conectar ao serviço Phoenix em {phoenix_endpoint}. Verifique se o serviço está no ar e a URL está correta. Detalhe: {str(e)}",
-        )
-    except Exception as e:
-        logger.error(f"Erro inesperado no proxy para o Phoenix: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ocorreu um erro interno no servidor ao processar a requisição. Detalhe: {str(e)}",
-        )
-
-
+# Endpoints estáticos DEVEM vir primeiro para evitar conflitos
 @router.get("/static/{file_path:path}")
 async def get_static_file(file_path: str):
     """
@@ -129,8 +60,496 @@ async def get_static_file(file_path: str):
     )
 
 
-import json
-import ast
+@router.get("/auth", response_class=HTMLResponse)
+async def get_auth_page(request: Request):
+    """
+    Retorna a página de autenticação centralizada.
+    A URL final será /admin/experiments/auth
+    """
+    html_path = os.path.join(STATIC_DIR, "auth.html")
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        logger.error(f"Arquivo não encontrado: {html_path}")
+        return Response(content="Página não encontrada.", status_code=404)
+    except Exception as e:
+        logger.error(f"Erro ao carregar auth.html: {str(e)}")
+        return HTMLResponse(
+            content=f"<h1>Erro ao carregar a página de autenticação: {e}</h1>",
+            status_code=500,
+        )
+
+
+@router.get("/data")
+async def get_datasets_data():
+    """
+    Endpoint para buscar dados dos datasets do serviço Phoenix.
+    A URL final será /admin/experiments/data
+    """
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
+
+    url = f"{phoenix_endpoint}graphql"
+
+    payload = {
+        "query": """query DatasetsPageQuery {
+          ...DatasetsTable_datasets
+        }
+
+        fragment DatasetsTable_datasets on Query {
+          datasets(first: 100, sort: {col: createdAt, dir: desc}) {
+            edges {
+              node {
+                id
+                name
+                description
+                metadata
+                createdAt
+                exampleCount
+                experimentCount
+                __typename
+              }
+              cursor
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+        }""",
+        "variables": {},
+    }
+
+    logger.info(f"Fazendo requisição GraphQL para: {url}")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=payload,
+                timeout=30.0,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if response.status_code == 200:
+            return JSONResponse(content=response.json())
+        else:
+            logger.error(
+                f"Erro ao buscar dados do Phoenix. Status: {response.status_code}, Resposta: {response.text}"
+            )
+            return JSONResponse(
+                status_code=response.status_code,
+                content={
+                    "detail": f"Erro ao contatar o serviço Phoenix (Status {response.status_code}): {response.text}"
+                },
+            )
+
+    except httpx.RequestError as e:
+        logger.error(f"Erro de conexão ao tentar acessar o Phoenix em {url}: {str(e)}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Não foi possível conectar ao serviço Phoenix em {phoenix_endpoint}. Verifique se o serviço está no ar e a URL está correta. Detalhe: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Erro inesperado no proxy para o Phoenix: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ocorreu um erro interno no servidor ao processar a requisição. Detalhe: {str(e)}",
+        )
+
+
+@router.get("/", response_class=HTMLResponse)
+async def get_datasets_page(request: Request):
+    """
+    Retorna a página principal de visualização de datasets.
+    A URL final será /admin/experiments/
+    """
+    html_path = os.path.join(STATIC_DIR, "datasets.html")
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        logger.error(f"Arquivo não encontrado: {html_path}")
+        return Response(content="Página não encontrada.", status_code=404)
+    except Exception as e:
+        logger.error(f"Erro ao carregar datasets.html: {str(e)}")
+        return HTMLResponse(
+            content=f"<h1>Erro ao carregar a página de datasets: {e}</h1>",
+            status_code=500,
+        )
+
+
+@router.get("/{dataset_id}/data")
+async def get_dataset_data(dataset_id: str):
+    """
+    Endpoint para buscar dados de um dataset específico do serviço Phoenix.
+    A URL final será /admin/experiments/{dataset_id}/data
+    """
+
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
+
+    url = f"{phoenix_endpoint}graphql"
+
+    payload = {
+        "query": """query experimentsLoaderQuery(
+          $id: GlobalID!
+        ) {
+          dataset: node(id: $id) {
+            __typename
+            id
+            ... on Dataset {
+              name
+              description
+              ...ExperimentsTableFragment
+            }
+          }
+        }
+
+        fragment ExperimentsTableFragment on Dataset {
+          experimentAnnotationSummaries {
+            annotationName
+            minScore
+            maxScore
+          }
+          experiments(first: 100) {
+            edges {
+              experiment: node {
+                id
+                name
+                sequenceNumber
+                description
+                createdAt
+                metadata
+                errorRate
+                runCount
+                averageRunLatencyMs
+                project {
+                  id
+                }
+                annotationSummaries {
+                  annotationName
+                  meanScore
+                }
+              }
+              cursor
+              node {
+                __typename
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+          id
+        }""",
+        "variables": {"id": dataset_id},
+    }
+
+    logger.info(f"Fazendo requisição GraphQL para dataset {dataset_id}: {url}")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=payload,
+                timeout=30.0,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if response.status_code == 200:
+            return JSONResponse(content=response.json())
+        else:
+            logger.error(
+                f"Erro ao buscar dados do dataset {dataset_id}. Status: {response.status_code}, Resposta: {response.text}"
+            )
+            return JSONResponse(
+                status_code=response.status_code,
+                content={
+                    "detail": f"Erro ao contatar o serviço Phoenix (Status {response.status_code}): {response.text}"
+                },
+            )
+
+    except httpx.RequestError as e:
+        logger.error(f"Erro de conexão ao tentar acessar o Phoenix em {url}: {str(e)}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Não foi possível conectar ao serviço Phoenix em {phoenix_endpoint}. Verifique se o serviço está no ar e a URL está correta. Detalhe: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Erro inesperado no proxy para o Phoenix: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ocorreu um erro interno no servidor ao processar a requisição. Detalhe: {str(e)}",
+        )
+
+
+@router.get("/{dataset_id}/{experiment_id}/data")
+async def get_experiment_data(dataset_id: str, experiment_id: str):
+    """
+    Endpoint para buscar dados de um experimento específico do serviço Phoenix.
+    A URL final será /admin/experiments/{dataset_id}/{experiment_id}/data
+    """
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
+
+    url = f"{phoenix_endpoint}v1/experiments/{experiment_id}/json"
+
+    logger.info(f"Fazendo proxy da requisição para: {url}")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=30.0)
+
+        # Repassa o status e o conteúdo da resposta do Phoenix
+        if response.status_code == 200:
+            response_content = parse_output(json.loads(response.text))
+            # Adiciona informações do dataset
+            response_content["dataset_id"] = dataset_id
+            response_content["experiment_id"] = experiment_id
+
+            # Buscar nome do dataset
+            try:
+                dataset_name = await get_dataset_name(dataset_id)
+                response_content["dataset_name"] = dataset_name
+            except Exception as e:
+                logger.warning(
+                    f"Não foi possível buscar nome do dataset {dataset_id}: {e}"
+                )
+                response_content["dataset_name"] = dataset_id
+
+            # Buscar nome do experimento
+            try:
+                experiment_name = await get_experiment_name(dataset_id, experiment_id)
+                response_content["experiment_name"] = experiment_name
+            except Exception as e:
+                logger.warning(
+                    f"Não foi possível buscar nome do experimento {experiment_id}: {e}"
+                )
+                response_content["experiment_name"] = experiment_id
+
+            return JSONResponse(content=response_content)
+        else:
+            logger.error(
+                f"Erro ao buscar dados do Phoenix. Status: {response.status_code}, Resposta: {response.text}"
+            )
+            # Retorna um erro formatado que o frontend pode exibir
+            return JSONResponse(
+                status_code=response.status_code,
+                content={
+                    "detail": f"Erro ao contatar o serviço Phoenix (Status {response.status_code}): {response.text}"
+                },
+            )
+
+    except httpx.RequestError as e:
+        logger.error(f"Erro de conexão ao tentar acessar o Phoenix em {url}: {str(e)}")
+        raise HTTPException(
+            status_code=502,  # Bad Gateway
+            detail=f"Não foi possível conectar ao serviço Phoenix em {phoenix_endpoint}. Verifique se o serviço está no ar e a URL está correta. Detalhe: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Erro inesperado no proxy para o Phoenix: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ocorreu um erro interno no servidor ao processar a requisição. Detalhe: {str(e)}",
+        )
+
+
+@router.get("/{dataset_id}/{experiment_id}", response_class=HTMLResponse)
+async def get_experiment_page(request: Request, dataset_id: str, experiment_id: str):
+    """
+    Retorna a página de visualização de um experimento específico.
+    A URL final será /admin/experiments/{dataset_id}/{experiment_id}
+    """
+    html_path = os.path.join(STATIC_DIR, "experiment.html")
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+            # Injeta o dataset_id e experiment_id no HTML
+            html_content = html_content.replace("{{DATASET_ID}}", dataset_id)
+            html_content = html_content.replace("{{EXPERIMENT_ID}}", experiment_id)
+            return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        logger.error(f"Arquivo não encontrado: {html_path}")
+        return Response(content="Página não encontrada.", status_code=404)
+    except Exception as e:
+        logger.error(f"Erro ao carregar experiment.html: {str(e)}")
+        return HTMLResponse(
+            content=f"<h1>Erro ao carregar a página de experimento: {e}</h1>",
+            status_code=500,
+        )
+
+
+@router.get("/{dataset_id}", response_class=HTMLResponse)
+async def get_dataset_experiments_page(request: Request, dataset_id: str):
+    """
+    Retorna a página de experimentos de um dataset específico.
+    A URL final será /admin/experiments/{dataset_id}
+    """
+    html_path = os.path.join(STATIC_DIR, "dataset-experiments.html")
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+            # Injeta o dataset_id no HTML
+            html_content = html_content.replace("{{DATASET_ID}}", dataset_id)
+            return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        logger.error(f"Arquivo não encontrado: {html_path}")
+        return Response(content="Página não encontrada.", status_code=404)
+    except Exception as e:
+        logger.error(f"Erro ao carregar dataset-experiments.html: {str(e)}")
+        return HTMLResponse(
+            content=f"<h1>Erro ao carregar a página de experimentos do dataset: {e}</h1>",
+            status_code=500,
+        )
+
+
+async def get_dataset_name(dataset_id: str) -> str:
+    """
+    Busca o nome de um dataset específico do serviço Phoenix.
+    """
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
+
+    url = f"{phoenix_endpoint}graphql"
+
+    payload = {
+        "query": """query GetDatasetName($id: GlobalID!) {
+          dataset: node(id: $id) {
+            __typename
+            id
+            ... on Dataset {
+              name
+            }
+          }
+        }""",
+        "variables": {"id": dataset_id},
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            url,
+            json=payload,
+            timeout=30.0,
+            headers={"Content-Type": "application/json"},
+        )
+
+    if response.status_code == 200:
+        data = response.json()
+        dataset_name = data.get("data", {}).get("dataset", {}).get("name")
+        return dataset_name or dataset_id
+    else:
+        return dataset_id
+
+
+async def get_experiment_name(dataset_id: str, experiment_id: str) -> str:
+    """
+    Busca o nome de um experimento específico do serviço Phoenix usando a mesma query da página de experimentos do dataset.
+    """
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
+
+    url = f"{phoenix_endpoint}graphql"
+
+    # Usar a mesma query que a página de experimentos do dataset usa
+    payload = {
+        "query": """query experimentsLoaderQuery(
+          $id: GlobalID!
+        ) {
+          dataset: node(id: $id) {
+            __typename
+            id
+            ... on Dataset {
+              name
+              description
+              ...ExperimentsTableFragment
+            }
+          }
+        }
+
+        fragment ExperimentsTableFragment on Dataset {
+          experimentAnnotationSummaries {
+            annotationName
+            minScore
+            maxScore
+          }
+          experiments(first: 100) {
+            edges {
+              experiment: node {
+                id
+                name
+                sequenceNumber
+                description
+                createdAt
+                metadata
+                errorRate
+                runCount
+                averageRunLatencyMs
+                project {
+                  id
+                }
+                annotationSummaries {
+                  annotationName
+                  meanScore
+                }
+              }
+              cursor
+              node {
+                __typename
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+          id
+        }""",
+        "variables": {"id": dataset_id},
+    }
+
+    logger.info(f"Buscando nome do experimento {experiment_id} no dataset {dataset_id}")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=payload,
+                timeout=30.0,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if response.status_code == 200:
+            data = response.json()
+            experiments = (
+                data.get("data", {})
+                .get("dataset", {})
+                .get("experiments", {})
+                .get("edges", [])
+            )
+
+            # Procurar pelo experimento específico
+            for edge in experiments:
+                experiment = edge.get("experiment", {})
+                if experiment.get("id") == experiment_id:
+                    experiment_name = experiment.get("name")
+                    logger.info(f"Nome do experimento encontrado: {experiment_name}")
+                    return experiment_name or experiment_id
+
+            logger.warning(
+                f"Experimento {experiment_id} não encontrado no dataset {dataset_id}"
+            )
+            return experiment_id
+        else:
+            logger.error(f"Erro ao buscar experimentos: {response.status_code}")
+            return experiment_id
+
+    except Exception as e:
+        logger.error(f"Erro ao buscar nome do experimento: {str(e)}")
+        return experiment_id
 
 
 def parse_json_strings_recursively(obj):
@@ -170,7 +589,10 @@ def parse_json_strings_recursively(obj):
 # --- Script principal (permanece o mesmo) ---
 def parse_output(output):
     processed_output = parse_json_strings_recursively(output)
-    experiment_metadata = processed_output[0]["output"]["experiment_metadata"]
+    if "experiment_metadata" in processed_output[0]["output"]:
+        experiment_metadata = processed_output[0]["output"]["experiment_metadata"]
+    else:
+        experiment_metadata = {}
 
     for item in processed_output:
         item["example_id_clean"] = item["example_id"].replace("==", "")
@@ -212,4 +634,6 @@ def parse_output(output):
         "experiment_metadata": experiment_metadata,
         "experiment": processed_output,
     }
+    with open("processed_output.json", "w") as f:
+        json.dump(final_output, f, indent=4)
     return final_output

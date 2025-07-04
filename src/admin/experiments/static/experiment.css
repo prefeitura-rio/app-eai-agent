@@ -34,6 +34,122 @@ body {
     background-color: var(--bs-body-bg); /* Body background color */
 }
 
+/* --- DATASETS AND DATASET EXPERIMENTS PAGES --- */
+#datasetsPanel, #datasetExperimentsPanel {
+    height: 100vh;
+    overflow: hidden;
+}
+
+#datasetsPanel .main-app-content, 
+#datasetExperimentsPanel .main-app-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+}
+
+/* Ensure tables are scrollable */
+.table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Fix for container overflow */
+.container-xl {
+    max-width: none;
+    width: 100%;
+}
+
+/* Metrics badges styling */
+.badge.rounded-pill {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    min-width: 45px;
+    text-align: center;
+}
+
+/* Table styling for metrics columns */
+.table th[title] {
+    cursor: help;
+    border-bottom: 2px dotted var(--bs-border-color);
+}
+
+/* Table styling */
+.table th {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Ensure table is horizontally scrollable */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Fixed columns styling */
+.table td:first-child {
+    min-width: 200px;
+    max-width: 250px;
+    text-align: left;
+}
+
+.table td:nth-child(2) {
+    min-width: 150px;
+    max-width: 200px;
+    text-align: left;
+}
+
+/* Progress bar styling for metrics */
+.progress-container {
+    width: 60px;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Metric columns */
+.table td:has(.progress-container) {
+    text-align: center;
+    white-space: nowrap;
+    min-width: 80px;
+    max-width: 100px;
+}
+
+/* Table row hover effect */
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    cursor: pointer;
+}
+
+/* Badge styling for sequence number */
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Hide search input if it still exists anywhere */
+#experimentIdInput,
+#fetchExperimentBtn {
+    display: none !important;
+}
+
 /* --- LOGIN OVERLAY --- */
 .login-overlay {
     position: fixed;
@@ -359,4 +475,252 @@ pre code {
 .tool-return-section h6 {
     font-size: 0.95rem;
     margin-bottom: 0.5rem;
+}
+
+/* --- FORCE TABLE ALIGNMENT --- */
+/* Force left alignment for specific columns */
+.table th:nth-child(1),
+.table th:nth-child(2),
+.table th:nth-child(3),
+.table th:nth-child(5),
+.table td:nth-child(1),
+.table td:nth-child(2),
+.table td:nth-child(3),
+.table td:nth-child(5) {
+    text-align: left !important;
+}
+
+/* Force center alignment for numeric columns */
+.table th:nth-child(4),
+.table th:nth-child(6),
+.table th:nth-child(7),
+.table th:nth-child(8),
+.table th:nth-child(9),
+.table th:nth-child(10),
+.table th:nth-child(11),
+.table th:nth-child(12),
+.table th:nth-child(13),
+.table th:nth-child(14),
+.table th:nth-child(15),
+.table td:nth-child(4),
+.table td:nth-child(6),
+.table td:nth-child(7),
+.table td:nth-child(8),
+.table td:nth-child(9),
+.table td:nth-child(10),
+.table td:nth-child(11),
+.table td:nth-child(12),
+.table td:nth-child(13),
+.table td:nth-child(14),
+.table td:nth-child(15) {
+    text-align: center !important;
+}
+
+/* Allow text wrapping in description cells */
+.table td:nth-child(2) {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    max-width: 300px;
+    line-height: 1.4;
+}
+
+/* Ensure name column has adequate width */
+.table td:nth-child(1) {
+    min-width: 180px;
+    max-width: 220px;
+}
+
+/* Specific styling for datasets table */
+.datasets-table th:nth-child(1),
+.datasets-table th:nth-child(2),
+.datasets-table th:nth-child(5),
+.datasets-table td:nth-child(1),
+.datasets-table td:nth-child(2),
+.datasets-table td:nth-child(5) {
+    text-align: left !important;
+}
+
+.datasets-table th:nth-child(3),
+.datasets-table th:nth-child(4),
+.datasets-table td:nth-child(3),
+.datasets-table td:nth-child(4) {
+    text-align: center !important;
+}
+
+/* Ensure description column in datasets table allows text wrapping */
+.datasets-table td:nth-child(2) {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+/* Specific styling for experiments table */
+.experiments-table th:nth-child(1),
+.experiments-table th:nth-child(2),
+.experiments-table th:nth-child(3),
+.experiments-table td:nth-child(1),
+.experiments-table td:nth-child(2),
+.experiments-table td:nth-child(3) {
+    text-align: left !important;
+}
+
+.experiments-table th:nth-child(n+4),
+.experiments-table td:nth-child(n+4) {
+    text-align: center !important;
+}
+
+/* Ensure description column in experiments table allows text wrapping */
+.experiments-table td:nth-child(2) {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    max-width: 350px;
+    line-height: 1.4;
+    padding: 0.75rem 0.5rem;
+}
+
+/* Override Bootstrap's default text alignment */
+.table .text-center {
+    text-align: center !important;
+}
+
+.table .text-left {
+    text-align: left !important;
+}
+
+/* Ensure badges are properly centered */
+.badge.rounded-pill {
+    display: inline-block;
+    text-align: center;
+}
+
+/* Progress bars in metric cells */
+.progress-container {
+    margin: 0 auto;
+    display: block;
+}
+
+/* Additional specificity for metric cells */
+.table td[style*="text-align: center"] {
+    text-align: center !important;
+}
+
+.table td[style*="text-align: left"] {
+    text-align: left !important;
+}
+
+/* Ensure table rows adjust height automatically */
+.table tr {
+    height: auto !important;
+}
+
+.table td {
+    vertical-align: top !important;
+    padding: 0.75rem 0.5rem !important;
+}
+
+/* Specific height adjustments for description cells */
+.table td[style*="word-wrap: break-word"] {
+    min-height: 60px;
+    vertical-align: top !important;
+}
+
+/* --- SORTING FUNCTIONALITY --- */
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 20px !important;
+    transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+.sortable-header::after {
+    content: '↕';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: #6c757d;
+    opacity: 0.5;
+}
+
+.sortable-header.sort-asc::after {
+    content: '↑';
+    color: #0d6efd;
+    opacity: 1;
+}
+
+.sortable-header.sort-desc::after {
+    content: '↓';
+    color: #0d6efd;
+    opacity: 1;
+}
+
+.sortable-header.sort-active {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    font-weight: 600;
+}
+
+/* --- SEARCH FUNCTIONALITY --- */
+.search-container {
+    position: relative;
+}
+
+.search-container .form-control {
+    border-radius: 20px;
+    padding-left: 2.5rem;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.search-container .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-container .bi-search {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+/* Card header layout improvements */
+.card-header .d-flex.align-items-center {
+    flex-wrap: wrap;
+}
+
+.card-header .search-container {
+    flex-shrink: 0;
+}
+
+/* Separator styling */
+.card-header span.text-muted {
+    font-size: 1.2rem;
+    font-weight: 300;
+    opacity: 0.6;
+}
+
+/* Responsive adjustments for search */
+@media (max-width: 768px) {
+    .card-header .d-flex.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+    
+    .card-header span.text-muted {
+        display: none;
+    }
+    
+    .search-container input {
+        width: 100% !important;
+        max-width: 300px;
+    }
 }

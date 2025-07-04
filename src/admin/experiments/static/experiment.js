@@ -10,20 +10,28 @@ let appState = {
   selectedRunId: null,
   filters: {},
   originalJsonData: null,
-  currentToken: localStorage.getItem("adminToken"),
+  currentDatasetId: null,
+  currentExperimentId: null,
 };
 
 // --- DOM ELEMENT SELECTORS ---
-const getElement = (id) => document.getElementById(id);
+const getElement = (id) => {
+  const element = document.getElementById(id);
+  if (!element) {
+    console.warn(`Element with id '${id}' not found`);
+  }
+  return element;
+};
 
 const elements = {
-  loginOverlay: getElement("login-overlay"),
-  loginForm: getElement("loginForm"),
-  errorMsg: getElement("errorMsg"),
+  loadingScreen: getElement("loading-screen"),
   experimentsPanel: getElement("experimentsPanel"),
-  logoutBtn: getElement("logoutBtn"),
-  experimentIdInput: getElement("experimentIdInput"),
-  fetchExperimentBtn: getElement("fetchExperimentBtn"),
+  refreshExperimentBtn: getElement("refreshExperimentBtn"),
+  downloadJsonBtn: getElement("downloadJsonBtn"),
+  viewJsonBtn: getElement("viewJsonBtn"),
+  backToDatasetBtn: getElement("backToDatasetBtn"),
+  experimentTitle: getElement("experiment-title"),
+  experimentInfo: getElement("experiment-info"),
   loadingIndicator: getElement("loadingIndicator"),
   alertArea: getElement("alertArea"),
   welcomeScreen: getElement("welcome-screen"),
@@ -48,103 +56,188 @@ const elements = {
 
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
-  if (appState.currentToken) {
-    showExperimentsPanel();
-  } else {
-    elements.loginOverlay.classList.remove("d-none");
+  // Aguardar verificação de autenticação
+  setTimeout(() => {
+    if (AuthCheck.isAuthenticated()) {
+      showExperimentsPanel();
+    }
+  }, 100);
+
+  // Check for dataset_id and experiment_id from URL path or injected variables
+  let datasetId = window.DATASET_ID;
+  let experimentId = window.EXPERIMENT_ID;
+
+  // If not injected, try to parse from URL path
+  if (
+    !datasetId ||
+    datasetId === "{{DATASET_ID}}" ||
+    !experimentId ||
+    experimentId === "{{EXPERIMENT_ID}}"
+  ) {
+    const pathParts = window.location.pathname
+      .split("/")
+      .filter((part) => part);
+    const adminIndex = pathParts.indexOf("admin");
+
+    if (adminIndex >= 0 && pathParts[adminIndex + 1] === "experiments") {
+      datasetId = pathParts[adminIndex + 2];
+      experimentId = pathParts[adminIndex + 3];
+    }
   }
 
-  elements.loginForm.addEventListener("submit", handleLogin);
-  elements.logoutBtn.addEventListener("click", handleLogout);
-  elements.fetchExperimentBtn.addEventListener("click", fetchExperimentData);
-  elements.experimentIdInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") fetchExperimentData();
-  });
-  elements.runList.addEventListener("click", handleRunClick);
+  if (
+    datasetId &&
+    experimentId &&
+    datasetId !== "{{DATASET_ID}}" &&
+    experimentId !== "{{EXPERIMENT_ID}}"
+  ) {
+    appState.currentDatasetId = datasetId;
+    appState.currentExperimentId = experimentId;
+
+    // Auto-fetch if user is already authenticated
+    if (AuthCheck.isAuthenticated()) {
+      setTimeout(() => {
+        fetchExperimentData(datasetId, experimentId);
+      }, 500);
+    }
+  }
+
+  // Removed login form and logout button event listeners - handled by AuthCheck
+  if (elements.refreshExperimentBtn) {
+    elements.refreshExperimentBtn.addEventListener("click", () => {
+      if (appState.currentDatasetId && appState.currentExperimentId) {
+        fetchExperimentData(
+          appState.currentDatasetId,
+          appState.currentExperimentId
+        );
+      }
+    });
+  }
+  if (elements.downloadJsonBtn) {
+    elements.downloadJsonBtn.addEventListener("click", downloadOriginalJson);
+  }
+  if (elements.viewJsonBtn) {
+    elements.viewJsonBtn.addEventListener("click", () => {
+      // O modal será aberto automaticamente pelo data-bs-toggle
+    });
+  }
+  if (elements.backToDatasetBtn) {
+    elements.backToDatasetBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (appState.currentDatasetId) {
+        window.location.href = `/eai-agent/admin/experiments/${appState.currentDatasetId}`;
+      }
+    });
+  }
+  if (elements.runList) {
+    elements.runList.addEventListener("click", handleRunClick);
+  }
   // elements.toggleDiffBtn.addEventListener("click", handleToggleDiff); // Removed as requested
 });
 
-// --- AUTHENTICATION (Unchanged as per instructions) ---
-function handleLogin(e) {
-  e.preventDefault();
-  const tokenInput = getElement("token");
-  const token = tokenInput.value.trim().replace(/["\n\r]/g, "");
-  if (!token) return;
-
-  const API_BASE_URL_AUTH =
-    "https://services.staging.app.dados.rio/eai-agent";
-  // Assuming 'requestUrl' is meant to be a placeholder for a general API endpoint to validate the token
-  // For a real application, you'd typically have a specific /auth/validate or /me endpoint.
-  // For now, I'll use a generic existing endpoint (like data endpoint without params) if no specific one is defined for validation,
-  // or you should replace this with your actual token validation URL.
-  // Using a dummy URL for now, as per previous instructions context this might have been implied for a general fetch.
-  // If the server requires *any* endpoint with valid token, /data without params might work or needs specific /auth endpoint.
-  const validationUrl = `${API_BASE_URL_AUTH}/api/v1/system-prompt`; // A non-existent but authenticated endpoint just to check token
-
-  fetch(validationUrl, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-  })
-    .then((response) => {
-      // If the response is not OK, it means the token is likely invalid or expired.
-      if (!response.ok) {
-        // Attempt to parse error message from response body if available
-        return response
-          .json()
-          .then((errorData) => {
-            throw new Error(
-              errorData.detail ||
-                `Authentication failed (Status: ${response.status})`
-            );
-          })
-          .catch(() => {
-            // If JSON parsing fails, use generic error message
-            throw new Error(
-              `Authentication failed (Status: ${response.status})`
-            );
-          });
-      }
-      // If response is OK, token is valid
-      return response.json(); // Or just response.text() if body is not important
-    })
-    .then(() => {
-      localStorage.setItem("adminToken", token);
-      appState.currentToken = token;
-      showExperimentsPanel(); // Correctly shows the panel
-    })
-    .catch((error) => {
-      elements.errorMsg.textContent = `Token inválido ou erro de autenticação: ${error.message}`;
-      elements.errorMsg.classList.remove("d-none");
-    });
-}
-
-function handleLogout() {
-  localStorage.removeItem("adminToken");
-  appState.currentToken = null;
-  location.reload();
-}
+// --- AUTHENTICATION REMOVED - Now handled by auth-check.js ---
 
 // FIX: Ensure d-flex is added when showing the panel
 function showExperimentsPanel() {
-  elements.loginOverlay.classList.add("d-none");
-  elements.experimentsPanel.classList.remove("d-none");
-  elements.experimentsPanel.classList.add("d-flex"); // Crucial line to apply flex display
+  if (elements.loadingScreen) {
+    elements.loadingScreen.classList.add("d-none");
+  }
+  if (elements.experimentsPanel) {
+    elements.experimentsPanel.classList.remove("d-none");
+    elements.experimentsPanel.classList.add("d-flex"); // Crucial line to apply flex display
+  }
+
+  // Check for dataset_id and experiment_id from URL path or injected variables after login
+  let datasetId = window.DATASET_ID;
+  let experimentId = window.EXPERIMENT_ID;
+
+  // If not injected, try to parse from URL path
+  if (
+    !datasetId ||
+    datasetId === "{{DATASET_ID}}" ||
+    !experimentId ||
+    experimentId === "{{EXPERIMENT_ID}}"
+  ) {
+    const pathParts = window.location.pathname
+      .split("/")
+      .filter((part) => part);
+    const adminIndex = pathParts.indexOf("admin");
+
+    if (adminIndex >= 0 && pathParts[adminIndex + 1] === "experiments") {
+      datasetId = pathParts[adminIndex + 2];
+      experimentId = pathParts[adminIndex + 3];
+    }
+  }
+
+  if (
+    datasetId &&
+    experimentId &&
+    datasetId !== "{{DATASET_ID}}" &&
+    experimentId !== "{{EXPERIMENT_ID}}"
+  ) {
+    appState.currentDatasetId = datasetId;
+    appState.currentExperimentId = experimentId;
+    setTimeout(() => {
+      fetchExperimentData(datasetId, experimentId);
+    }, 500);
+  }
+}
+
+// --- HEADER UPDATES ---
+function updateExperimentHeader(
+  metadata,
+  datasetName = null,
+  experimentName = null
+) {
+  if (elements.experimentTitle) {
+    // Sempre manter "Dashboard de Experimentos" como título
+    elements.experimentTitle.textContent = "Dashboard de Experimentos";
+  }
+
+  if (elements.experimentInfo) {
+    let infoHtml = "";
+    if (datasetName) {
+      infoHtml += `Dataset: ${datasetName}`;
+    }
+    if (experimentName) {
+      if (infoHtml) infoHtml += "<br>";
+      infoHtml += `Experimento: ${experimentName}`;
+    } else if (metadata && metadata.name) {
+      if (infoHtml) infoHtml += "<br>";
+      infoHtml += `Experimento: ${metadata.name}`;
+    } else if (appState.currentExperimentId) {
+      if (infoHtml) infoHtml += "<br>";
+      infoHtml += `Experimento: ${appState.currentExperimentId}`;
+    }
+
+    if (!infoHtml) {
+      infoHtml = "Análise detalhada de experimento";
+    }
+
+    elements.experimentInfo.innerHTML = infoHtml;
+  }
+
+  // Mostrar botão de voltar ao dataset
+  if (elements.backToDatasetBtn && appState.currentDatasetId) {
+    elements.backToDatasetBtn.classList.remove("d-none");
+  }
 }
 
 // --- DATA FETCHING ---
-function fetchExperimentData() {
-  const expId = elements.experimentIdInput.value.trim();
-  if (!expId) {
-    showAlert("Por favor, insira um ID de experimento.", "warning");
+function fetchExperimentData(datasetId = null, experimentId = null) {
+  if (!datasetId || !experimentId) {
+    showAlert("IDs do dataset e experimento são necessários.", "warning");
     return;
   }
 
+  appState.currentDatasetId = datasetId;
+  appState.currentExperimentId = experimentId;
   setLoadingState(true);
 
   const API_BASE_URL = window.API_BASE_URL_OVERRIDE;
-  const url = `${API_BASE_URL}/admin/experiments/data?id=${encodeURIComponent(
-    expId
-  )}`;
+  const url = `${API_BASE_URL}/admin/experiments/${encodeURIComponent(
+    datasetId
+  )}/${encodeURIComponent(experimentId)}/data`;
 
   fetch(url, {
     headers: {
@@ -166,21 +259,61 @@ function fetchExperimentData() {
       appState.allRuns = data.experiment;
       appState.selectedRunId = null;
 
+      // Atualizar informações no cabeçalho
+      updateExperimentHeader(
+        data.experiment_metadata,
+        data.dataset_name,
+        data.experiment_name
+      );
+
       renderMetadata(data.experiment_metadata);
       calculateAndRenderSummaryMetrics(data.experiment);
       renderFilters(data.experiment);
       renderRunList(appState.allRuns);
       resetDetailsPanel();
 
+      // Mostrar botões de ação
+      if (elements.refreshExperimentBtn) {
+        elements.refreshExperimentBtn.classList.remove("d-none");
+      }
+      if (elements.downloadJsonBtn) {
+        elements.downloadJsonBtn.classList.remove("d-none");
+      }
+      if (elements.viewJsonBtn) {
+        elements.viewJsonBtn.classList.remove("d-none");
+      }
+
       showAlert("Experimento carregado com sucesso!", "success");
-      elements.welcomeScreen.classList.add("d-none");
-      elements.resultContainer.classList.remove("d-none");
+      if (elements.welcomeScreen) {
+        elements.welcomeScreen.classList.add("d-none");
+      }
+      if (elements.resultContainer) {
+        elements.resultContainer.classList.remove("d-none");
+      }
     })
     .catch((error) => {
       console.error("Erro ao buscar experimento:", error);
       showAlert(`Falha ao buscar o experimento: ${error.message}`, "danger");
-      elements.resultContainer.classList.add("d-none");
-      elements.welcomeScreen.classList.remove("d-none");
+      if (elements.resultContainer) {
+        elements.resultContainer.classList.add("d-none");
+      }
+      if (elements.welcomeScreen) {
+        elements.welcomeScreen.classList.remove("d-none");
+      }
+
+      // Esconder botões de ação em caso de erro
+      if (elements.refreshExperimentBtn) {
+        elements.refreshExperimentBtn.classList.add("d-none");
+      }
+      if (elements.downloadJsonBtn) {
+        elements.downloadJsonBtn.classList.add("d-none");
+      }
+      if (elements.viewJsonBtn) {
+        elements.viewJsonBtn.classList.add("d-none");
+      }
+      if (elements.backToDatasetBtn) {
+        elements.backToDatasetBtn.classList.add("d-none");
+      }
     })
     .finally(() => {
       setLoadingState(false);
@@ -190,10 +323,14 @@ function fetchExperimentData() {
 // --- RENDERING LOGIC ---
 
 function renderRunList(runs) {
+  if (!elements.runList) return;
+
   elements.runList.innerHTML = "";
   if (!runs || runs.length === 0) {
     elements.runList.innerHTML = `<li class="list-group-item">Nenhum run encontrado.</li>`;
-    elements.runCountBadge.textContent = "0";
+    if (elements.runCountBadge) {
+      elements.runCountBadge.textContent = "0";
+    }
     return;
   }
 
@@ -223,7 +360,9 @@ function renderRunList(runs) {
   });
 
   elements.runList.appendChild(fragment);
-  elements.runCountBadge.textContent = runs.length;
+  if (elements.runCountBadge) {
+    elements.runCountBadge.textContent = runs.length;
+  }
 }
 
 function handleRunClick(e) {
@@ -236,8 +375,10 @@ function handleRunClick(e) {
 
   appState.selectedRunId = runId;
 
-  const currentlyActive = elements.runList.querySelector(".active");
-  if (currentlyActive) currentlyActive.classList.remove("active");
+  if (elements.runList) {
+    const currentlyActive = elements.runList.querySelector(".active");
+    if (currentlyActive) currentlyActive.classList.remove("active");
+  }
   target.classList.add("active");
 
   renderDetailsPanel();
@@ -262,15 +403,21 @@ function renderDetailsPanel() {
     return;
   }
 
-  elements.userMessageContainer.textContent =
-    selectedRun.input.mensagem_whatsapp_simulada;
+  if (elements.userMessageContainer) {
+    elements.userMessageContainer.textContent =
+      selectedRun.input.mensagem_whatsapp_simulada;
+  }
   renderComparison(selectedRun); // Diff button removed, this always renders side-by-side
   renderEvaluations(selectedRun.annotations);
   renderReasoningTimeline(selectedRun.output.agent_output?.ordered);
   // renderErrors(selectedRun); // Removed as requested
 
-  elements.detailsPlaceholder.classList.add("d-none");
-  elements.detailsContent.classList.remove("d-none");
+  if (elements.detailsPlaceholder) {
+    elements.detailsPlaceholder.classList.add("d-none");
+  }
+  if (elements.detailsContent) {
+    elements.detailsContent.classList.remove("d-none");
+  }
 
   // Scroll to top of details panel when new run is selected
   if (elements.mainContentWrapper) {
@@ -279,11 +426,17 @@ function renderDetailsPanel() {
 }
 
 function resetDetailsPanel() {
-  elements.detailsPlaceholder.classList.remove("d-none");
-  elements.detailsContent.classList.add("d-none");
+  if (elements.detailsPlaceholder) {
+    elements.detailsPlaceholder.classList.remove("d-none");
+  }
+  if (elements.detailsContent) {
+    elements.detailsContent.classList.add("d-none");
+  }
   appState.selectedRunId = null;
-  const currentlyActive = elements.runList.querySelector(".active");
-  if (currentlyActive) currentlyActive.classList.remove("active");
+  if (elements.runList) {
+    const currentlyActive = elements.runList.querySelector(".active");
+    if (currentlyActive) currentlyActive.classList.remove("active");
+  }
 }
 
 // MODIFIED: Simplified as diff button is removed
@@ -300,18 +453,20 @@ function renderComparison(runData) {
     ? marked.parse(runData.reference_output.golden_answer)
     : "<p>N/A</p>";
 
-  elements.comparisonContainer.innerHTML = `
-      <div class="comparison-grid">
-          <div class="comparison-box">
-              <h5>🤖 Resposta do Agente</h5>
-              <div class="agent-answer-content">${agentAnswerHtml}</div>
-          </div>
-          <div class="comparison-box">
-              <h5>🏆 Resposta de Referência (Golden)</h5>
-              <div class="golden-answer-content">${goldenAnswerHtml}</div>
-          </div>
-      </div>
-  `;
+  if (elements.comparisonContainer) {
+    elements.comparisonContainer.innerHTML = `
+        <div class="comparison-grid">
+            <div class="comparison-box">
+                <h5>🤖 Resposta do Agente</h5>
+                <div class="agent-answer-content">${agentAnswerHtml}</div>
+            </div>
+            <div class="comparison-box">
+                <h5>🏆 Resposta de Referência (Golden)</h5>
+                <div class="golden-answer-content">${goldenAnswerHtml}</div>
+            </div>
+        </div>
+    `;
+  }
 }
 
 /**
@@ -320,6 +475,8 @@ function renderComparison(runData) {
  * MODIFIED: "Golden Link in Answer" also gets the collapse button if its explanation is JSON.
  */
 function renderEvaluations(annotations) {
+  if (!elements.evaluationsContainer) return;
+
   if (!annotations || annotations.length === 0) {
     elements.evaluationsContainer.innerHTML =
       "<p>Nenhuma avaliação disponível.</p>";
@@ -434,12 +591,16 @@ function renderEvaluations(annotations) {
  * reasoning/assistant message. `letta_usage_statistics` does not receive a prefix.
  */
 function renderReasoningTimeline(orderedSteps) {
+  if (!elements.reasoningTimelineContainer) return;
+
   const parentHeader =
     elements.reasoningTimelineContainer.previousElementSibling;
 
   // Clear previous summary
-  const existingSummary = parentHeader.querySelector("#reasoning-summary");
-  if (existingSummary) existingSummary.remove();
+  if (parentHeader) {
+    const existingSummary = parentHeader.querySelector("#reasoning-summary");
+    if (existingSummary) existingSummary.remove();
+  }
 
   if (!orderedSteps || orderedSteps.length === 0) {
     elements.reasoningTimelineContainer.innerHTML =
@@ -456,7 +617,7 @@ function renderReasoningTimeline(orderedSteps) {
       return acc;
     }, {});
 
-  if (Object.keys(toolCallCounts).length > 0) {
+  if (Object.keys(toolCallCounts).length > 0 && parentHeader) {
     const badges = Object.entries(toolCallCounts)
       .map(
         ([name, count]) =>
@@ -601,6 +762,8 @@ function renderReasoningTimeline(orderedSteps) {
 // --- FILTERING LOGIC ---
 
 function renderFilters(experimentData) {
+  if (!elements.filterContainer) return;
+
   const filterOptions = {};
   experimentData.forEach((exp) => {
     exp.annotations?.forEach((ann) => {
@@ -692,17 +855,35 @@ function clearFilters() {
 
 function setLoadingState(isLoading) {
   if (isLoading) {
-    elements.loadingIndicator.classList.remove("d-none");
-    elements.fetchExperimentBtn.disabled = true;
-    elements.fetchExperimentBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...`;
+    if (elements.loadingIndicator) {
+      elements.loadingIndicator.classList.remove("d-none");
+    }
+    // Disable refresh button if it exists and is visible
+    if (
+      elements.refreshExperimentBtn &&
+      !elements.refreshExperimentBtn.classList.contains("d-none")
+    ) {
+      elements.refreshExperimentBtn.disabled = true;
+      elements.refreshExperimentBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Atualizando...`;
+    }
   } else {
-    elements.loadingIndicator.classList.add("d-none");
-    elements.fetchExperimentBtn.disabled = false;
-    elements.fetchExperimentBtn.innerHTML = `<i class="bi bi-search me-1"></i> Buscar`;
+    if (elements.loadingIndicator) {
+      elements.loadingIndicator.classList.add("d-none");
+    }
+    // Re-enable refresh button if it exists and is visible
+    if (
+      elements.refreshExperimentBtn &&
+      !elements.refreshExperimentBtn.classList.contains("d-none")
+    ) {
+      elements.refreshExperimentBtn.disabled = false;
+      elements.refreshExperimentBtn.innerHTML = `<i class="bi bi-arrow-clockwise me-1"></i> Atualizar`;
+    }
   }
 }
 
 function showAlert(message, type = "danger") {
+  if (!elements.alertArea) return;
+
   const alertId = `alert-${Date.now()}`;
   elements.alertArea.innerHTML = `
       <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -728,7 +909,26 @@ function downloadOriginalJson() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "experiment_data.json"; // Suggested filename
+
+    // Usar o nome do experimento para o arquivo, se disponível
+    let filename = "experiment_data.json";
+    if (appState.originalJsonData.experiment_name) {
+      // Limpar o nome do experimento para usar como nome de arquivo
+      const cleanName = appState.originalJsonData.experiment_name
+        .replace(/[^a-zA-Z0-9_-]/g, "_") // Substituir caracteres especiais por underscore
+        .replace(/_+/g, "_") // Substituir múltiplos underscores por um só
+        .replace(/^_|_$/g, ""); // Remover underscores do início e fim
+      filename = `${cleanName}_experiment_data.json`;
+    } else if (appState.originalJsonData.experiment_metadata?.name) {
+      // Fallback para metadata.name se experiment_name não estiver disponível
+      const cleanName = appState.originalJsonData.experiment_metadata.name
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
+      filename = `${cleanName}_experiment_data.json`;
+    }
+
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -743,7 +943,7 @@ function downloadOriginalJson() {
  * Added download JSON button.
  */
 function renderMetadata(metadata) {
-  if (!metadata) return;
+  if (!metadata || !elements.metadataContainer) return;
   const createPromptSectionHTML = (title, id, collapseId) => {
     return `
             <div class="metadata-item-full-width">
@@ -775,10 +975,6 @@ function renderMetadata(metadata) {
       <div class="card-component">
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <h4 class="mb-0">Parâmetros do Experimento</h4>
-              <div>
-                  <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jsonModal"><i class="bi bi-code-slash me-1"></i> Ver JSON</button>
-                  <button class="btn btn-sm btn-info ms-2" id="downloadJsonBtn"><i class="bi bi-download me-1"></i> Baixar JSON</button>
-              </div>
           </div>
           <hr class="my-3">
           <div class="metadata-grid">
@@ -806,11 +1002,7 @@ function renderMetadata(metadata) {
     document.getElementById("system-prompt-similarity-code").textContent =
       metadata.system_prompt_answer_similatiry;
   }
-  // Attach event listener for the new download button
-  getElement("downloadJsonBtn").addEventListener(
-    "click",
-    downloadOriginalJson
-  );
+  // Removed metadata download button as per requirements
 
   getElement("jsonModal").addEventListener("show.bs.modal", () => {
     const jsonModalContent = document.querySelector("#jsonModal pre code");
@@ -831,6 +1023,8 @@ function renderMetadata(metadata) {
  * ALTERED: Now, if a metric has no data, its card is not rendered at all (instead of showing "not available").
  */
 function calculateAndRenderSummaryMetrics(experimentData) {
+  if (!elements.summaryMetricsContainer) return;
+
   const metrics = {};
   const totalRuns = experimentData.length;
   if (totalRuns === 0) {

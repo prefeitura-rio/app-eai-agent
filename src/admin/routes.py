@@ -5,7 +5,6 @@ import os
 from loguru import logger
 
 from src.admin.experiments.routers import router as experiments_router
-from src.admin.experiments_v2.routers import router as experiments_v2_router
 
 router = APIRouter()
 
@@ -51,6 +50,3 @@ async def get_favicon():
 
 router.mount("/static", StaticFiles(directory=STATIC_DIR), name="admin_static")
 router.include_router(experiments_router, prefix="/experiments", tags=["Experiments"])
-router.include_router(
-    experiments_v2_router, prefix="/experiments_v2", tags=["Experiments V2"]
-)

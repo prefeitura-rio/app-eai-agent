@@ -15,39 +15,42 @@
     <link rel="stylesheet" href="/eai-agent/admin/experiments/static/experiment.css">
 </head>
 <body>
-    <!-- Tela de Login (Modal-like) -->
-    <div id="login-overlay" class="login-overlay">
-        <div class="card login-container">
-            <div class="card-body p-4">
-                <h2 class="mb-3 text-center">Painel Administrativo</h2>
-                <p class="text-center text-muted mb-4">Visualizador de Experimentos</p>
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="token" class="form-label">Token de Autenticação</label>
-                        <input type="password" class="form-control" id="token" placeholder="Insira o token de autenticação" required autocomplete="new-password">
-                    </div>
-                    <div id="errorMsg" class="alert alert-danger d-none" role="alert"></div>
-                    <button type="submit" class="btn btn-primary w-100 mt-2">Entrar</button>
-                </form>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="d-flex justify-content-center align-items-center vh-100">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Carregando...</span>
             </div>
+            <p class="mt-3 text-muted">Verificando autenticação...</p>
         </div>
     </div>
 
     <!-- Painel Principal (Refactored to fixed sidebar layout) -->
     <div id="experimentsPanel" class="d-none d-flex flex-column vh-100"> <!-- Main app container, fills screen height -->
 
-        <!-- Global Header - now outside the two-panel layout, at the very top -->
+        <!-- Global Header -->
         <header class="container-xl py-4">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <h1 class="h3 mb-0 me-4">Dashboard de Experimentos</h1>
-                <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 400px;">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="experimentIdInput" placeholder="ID do Experimento (Ex: RXhwZXJpbWVudDozNzU=)">
-                        <button class="btn btn-primary" type="button" id="fetchExperimentBtn">
-                            <i class="bi bi-search me-1"></i> Buscar
-                        </button>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="#" id="backToDatasetBtn" class="btn btn-outline-secondary d-none">
+                        <i class="bi bi-arrow-left me-1"></i> Voltar ao Dataset
+                    </a>
+                    <div>
+                        <h1 class="h3 mb-0" id="experiment-title">Dashboard de Experimentos</h1>
+                        <small class="text-muted" id="experiment-info">Análise detalhada de experimento</small>
                     </div>
-                    <button id="logoutBtn" class="btn btn-outline-secondary flex-shrink-0">Sair</button>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="refreshExperimentBtn" class="btn btn-outline-primary d-none">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Atualizar
+                    </button>
+                    <button id="viewJsonBtn" class="btn btn-outline-info d-none" data-bs-toggle="modal" data-bs-target="#jsonModal">
+                        <i class="bi bi-eye me-1"></i> Ver JSON
+                    </button>
+                    <button id="downloadJsonBtn" class="btn btn-outline-success d-none">
+                        <i class="bi bi-download me-1"></i> Download JSON
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline-secondary" onclick="AuthCheck.logout()">Sair</button>
                 </div>
             </div>
         </header>
@@ -79,8 +82,8 @@
                     <div id="alertArea" class="mb-3"></div>
 
                     <div id="welcome-screen" class="text-center text-muted p-5 border rounded bg-light">
-                        <h3>Bem-vindo ao Dashboard</h3>
-                        <p class="mb-0">Insira um ID de experimento acima para começar a análise.</p>
+                        <h3>Bem-vindo ao Dashboard de Experimentos</h3>
+                        <p class="mb-0">Navegue pelos datasets para visualizar experimentos específicos ou acesse diretamente via URL com parâmetro ?id=...</p>
                     </div>
 
                     <!-- Result container now sits cleanly within the main page container -->
@@ -144,7 +147,13 @@
     <script>
         // Configuração global da API (unchanged)
         window.API_BASE_URL_OVERRIDE = 'https://services.staging.app.dados.rio/eai-agent';
+        
+        // Injeta IDs do backend se disponíveis
+        window.DATASET_ID = '{{DATASET_ID}}';
+        window.EXPERIMENT_ID = '{{EXPERIMENT_ID}}';
     </script>
+    <!-- Auth Check deve ser carregado PRIMEIRO -->
+    <script src="/eai-agent/admin/experiments/static/auth-check.js"></script>
     <!-- App JS - Path confirmed to be correct as per instructions -->
     <script src="/eai-agent/admin/experiments/static/experiment.js"></script>
 </body>
