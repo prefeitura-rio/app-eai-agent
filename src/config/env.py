@@ -55,3 +55,7 @@ GPT_SEARCH_MODEL = getenv_or_action("GPT_SEARCH_MODEL")
 
 EVAL_MODEL_TYPE = getenv_or_action("EVAL_MODEL_TYPE", default="gpt")
 GPT_EVAL_MODEL = getenv_or_action("GPT_EVAL_MODEL", default="gpt-4o")
+
+USE_LOCAL_API = (
+    getenv_or_action("USE_LOCAL_API", default="false", action="ignore") == "true"
+)

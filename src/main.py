@@ -15,6 +15,7 @@ from src.admin import router as admin_router
 from src.core.middlewares.logging import LoggingMiddleware
 from src.core.middlewares.static_cache import NoCacheStaticFilesMiddleware
 from src.db import Base, engine
+from src.config import env
 
 Base.metadata.create_all(bind=engine)
 
@@ -62,13 +63,18 @@ _logger.handlers = [InterceptHandler()]
 _logger.propagate = False
 _logger.setLevel(logging.DEBUG)
 
+
 app = FastAPI(
     title="Agentic Search API",
     description="API que gerencia os fluxos e ferramentas dos agentes de IA da Prefeitura do Rio de Janeiro",
     version="0.1.0",
     servers=[
         {
-            "url": "https://services.staging.app.dados.rio/eai-agent/",
+            "url": (
+                "http://localhost:8089"
+                if env.USE_LOCAL_API
+                else "https://services.staging.app.dados.rio/eai-agent"
+            ),
             "description": "Staging",
         }
     ],

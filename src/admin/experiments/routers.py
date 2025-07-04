@@ -19,6 +19,19 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 logger.info(f"Diretório estático de experimentos: {STATIC_DIR}")
 
 
+def replace_api_base_url(html_content: str) -> str:
+    if env.USE_LOCAL_API:
+        return html_content.replace(
+            "{{BASE_API_URL}}",
+            "http://localhost:8089/eai-agent",
+        )
+    else:
+        return html_content.replace(
+            "{{BASE_API_URL}}",
+            "https://services.staging.app.dados.rio/eai-agent",
+        )
+
+
 # Endpoints estáticos DEVEM vir primeiro para evitar conflitos
 @router.get("/static/{file_path:path}")
 async def get_static_file(file_path: str):
@@ -69,7 +82,9 @@ async def get_auth_page(request: Request):
     html_path = os.path.join(STATIC_DIR, "auth.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            html_content = f.read()
+            html_content = replace_api_base_url(html_content=html_content)
+            return HTMLResponse(content=html_content)
     except FileNotFoundError:
         logger.error(f"Arquivo não encontrado: {html_path}")
         return Response(content="Página não encontrada.", status_code=404)
@@ -168,7 +183,9 @@ async def get_datasets_page(request: Request):
     html_path = os.path.join(STATIC_DIR, "datasets.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
+            html_content = f.read()
+            html_content = replace_api_base_url(html_content=html_content)
+            return HTMLResponse(content=html_content)
     except FileNotFoundError:
         logger.error(f"Arquivo não encontrado: {html_path}")
         return Response(content="Página não encontrada.", status_code=404)
@@ -460,6 +477,7 @@ async def get_experiment_page(request: Request, dataset_id: str, experiment_id: 
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             html_content = f.read()
+            html_content = replace_api_base_url(html_content=html_content)
             # Injeta o dataset_id e experiment_id no HTML
             html_content = html_content.replace("{{DATASET_ID}}", dataset_id)
             html_content = html_content.replace("{{EXPERIMENT_ID}}", experiment_id)
@@ -485,6 +503,7 @@ async def get_dataset_experiments_page(request: Request, dataset_id: str):
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             html_content = f.read()
+            html_content = replace_api_base_url(html_content=html_content)
             # Injeta o dataset_id no HTML
             html_content = html_content.replace("{{DATASET_ID}}", dataset_id)
             return HTMLResponse(content=html_content)
