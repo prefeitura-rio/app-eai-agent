@@ -33,6 +33,29 @@ def replace_api_base_url(html_content: str) -> str:
 
 
 # Endpoints estáticos DEVEM vir primeiro para evitar conflitos
+@router.get("/favicon.ico")
+async def get_favicon():
+    """
+    Serve o favicon do admin para garantir compatibilidade entre local e produção.
+    Funciona tanto para /admin/experiments/favicon.ico quanto para /admin/static/favicon.ico
+    """
+    # Caminho para o favicon do admin (uma pasta acima)
+    admin_static_dir = os.path.join(os.path.dirname(BASE_DIR), "static")
+    favicon_path = os.path.join(admin_static_dir, "favicon.ico")
+
+    if os.path.exists(favicon_path):
+        return FileResponse(
+            favicon_path,
+            media_type="image/x-icon",
+            headers={
+                "Cache-Control": "public, max-age=86400",  # Cache por 24 horas
+            },
+        )
+    else:
+        logger.error(f"Favicon não encontrado em: {favicon_path}")
+        return Response(content="Favicon não encontrado", status_code=404)
+
+
 @router.get("/static/{file_path:path}")
 async def get_static_file(file_path: str):
     """
