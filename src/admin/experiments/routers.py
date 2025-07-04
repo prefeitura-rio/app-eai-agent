@@ -288,7 +288,7 @@ async def get_dataset_data(dataset_id: str):
 
 
 @router.get("/{dataset_id}/examples")
-async def get_dataset_examples(dataset_id: str, first: int = 100, after: str = None):
+async def get_dataset_examples(dataset_id: str, first: int = 1000, after: str = None):
     """
     Endpoint para buscar exemplos de um dataset específico do serviço Phoenix.
     A URL final será /admin/experiments/{dataset_id}/examples

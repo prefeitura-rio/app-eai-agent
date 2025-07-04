@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Scroll infinito removido - agora usamos botão "Carregar Mais"
+  // Sistema de carregamento por botão "Carregar Mais"
 
   // Add theme toggle event listener
   if (themeToggleBtn) {
@@ -835,8 +835,11 @@ async function loadExamplesData(loadMore = false) {
     allLoadedExamples = [];
     examplesHasNextPage = false;
     examplesEndCursor = null;
+    isLoadingMoreExamples = false;
   } else {
     isLoadingMoreExamples = true;
+    // Atualizar UI imediatamente para mostrar loading
+    applyExampleFilter();
   }
 
   clearAlerts();
@@ -849,7 +852,7 @@ async function loadExamplesData(loadMore = false) {
     );
 
     // Construir URL com parâmetros de paginação
-    let url = `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples?first=100`;
+    let url = `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples?first=1000`;
     if (loadMore && examplesEndCursor) {
       url += `&after=${encodeURIComponent(examplesEndCursor)}`;
     }
@@ -886,9 +889,17 @@ async function loadExamplesData(loadMore = false) {
       }
 
       console.log(
-        `🔄 Carregados ${newExamples.length} novos examples. Total: ${allLoadedExamples.length}. HasNextPage: ${examplesHasNextPage}`
+        `🔄 Carregados ${newExamples.length} novos examples. Total: ${allLoadedExamples.length}/${examplesData.exampleCount}. HasNextPage: ${examplesHasNextPage}`
       );
 
+      // Aplicar filtro sempre para atualizar a UI
+      // Mas resetar o estado de loading antes se for loadMore
+      if (loadMore) {
+        isLoadingMoreExamples = false;
+        console.log(
+          "🔄 isLoadingMoreExamples resetado para false ANTES do applyExampleFilter"
+        );
+      }
       applyExampleFilter();
     } else {
       throw new Error(
@@ -905,19 +916,16 @@ async function loadExamplesData(loadMore = false) {
   } finally {
     if (!loadMore) {
       hideExamplesLoading();
-    } else {
-      isLoadingMoreExamples = false;
     }
+    // O estado isLoadingMoreExamples já foi resetado no try block
   }
 }
 
 function displayExamples() {
   if (!examplesData) return;
 
-  // Limpar tabela (mas manter estrutura para scroll infinito)
+  // Limpar tabela
   examplesTableBody.innerHTML = "";
-
-  // Limpeza simples - sem scroll infinito
 
   if (filteredExamples.length === 0) {
     const message = exampleSearchTerm
@@ -945,8 +953,15 @@ function displayExamples() {
   if (examplesData && examplesData.exampleCount) {
     const statusRow = document.createElement("tr");
 
+    console.log(
+      `🔍 Debug displayExamples: isLoadingMoreExamples=${isLoadingMoreExamples}, examplesHasNextPage=${examplesHasNextPage}, allLoadedExamples.length=${allLoadedExamples.length}, exampleCount=${examplesData.exampleCount}`
+    );
+
+    // Correção: Se não estamos carregando mais E há próxima página, mostrar botão
+    // Se estivermos carregando mais, mostrar loading
     if (isLoadingMoreExamples) {
       // Mostra indicador de carregamento
+      console.log("📝 Mostrando indicador de carregamento");
       statusRow.innerHTML = `
         <td colspan="4" class="text-center py-3">
           <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
@@ -957,17 +972,22 @@ function displayExamples() {
       `;
     } else if (examplesHasNextPage) {
       // Mostra botão para carregar mais
+      console.log("🔘 Mostrando botão 'Carregar Mais'");
+      console.log(
+        `🔘 Condições: isLoadingMoreExamples=${isLoadingMoreExamples}, examplesHasNextPage=${examplesHasNextPage}`
+      );
       statusRow.innerHTML = `
         <td colspan="4" class="text-center text-info py-3">
           <i class="bi bi-info-circle me-2"></i>
           <strong>Mostrando ${allLoadedExamples.length} de ${examplesData.exampleCount} examples.</strong>
                      <br><button class="btn btn-sm btn-primary mt-2" onclick="loadExamplesData(true)">
-             <i class="bi bi-plus-circle me-1"></i>Carregar Mais 100 Examples
+             <i class="bi bi-plus-circle me-1"></i>Carregar Mais 1000 Examples
            </button>
         </td>
       `;
     } else if (allLoadedExamples.length > 0) {
       // Mostra mensagem de conclusão
+      console.log("✅ Mostrando mensagem de conclusão");
       statusRow.innerHTML = `
         <td colspan="4" class="text-center text-success py-3">
           <i class="bi bi-check-circle me-2"></i>
@@ -1018,25 +1038,25 @@ function createExampleRow(example, rowNumber) {
   const outputHtml = renderMarkdown(outputText);
 
   row.innerHTML = `
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 15%;">
-      <div class="d-flex align-items-start flex-column">
-        <span class="badge bg-secondary mb-1" style="font-size: 0.7rem;">#${rowNumber}</span>
-        <div class="fw-medium" style="font-size: 0.8rem; word-wrap: break-word; overflow-wrap: break-word;">
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.75rem 0.5rem;">
+      <div class="d-flex align-items-start flex-column" style="gap: 0.25rem;">
+        <span class="badge bg-secondary" style="font-size: 0.7rem; align-self: flex-start;">#${rowNumber}</span>
+        <div class="fw-medium text-break" style="font-size: 0.8rem; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;">
           ${escapeHtml(exampleId)}
         </div>
       </div>
     </td>
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 35%;">
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.75rem 0.5rem;">
       <div class="markdown-content" style="word-wrap: break-word; overflow-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
         ${inputHtml}
       </div>
     </td>
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 35%;">
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.75rem 0.5rem;">
       <div class="markdown-content" style="word-wrap: break-word; overflow-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
         ${outputHtml}
       </div>
     </td>
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 15%;">
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.75rem 0.5rem;">
       <div style="white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; font-family: monospace; font-size: 0.8rem; line-height: 1.3;">${escapeHtml(
         metadataJson
       )}</div>
@@ -1124,6 +1144,10 @@ function viewExampleDetails(exampleId) {
 function applyExampleFilter() {
   if (!allLoadedExamples || allLoadedExamples.length === 0) return;
 
+  console.log(
+    `🔍 applyExampleFilter chamado - allLoadedExamples: ${allLoadedExamples.length}, isLoadingMoreExamples: ${isLoadingMoreExamples}`
+  );
+
   // Filtrar examples dos carregados
   if (exampleSearchTerm) {
     filteredExamples = allLoadedExamples.filter((example) => {
@@ -1139,6 +1163,10 @@ function applyExampleFilter() {
   } else {
     filteredExamples = [...allLoadedExamples];
   }
+
+  console.log(
+    `🔍 filteredExamples: ${filteredExamples.length}, chamando displayExamples()`
+  );
 
   // Re-render the table
   displayExamples();
@@ -1156,7 +1184,7 @@ function hideExamplesLoading() {
   }
 }
 
-// Scroll infinito removido - funcionalidade substituída por botão "Carregar Mais"
+// Funcionalidade de carregamento por botão "Carregar Mais"
 
 // Theme management functions
 function initializeTheme() {
