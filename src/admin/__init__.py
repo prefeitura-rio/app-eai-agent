@@ -10,4 +10,4 @@ else:
 
 router = APIRouter(prefix=prefix, tags=["Admin"])
 router.include_router(admin_router)
-router.include_router(experiments_router, prefix="/experiments", tags=["Experiments"])
+router.include_router(experiments_router, prefix="/experiments")
