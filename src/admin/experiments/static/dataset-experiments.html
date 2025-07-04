@@ -39,6 +39,9 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
+                    <button id="themeToggleBtn" class="btn btn-outline-secondary" title="Alternar tema">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i>
+                    </button>
                     <button id="refreshDatasetBtn" class="btn btn-outline-primary">
                         <i class="bi bi-arrow-clockwise me-1"></i> Atualizar
                     </button>
@@ -92,6 +95,9 @@
                                             <i class="bi bi-search text-muted"></i>
                                             <input type="text" id="experiment-search" class="form-control" placeholder="Filtrar por nome do experimento..." style="width: 250px;">
                                         </div>
+                                        <button id="downloadExperimentsCsvBtn" class="btn btn-sm btn-outline-success" title="Download CSV">
+                                            <i class="bi bi-download me-1"></i>CSV
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="card-body p-0">
@@ -120,6 +126,9 @@
                                             <i class="bi bi-search text-muted"></i>
                                             <input type="text" id="example-search" class="form-control" placeholder="Filtrar por conteúdo do exemplo..." style="width: 250px;">
                                         </div>
+                                        <button id="downloadExamplesCsvBtn" class="btn btn-sm btn-outline-success" title="Download CSV">
+                                            <i class="bi bi-download me-1"></i>CSV
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="card-body p-0">
@@ -129,13 +138,13 @@
                                         </div>
                                     </div>
                                     <div class="table-responsive">
-                                        <table class="table table-hover examples-table mb-0">
+                                        <table class="table table-hover examples-table mb-0" style="table-layout: fixed;">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th class="align-middle" style="text-align: left !important;">ID</th>
-                                                    <th class="align-middle" style="text-align: left !important;">Input</th>
-                                                    <th class="align-middle" style="text-align: left !important;">Output</th>
-                                                    <th class="align-middle" style="text-align: left !important;">Metadata</th>
+                                                    <th class="align-middle" style="text-align: left !important; width: 15%;">ID</th>
+                                                    <th class="align-middle" style="text-align: left !important; width: 35%;">Input</th>
+                                                    <th class="align-middle" style="text-align: left !important; width: 35%;">Output</th>
+                                                    <th class="align-middle" style="text-align: left !important; width: 15%;">Metadata</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="examples-table-body">

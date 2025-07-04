@@ -14,6 +14,10 @@ let searchTerm = "";
 let examplesData = null;
 let filteredExamples = [];
 let exampleSearchTerm = "";
+let allLoadedExamples = []; // Array para armazenar todos os examples carregados
+let examplesHasNextPage = false;
+let examplesEndCursor = null;
+let isLoadingMoreExamples = false;
 
 // Elementos DOM
 const loadingScreen = document.getElementById("loading-screen");
@@ -35,6 +39,7 @@ const experimentsCountBadge = document.getElementById(
   "experiments-count-badge"
 );
 const experimentSearchInput = document.getElementById("experiment-search");
+const experimentsContainer = tabsContainer; // Using tabsContainer as the experiments container
 
 // Elementos dos examples
 const examplesTableBody = document.getElementById("examples-table-body");
@@ -44,6 +49,18 @@ const examplesLoading = document.getElementById("examples-loading");
 
 // Elementos de dados do dataset
 const datasetName = document.getElementById("dataset-name");
+
+// Elementos do tema
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeIcon = document.getElementById("themeIcon");
+
+// Elementos de download
+const downloadExamplesCsvBtn = document.getElementById(
+  "downloadExamplesCsvBtn"
+);
+const downloadExperimentsCsvBtn = document.getElementById(
+  "downloadExperimentsCsvBtn"
+);
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", function () {
@@ -62,6 +79,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 3000);
     return;
   }
+
+  // Inicializar tema
+  initializeTheme();
 
   // Aguardar verificação de autenticação
   setTimeout(() => {
@@ -107,6 +127,24 @@ document.addEventListener("DOMContentLoaded", function () {
       loadExamplesData();
     }
   });
+
+  // Scroll infinito removido - agora usamos botão "Carregar Mais"
+
+  // Add theme toggle event listener
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+
+  // Add download CSV event listeners
+  if (downloadExamplesCsvBtn) {
+    downloadExamplesCsvBtn.addEventListener("click", downloadExamplesCsv);
+  }
+  if (downloadExperimentsCsvBtn) {
+    downloadExperimentsCsvBtn.addEventListener(
+      "click",
+      downloadExperimentsCsv
+    );
+  }
 });
 
 // Funções de UI
@@ -141,15 +179,38 @@ async function loadExperimentsData() {
 
     if (response.data && response.data.data && response.data.data.dataset) {
       experimentsData = response.data.data.dataset;
+
+      // Atualizar contador de examples se disponível
+      if (experimentsData.exampleCount !== undefined) {
+        if (examplesCountBadge) {
+          examplesCountBadge.textContent = experimentsData.exampleCount;
+        }
+      }
+
       applyFilter();
       hideWelcomeScreen();
     } else {
+      // Mesmo com erro, mostrar o container das tabs
+      hideWelcomeScreen();
       throw new Error(
         "Formato de resposta inválido ou dataset não encontrado"
       );
     }
   } catch (error) {
     console.error("Erro ao carregar experimentos do dataset:", error);
+
+    // Mostrar container das tabs mesmo com erro
+    hideWelcomeScreen();
+
+    // Criar um dataset vazio para mostrar a mensagem de "nenhum experimento"
+    experimentsData = {
+      name: "Dataset não encontrado",
+      experiments: { edges: [] },
+    };
+
+    // Aplicar filtro para mostrar a mensagem de "nenhum experimento"
+    applyFilter();
+
     showAlert(
       "Erro ao carregar experimentos: " +
         (error.response?.data?.detail || error.message),
@@ -199,6 +260,9 @@ function displayExperiments() {
     const message = searchTerm
       ? `Nenhum experimento encontrado para "${searchTerm}"`
       : "Nenhum experimento encontrado para este dataset";
+
+    // Gerar cabeçalho mesmo quando não há experimentos
+    generateTableHeader(sortedMetrics);
 
     experimentsTableBody.innerHTML = `
       <tr>
@@ -719,9 +783,9 @@ function updateSortHeaders() {
 function applyFilter() {
   if (!experimentsData || !experimentsData.experiments) return;
 
-  const experiments = experimentsData.experiments.edges.map(
-    (edge) => edge.experiment
-  );
+  const experiments = experimentsData.experiments.edges
+    ? experimentsData.experiments.edges.map((edge) => edge.experiment)
+    : [];
 
   // First, filter the experiments
   if (searchTerm) {
@@ -759,26 +823,72 @@ function applyFilter() {
 }
 
 // Examples functions
-async function loadExamplesData() {
+async function loadExamplesData(loadMore = false) {
   if (!AuthCheck.isAuthenticated()) {
     AuthCheck.redirectToAuth();
     return;
   }
 
-  showExamplesLoading();
+  if (!loadMore) {
+    showExamplesLoading();
+    // Reset para primeira carga
+    allLoadedExamples = [];
+    examplesHasNextPage = false;
+    examplesEndCursor = null;
+  } else {
+    isLoadingMoreExamples = true;
+  }
+
   clearAlerts();
 
   try {
-    console.log("Carregando examples do dataset:", DATASET_ID);
-    const response = await axios.get(
-      `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples`,
-      {
-        timeout: 30000,
-      }
+    console.log(
+      "Carregando examples do dataset:",
+      DATASET_ID,
+      loadMore ? "(carregando mais)" : "(primeira carga)"
     );
 
+    // Construir URL com parâmetros de paginação
+    let url = `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples?first=100`;
+    if (loadMore && examplesEndCursor) {
+      url += `&after=${encodeURIComponent(examplesEndCursor)}`;
+    }
+
+    const response = await axios.get(url, {
+      timeout: 30000,
+    });
+
     if (response.data && response.data.data && response.data.data.dataset) {
-      examplesData = response.data.data.dataset;
+      const datasetData = response.data.data.dataset;
+
+      // Na primeira carga, definir examplesData
+      if (!loadMore) {
+        examplesData = datasetData;
+
+        // Atualizar contador de examples com o número total
+        if (examplesData.exampleCount !== undefined) {
+          if (examplesCountBadge) {
+            examplesCountBadge.textContent = examplesData.exampleCount;
+          }
+        }
+      }
+
+      // Adicionar novos examples ao array
+      const newExamples =
+        datasetData.examples?.edges?.map((edge) => edge.example) || [];
+      allLoadedExamples = allLoadedExamples.concat(newExamples);
+
+      // Atualizar informações de paginação
+      const pageInfo = datasetData.examples?.pageInfo;
+      if (pageInfo) {
+        examplesHasNextPage = pageInfo.hasNextPage;
+        examplesEndCursor = pageInfo.endCursor;
+      }
+
+      console.log(
+        `🔄 Carregados ${newExamples.length} novos examples. Total: ${allLoadedExamples.length}. HasNextPage: ${examplesHasNextPage}`
+      );
+
       applyExampleFilter();
     } else {
       throw new Error(
@@ -793,15 +903,21 @@ async function loadExamplesData() {
       "danger"
     );
   } finally {
-    hideExamplesLoading();
+    if (!loadMore) {
+      hideExamplesLoading();
+    } else {
+      isLoadingMoreExamples = false;
+    }
   }
 }
 
 function displayExamples() {
-  if (!examplesData || !examplesData.examples) return;
+  if (!examplesData) return;
 
-  // Limpar tabela
+  // Limpar tabela (mas manter estrutura para scroll infinito)
   examplesTableBody.innerHTML = "";
+
+  // Limpeza simples - sem scroll infinito
 
   if (filteredExamples.length === 0) {
     const message = exampleSearchTerm
@@ -820,15 +936,60 @@ function displayExamples() {
     return;
   }
 
-  filteredExamples.forEach((example) => {
-    const row = createExampleRow(example);
+  filteredExamples.forEach((example, index) => {
+    const row = createExampleRow(example, index + 1);
     examplesTableBody.appendChild(row);
   });
 
-  examplesCountBadge.textContent = filteredExamples.length;
+  // Mostrar informações de carregamento e botão "Carregar Mais"
+  if (examplesData && examplesData.exampleCount) {
+    const statusRow = document.createElement("tr");
+
+    if (isLoadingMoreExamples) {
+      // Mostra indicador de carregamento
+      statusRow.innerHTML = `
+        <td colspan="4" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+            <span class="visually-hidden">Carregando...</span>
+          </div>
+          <small>Carregando mais examples...</small>
+        </td>
+      `;
+    } else if (examplesHasNextPage) {
+      // Mostra botão para carregar mais
+      statusRow.innerHTML = `
+        <td colspan="4" class="text-center text-info py-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Mostrando ${allLoadedExamples.length} de ${examplesData.exampleCount} examples.</strong>
+                     <br><button class="btn btn-sm btn-primary mt-2" onclick="loadExamplesData(true)">
+             <i class="bi bi-plus-circle me-1"></i>Carregar Mais 100 Examples
+           </button>
+        </td>
+      `;
+    } else if (allLoadedExamples.length > 0) {
+      // Mostra mensagem de conclusão
+      statusRow.innerHTML = `
+        <td colspan="4" class="text-center text-success py-3">
+          <i class="bi bi-check-circle me-2"></i>
+          <strong>Todos os ${examplesData.exampleCount} examples foram carregados.</strong>
+        </td>
+      `;
+    }
+
+    if (statusRow.innerHTML) {
+      examplesTableBody.appendChild(statusRow);
+    }
+  }
+
+  // Manter o contador total, não apenas os filtrados
+  if (examplesData.exampleCount !== undefined) {
+    examplesCountBadge.textContent = examplesData.exampleCount;
+  } else {
+    examplesCountBadge.textContent = filteredExamples.length;
+  }
 }
 
-function createExampleRow(example) {
+function createExampleRow(example, rowNumber) {
   const row = document.createElement("tr");
   row.style.cursor = "pointer";
 
@@ -857,25 +1018,26 @@ function createExampleRow(example) {
   const outputHtml = renderMarkdown(outputText);
 
   row.innerHTML = `
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
-      <div class="fw-medium" style="word-wrap: break-word;" title="${escapeHtml(
-        exampleId
-      )}">
-        ${escapeHtml(exampleId)}
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 15%;">
+      <div class="d-flex align-items-start flex-column">
+        <span class="badge bg-secondary mb-1" style="font-size: 0.7rem;">#${rowNumber}</span>
+        <div class="fw-medium" style="font-size: 0.8rem; word-wrap: break-word; overflow-wrap: break-word;">
+          ${escapeHtml(exampleId)}
+        </div>
       </div>
     </td>
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
-      <div class="markdown-content" style="word-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 35%;">
+      <div class="markdown-content" style="word-wrap: break-word; overflow-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
         ${inputHtml}
       </div>
     </td>
-    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
-      <div class="markdown-content" style="word-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 35%;">
+      <div class="markdown-content" style="word-wrap: break-word; overflow-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
         ${outputHtml}
       </div>
     </td>
-              <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
-      <div style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; font-size: 0.8rem; line-height: 1.3;">${escapeHtml(
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem; width: 15%;">
+      <div style="white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; font-family: monospace; font-size: 0.8rem; line-height: 1.3;">${escapeHtml(
         metadataJson
       )}</div>
     </td>
@@ -960,13 +1122,11 @@ function viewExampleDetails(exampleId) {
 }
 
 function applyExampleFilter() {
-  if (!examplesData || !examplesData.examples) return;
+  if (!allLoadedExamples || allLoadedExamples.length === 0) return;
 
-  const examples = examplesData.examples.edges.map((edge) => edge.example);
-
-  // Filtrar examples
+  // Filtrar examples dos carregados
   if (exampleSearchTerm) {
-    filteredExamples = examples.filter((example) => {
+    filteredExamples = allLoadedExamples.filter((example) => {
       const input = formatObjectForDisplay(
         example.latestRevision?.input || {}
       );
@@ -977,7 +1137,7 @@ function applyExampleFilter() {
       return searchContent.includes(exampleSearchTerm);
     });
   } else {
-    filteredExamples = [...examples];
+    filteredExamples = [...allLoadedExamples];
   }
 
   // Re-render the table
@@ -996,5 +1156,273 @@ function hideExamplesLoading() {
   }
 }
 
+// Scroll infinito removido - funcionalidade substituída por botão "Carregar Mais"
+
+// Theme management functions
+function initializeTheme() {
+  const savedTheme = localStorage.getItem("experiments-theme") || "light";
+  applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme =
+    document.documentElement.getAttribute("data-bs-theme") || "light";
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+  applyTheme(newTheme);
+  localStorage.setItem("experiments-theme", newTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-bs-theme", theme);
+
+  if (themeIcon) {
+    if (theme === "dark") {
+      themeIcon.className = "bi bi-sun-fill";
+    } else {
+      themeIcon.className = "bi bi-moon-fill";
+    }
+  }
+}
+
+// Função para resetar estado dos examples (útil para debugging)
+function resetExamplesState() {
+  allLoadedExamples = [];
+  examplesHasNextPage = false;
+  examplesEndCursor = null;
+  isLoadingMoreExamples = false;
+  examplesData = null;
+  filteredExamples = [];
+}
+
+// Funções de download CSV
+async function downloadExamplesCsv() {
+  if (!examplesData || !examplesData.exampleCount) {
+    showAlert("Nenhum example disponível para download.", "warning");
+    return;
+  }
+
+  // Mostrar indicador de carregamento
+  const originalText = downloadExamplesCsvBtn.innerHTML;
+  downloadExamplesCsvBtn.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-1"></span>Baixando todos os examples...';
+  downloadExamplesCsvBtn.disabled = true;
+
+  try {
+    // Carregar todos os examples disponíveis
+    const allExamples = [];
+    let hasNextPage = true;
+    let cursor = null;
+    let pageCount = 0;
+
+    while (hasNextPage) {
+      pageCount++;
+      console.log(`📥 Carregando página ${pageCount} para download CSV...`);
+
+      // Atualizar texto do botão com progresso
+      downloadExamplesCsvBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Carregando página ${pageCount}...`;
+
+      let url = `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples?first=1000`;
+      if (cursor) {
+        url += `&after=${encodeURIComponent(cursor)}`;
+      }
+
+      const response = await axios.get(url, { timeout: 30000 });
+
+      if (response.data && response.data.data && response.data.data.dataset) {
+        const datasetData = response.data.data.dataset;
+        const newExamples =
+          datasetData.examples?.edges?.map((edge) => edge.example) || [];
+        allExamples.push(...newExamples);
+
+        const pageInfo = datasetData.examples?.pageInfo;
+        hasNextPage = pageInfo?.hasNextPage || false;
+        cursor = pageInfo?.endCursor;
+
+        console.log(
+          `✅ Página ${pageCount}: ${newExamples.length} examples. Total: ${allExamples.length}/${examplesData.exampleCount}`
+        );
+      } else {
+        break;
+      }
+    }
+
+    if (allExamples.length === 0) {
+      showAlert("Nenhum example encontrado para download.", "warning");
+      return;
+    }
+
+    // Preparar dados CSV
+    const csvData = [];
+
+    // Cabeçalho
+    csvData.push(["Número", "ID", "Input", "Output", "Metadata"]);
+
+    // Dados
+    allExamples.forEach((example, index) => {
+      const exampleId = example.id.trim();
+      const input = formatObjectForDisplay(
+        example.latestRevision?.input || {}
+      );
+      const output = formatObjectForDisplay(
+        example.latestRevision?.output || {}
+      );
+      const metadata = JSON.stringify(example.latestRevision?.metadata || {});
+
+      csvData.push([
+        index + 1,
+        exampleId,
+        input.replace(/"/g, '""'), // Escapar aspas duplas
+        output.replace(/"/g, '""'),
+        metadata.replace(/"/g, '""'),
+      ]);
+    });
+
+    console.log(
+      `📊 Gerando arquivo CSV com ${allExamples.length} examples...`
+    );
+    downloadExamplesCsvBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Gerando CSV...`;
+
+    // Converter para CSV
+    const csvContent = csvData
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
+
+    // Gerar nome do arquivo com dataset name e data
+    const datasetName = (examplesData.name || DATASET_ID).replace(
+      /[^a-zA-Z0-9_-]/g,
+      "_"
+    );
+    const createdDate = new Date().toISOString().split("T")[0];
+    const fileName = `${datasetName}_${createdDate}.csv`;
+
+    // Download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showAlert(
+      `Download de ${allExamples.length} examples realizado com sucesso!`,
+      "success"
+    );
+  } catch (error) {
+    console.error("Erro ao baixar examples:", error);
+    showAlert(
+      "Erro ao baixar examples: " + (error.message || "Erro desconhecido"),
+      "danger"
+    );
+  } finally {
+    // Restaurar botão
+    downloadExamplesCsvBtn.innerHTML = originalText;
+    downloadExamplesCsvBtn.disabled = false;
+  }
+}
+
+function downloadExperimentsCsv() {
+  if (!filteredExperiments || filteredExperiments.length === 0) {
+    showAlert("Nenhum experimento carregado para download.", "warning");
+    return;
+  }
+
+  // Descobrir todas as métricas únicas
+  const allMetrics = new Set();
+  filteredExperiments.forEach((experiment) => {
+    if (experiment.annotationSummaries) {
+      experiment.annotationSummaries.forEach((annotation) => {
+        allMetrics.add(annotation.annotationName);
+      });
+    }
+  });
+
+  const sortedMetrics = sortMetrics(Array.from(allMetrics));
+
+  // Preparar dados CSV
+  const csvData = [];
+
+  // Cabeçalho
+  const headers = [
+    "Número",
+    "Nome",
+    "Descrição",
+    "Criado em",
+    "Run Count",
+    "Avg Latency (ms)",
+    "Error Rate (%)",
+    ...sortedMetrics,
+    "Download Link",
+  ];
+  csvData.push(headers);
+
+  // Dados
+  filteredExperiments.forEach((experiment, index) => {
+    const createdAt = new Date(experiment.createdAt).toLocaleString("pt-BR");
+    const description = experiment.description || "Sem descrição";
+    const errorRate = (experiment.errorRate * 100).toFixed(2);
+    const latencyMs = experiment.averageRunLatencyMs
+      ? experiment.averageRunLatencyMs.toFixed(2)
+      : "N/A";
+
+    // Valores das métricas
+    const metricValues = sortedMetrics.map((metric) => {
+      const annotation = experiment.annotationSummaries?.find(
+        (ann) => ann.annotationName === metric
+      );
+      return annotation ? annotation.meanScore.toFixed(3) : "";
+    });
+
+    // Link para download do experimento
+    const downloadLink = `${window.location.origin}/eai-agent/admin/experiments/${DATASET_ID}/${experiment.id}`;
+
+    const row = [
+      experiment.sequenceNumber,
+      experiment.name.replace(/"/g, '""'),
+      description.replace(/"/g, '""'),
+      createdAt,
+      experiment.runCount,
+      latencyMs,
+      errorRate,
+      ...metricValues,
+      downloadLink,
+    ];
+
+    csvData.push(row);
+  });
+
+  // Converter para CSV
+  const csvContent = csvData
+    .map((row) => row.map((field) => `"${field}"`).join(","))
+    .join("\n");
+
+  // Gerar nome do arquivo com dataset name e data
+  const datasetName = (experimentsData?.name || DATASET_ID).replace(
+    /[^a-zA-Z0-9_-]/g,
+    "_"
+  );
+  const createdDate = new Date().toISOString().split("T")[0];
+  const fileName = `${datasetName}_experiments_${createdDate}.csv`;
+
+  // Download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", fileName);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showAlert(
+    `Download de ${filteredExperiments.length} experimentos realizado com sucesso!`,
+    "success"
+  );
+}
+
 // Exportar funções globais necessárias
 window.viewExperiment = viewExperiment;
+window.loadExamplesData = loadExamplesData;

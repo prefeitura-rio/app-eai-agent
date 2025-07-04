@@ -21,9 +21,16 @@ const datasetsTableBody = document.getElementById("datasets-table-body");
 const datasetsCountBadge = document.getElementById("datasets-count-badge");
 const datasetSearchInput = document.getElementById("dataset-search");
 
+// Elementos do tema
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeIcon = document.getElementById("themeIcon");
+
 // Inicialização
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM carregado - Inicializando aplicação de datasets");
+
+  // Inicializar tema
+  initializeTheme();
 
   // Aguardar verificação de autenticação
   setTimeout(() => {
@@ -52,6 +59,11 @@ document.addEventListener("DOMContentLoaded", function () {
       searchTerm = e.target.value.toLowerCase().trim();
       applyFilter();
     });
+  }
+
+  // Add theme toggle event listener
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", toggleTheme);
   }
 });
 
@@ -362,6 +374,32 @@ function applyFilter() {
 
   // Re-render the table
   displayDatasets();
+}
+
+// Theme management functions
+function initializeTheme() {
+  const savedTheme = localStorage.getItem("experiments-theme") || "light";
+  applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme =
+    document.documentElement.getAttribute("data-bs-theme") || "light";
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+  applyTheme(newTheme);
+  localStorage.setItem("experiments-theme", newTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-bs-theme", theme);
+
+  if (themeIcon) {
+    if (theme === "dark") {
+      themeIcon.className = "bi bi-sun-fill";
+    } else {
+      themeIcon.className = "bi bi-moon-fill";
+    }
+  }
 }
 
 // Exportar funções globais necessárias

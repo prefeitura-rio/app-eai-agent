@@ -30,6 +30,8 @@ const elements = {
   downloadJsonBtn: getElement("downloadJsonBtn"),
   viewJsonBtn: getElement("viewJsonBtn"),
   backToDatasetBtn: getElement("backToDatasetBtn"),
+  themeToggleBtn: getElement("themeToggleBtn"),
+  themeIcon: getElement("themeIcon"),
   experimentTitle: getElement("experiment-title"),
   experimentInfo: getElement("experiment-info"),
   loadingIndicator: getElement("loadingIndicator"),
@@ -56,6 +58,9 @@ const elements = {
 
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
+  // Inicializar tema
+  initializeTheme();
+
   // Aguardar verificação de autenticação
   setTimeout(() => {
     if (AuthCheck.isAuthenticated()) {
@@ -131,6 +136,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (elements.runList) {
     elements.runList.addEventListener("click", handleRunClick);
+  }
+  if (elements.themeToggleBtn) {
+    elements.themeToggleBtn.addEventListener("click", toggleTheme);
   }
   // elements.toggleDiffBtn.addEventListener("click", handleToggleDiff); // Removed as requested
 });
@@ -335,6 +343,7 @@ function renderRunList(runs) {
   }
 
   const fragment = document.createDocumentFragment();
+
   runs.forEach((run, index) => {
     // Use run.output.metadata.id if available, fallback to internal index
     const displayId = run.output?.metadata?.id || `${index + 1}`; // Removed "ID:" prefix
@@ -346,6 +355,7 @@ function renderRunList(runs) {
       "list-group-item list-group-item-action d-flex justify-content-between align-items-start";
     listItem.dataset.runId = runId;
 
+    // Check if this run should be selected
     if (runId === appState.selectedRunId) {
       listItem.classList.add("active");
     }
@@ -370,18 +380,39 @@ function handleRunClick(e) {
   if (!target) return;
 
   e.preventDefault();
+  e.stopPropagation();
+
   const runId = target.dataset.runId;
+  if (!runId) return;
+
+  // Don't do anything if clicking the same run
   if (runId === appState.selectedRunId) return;
 
+  // Clear any existing timeouts to prevent race conditions
+  if (window.runClickTimeout) {
+    clearTimeout(window.runClickTimeout);
+  }
+  if (window.renderDetailsTimeout) {
+    clearTimeout(window.renderDetailsTimeout);
+  }
+
+  // Update state immediately
   appState.selectedRunId = runId;
 
+  // Update active state immediately with force
   if (elements.runList) {
-    const currentlyActive = elements.runList.querySelector(".active");
-    if (currentlyActive) currentlyActive.classList.remove("active");
+    // Remove active from all items
+    elements.runList.querySelectorAll(".active").forEach((item) => {
+      item.classList.remove("active");
+    });
+    // Add active to clicked item
+    target.classList.add("active");
   }
-  target.classList.add("active");
 
-  renderDetailsPanel();
+  // Force a small delay to ensure DOM updates are complete
+  requestAnimationFrame(() => {
+    renderDetailsPanel();
+  });
 }
 
 /**
@@ -393,46 +424,62 @@ function renderDetailsPanel() {
     return;
   }
 
-  const selectedRun = appState.allRuns.find(
-    (run) =>
-      (run.example_id_clean || `run-${appState.allRuns.indexOf(run)}`) ===
-      appState.selectedRunId
-  );
+  const selectedRun = appState.allRuns.find((run, index) => {
+    const runId = run.example_id_clean || `run-${index}`;
+    return runId === appState.selectedRunId;
+  });
   if (!selectedRun) {
-    showAlert("Erro: Run selecionado não encontrado.", "danger");
+    console.warn("Run selecionado não encontrado:", appState.selectedRunId);
+    resetDetailsPanel();
     return;
   }
 
-  if (elements.userMessageContainer) {
-    elements.userMessageContainer.textContent =
-      selectedRun.input.mensagem_whatsapp_simulada;
-  }
-  renderComparison(selectedRun); // Diff button removed, this always renders side-by-side
-  renderEvaluations(selectedRun.annotations);
-  renderReasoningTimeline(selectedRun.output.agent_output?.ordered);
-  // renderErrors(selectedRun); // Removed as requested
+  try {
+    if (elements.userMessageContainer) {
+      elements.userMessageContainer.textContent =
+        selectedRun.input.mensagem_whatsapp_simulada ||
+        "Mensagem não disponível";
+    }
 
-  if (elements.detailsPlaceholder) {
-    elements.detailsPlaceholder.classList.add("d-none");
-  }
-  if (elements.detailsContent) {
-    elements.detailsContent.classList.remove("d-none");
-  }
+    renderComparison(selectedRun);
+    renderEvaluations(selectedRun.annotations);
+    renderReasoningTimeline(selectedRun.output.agent_output?.ordered);
 
-  // Scroll to top of details panel when new run is selected
-  if (elements.mainContentWrapper) {
-    elements.mainContentWrapper.scrollTop = 0;
+    if (elements.detailsPlaceholder) {
+      elements.detailsPlaceholder.classList.add("d-none");
+    }
+    if (elements.detailsContent) {
+      elements.detailsContent.classList.remove("d-none");
+    }
+
+    // Scroll to top of details panel when new run is selected
+    if (elements.mainContentWrapper) {
+      elements.mainContentWrapper.scrollTop = 0;
+    }
+  } catch (error) {
+    console.error("Erro ao renderizar painel de detalhes:", error);
+    showAlert("Erro ao carregar detalhes da run.", "warning");
   }
 }
 
 function resetDetailsPanel() {
+  // Clear any pending timeouts
+  if (window.runClickTimeout) {
+    clearTimeout(window.runClickTimeout);
+  }
+  if (window.renderDetailsTimeout) {
+    clearTimeout(window.renderDetailsTimeout);
+  }
+
   if (elements.detailsPlaceholder) {
     elements.detailsPlaceholder.classList.remove("d-none");
   }
   if (elements.detailsContent) {
     elements.detailsContent.classList.add("d-none");
   }
+
   appState.selectedRunId = null;
+
   if (elements.runList) {
     const currentlyActive = elements.runList.querySelector(".active");
     if (currentlyActive) currentlyActive.classList.remove("active");
@@ -839,8 +886,20 @@ function applyFilters() {
           );
         });
 
+  // Check if current selection is still valid in filtered results
+  const currentRunStillVisible =
+    appState.selectedRunId &&
+    filteredRuns.some((run, index) => {
+      const runId = run.example_id_clean || `run-${index}`;
+      return runId === appState.selectedRunId;
+    });
+
   renderRunList(filteredRuns);
-  resetDetailsPanel();
+
+  // Only reset if current selection is no longer visible
+  if (!currentRunStillVisible) {
+    resetDetailsPanel();
+  }
 }
 
 function clearFilters() {
@@ -1117,4 +1176,30 @@ function calculateAndRenderSummaryMetrics(experimentData) {
             '<p class="text-muted">Nenhuma métrica de resumo disponível.</p>'
           }</div>
       </div>`;
+}
+
+// Theme management functions
+function initializeTheme() {
+  const savedTheme = localStorage.getItem("experiments-theme") || "light";
+  applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme =
+    document.documentElement.getAttribute("data-bs-theme") || "light";
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+  applyTheme(newTheme);
+  localStorage.setItem("experiments-theme", newTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-bs-theme", theme);
+
+  if (elements.themeIcon) {
+    if (theme === "dark") {
+      elements.themeIcon.className = "bi bi-sun-fill";
+    } else {
+      elements.themeIcon.className = "bi bi-moon-fill";
+    }
+  }
 }

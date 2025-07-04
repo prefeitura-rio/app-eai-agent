@@ -203,6 +203,7 @@ async def get_dataset_data(dataset_id: str):
             ... on Dataset {
               name
               description
+              exampleCount
               ...ExperimentsTableFragment
             }
           }
@@ -287,7 +288,7 @@ async def get_dataset_data(dataset_id: str):
 
 
 @router.get("/{dataset_id}/examples")
-async def get_dataset_examples(dataset_id: str):
+async def get_dataset_examples(dataset_id: str, first: int = 100, after: str = None):
     """
     Endpoint para buscar exemplos de um dataset específico do serviço Phoenix.
     A URL final será /admin/experiments/{dataset_id}/examples
@@ -299,13 +300,14 @@ async def get_dataset_examples(dataset_id: str):
     url = f"{phoenix_endpoint}graphql"
 
     payload = {
-        "query": """query DatasetExamplesQuery($datasetId: GlobalID!) {
+        "query": """query DatasetExamplesQuery($datasetId: GlobalID!, $first: Int!, $after: String) {
           dataset: node(id: $datasetId) {
             __typename
             ... on Dataset {
               id
               name
-              examples(first: 100) {
+              exampleCount
+              examples(first: $first, after: $after) {
                 edges {
                   example: node {
                     id
@@ -335,7 +337,7 @@ async def get_dataset_examples(dataset_id: str):
             }
           }
         }""",
-        "variables": {"datasetId": dataset_id},
+        "variables": {"datasetId": dataset_id, "first": first, "after": after},
     }
 
     logger.info(

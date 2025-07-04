@@ -12,10 +12,15 @@ const errorMessage = document.getElementById("errorMessage");
 const errorText = document.getElementById("errorText");
 const successMessage = document.getElementById("successMessage");
 const successText = document.getElementById("successText");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeIcon = document.getElementById("themeIcon");
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", function () {
   console.log("Página de autenticação carregada");
+
+  // Inicializar tema
+  initializeTheme();
 
   // Verificar se já existe token válido
   const existingToken = localStorage.getItem("adminToken");
@@ -31,6 +36,11 @@ document.addEventListener("DOMContentLoaded", function () {
       handleLogin(e);
     }
   });
+
+  // Add theme toggle event listener
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", toggleTheme);
+  }
 
   // Focar no input
   authToken.focus();
@@ -209,6 +219,32 @@ window.AuthManager = {
     }
   },
 };
+
+// Theme management functions
+function initializeTheme() {
+  const savedTheme = localStorage.getItem("experiments-theme") || "light";
+  applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme =
+    document.documentElement.getAttribute("data-bs-theme") || "light";
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+  applyTheme(newTheme);
+  localStorage.setItem("experiments-theme", newTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-bs-theme", theme);
+
+  if (themeIcon) {
+    if (theme === "dark") {
+      themeIcon.className = "bi bi-sun-fill";
+    } else {
+      themeIcon.className = "bi bi-moon-fill";
+    }
+  }
+}
 
 // Exportar para uso global
 window.validateToken = validateToken;
