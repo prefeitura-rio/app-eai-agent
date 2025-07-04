@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <!-- App CSS -->
     <link rel="stylesheet" href="/eai-agent/admin/experiments/static/experiment.css">
@@ -58,18 +59,34 @@
                 <div id="alertArea" class="mb-3"></div>
 
                 <div id="welcome-screen" class="text-center text-muted p-5 border rounded bg-light">
-                    <h3>Carregando experimentos do dataset...</h3>
+                    <h3>Carregando dados do dataset...</h3>
                     <p class="mb-0">Aguarde enquanto buscamos os dados.</p>
                 </div>
 
-                <!-- Experiments Container -->
-                <div id="experimentsContainer" class="d-none">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
+                <!-- Tabs Container -->
+                <div id="tabsContainer" class="d-none">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" id="datasetTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="experiments-tab" data-bs-toggle="tab" data-bs-target="#experiments" type="button" role="tab" aria-controls="experiments" aria-selected="true">
+                                Experimentos (<span id="experiments-count-badge" class="fw-normal">0</span>)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="examples-tab" data-bs-toggle="tab" data-bs-target="#examples" type="button" role="tab" aria-controls="examples" aria-selected="false">
+                                Examples (<span id="examples-count-badge" class="fw-normal">0</span>)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab content -->
+                    <div class="tab-content" id="datasetTabContent">
+                        <!-- Experiments Tab -->
+                        <div class="tab-pane fade show active" id="experiments" role="tabpanel" aria-labelledby="experiments-tab">
+                            <div class="card border-top-0">
                                 <div class="card-header">
                                     <div class="d-flex align-items-center gap-3">
-                                        <h5 class="mb-0">Experimentos (<span id="experiments-count-badge" class="fw-normal"></span>)</h5>
+                                        <h5 class="mb-0">Experimentos</h5>
                                         <span class="text-muted">|</span>
                                         <div class="search-container">
                                             <i class="bi bi-search text-muted"></i>
@@ -85,6 +102,44 @@
                                             </thead>
                                             <tbody id="experiments-table-body">
                                                 <!-- Experiments will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Examples Tab -->
+                        <div class="tab-pane fade" id="examples" role="tabpanel" aria-labelledby="examples-tab">
+                            <div class="card border-top-0">
+                                <div class="card-header">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <h5 class="mb-0">Examples</h5>
+                                        <span class="text-muted">|</span>
+                                        <div class="search-container">
+                                            <i class="bi bi-search text-muted"></i>
+                                            <input type="text" id="example-search" class="form-control" placeholder="Filtrar por conteúdo do exemplo..." style="width: 250px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="examples-loading" class="d-none text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Carregando examples...</span>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover examples-table mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="align-middle" style="text-align: left !important;">ID</th>
+                                                    <th class="align-middle" style="text-align: left !important;">Input</th>
+                                                    <th class="align-middle" style="text-align: left !important;">Output</th>
+                                                    <th class="align-middle" style="text-align: left !important;">Metadata</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="examples-table-body">
+                                                <!-- Examples will be populated here -->
                                             </tbody>
                                         </table>
                                     </div>

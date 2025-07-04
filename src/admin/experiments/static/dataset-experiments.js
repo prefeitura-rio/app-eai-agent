@@ -10,6 +10,11 @@ let filteredExperiments = [];
 let currentSort = { column: null, direction: null };
 let searchTerm = "";
 
+// Estado dos examples
+let examplesData = null;
+let filteredExamples = [];
+let exampleSearchTerm = "";
+
 // Elementos DOM
 const loadingScreen = document.getElementById("loading-screen");
 const datasetExperimentsPanel = document.getElementById(
@@ -18,7 +23,7 @@ const datasetExperimentsPanel = document.getElementById(
 const refreshDatasetBtn = document.getElementById("refreshDatasetBtn");
 const loadingIndicator = document.getElementById("loadingIndicator");
 const welcomeScreen = document.getElementById("welcome-screen");
-const experimentsContainer = document.getElementById("experimentsContainer");
+const tabsContainer = document.getElementById("tabsContainer");
 const alertArea = document.getElementById("alertArea");
 const experimentsTableBody = document.getElementById(
   "experiments-table-body"
@@ -30,6 +35,12 @@ const experimentsCountBadge = document.getElementById(
   "experiments-count-badge"
 );
 const experimentSearchInput = document.getElementById("experiment-search");
+
+// Elementos dos examples
+const examplesTableBody = document.getElementById("examples-table-body");
+const examplesCountBadge = document.getElementById("examples-count-badge");
+const exampleSearchInput = document.getElementById("example-search");
+const examplesLoading = document.getElementById("examples-loading");
 
 // Elementos de dados do dataset
 const datasetName = document.getElementById("dataset-name");
@@ -77,10 +88,25 @@ document.addEventListener("DOMContentLoaded", function () {
   // Add search event listener
   if (experimentSearchInput) {
     experimentSearchInput.addEventListener("input", (e) => {
-      searchTerm = e.target.value.toLowerCase().trim();
+      searchTerm = e.target.value.trim();
       applyFilter();
     });
   }
+
+  // Add examples search event listener
+  if (exampleSearchInput) {
+    exampleSearchInput.addEventListener("input", (e) => {
+      exampleSearchTerm = e.target.value.trim();
+      applyExampleFilter();
+    });
+  }
+
+  // Add tab change event listener
+  document.addEventListener("shown.bs.tab", (e) => {
+    if (e.target.id === "examples-tab" && !examplesData) {
+      loadExamplesData();
+    }
+  });
 });
 
 // Funções de UI
@@ -196,7 +222,6 @@ function displayExperiments() {
   forceTableAlignment();
 
   experimentsCountBadge.textContent = filteredExperiments.length;
-  experimentsContainer.classList.remove("d-none");
 }
 
 // Function to force table alignment after rendering
@@ -542,6 +567,7 @@ function hideLoading() {
 
 function hideWelcomeScreen() {
   welcomeScreen.classList.add("d-none");
+  tabsContainer.classList.remove("d-none");
 }
 
 function showAlert(message, type = "info") {
@@ -730,6 +756,244 @@ function applyFilter() {
 
   // Re-render the table
   displayExperiments();
+}
+
+// Examples functions
+async function loadExamplesData() {
+  if (!AuthCheck.isAuthenticated()) {
+    AuthCheck.redirectToAuth();
+    return;
+  }
+
+  showExamplesLoading();
+  clearAlerts();
+
+  try {
+    console.log("Carregando examples do dataset:", DATASET_ID);
+    const response = await axios.get(
+      `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples`,
+      {
+        timeout: 30000,
+      }
+    );
+
+    if (response.data && response.data.data && response.data.data.dataset) {
+      examplesData = response.data.data.dataset;
+      applyExampleFilter();
+    } else {
+      throw new Error(
+        "Formato de resposta inválido ou examples não encontrados"
+      );
+    }
+  } catch (error) {
+    console.error("Erro ao carregar examples do dataset:", error);
+    showAlert(
+      "Erro ao carregar examples: " +
+        (error.response?.data?.detail || error.message),
+      "danger"
+    );
+  } finally {
+    hideExamplesLoading();
+  }
+}
+
+function displayExamples() {
+  if (!examplesData || !examplesData.examples) return;
+
+  // Limpar tabela
+  examplesTableBody.innerHTML = "";
+
+  if (filteredExamples.length === 0) {
+    const message = exampleSearchTerm
+      ? `Nenhum example encontrado para "${exampleSearchTerm}"`
+      : "Nenhum example encontrado para este dataset";
+
+    examplesTableBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted py-4">
+          <i class="bi bi-file-text" style="font-size: 2rem;"></i>
+          <p class="mt-2 mb-0">${message}</p>
+        </td>
+      </tr>
+    `;
+    examplesCountBadge.textContent = "0";
+    return;
+  }
+
+  filteredExamples.forEach((example) => {
+    const row = createExampleRow(example);
+    examplesTableBody.appendChild(row);
+  });
+
+  examplesCountBadge.textContent = filteredExamples.length;
+}
+
+function createExampleRow(example) {
+  const row = document.createElement("tr");
+  row.style.cursor = "pointer";
+
+  const exampleId = example.id.trim();
+  const input = example.latestRevision?.input || {};
+  const output = example.latestRevision?.output || {};
+  const metadata = example.latestRevision?.metadata || {};
+
+  // Formatear input e output para display completo
+  const inputText = formatObjectForDisplay(input);
+  const outputText = formatObjectForDisplay(output);
+
+  // Formatear metadata sem espaços desnecessários
+  let metadataJson = "";
+  if (metadata && Object.keys(metadata).length > 0) {
+    // Formatar JSON mantendo indentação mas removendo espaços extras
+    metadataJson = JSON.stringify(metadata, null, 2)
+      .trim() // Remove espaços no início e fim
+      .replace(/\n{3,}/g, "\n\n"); // Limita quebras de linha consecutivas
+  } else {
+    metadataJson = "{}";
+  }
+
+  // Renderizar markdown para input e output
+  const inputHtml = renderMarkdown(inputText);
+  const outputHtml = renderMarkdown(outputText);
+
+  row.innerHTML = `
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
+      <div class="fw-medium" style="word-wrap: break-word;" title="${escapeHtml(
+        exampleId
+      )}">
+        ${escapeHtml(exampleId)}
+      </div>
+    </td>
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
+      <div class="markdown-content" style="word-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
+        ${inputHtml}
+      </div>
+    </td>
+    <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
+      <div class="markdown-content" style="word-wrap: break-word; font-size: 0.9rem; line-height: 1.4;">
+        ${outputHtml}
+      </div>
+    </td>
+              <td class="align-middle" style="text-align: left !important; vertical-align: top !important; padding: 0.5rem;">
+      <div style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; font-size: 0.8rem; line-height: 1.3;">${escapeHtml(
+        metadataJson
+      )}</div>
+    </td>
+  `;
+
+  // Adicionar evento de clique na linha
+  row.addEventListener("click", (e) => {
+    // Permitir seleção de texto - não navegar se o usuário está selecionando texto
+    if (window.getSelection().toString()) {
+      return;
+    }
+    viewExampleDetails(exampleId);
+  });
+
+  return row;
+}
+
+function formatObjectForDisplay(obj) {
+  if (!obj || typeof obj !== "object") {
+    return String(obj || "").trim();
+  }
+
+  // Se for um objeto simples, tentar extrair a primeira propriedade de string
+  const entries = Object.entries(obj);
+  if (entries.length === 0) return "";
+
+  // Procurar por propriedades que parecem ser o conteúdo principal
+  const contentKeys = [
+    "mensagem_whatsapp_simulada",
+    "golden_answer",
+    "content",
+    "text",
+    "message",
+  ];
+  for (const key of contentKeys) {
+    if (obj[key]) {
+      return String(obj[key]).trim();
+    }
+  }
+
+  // Se não encontrar chaves conhecidas, usar a primeira propriedade string
+  for (const [key, value] of entries) {
+    if (typeof value === "string" && value.length > 0) {
+      return value.trim();
+    }
+  }
+
+  // Fallback para JSON formatado
+  return JSON.stringify(obj, null, 2);
+}
+
+function renderMarkdown(text) {
+  if (!text || typeof text !== "string") {
+    return "";
+  }
+
+  // Configurar marked para ser mais seguro
+  if (typeof marked !== "undefined") {
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      sanitize: false,
+      smartLists: true,
+      smartypants: false,
+    });
+
+    try {
+      return marked.parse(text.trim());
+    } catch (error) {
+      console.warn("Erro ao renderizar markdown:", error);
+      return escapeHtml(text.trim());
+    }
+  }
+
+  // Fallback se marked não estiver disponível
+  return escapeHtml(text.trim());
+}
+
+function viewExampleDetails(exampleId) {
+  // Log para debug - funcionalidade pode ser expandida no futuro
+  console.log("Clicou no example:", exampleId);
+}
+
+function applyExampleFilter() {
+  if (!examplesData || !examplesData.examples) return;
+
+  const examples = examplesData.examples.edges.map((edge) => edge.example);
+
+  // Filtrar examples
+  if (exampleSearchTerm) {
+    filteredExamples = examples.filter((example) => {
+      const input = formatObjectForDisplay(
+        example.latestRevision?.input || {}
+      );
+      const output = formatObjectForDisplay(
+        example.latestRevision?.output || {}
+      );
+      const searchContent = (input + " " + output).toLowerCase();
+      return searchContent.includes(exampleSearchTerm);
+    });
+  } else {
+    filteredExamples = [...examples];
+  }
+
+  // Re-render the table
+  displayExamples();
+}
+
+function showExamplesLoading() {
+  if (examplesLoading) {
+    examplesLoading.classList.remove("d-none");
+  }
+}
+
+function hideExamplesLoading() {
+  if (examplesLoading) {
+    examplesLoading.classList.add("d-none");
+  }
 }
 
 // Exportar funções globais necessárias

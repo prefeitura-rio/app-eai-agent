@@ -286,6 +286,97 @@ async def get_dataset_data(dataset_id: str):
         )
 
 
+@router.get("/{dataset_id}/examples")
+async def get_dataset_examples(dataset_id: str):
+    """
+    Endpoint para buscar exemplos de um dataset específico do serviço Phoenix.
+    A URL final será /admin/experiments/{dataset_id}/examples
+    """
+    phoenix_endpoint = env.PHOENIX_ENDPOINT
+    if not phoenix_endpoint.endswith("/"):
+        phoenix_endpoint += "/"
+
+    url = f"{phoenix_endpoint}graphql"
+
+    payload = {
+        "query": """query DatasetExamplesQuery($datasetId: GlobalID!) {
+          dataset: node(id: $datasetId) {
+            __typename
+            ... on Dataset {
+              id
+              name
+              examples(first: 100) {
+                edges {
+                  example: node {
+                    id
+                    latestRevision: revision {
+                      input
+                      output
+                      metadata
+                    }
+                    span {
+                      id
+                      trace {
+                        id
+                        traceId
+                        project {
+                          id
+                        }
+                      }
+                    }
+                  }
+                  cursor
+                }
+                pageInfo {
+                  endCursor
+                  hasNextPage
+                }
+              }
+            }
+          }
+        }""",
+        "variables": {"datasetId": dataset_id},
+    }
+
+    logger.info(
+        f"Fazendo requisição GraphQL para exemplos do dataset {dataset_id}: {url}"
+    )
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url,
+                json=payload,
+                timeout=30.0,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if response.status_code == 200:
+            return JSONResponse(content=response.json())
+        else:
+            logger.error(
+                f"Erro ao buscar exemplos do dataset {dataset_id}. Status: {response.status_code}, Resposta: {response.text}"
+            )
+            return JSONResponse(
+                status_code=response.status_code,
+                content={
+                    "detail": f"Erro ao contatar o serviço Phoenix (Status {response.status_code}): {response.text}"
+                },
+            )
+
+    except httpx.RequestError as e:
+        logger.error(f"Erro de conexão ao tentar acessar o Phoenix em {url}: {str(e)}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Não foi possível conectar ao serviço Phoenix em {phoenix_endpoint}. Verifique se o serviço está no ar e a URL está correta. Detalhe: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Erro inesperado no proxy para o Phoenix: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ocorreu um erro interno no servidor ao processar a requisição. Detalhe: {str(e)}",
+        )
+
+
 @router.get("/{dataset_id}/{experiment_id}/data")
 async def get_experiment_data(dataset_id: str, experiment_id: str):
     """
