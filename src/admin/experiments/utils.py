@@ -2,6 +2,8 @@ import ast
 import os
 import httpx
 import json
+import random
+
 import mimetypes
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
@@ -216,6 +218,114 @@ class ExperimentDataProcessor:
                     },
                 },
             ],
+        }
+
+    def get_experiment_json_data_clean(
+        self, processed_data: Dict[str, Any], number_of_random_experiments: int = None
+    ) -> Dict[str, Any]:
+        """Limpa os dados do experimento para um formato mais limpo e organizado"""
+        experiment_metadata = processed_data.get("experiment_metadata", {})
+        experiment = processed_data.get("experiment", [])
+
+        # Extrair metadados do experimento, assumindo que eles estão no primeiro item
+        clean_experiment = []
+        for item in experiment:
+            exp = {
+                "message_id": item.get("output", {}).get("metadata", {}).get("id"),
+                "menssagem": item.get("input", {}).get("mensagem_whatsapp_simulada"),
+                "golden_answer": item.get("reference_output", {}).get("golden_answer"),
+                "model_response": item.get("output", {})
+                .get("agent_output", {})
+                .get("grouped", {})
+                .get("assistant_messages", {})[0]
+                .get("content", {}),
+                # "golden_links_list": item.get("output", {})
+                # .get("metadata", {})
+                # .get("golden_links_list"),
+            }
+
+            reasoning_messages = (
+                item.get("output", {}).get("agent_output", {}).get("ordered", {})
+            )
+
+            reasoning_list = []
+            for step, message in enumerate(reasoning_messages):
+
+                if message.get("type") in [
+                    "reasoning_message",
+                    "tool_call_message",
+                    "tool_return_message",
+                ]:
+                    reasoning_data = {}
+
+                    reasoning_data["step"] = step
+                    reasoning_data["type"] = message.get("type")
+
+                    if message.get("type") == "reasoning_message":
+                        reasoning_data["content"] = message.get("message", {}).get(
+                            "reasoning"
+                        )
+
+                    elif message.get("type") == "tool_call_message":
+                        reasoning_data["content"] = {
+                            "name": message.get("message", {})
+                            .get("tool_call", {})
+                            .get("name"),
+                            "query": message.get("message", {})
+                            .get("tool_call", {})
+                            .get("arguments", {})
+                            .get("query"),
+                        }
+                    elif message.get("type") == "tool_return_message":
+                        try:
+                            reasoning_data["content"] = {
+                                "name": message.get("message", {}).get("name"),
+                                "text": message.get("message", {})
+                                .get("tool_return", {})
+                                .get("text"),
+                                "sources": message.get("message", {})
+                                .get("tool_return", {})
+                                .get("sources"),
+                                "web_search_queries": message.get("message", {})
+                                .get("tool_return", {})
+                                .get("web_search_queries"),
+                            }
+                        except Exception as e:
+                            reasoning_data["content"] = {
+                                "name": message.get("message", {}).get("name"),
+                                "text": message.get("message", {}).get(
+                                    "tool_return", {}
+                                ),
+                            }
+                    reasoning_list.append(reasoning_data)
+
+                exp["reasoning_messages"] = reasoning_list
+
+            # metrics
+            annotation_metrics = item.get("annotations", {})
+            metrics = []
+            for annotation in annotation_metrics:
+                metric_data = {
+                    "annotation_name": annotation.get("name"),
+                    "score": annotation.get("score"),
+                    "explanation": annotation.get("explanation"),
+                }
+                metrics.append(metric_data)
+
+            exp["metrics"] = metrics
+            clean_experiment.append(exp)
+
+        experiment_metadata["total_runs"] = len(clean_experiment)
+
+        if number_of_random_experiments:
+            runs = len(clean_experiment)
+            # generate N random experiment numbers
+            random_runs = random.sample(range(runs), number_of_random_experiments)
+            clean_experiment = [clean_experiment[i] for i in random_runs]
+            experiment_metadata["run_samples"] = number_of_random_experiments
+        return {
+            "experiment_metadata": experiment_metadata,
+            "experiment": clean_experiment,
         }
 
 

@@ -28,6 +28,7 @@ const elements = {
   experimentsPanel: getElement("experimentsPanel"),
   refreshExperimentBtn: getElement("refreshExperimentBtn"),
   downloadJsonBtn: getElement("downloadJsonBtn"),
+  downloadJsonLlmBtn: getElement("downloadJsonLlmBtn"),
   viewJsonBtn: getElement("viewJsonBtn"),
   backToDatasetBtn: getElement("backToDatasetBtn"),
   themeToggleBtn: getElement("themeToggleBtn"),
@@ -121,6 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (elements.downloadJsonBtn) {
     elements.downloadJsonBtn.addEventListener("click", downloadOriginalJson);
   }
+  if (elements.downloadJsonLlmBtn) {
+    elements.downloadJsonLlmBtn.addEventListener(
+      "click",
+      showDownloadJsonLlmModal
+    );
+  }
   if (elements.viewJsonBtn) {
     elements.viewJsonBtn.addEventListener("click", () => {
       // O modal será aberto automaticamente pelo data-bs-toggle
@@ -139,6 +146,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (elements.themeToggleBtn) {
     elements.themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+
+  // Event listener para o botão de confirmação do modal
+  const confirmDownloadJsonLlmBtn = getElement("confirmDownloadJsonLlm");
+  if (confirmDownloadJsonLlmBtn) {
+    confirmDownloadJsonLlmBtn.addEventListener("click", downloadJsonForLlm);
   }
   // elements.toggleDiffBtn.addEventListener("click", handleToggleDiff); // Removed as requested
 });
@@ -287,6 +300,9 @@ function fetchExperimentData(datasetId = null, experimentId = null) {
       if (elements.downloadJsonBtn) {
         elements.downloadJsonBtn.classList.remove("d-none");
       }
+      if (elements.downloadJsonLlmBtn) {
+        elements.downloadJsonLlmBtn.classList.remove("d-none");
+      }
       if (elements.viewJsonBtn) {
         elements.viewJsonBtn.classList.remove("d-none");
       }
@@ -315,6 +331,9 @@ function fetchExperimentData(datasetId = null, experimentId = null) {
       }
       if (elements.downloadJsonBtn) {
         elements.downloadJsonBtn.classList.add("d-none");
+      }
+      if (elements.downloadJsonLlmBtn) {
+        elements.downloadJsonLlmBtn.classList.add("d-none");
       }
       if (elements.viewJsonBtn) {
         elements.viewJsonBtn.classList.add("d-none");
@@ -962,39 +981,38 @@ function showAlert(message, type = "danger") {
  * NEW: Function to download the original JSON data.
  */
 function downloadOriginalJson() {
-  if (appState.originalJsonData) {
-    const dataStr = JSON.stringify(appState.originalJsonData, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-
-    // Usar o nome do experimento para o arquivo, se disponível
-    let filename = "experiment_data.json";
-    if (appState.originalJsonData.experiment_name) {
-      // Limpar o nome do experimento para usar como nome de arquivo
-      const cleanName = appState.originalJsonData.experiment_name
-        .replace(/[^a-zA-Z0-9_-]/g, "_") // Substituir caracteres especiais por underscore
-        .replace(/_+/g, "_") // Substituir múltiplos underscores por um só
-        .replace(/^_|_$/g, ""); // Remover underscores do início e fim
-      filename = `${cleanName}_experiment_data.json`;
-    } else if (appState.originalJsonData.experiment_metadata?.name) {
-      // Fallback para metadata.name se experiment_name não estiver disponível
-      const cleanName = appState.originalJsonData.experiment_metadata.name
-        .replace(/[^a-zA-Z0-9_-]/g, "_")
-        .replace(/_+/g, "_")
-        .replace(/^_|_$/g, "");
-      filename = `${cleanName}_experiment_data.json`;
-    }
-
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url); // Clean up the object URL
-  } else {
-    showAlert("Nenhum dado de experimento para baixar.", "warning");
+  if (!appState.originalJsonData) {
+    showAlert("Nenhum dado para download.", "warning");
+    return;
   }
+
+  const jsonString = JSON.stringify(appState.originalJsonData, null, 2);
+  const blob = new Blob([jsonString], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+
+  // Gerar nome do arquivo: experiment_name__date_in_snake_case__experiment_data.json
+  const experimentName =
+    appState.originalJsonData?.experiment_name ||
+    appState.originalJsonData?.experiment_metadata?.name ||
+    "unknown_experiment";
+  const cleanExperimentName = experimentName
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_");
+  const dateSnakeCase = new Date()
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, "_");
+
+  a.download = `${cleanExperimentName}__${dateSnakeCase}__experiment_data.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showAlert("Download iniciado!", "success");
 }
 
 /**
@@ -1201,5 +1219,94 @@ function applyTheme(theme) {
     } else {
       elements.themeIcon.className = "bi bi-moon-fill";
     }
+  }
+}
+
+function showDownloadJsonLlmModal() {
+  const modal = new bootstrap.Modal(
+    document.getElementById("downloadJsonLlmModal")
+  );
+  modal.show();
+}
+
+async function downloadJsonForLlm() {
+  if (!appState.currentDatasetId || !appState.currentExperimentId) {
+    showAlert("IDs do dataset e experimento são necessários.", "warning");
+    return;
+  }
+
+  const numberOfExperimentsInput = getElement("numberOfExperimentsLlm");
+  const numberOfExperiments = numberOfExperimentsInput?.value
+    ? parseInt(numberOfExperimentsInput.value)
+    : null;
+
+  try {
+    const API_BASE_URL = window.API_BASE_URL_OVERRIDE;
+    let url = `${API_BASE_URL}/admin/experiments/${encodeURIComponent(
+      appState.currentDatasetId
+    )}/${encodeURIComponent(appState.currentExperimentId)}/data_clean`;
+
+    if (numberOfExperiments && numberOfExperiments > 0) {
+      url += `?number_of_random_experiments=${numberOfExperiments}`;
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `HTTP ${response.status}: ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url_download = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url_download;
+
+    // Gerar nome do arquivo: experiment_name__date_in_snake_case__random_number__experiment_data_llm.json
+    const experimentName =
+      appState.originalJsonData?.experiment_name ||
+      appState.originalJsonData?.experiment_metadata?.name ||
+      "unknown_experiment";
+    const cleanExperimentName = experimentName
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .replace(/_+/g, "_");
+    const dateSnakeCase = new Date()
+      .toISOString()
+      .slice(0, 10)
+      .replace(/-/g, "_");
+    const randomSuffix = numberOfExperiments
+      ? `__${numberOfExperiments}random`
+      : "__all";
+
+    a.download = `${cleanExperimentName}__${dateSnakeCase}${randomSuffix}__experiment_data_llm.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url_download);
+
+    // Fechar o modal
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById("downloadJsonLlmModal")
+    );
+    modal.hide();
+
+    // Limpar o input
+    if (numberOfExperimentsInput) {
+      numberOfExperimentsInput.value = "";
+    }
+
+    showAlert("Download JSON for LLM iniciado!", "success");
+  } catch (error) {
+    console.error("Erro ao fazer download do JSON for LLM:", error);
+    showAlert(`Erro ao fazer download: ${error.message}`, "danger");
   }
 }

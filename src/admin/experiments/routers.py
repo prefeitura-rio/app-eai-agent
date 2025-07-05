@@ -113,6 +113,39 @@ async def get_experiment_data(dataset_id: str, experiment_id: str):
     return JSONResponse(content=processed_data)
 
 
+@router.get("/{dataset_id}/{experiment_id}/data_clean")
+async def get_experiment_data_clean(
+    dataset_id: str, experiment_id: str, number_of_random_experiments: int = None
+):
+    """
+    Dados de um experimento específico, limpos e organizados.
+    Se number_of_random_experiments for fornecido, retorna um número aleatório de experimentos.
+    Apenas para download!
+    """
+    raw_data = await phoenix_service.get_experiment_json_data(
+        experiment_id=experiment_id
+    )
+    processed_data = data_processor.process_experiment_output(output=raw_data)
+    clean_experiment = data_processor.get_experiment_json_data_clean(
+        processed_data=processed_data,
+        number_of_random_experiments=number_of_random_experiments,
+    )
+    # Enriquecer com informações adicionais
+    clean_experiment.update(
+        {
+            "dataset_id": dataset_id,
+            "experiment_id": experiment_id,
+            "dataset_name": await phoenix_service.get_dataset_name(
+                dataset_id=dataset_id
+            ),
+            "experiment_name": await phoenix_service.get_experiment_name(
+                dataset_id=dataset_id, experiment_id=experiment_id
+            ),
+        }
+    )
+    return JSONResponse(content=clean_experiment)
+
+
 @router.get("/{dataset_id}/{experiment_id}", response_class=HTMLResponse)
 async def get_experiment_page(dataset_id: str, experiment_id: str):
     """Página de visualização de um experimento específico."""

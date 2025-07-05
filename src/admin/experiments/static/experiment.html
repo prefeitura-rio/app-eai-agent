@@ -55,6 +55,9 @@
                     <button id="downloadJsonBtn" class="btn btn-outline-success d-none">
                         <i class="bi bi-download me-1"></i> Download JSON
                     </button>
+                    <button id="downloadJsonLlmBtn" class="btn btn-outline-primary d-none">
+                        <i class="bi bi-download me-1"></i> Download JSON for LLM
+                    </button>
                     <button id="logoutBtn" class="btn btn-outline-secondary" onclick="AuthCheck.logout()">Sair</button>
                 </div>
             </div>
@@ -145,6 +148,31 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Modal para Download JSON for LLM -->
+    <div class="modal fade" id="downloadJsonLlmModal" tabindex="-1" aria-labelledby="downloadJsonLlmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="downloadJsonLlmModalLabel">Download JSON for LLM</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="numberOfExperimentsLlm" class="form-label">Número de experimentos (opcional)</label>
+                        <input type="number" class="form-control" id="numberOfExperimentsLlm" min="1" placeholder="Deixe em branco para baixar todos">
+                        <div class="form-text">Se não especificar um número, todos os experimentos serão baixados. Se especificar, será feita uma seleção aleatória.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmDownloadJsonLlm">
+                        <i class="bi bi-download me-1"></i>Baixar JSON
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
