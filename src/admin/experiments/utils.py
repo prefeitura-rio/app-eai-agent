@@ -234,11 +234,18 @@ class ExperimentDataProcessor:
                 "message_id": item.get("output", {}).get("metadata", {}).get("id"),
                 "menssagem": item.get("input", {}).get("mensagem_whatsapp_simulada"),
                 "golden_answer": item.get("reference_output", {}).get("golden_answer"),
-                "model_response": item.get("output", {})
-                .get("agent_output", {})
-                .get("grouped", {})
-                .get("assistant_messages", {})[0]
-                .get("content", {}),
+                "model_response": (
+                    item.get("output", {})
+                    .get("agent_output", {})
+                    .get("grouped", {})
+                    .get("assistant_messages", [])[0]
+                    .get("content", {})
+                    if item.get("output", {})
+                    .get("agent_output", {})
+                    .get("grouped", {})
+                    .get("assistant_messages", [])
+                    else None
+                ),
                 # "golden_links_list": item.get("output", {})
                 # .get("metadata", {})
                 # .get("golden_links_list"),

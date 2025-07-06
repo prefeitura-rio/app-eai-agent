@@ -149,14 +149,23 @@ async def main():
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
         {
-            "dataset_name": "golden_dataset_v5_small_sample",
-            "experiment_name": "eai-2025-07-02-v21",
-            "experiment_description": "Temperature: 0.7, Model: google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "dataset_name": "golden_dataset_v5_30_samples",
+            "experiment_name": "eai-2025-07-05",
             "evaluators": evaluators,
             "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "temperature": 0.7,
+            "model_name": "google_ai/gemini-2.5-pro",
+            "batch_size": 1,
+            "temperature": 0.3,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+        },
+        {
+            "dataset_name": "golden_dataset_v5_30_samples",
+            "experiment_name": "eai-2025-07-05",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash",
+            "batch_size": 1,
+            "temperature": 0.3,
             "system_prompt": SYSTEM_PROMPT_EAI,
         },
         # {
@@ -175,6 +184,9 @@ async def main():
     for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
         experiment_name = experiment_config["experiment_name"]
+        experiment_config["experiment_description"] = (
+            f"Temperature {experiment_config['temperature']}| Model {experiment_config['model_name']}"
+        )
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)

@@ -25,6 +25,15 @@ spec:
           envFrom:
             - secretRef:
                 name: agentic-search-secrets
+          # Adicione recursos para garantir que o pod tenha CPU e memória suficientes
+          # Isso pode ajudar a evitar lentidão devido a restrições de recursos
+          resources:
+            requests:
+              cpu: "200m"  # Solicita 0.2 de um core de CPU
+              memory: "256Mi" # Solicita 256 Megabytes de memória
+            limits:
+              cpu: "500m"  # Limita a 0.5 de um core de CPU (permite bursts)
+              memory: "512Mi" # Limita a 512 Megabytes de memória
           livenessProbe:
             httpGet:
               path: /health
@@ -71,6 +80,11 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
     cert-manager.io/cluster-issuer: 'letsencrypt'
     nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    # Definindo um timeout maior para permitir que a aplicação responda
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "120" # Tempo para o Nginx conectar ao seu serviço (pod)
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"    # Tempo para o Nginx enviar a requisição completa ao seu serviço
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"    # Tempo para o Nginx ler a resposta completa do seu serviço
+spec:
 spec:
   tls:
     - hosts:
