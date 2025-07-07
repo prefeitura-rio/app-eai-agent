@@ -422,20 +422,20 @@ function generateTableHeader(metrics) {
       column: "createdAt",
     },
     {
-      text: "Run<br/>Count",
-      display: "run count",
+      text: "Total<br/>Execuções",
+      display: "total execuções",
       align: "center",
       column: "runCount",
     },
     {
-      text: "Avg latency",
-      display: "avg latency",
+      text: "Latência<br/>Média",
+      display: "latência média",
       align: "center",
       column: "averageRunLatencyMs",
     },
     {
-      text: "Error<br/>Rate",
-      display: "error rate",
+      text: "Taxa de<br/>Erro",
+      display: "taxa de erro",
       align: "center",
       column: "errorRate",
     },
@@ -453,7 +453,12 @@ function generateTableHeader(metrics) {
   const finalColumns = [
     ...fixedColumns,
     ...metricColumns,
-    { text: "metadata", display: "metadata", align: "center", column: null },
+    {
+      text: "metadados",
+      display: "metadados",
+      align: "center",
+      column: null,
+    },
   ];
 
   const headerHtml = `
@@ -1387,7 +1392,7 @@ async function downloadExamplesCsv() {
     const csvData = [];
 
     // Cabeçalho
-    csvData.push(["Número", "ID", "Input", "Output", "Metadata"]);
+    csvData.push(["Número", "ID", "Entrada", "Saída", "Metadados"]);
 
     // Dados
     allExamples.forEach((example, index) => {
@@ -1482,7 +1487,7 @@ function downloadExperimentsCsv() {
     "Nome",
     "Descrição",
     "Criado em",
-    "Run Count",
+    "Total Execuções",
     "Avg Latency (ms)",
     "Error Rate (%)",
     ...sortedMetrics,

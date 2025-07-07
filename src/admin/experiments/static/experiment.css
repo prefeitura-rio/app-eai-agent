@@ -5,50 +5,57 @@
  * and consistent light theme.
  */
 
-/* --- THEME & GLOBAL VARIABLES --- */
+/* --- THEME & GLOBAL VARIABLES (PROFESSIONAL & SUBTLE PALETTE) --- */
 :root {
-    /* Light Theme */
-    --bs-body-bg: #f8f9fa;
-    --bs-body-color: #212529;
-    --bs-border-color: #dee2e6;
-    --surface-1: #ffffff;
-    --surface-2: #f1f3f5;
-    --surface-3: #e9ecef;
-    --text-muted: #6c757d;
-    --primary-color: #0d6efd;
-    --primary-color-light: #e7f1ff;
-    --accent-green: #198754;
-    --accent-red: #dc3545;
-    --accent-yellow: #ffc107;
-    --accent-green-bg: #d1e7dd;
-    --accent-red-bg: #f8d7da;
-    --code-bg: #212529;
-    --code-color: #f8f9fa;
-    --hover-bg: rgba(0, 123, 255, 0.1);
-    --shadow: rgba(0, 0, 0, 0.1);
+    /* Light Theme - Professional & Subtle */
+    --bs-body-bg: #F8F9FA; /* Fundo principal claro */
+    --bs-body-color: #212529; /* Texto principal escuro */
+    --bs-border-color: #DEE2E6; /* Bordas e divisores sutis */
+    --surface-1: #FFFFFF; /* Superfície de cards, painéis */
+    --surface-2: #F1F3F5; /* Fundo de seções, hover sutil */
+    --surface-3: #E9ECEF; /* Fundo de código, elementos mais escuros */
+    --text-muted: #6C757D; /* Texto secundário, informações */
+
+    --primary-color: #007BFF; /* Azul primário para interações e destaques */
+    --primary-color-light: #EBF5FF; /* Azul claro para fundos de itens ativos */
+
+    --accent-green: #28A745; /* Verde para sucesso */
+    --accent-red: #DC3545; /* Vermelho para erro */
+    --accent-yellow: #FFC107; /* Amarelo para aviso */
+    --accent-green-bg: #D4EDDA; /* Fundo verde claro */
+    --accent-red-bg: #F8D7DA; /* Fundo vermelho claro */
+    --code-bg: #212529; /* Fundo de código escuro */
+    --code-color: #F8F9FA; /* Texto de código claro */
+    --hover-bg: rgba(0, 123, 255, 0.08); /* Fundo de hover sutil */
+    --shadow: rgba(0, 0, 0, 0.05); /* Sombra sutil */
 }
 
 [data-bs-theme="dark"] {
-    /* Dark Theme */
-    --bs-body-bg: #0d1117;
-    --bs-body-color: #e6edf3;
-    --bs-border-color: #30363d;
-    --surface-1: #161b22;
-    --surface-2: #21262d;
-    --surface-3: #30363d;
-    --text-muted: #7d8590;
-    --primary-color: #58a6ff;
-    --primary-color-light: #1f2937;
-    --accent-green: #3fb950;
-    --accent-red: #f85149;
-    --accent-yellow: #d29922;
-    --accent-green-bg: #1a2f1a;
-    --accent-red-bg: #2f1a1a;
-    --code-bg: #0d1117;
-    --code-color: #e6edf3;
-    --hover-bg: rgba(88, 166, 255, 0.1);
-    --shadow: rgba(0, 0, 0, 0.3);
+    /* Dark Theme - Professional & Subtle */
+    --bs-body-bg: #1A1D23; /* Fundo principal escuro (carvão) */
+    --bs-body-color: #E6EDF3; /* Texto principal claro */
+    --bs-border-color: #495057; /* Bordas e divisores escuros */
+    --surface-1: #22262E; /* Superfície de cards, painéis */
+    --surface-2: #2B303A; /* Fundo de seções, hover sutil */
+    --surface-3: #373E47; /* Fundo de código, elementos mais escuros */
+    --text-muted: #9CA3AF; /* Texto secundário, informações */
+
+    --primary-color: #66B2FF; /* Azul primário para interações e destaques (mais claro para contraste) */
+    --primary-color-light: #1A3A5C; /* Azul escuro para fundos de itens ativos */
+
+    --accent-green: #4CAF50; /* Verde para sucesso */
+    --accent-red: #EF5350; /* Vermelho para erro */
+    --accent-yellow: #FFCA28; /* Amarelo para aviso */
+    --accent-green-bg: #2E4D31; /* Fundo verde escuro */
+    --accent-red-bg: #4D2E2E; /* Fundo vermelho escuro */
+    --code-bg: #111317; /* Fundo de código mais escuro */
+    --code-color: #E6EDF3; /* Texto de código claro */
+    --hover-bg: rgba(102, 178, 255, 0.12); /* Fundo de hover sutil */
+    --shadow: rgba(0, 0, 0, 0.4); /* Sombra mais pronunciada no tema escuro */
 }
+
+/* Import Inter font for modern typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 html, body {
     height: 100%; /* Ensures html/body take full viewport height for flexbox */
@@ -56,8 +63,34 @@ html, body {
     padding: 0;
     overflow: hidden; /* Prevent main body scroll */
 }
+
 body {
     background-color: var(--bs-body-bg); /* Body background color */
+    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    font-size: 16px; /* Melhor legibilidade */
+    line-height: 1.6; /* Melhor espaçamento entre linhas */
+}
+
+/* Typography hierarchy improvements */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+}
+
+h1 { font-size: 2.25rem; font-weight: 700; } /* 36px */
+h2 { font-size: 1.875rem; font-weight: 600; } /* 30px */
+h3 { font-size: 1.5rem; font-weight: 600; } /* 24px */
+h4 { font-size: 1.25rem; font-weight: 600; } /* 20px */
+h5 { font-size: 1.125rem; font-weight: 500; } /* 18px */
+h6 { font-size: 1rem; font-weight: 500; } /* 16px */
+
+/* Improved text hierarchy */
+.text-muted, small {
+    color: var(--text-muted);
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.5;
 }
 
 /* --- DATASETS AND DATASET EXPERIMENTS PAGES --- */
@@ -111,16 +144,27 @@ body {
 
 /* Fix for container overflow */
 .container-xl {
-    max-width: none;
+    max-width: none; /* Usar toda a largura disponível para melhor aproveitamento do espaço */
     width: 100%;
+    margin: 0 auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Para seções que precisam de largura total, usar container-fluid */
+.container-fluid {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
 }
 
 /* Metrics badges styling */
 .badge.rounded-pill {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
-    min-width: 45px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem; /* Padding mais generoso */
+    min-width: 2.5rem; /* Largura mínima maior */
     text-align: center;
+    border-radius: 1rem; /* Border radius mais arredondado */
 }
 
 /* Table styling for metrics columns */
@@ -131,12 +175,13 @@ body {
 
 /* Table styling */
 .table th {
-    font-size: 0.85rem;
+    font-size: 0.875rem; /* Melhor legibilidade */
     font-weight: 600;
     text-align: center;
     vertical-align: middle;
-    padding: 0.75rem 0.5rem;
+    padding: 0.75rem 1rem; /* Padding otimizado para melhor uso do espaço */
     white-space: nowrap;
+    background-color: var(--surface-2); /* Fundo sutil para cabeçalhos */
 }
 
 .table td {
@@ -319,39 +364,50 @@ body {
     flex-wrap: wrap;
     gap: 0.5rem;
     border-bottom: 2px solid var(--primary-color-light);
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.75rem;
     margin-top: 2rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
+
 .section-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--bs-body-color);
     margin-top: 2rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
+
 .section-header .section-title {
     margin: 0; /* Reset margin when inside a header */
 }
+
 pre {
     background-color: var(--code-bg);
     color: var(--code-color);
-    padding: 1rem;
-    border-radius: 0.375rem;
+    padding: 1.25rem;
+    border-radius: 0.5rem; /* Border radius padronizado */
     white-space: pre-wrap;
     word-wrap: break-word;
     font-size: 0.9em;
+    box-shadow: 0 2px 8px var(--shadow); /* Sombra sutil */
 }
+
 pre code {
-    font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family: 'Inter', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 /* --- METADATA & SUMMARY CARDS --- */
 .card-component { /* A generic card style for metadata, summary, details panel etc. */
     background-color: var(--surface-1);
     border: 1px solid var(--bs-border-color);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem; /* Border radius mais elegante */
     padding: 1.5rem;
+    box-shadow: 0 4px 12px var(--shadow); /* Elevação sutil */
+    transition: box-shadow 0.3s ease;
+}
+
+.card-component:hover {
+    box-shadow: 0 6px 20px var(--shadow); /* Elevação maior no hover */
 }
 .metadata-grid {
     display: grid;
@@ -373,9 +429,16 @@ pre code {
 }
 .summary-metric-card {
     background-color: var(--surface-2);
-    padding: 0.75rem; /* Reduced padding for compact size */
-    border-radius: 0.375rem;
+    padding: 1rem; /* Padding mais generoso */
+    border-radius: 0.5rem; /* Border radius padronizado */
     border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 8px var(--shadow); /* Sombra sutil */
+    transition: all 0.3s ease;
+}
+
+.summary-metric-card:hover {
+    transform: translateY(-2px); /* Elevação sutil no hover */
+    box-shadow: 0 4px 16px var(--shadow);
 }
 .summary-metric-card h6 {
     font-weight: 600;
@@ -429,9 +492,11 @@ pre code {
 .comparison-box {
     border: 1px solid var(--bs-border-color);
     border-radius: 0.5rem;
-    padding: 1rem;
+    padding: 1.25rem; /* Padding mais generoso */
     min-width: 0; /* Allow content to shrink */
     overflow: hidden; /* Prevent overflow */
+    background-color: var(--surface-1);
+    box-shadow: 0 2px 8px var(--shadow); /* Sombra sutil */
 }
 
 .comparison-box h5 {
@@ -539,9 +604,11 @@ pre code {
 /* --- EVALUATIONS --- */
 .evaluation-card {
     border: 1px solid var(--bs-border-color);
-    border-radius: 0.375rem;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    padding: 1.25rem; /* Padding mais generoso */
+    margin-bottom: 1.5rem; /* Espaçamento mais generoso */
+    background-color: var(--surface-1);
+    box-shadow: 0 2px 8px var(--shadow); /* Sombra sutil */
 }
 /* Score moved to left by HTML reordering, so flex props apply naturally */
 .evaluation-card .score {
@@ -673,18 +740,18 @@ pre code {
     text-align: center !important;
 }
 
-/* Allow text wrapping in description cells */
+/* Allow text wrapping in description cells with better space usage */
 .table td:nth-child(2) {
     white-space: normal !important;
     word-wrap: break-word !important;
-    max-width: 300px;
+    max-width: 400px; /* Aumentar largura máxima para melhor uso do espaço */
     line-height: 1.4;
 }
 
-/* Ensure name column has adequate width */
+/* Ensure name column has adequate width but allows more space for content */
 .table td:nth-child(1) {
-    min-width: 180px;
-    max-width: 220px;
+    min-width: 160px;
+    max-width: 200px;
 }
 
 /* Specific styling for datasets table */
@@ -704,11 +771,11 @@ pre code {
     text-align: center !important;
 }
 
-/* Ensure description column in datasets table allows text wrapping */
+/* Ensure description column in datasets table allows text wrapping with better space usage */
 .datasets-table td:nth-child(2) {
     white-space: normal !important;
     word-wrap: break-word !important;
-    max-width: 250px;
+    max-width: 350px; /* Aumentar largura máxima para melhor uso do espaço */
     line-height: 1.4;
 }
 
@@ -727,22 +794,22 @@ pre code {
     text-align: center !important;
 }
 
-/* Ensure description column in experiments table allows text wrapping */
+/* Ensure description column in experiments table allows text wrapping with better space usage */
 .experiments-table td:nth-child(2) {
     white-space: normal !important;
     word-wrap: break-word !important;
-    max-width: 350px;
+    max-width: 450px; /* Aumentar largura máxima para melhor uso do espaço */
     line-height: 1.4;
-    padding: 0.75rem 0.5rem;
+    padding: 0.6rem 0.8rem; /* Padding otimizado */
 }
 
 /* Override Bootstrap's default text alignment */
 .table .text-center {
-    text-align: center !important;
+    text-align: center;
 }
 
 .table .text-left {
-    text-align: left !important;
+    text-align: left;
 }
 
 /* Ensure badges are properly centered */
@@ -761,17 +828,17 @@ pre code {
 .table-cell-left {
     text-align: left !important;
     vertical-align: top !important;
-    padding: 0.75rem 0.5rem !important;
+    padding: 0.6rem 0.8rem !important; /* Padding otimizado para melhor uso do espaço */
 }
 
 .table-cell-center {
     text-align: center !important;
     vertical-align: middle !important;
-    padding: 0.75rem 0.5rem !important;
+    padding: 0.6rem 0.8rem !important; /* Padding otimizado para melhor uso do espaço */
 }
 
 .table-cell-compact {
-    padding: 0.5rem !important;
+    padding: 0.4rem 0.6rem !important; /* Padding mais compacto para melhor densidade */
     vertical-align: top !important;
 }
 
@@ -797,8 +864,8 @@ pre code {
 }
 
 .table td {
-    vertical-align: top !important;
-    padding: 0.75rem 0.5rem !important;
+    vertical-align: top;
+    padding: 0.6rem 0.8rem; /* Padding otimizado para melhor aproveitamento do espaço */
 }
 
 /* Specific height adjustments for description cells */
@@ -1089,26 +1156,47 @@ pre code {
     border-bottom-color: var(--surface-1);
 }
 
+/* --- RHYTHM AND SPACING IMPROVEMENTS --- */
+/* Consistent vertical rhythm using 16px base unit (1rem) */
+.section-spacing {
+    margin-bottom: 2rem; /* 32px - section separation */
+}
+
+.card-spacing {
+    margin-bottom: 1.5rem; /* 24px - card separation */
+}
+
+.element-spacing {
+    margin-bottom: 1rem; /* 16px - element separation */
+}
+
+.tight-spacing {
+    margin-bottom: 0.5rem; /* 8px - tight element separation */
+}
+
+/* Apply consistent spacing to main sections */
+.main-app-content {
+    padding: 1.5rem 0; /* Ritmo vertical para conteúdo principal */
+}
+
 /* --- AUTH PAGE STYLES --- */
 /* These styles are specific to the authentication page */
 body.auth-page {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: var(--surface-2) !important; /* Fundo sutil em harmonia com a paleta */
     min-height: 100vh !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     margin: 0 !important;
     padding: 0 !important;
 }
 
 .auth-container {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    max-width: 400px;
+    background: var(--surface-1);
+    border-radius: 0.75rem; /* Border radius mais sutil */
+    box-shadow: 0 8px 32px var(--shadow); /* Sombra mais sutil */
+    border: 1px solid var(--bs-border-color);
+    max-width: 420px;
     width: 100%;
     margin: 20px;
 }
@@ -1116,18 +1204,20 @@ body.auth-page {
 .auth-header {
     text-align: center;
     padding: 2rem 2rem 1rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
 .auth-header h1 {
-    color: #333;
+    color: var(--bs-body-color);
     font-weight: 600;
     margin-bottom: 0.5rem;
+    font-size: 1.5rem; /* Tamanho mais modesto */
 }
 
 .auth-header p {
-    color: #666;
+    color: var(--text-muted);
     margin: 0;
+    font-size: 0.9rem;
 }
 
 .auth-body {
@@ -1147,19 +1237,19 @@ body.auth-page {
 }
 
 .btn-auth {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-color);
     border: none;
-    border-radius: 10px;
-    padding: 12px;
+    border-radius: 0.5rem;
+    padding: 12px 24px;
     font-weight: 600;
     transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: white;
 }
 
 .btn-auth:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    background: var(--primary-color);
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 .loading-spinner {
@@ -1195,24 +1285,24 @@ body.auth-page {
 
 /* Auth page dark theme styles */
 [data-bs-theme="dark"] body.auth-page {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+    background: var(--surface-2) !important; /* Mantém consistência com a paleta escura */
 }
 
 [data-bs-theme="dark"] .auth-container {
-    background: rgba(33, 37, 41, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-1);
+    border: 1px solid var(--bs-border-color);
 }
 
 [data-bs-theme="dark"] .auth-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
 [data-bs-theme="dark"] .auth-header h1 {
-    color: #e6edf3;
+    color: var(--bs-body-color);
 }
 
 [data-bs-theme="dark"] .auth-header p {
-    color: #7d8590;
+    color: var(--text-muted);
 }
 
 [data-bs-theme="dark"] .auth-page .form-control {
@@ -1237,11 +1327,13 @@ body.auth-page {
 }
 
 [data-bs-theme="dark"] .btn-auth {
-    background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%);
+    background: var(--primary-color);
 }
 
 [data-bs-theme="dark"] .btn-auth:hover {
-    box-shadow: 0 10px 20px rgba(88, 166, 255, 0.3);
+    background: var(--primary-color);
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 [data-bs-theme="dark"] .error-message {
