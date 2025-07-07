@@ -577,7 +577,7 @@ function renderEvaluations(annotations) {
 
       if (ann.explanation) {
         if (typeof ann.explanation === "object") {
-          explanationContentHtml = `<pre><code>${JSON.stringify(
+          explanationContentHtml = `<pre class="evaluation-json-code"><code>${JSON.stringify(
             ann.explanation,
             null,
             2
@@ -1024,13 +1024,13 @@ function renderMetadata(metadata) {
   const createPromptSectionHTML = (title, id, collapseId) => {
     return `
             <div class="metadata-item-full-width">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2 mb-2">
                     <strong>${title}</strong>
                     <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                        <i class="bi bi-arrows-expand"></i> Ver/Ocultar
+                        <i class="bi bi-arrows-expand me-1"></i><span>Ver/Ocultar</span>
                     </button>
                 </div>
-                <div class="collapse mt-2" id="${collapseId}">
+                <div class="collapse" id="${collapseId}">
                     <pre><code id="${id}"></code></pre>
                 </div>
             </div>
@@ -1050,23 +1050,32 @@ function renderMetadata(metadata) {
 `;
   elements.metadataContainer.innerHTML = `
       <div class="card-component">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <h4 class="mb-0">Parâmetros do Experimento</h4>
-          </div>
-          <hr class="my-3">
+          <h4 class="mb-3">Parâmetros do Experimento</h4>
           <div class="metadata-grid">
-              <div class="metadata-item"><strong>Modelo de Avaliação:</strong> ${
-                metadata.eval_model || "N/A"
-              }</div>
-              <div class="metadata-item"><strong>Modelo de Resposta:</strong> ${
-                metadata.final_repose_model || "N/A"
-              }</div>
-              <div class="metadata-item"><strong>Temperatura:</strong> ${
-                metadata.temperature ?? "N/A"
-              }</div>
-              <div class="metadata-item"><strong>Ferramentas:</strong> ${
-                metadata.tools?.join(", ") || "N/A"
-              }</div>
+              <div class="metadata-item">
+                  <strong>Modelo de Avaliação:</strong><br>
+                  <span class="text-muted">${
+                    metadata.eval_model || "N/A"
+                  }</span>
+              </div>
+              <div class="metadata-item">
+                  <strong>Modelo de Resposta:</strong><br>
+                  <span class="text-muted">${
+                    metadata.final_repose_model || "N/A"
+                  }</span>
+              </div>
+              <div class="metadata-item">
+                  <strong>Temperatura:</strong><br>
+                  <span class="text-muted">${
+                    metadata.temperature ?? "N/A"
+                  }</span>
+              </div>
+              <div class="metadata-item">
+                  <strong>Ferramentas:</strong><br>
+                  <span class="text-muted">${
+                    metadata.tools?.join(", ") || "N/A"
+                  }</span>
+              </div>
               ${promptsHTML}
           </div>
       </div>`;
@@ -1082,9 +1091,9 @@ function renderMetadata(metadata) {
   // Removed metadata download button as per requirements
 
   getElement("jsonModal").addEventListener("show.bs.modal", () => {
-    const jsonModalContent = document.querySelector("#jsonModal pre code");
-    if (jsonModalContent && appState.originalJsonData) {
-      jsonModalContent.textContent = JSON.stringify(
+    const jsonContent = document.getElementById("jsonContent");
+    if (jsonContent && appState.originalJsonData) {
+      jsonContent.textContent = JSON.stringify(
         appState.originalJsonData,
         null,
         2
@@ -1179,7 +1188,7 @@ function calculateAndRenderSummaryMetrics(experimentData) {
               )} <small class="text-muted h6 fw-normal">avg</small></div>
               ${
                 distributionHtml
-                  ? `<div class="metric-distribution-header">Distribuição</div>${distributionHtml}`
+                  ? `<div class="metric-distribution-header">Dist.</div>${distributionHtml}`
                   : ""
               }
           </div>`;

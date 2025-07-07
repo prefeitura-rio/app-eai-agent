@@ -368,6 +368,7 @@ function createExperimentRow(experiment, allMetrics) {
         <small class="text-muted">${createdTime}</small>
       </div>
     </td>
+    ${metricCells}
     <td class="text-center align-middle" style="text-align: center !important;">
       <div class="fw-bold">${experiment.runCount}</div>
     </td>
@@ -377,7 +378,6 @@ function createExperimentRow(experiment, allMetrics) {
     <td class="text-center align-middle" style="text-align: center !important;">
       <div>${errorRate}%</div>
     </td>
-    ${metricCells}
     <td class="text-center align-middle" style="text-align: center !important;">
       <button class="btn btn-sm btn-outline-secondary download-metadata-btn" title="Download Metadata" data-experiment-id="${
         experiment.id
@@ -407,7 +407,16 @@ function createExperimentRow(experiment, allMetrics) {
 }
 
 function generateTableHeader(metrics) {
-  const fixedColumns = [
+  // Processar métricas para exibir nomes completos - métricas são numéricas (centralizadas)
+  const metricColumns = metrics.map((metric) => ({
+    text: getShortMetricName(metric), // Using full names to avoid code changes when new metrics are added
+    display: metric, // Keep full name for tooltip
+    align: "center",
+    column: "metric",
+    metric: metric,
+  }));
+
+  const finalColumns = [
     { text: "Nome", display: "name", align: "left", column: "name" },
     {
       text: "Descrição",
@@ -421,6 +430,7 @@ function generateTableHeader(metrics) {
       align: "left",
       column: "createdAt",
     },
+    ...metricColumns,
     {
       text: "Total<br/>Execuções",
       display: "total execuções",
@@ -439,23 +449,9 @@ function generateTableHeader(metrics) {
       align: "center",
       column: "errorRate",
     },
-  ];
-
-  // Processar métricas para exibir nomes abreviados - métricas são numéricas (centralizadas)
-  const metricColumns = metrics.map((metric) => ({
-    text: getShortMetricName(metric), // Using abbreviated names for better table layout
-    display: metric, // Keep full name for tooltip
-    align: "center",
-    column: "metric",
-    metric: metric,
-  }));
-
-  const finalColumns = [
-    ...fixedColumns,
-    ...metricColumns,
     {
-      text: "metadados",
-      display: "metadados",
+      text: "Metadados",
+      display: "Metadados",
       align: "center",
       column: null,
     },
@@ -475,6 +471,7 @@ function generateTableHeader(metrics) {
               : "text-align: left !important;";
 
           const sortableClass = column.column ? "sortable-header" : "";
+          const metricClass = column.metric ? "metric-header" : "";
           const dataColumn = column.column
             ? `data-column="${column.column}"`
             : "";
@@ -482,7 +479,7 @@ function generateTableHeader(metrics) {
             ? `data-metric="${escapeHtml(column.metric)}"`
             : "";
 
-          return `<th class="${alignClass} ${sortableClass}" style="${inlineStyle}" ${dataColumn} ${dataMetric} title="${escapeHtml(
+          return `<th class="${alignClass} ${sortableClass} ${metricClass}" style="${inlineStyle}" ${dataColumn} ${dataMetric} title="${escapeHtml(
             column.display
           )}">${column.text}</th>`;
         })
@@ -522,20 +519,20 @@ function createMetricCell(experiment, metricName) {
   const percentage = (score * 100).toFixed(0);
 
   // Determinar cor da barra baseada no score
-  let barColor = "#6c757d"; // cinza padrão
+  let barClass = "metric-default";
   if (score >= 0.8) {
-    barColor = "#198754"; // verde
+    barClass = "metric-high";
   } else if (score >= 0.5) {
-    barColor = "#ffc107"; // amarelo
+    barClass = "metric-mid";
   } else {
-    barColor = "#dc3545"; // vermelho
+    barClass = "metric-low";
   }
 
   return `
     <div>
       <div class="fw-bold mb-1">${score.toFixed(2)}</div>
       <div class="progress-container">
-        <div class="progress-bar" style="width: ${percentage}%; background-color: ${barColor};" title="${escapeHtml(
+        <div class="progress-bar ${barClass}" style="width: ${percentage}%;" title="${escapeHtml(
     metricName
   )}: ${score.toFixed(3)}"></div>
       </div>
@@ -579,43 +576,9 @@ function sortMetrics(metrics) {
 }
 
 function getShortMetricName(fullName) {
-  const shortNames = {
-    "Answer Similarity": "Sim",
-    "Answer Completeness": "Comp",
-    "Golden Link in Answer": "Link-A",
-    "Golden Link in Tool Calling": "Link-T",
-    "Activate Search Tools": "Search",
-    "Response Quality": "Quality",
-    "Factual Accuracy": "Accuracy",
-    "Relevance Score": "Relevance",
-    Coherence: "Coherence",
-    Helpfulness: "Helpful",
-    "Safety Score": "Safety",
-    "Bias Detection": "Bias",
-    "Toxicity Score": "Toxicity",
-  };
-
-  // Se temos um nome abreviado conhecido, usar ele
-  if (shortNames[fullName]) {
-    return shortNames[fullName];
-  }
-
-  // Caso contrário, gerar abreviação inteligente
-  const words = fullName.split(/[\s_-]+/);
-
-  if (words.length === 1) {
-    // Uma palavra: pegar primeiras 4-6 letras
-    return words[0].substring(0, Math.min(6, words[0].length));
-  } else if (words.length === 2) {
-    // Duas palavras: primeira letra de cada + resto da primeira
-    return words[0].substring(0, 3) + words[1].substring(0, 1).toUpperCase();
-  } else {
-    // Três ou mais palavras: primeira letra de cada palavra
-    return words
-      .slice(0, 4)
-      .map((word) => word.substring(0, 1).toUpperCase())
-      .join("");
-  }
+  // Retornar o nome original completo para evitar ter que editar o código
+  // quando novas métricas forem introduzidas
+  return fullName;
 }
 
 function viewExperiment(experimentId) {
@@ -1487,10 +1450,10 @@ function downloadExperimentsCsv() {
     "Nome",
     "Descrição",
     "Criado em",
+    ...sortedMetrics,
     "Total Execuções",
     "Avg Latency (ms)",
     "Error Rate (%)",
-    ...sortedMetrics,
     "Download Link",
   ];
   csvData.push(headers);
@@ -1520,10 +1483,10 @@ function downloadExperimentsCsv() {
       experiment.name.replace(/"/g, '""'),
       description.replace(/"/g, '""'),
       createdAt,
+      ...metricValues,
       experiment.runCount,
       latencyMs,
       errorRate,
-      ...metricValues,
       downloadLink,
     ];
 
