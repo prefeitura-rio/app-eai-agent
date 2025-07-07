@@ -735,7 +735,7 @@ function renderReasoningTimeline(orderedSteps) {
             if (toolReturn.text) {
               returnSections.push(`
                               <div class="tool-return-section">
-                                  <h6>Texto:</h6>
+                                  <h6>Content:</h6>
                                   <div class="p-2 bg-light border rounded mt-1">${marked.parse(
                                     String(toolReturn.text)
                                   )}</div>
@@ -747,7 +747,7 @@ function renderReasoningTimeline(orderedSteps) {
               const collapseId = `collapse-sources-${appState.selectedRunId}-${index}`;
               returnSections.push(`
                               <div class="tool-return-section">
-                                  <h6>Fontes (Sources):</h6>
+                                  <h6>Sources:</h6>
                                   <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
                                       <i class="bi bi-arrows-expand me-1"></i> Ver/Ocultar
                                   </button>
@@ -766,7 +766,7 @@ function renderReasoningTimeline(orderedSteps) {
             ) {
               returnSections.push(`
                               <div class="tool-return-section">
-                                  <h6>Consultas de Busca Web (Web Search Queries):</h6>
+                                  <h6>Web Search Queries:</h6>
                                   <pre><code>${JSON.stringify(
                                     toolReturn.web_search_queries,
                                     null,
@@ -872,7 +872,7 @@ function renderFilters(experimentData) {
 
   if (filtersHtml) {
     elements.filterContainer.innerHTML = `
-          <div id="dynamicFilters" class="d-flex flex-wrap gap-2">${filtersHtml}</div>
+          <div id="dynamicFilters" class="filter-grid">${filtersHtml}</div>
           <div class="d-flex gap-2 mt-2">
               <button id="applyFiltersBtn" class="btn btn-sm btn-success flex-grow-1">Aplicar</button>
               <button id="clearFiltersBtn" class="btn btn-sm btn-outline-secondary">Limpar</button>
