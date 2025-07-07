@@ -1153,7 +1153,8 @@ function calculateAndRenderSummaryMetrics(experimentData) {
 
       const distributionHtml = sortedDistribution
         .map(([score, count]) => {
-          const percentage = (count / totalRuns) * 100;
+          // Fix: Use metric.scores.length (actual count for this metric) instead of totalRuns
+          const percentage = (count / metric.scores.length) * 100;
           return `
             <div class="distribution-item">
               <span class="fw-bold">${score}</span>

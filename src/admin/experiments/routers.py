@@ -8,10 +8,7 @@ from src.admin.experiments.dependencies import (
     DataProcessorDep,
     FrontendManagerDep,
 )
-from src.admin.experiments.schemas import (
-    ExperimentData,
-    ExperimentRunClean,
-)
+from src.admin.experiments.schemas import ExperimentData
 
 # Configurações e constantes
 router = APIRouter()
@@ -100,9 +97,7 @@ async def get_experiment_data(
     return result
 
 
-@router.get(
-    "/{dataset_id}/{experiment_id}/data_clean", response_model=ExperimentRunClean
-)
+@router.get("/{dataset_id}/{experiment_id}/data_clean", response_model=ExperimentData)
 async def get_experiment_data_clean(
     dataset_id: str,
     experiment_id: str,
@@ -125,7 +120,7 @@ async def get_experiment_data_clean(
     )
 
     # Enriquecer com informações adicionais
-    result = ExperimentRunClean(
+    result = ExperimentData(
         dataset_id=dataset_id,
         experiment_id=experiment_id,
         dataset_name=await phoenix_service.get_dataset_name(dataset_id=dataset_id),

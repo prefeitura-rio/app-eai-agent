@@ -441,10 +441,10 @@ function generateTableHeader(metrics) {
     },
   ];
 
-  // Processar métricas para adicionar quebras de linha - métricas são numéricas (centralizadas)
+  // Processar métricas para exibir nomes abreviados - métricas são numéricas (centralizadas)
   const metricColumns = metrics.map((metric) => ({
-    text: formatMetricHeader(metric),
-    display: metric,
+    text: getShortMetricName(metric), // Using abbreviated names for better table layout
+    display: metric, // Keep full name for tooltip
     align: "center",
     column: "metric",
     metric: metric,
@@ -767,14 +767,19 @@ function updateSortHeaders() {
     const sortKey = metric || column;
 
     header.classList.remove("sort-asc", "sort-desc", "sort-active");
+    header.removeAttribute("aria-sort"); // Clear aria-sort attribute
 
     if (currentSort.column === sortKey) {
       header.classList.add("sort-active");
       if (currentSort.direction === "asc") {
         header.classList.add("sort-asc");
+        header.setAttribute("aria-sort", "ascending"); // Add ARIA for accessibility
       } else if (currentSort.direction === "desc") {
         header.classList.add("sort-desc");
+        header.setAttribute("aria-sort", "descending"); // Add ARIA for accessibility
       }
+    } else {
+      header.setAttribute("aria-sort", "none"); // Indicate sortable but not currently sorted
     }
   });
 }
@@ -999,6 +1004,29 @@ function displayExamples() {
     if (statusRow.innerHTML) {
       examplesTableBody.appendChild(statusRow);
     }
+
+    // Se houver termo de busca E ainda há mais exemplos no servidor, mostrar opção de busca completa
+    if (
+      exampleSearchTerm &&
+      examplesHasNextPage &&
+      !isLoadingMoreExamples &&
+      allLoadedExamples.length < examplesData.exampleCount
+    ) {
+      const searchStatusRow = document.createElement("tr");
+      searchStatusRow.innerHTML = `
+        <td colspan="4" class="text-center text-info py-3 border-top">
+          <i class="bi bi-search me-2"></i>
+          <strong>Pode haver mais resultados de busca.</strong>
+          <br><button class="btn btn-sm btn-outline-info mt-2" onclick="loadAllExamplesForSearch()">
+            <i class="bi bi-box-arrow-down me-1"></i>Carregar TODOS os Examples para Busca Completa
+          </button>
+          <br><small class="text-muted">Carregará ${
+            examplesData.exampleCount - allLoadedExamples.length
+          } examples restantes</small>
+        </td>
+      `;
+      examplesTableBody.appendChild(searchStatusRow);
+    }
   }
 
   // Manter o contador total, não apenas os filtrados
@@ -1119,7 +1147,7 @@ function renderMarkdown(text) {
     marked.setOptions({
       breaks: true,
       gfm: true,
-      sanitize: false,
+      // sanitize: false removed for security - sanitization should be handled server-side
       smartLists: true,
       smartypants: false,
     });
@@ -1137,8 +1165,43 @@ function renderMarkdown(text) {
 }
 
 function viewExampleDetails(exampleId) {
-  // Log para debug - funcionalidade pode ser expandida no futuro
-  console.log("Clicou no example:", exampleId);
+  const example = allLoadedExamples.find((e) => e.id.trim() === exampleId);
+  if (!example) {
+    console.warn("Example not found:", exampleId);
+    showAlert("Exemplo não encontrado!", "warning");
+    return;
+  }
+
+  // Populate modal with example data
+  document.getElementById("modalExampleId").textContent = example.id;
+
+  const inputText = formatObjectForDisplay(
+    example.latestRevision?.input || {}
+  );
+  const outputText = formatObjectForDisplay(
+    example.latestRevision?.output || {}
+  );
+
+  document.getElementById("modalExampleInput").innerHTML =
+    renderMarkdown(inputText);
+  document.getElementById("modalExampleOutput").innerHTML =
+    renderMarkdown(outputText);
+
+  // Format metadata as JSON
+  let metadataJson = "{}";
+  if (
+    example.latestRevision?.metadata &&
+    Object.keys(example.latestRevision.metadata).length > 0
+  ) {
+    metadataJson = JSON.stringify(example.latestRevision.metadata, null, 2);
+  }
+  document.getElementById("modalExampleMetadata").textContent = metadataJson;
+
+  // Show the modal
+  const exampleDetailsModal = new bootstrap.Modal(
+    document.getElementById("exampleDetailsModal")
+  );
+  exampleDetailsModal.show();
 }
 
 function applyExampleFilter() {
@@ -1170,6 +1233,47 @@ function applyExampleFilter() {
 
   // Re-render the table
   displayExamples();
+}
+
+// Nova função para carregar todos os exemplos especificamente para a busca
+async function loadAllExamplesForSearch() {
+  // Temporariamente desativar o input de busca
+  const searchInput = document.getElementById("example-search");
+  if (searchInput) {
+    searchInput.disabled = true;
+  }
+
+  // Mostrar loading enquanto todos são carregados
+  showExamplesLoading();
+
+  try {
+    // Chamar loadExamplesData em loop até hasNextPage ser false
+    while (examplesHasNextPage) {
+      await loadExamplesData(true); // loadMore = true
+      // Pequeno atraso para evitar bloquear o navegador
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Reaplicar filtro agora que todos os dados estão carregados
+    applyExampleFilter();
+
+    showAlert(
+      `Todos os ${allLoadedExamples.length} examples foram carregados. Busca completa aplicada!`,
+      "success"
+    );
+  } catch (error) {
+    console.error("Erro ao carregar todos os examples:", error);
+    showAlert(
+      "Erro ao carregar todos os examples: " + error.message,
+      "danger"
+    );
+  } finally {
+    hideExamplesLoading();
+    if (searchInput) {
+      searchInput.disabled = false;
+      searchInput.focus(); // Return focus to search input
+    }
+  }
 }
 
 function showExamplesLoading() {
@@ -1454,3 +1558,4 @@ function downloadExperimentsCsv() {
 // Exportar funções globais necessárias
 window.viewExperiment = viewExperiment;
 window.loadExamplesData = loadExamplesData;
+window.loadAllExamplesForSearch = loadAllExamplesForSearch;
