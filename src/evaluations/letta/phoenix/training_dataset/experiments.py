@@ -148,45 +148,47 @@ async def main():
         #     "temperature": 0.7,
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
-        {
-            "dataset_name": "golden_dataset_v5_30_samples",
-            "experiment_name": "eai-2025-07-05",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-pro",
-            "batch_size": 1,
-            "temperature": 0.3,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-        },
-        {
-            "dataset_name": "golden_dataset_v5_30_samples",
-            "experiment_name": "eai-2025-07-05",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash",
-            "batch_size": 1,
-            "temperature": 0.3,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-        },
         # {
-        #     "dataset_name": "golden_dataset_v5_small_sample",
-        #     "experiment_name": "baseline-gpt-2025-07-03",
+        #     "dataset_name": "golden_dataset_v5",
+        #     "experiment_name": "baseline-gpt-2025-07-05",
         #     "experiment_description": "Respostas geradas usando o ChatGPT",
-        #     "evaluators": evaluators,
+        #     "evaluators": [
+        #         golden_link_in_tool_calling,
+        #         golden_link_in_answer,
+        #         answer_completeness,
+        #     ],
         #     "tools": None,
         #     "model_name": "gpt-4o",
         #     "batch_size": None,
         #     "temperature": None,
         #     "system_prompt": None,
+        #     "type": "resposta_gpt",
         # },
+        # {
+        #     "dataset_name": "golden_dataset_v5",
+        #     "experiment_name": "eai-2025-07-05",
+        #     "evaluators": evaluators,
+        #     "tools": ["google_search"],
+        #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+        #     "batch_size": 10,
+        #     "temperature": 0.3,
+        #     "system_prompt": SYSTEM_PROMPT_EAI,
+        # },
+        {
+            "dataset_name": "golden_dataset_v5_30_samples",
+            "experiment_name": "eai-2025-07-05",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "batch_size": 10,
+            "temperature": 0.7,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+        },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
         dataset_name = experiment_config["dataset_name"]
         experiment_name = experiment_config["experiment_name"]
-        experiment_config["experiment_description"] = (
-            f"Temperature {experiment_config['temperature']}| Model {experiment_config['model_name']}"
-        )
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)
@@ -199,7 +201,10 @@ async def main():
         dataset = phoenix_client.get_dataset(name=dataset_name)
 
         # Etapa 1: Coletar todas as respostas em batches
-        if experiment_config.get("system_prompt"):
+        if not experiment_config.get("type") == "resposta_gpt":
+            experiment_config["experiment_description"] = (
+                f"Temperature {experiment_config['temperature']}| Model {experiment_config['model_name']}"
+            )
             logger.info("Iniciando coleta de respostas em batches")
             respostas = await coletar_todas_respostas(
                 dataset=dataset,
