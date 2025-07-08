@@ -555,7 +555,7 @@ async def answer_completeness(input, output, expected) -> tuple:
 @create_evaluator(name="Answer Completeness V2", kind="LLM")
 async def answer_completeness_v2(input, output, expected) -> tuple:
     rails = ["1", "2", "3", "4", "5"]
-    mapping = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5}
+    mapping = {"1": 0, "2": 0.25, "3": 0.5, "4": 0.75, "5": 1}
 
     response = await experiment_eval(
         input=input,

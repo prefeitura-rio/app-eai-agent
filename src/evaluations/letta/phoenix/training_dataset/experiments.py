@@ -149,7 +149,7 @@ async def main():
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
         {
-            "dataset_name": "golden_dataset_v5",
+            "dataset_name": "golden_dataset_v5_30_samples",
             "experiment_name": "baseline-gpt-2025-07-05",
             "experiment_description": "Respostas geradas usando o ChatGPT",
             "evaluators": [
@@ -166,27 +166,15 @@ async def main():
             "type": "resposta_gpt",
         },
         {
-            # "dataset_name": "golden_dataset_v5",
             "dataset_name": "golden_dataset_v5_30_samples",
-            "experiment_name": "eai-2025-07-08",
+            "experiment_name": "eai-2025-07-05",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            # "model_name": "google_ai/gemini-2.5-flash-preview-05-20",
             "batch_size": 10,
             "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
         },
-        # {
-        #     "dataset_name": "golden_dataset_v5_30_samples",
-        #     "experiment_name": "eai-2025-07-05",
-        #     "evaluators": evaluators,
-        #     "tools": ["google_search"],
-        #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-        #     "batch_size": 10,
-        #     "temperature": 0.7,
-        #     "system_prompt": SYSTEM_PROMPT_EAI,
-        # },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
