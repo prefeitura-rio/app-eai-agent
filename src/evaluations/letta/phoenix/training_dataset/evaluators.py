@@ -6,6 +6,7 @@ import pandas as pd
 import json
 from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
+    ANSWER_COMPLETENESS_V2_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
@@ -391,6 +392,7 @@ def match_golden_link(answer_links, golden_links):
     """
     overall_count = 0
     for answer_link in answer_links:
+        print(answer_link)
         url = _norm_url(answer_link.get("url"))
         url = None if url == "" else url
         answer_link["url"] = url
@@ -541,5 +543,29 @@ async def answer_completeness(input, output, expected) -> tuple:
     else:
         eval_result = 0
         explanation = "Label not recognized or not in mapping"
+
+    return (eval_result, explanation)
+
+@create_evaluator(name="Answer Completeness V2", kind="LLM")
+async def answer_completeness_v2(input, output, expected) -> tuple:
+    rails = ["1", "2", "3", "4", "5"]
+    mapping = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5}
+
+    response = await experiment_eval(
+        input=input,
+        output=output,
+        prompt=ANSWER_COMPLETENESS_V2_PROMPT,
+        rails=rails,
+        expected=expected,
+    )
+
+    label = response.iloc[0]["label"]
+    explanation = response.iloc[0]["explanation"]
+
+    if label in mapping:
+        eval_result = mapping[label]
+    else:
+        eval_result = 0
+        explanation = "Label not recognized or not in mapping: {label}"
 
     return (eval_result, explanation)

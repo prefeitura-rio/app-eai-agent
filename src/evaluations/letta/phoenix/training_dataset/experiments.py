@@ -89,9 +89,7 @@ async def executar_avaliacao_phoenix(
                 }
             else:
                 return {
-                    "agent_output": linha.iloc[
-                        0
-                    ].to_dict(),  # respostas_coletadas.get(example.id, {}),
+                    "agent_output": linha.iloc[0].to_dict(),
                     "metadata": example.metadata,
                     "experiment_metadata": experiment_metadata,
                 }
@@ -123,7 +121,7 @@ async def main():
         golden_link_in_tool_calling,
         golden_link_in_answer,
         activate_search,
-        answer_completeness,
+        answer_completeness_v2,
     ]
     experiments_configs = [
         # {
@@ -164,26 +162,28 @@ async def main():
         #     "system_prompt": None,
         #     "type": "resposta_gpt",
         # },
+        {
+            # "dataset_name": "golden_dataset_v5",
+            "dataset_name": "golden_dataset_v5_30_samples",
+            "experiment_name": "eai-2025-07-08",
+            "evaluators": evaluators,
+            "tools": ["google_search"],
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            # "model_name": "google_ai/gemini-2.5-flash-preview-05-20",
+            "batch_size": 10,
+            "temperature": 0.7,
+            "system_prompt": SYSTEM_PROMPT_EAI,
+        },
         # {
-        #     "dataset_name": "golden_dataset_v5",
+        #     "dataset_name": "golden_dataset_v5_30_samples",
         #     "experiment_name": "eai-2025-07-05",
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
         #     "batch_size": 10,
-        #     "temperature": 0.3,
+        #     "temperature": 0.7,
         #     "system_prompt": SYSTEM_PROMPT_EAI,
         # },
-        {
-            "dataset_name": "golden_dataset_v5_30_samples",
-            "experiment_name": "eai-2025-07-05",
-            "evaluators": evaluators,
-            "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-            "batch_size": 10,
-            "temperature": 0.7,
-            "system_prompt": SYSTEM_PROMPT_EAI,
-        },
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
@@ -203,7 +203,7 @@ async def main():
         # Etapa 1: Coletar todas as respostas em batches
         if not experiment_config.get("type") == "resposta_gpt":
             experiment_config["experiment_description"] = (
-                f"Temperature {experiment_config['temperature']}| Model {experiment_config['model_name']}"
+                f"Temperature {experiment_config['temperature']} | Model {experiment_config['model_name']}"
             )
             logger.info("Iniciando coleta de respostas em batches")
             respostas = await coletar_todas_respostas(

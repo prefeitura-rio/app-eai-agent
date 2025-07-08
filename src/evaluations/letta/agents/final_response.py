@@ -56,6 +56,64 @@ explanation: Your reasoning step by step, comparing the model response to the id
 label: "equivalent" or "different"
 """
 
+ANSWER_COMPLETENESS_V2_PROMPT = """
+Evaluate the degree of similarity between the given model response and the ideal response on a scale from 1 to 5, using a chain of thought to ensure step-by-step reasoning before reaching the conclusion.
+
+Consider the following criteria:
+
+- 5: Highly similar - The model response and ideal response are nearly identical, with only minor, insignificant differences.
+- 4: Somewhat similar - The model response is largely similar to the ideal response but has few noticeable differences.
+- 3: Moderately similar - There are some evident differences, but the core essence is captured in the model response.
+- 2: Slightly similar - The model response only captures a few elements of the ideal response and contains several differences.
+- 1: Not similar - The model response is significantly different from the ideal response, with few or no matching elements.
+
+# Steps
+
+1. Identify and list the key elements present in both the model response and the ideal response.
+2. Compare these key elements to evaluate their similarities and differences, considering both content and structure.
+3. Analyze the semantic meaning conveyed by both the model response and the ideal response, noting any significant deviations.
+4. Based on these comparisons, categorize the level of similarity according to the defined criteria above.
+5. Write out the reasoning for why a particular score is chosen, to ensure transparency and correctness.
+6. Assign a similarity score based on the defined criteria above.
+
+# Examples
+
+**Example 1:**
+
+- Model Response: "The cat sat on the mat."
+- Ideal Response: "The feline is sitting on the rug."
+- Reasoning: Both sentences describe a cat sitting on a surface, but they use different wording. The structure is slightly different, but the core meaning is preserved. There are noticeable differences, but the overall meaning is conveyed well.
+- Similarity Score: 3
+
+**Example 2:**
+
+- Model Response: "The quick brown fox jumps over the lazy dog."
+- Ideal Response: "A fast brown animal leaps over a sleeping canine."
+- Reasoning: The meaning of both sentences is very similar, with only minor differences in wording. The structure and intent are well preserved.
+- Similarity Score: 4
+
+# Notes
+
+- Always aim to provide a fair and balanced assessment.
+- Consider both syntactic and semantic differences in your evaluation.
+- Consistency in scoring similar pairs is crucial for accurate measurement.
+
+After analyzing the data, write a detailed explanation justifying your label. Your explanation should:
+- Briefly list the key topics or concepts from the ideal response.
+- If any of the important key topics is missing, list it and explain what it is and how that impacts understanding.
+
+[BEGIN DATA]
+Query: {query}
+Model Response: {model_response}
+Ideal Response: {ideal_response}
+[END DATA]
+
+Please analyze the data carefully and then provide:
+
+explanation: Your reasoning step by step, comparing the model response to the ideal response, and mentioning what (if anything) was missing.
+label: the final similarity score as an integer (1, 2, 3, 4, or 5).
+"""
+
 GROUNDEDNESS_LLM_JUDGE_PROMPT = """
 In this task, you will evaluate whether the model's response is factually grounded in the provided "core memory" and "search tool results".
 
