@@ -13,6 +13,7 @@ from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_4O,
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
+    SYSTEM_PROMPT_EAI_BASE,
 )
 from src.evaluations.letta.agents.final_response import ANSWER_COMPLETENESS_PROMPT
 
