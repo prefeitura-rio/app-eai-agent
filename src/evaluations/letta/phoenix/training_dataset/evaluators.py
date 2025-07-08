@@ -361,11 +361,15 @@ async def golden_link_in_tool_calling(output) -> bool | tuple:
 
     # golden_field = output.get("metadata", {}).get("Golden links", "")
     # golden_links = _parse_golden(golden_field)
-    
-    answer_links = output.get("agent_output").get("fontes") or get_answer_links(output=output)
-    
+
+    answer_links = output.get("agent_output").get("fontes") or get_answer_links(
+        output=output
+    )
+
     if output.get("agent_output", {}).get("resposta_gpt"):
-        answer_links = [{"uri": link, "url": link} for link in ast.literal_eval(answer_links)]
+        answer_links = [
+            {"uri": link, "url": link} for link in ast.literal_eval(answer_links)
+        ]
 
     if not answer_links or not golden_links:
         return (False, "No links found in the answer or no golden links provided")
@@ -392,7 +396,6 @@ def match_golden_link(answer_links, golden_links):
     """
     overall_count = 0
     for answer_link in answer_links:
-        print(answer_link)
         url = _norm_url(answer_link.get("url"))
         url = None if url == "" else url
         answer_link["url"] = url
@@ -473,9 +476,11 @@ async def golden_link_in_answer(output) -> bool | tuple:
     except (ValueError, SyntaxError):
         golden_links = []
 
-    resposta = output.get("agent_output").get("resposta_gpt") or output.get("agent_output", {}).get("texto") or final_response(
-        output["agent_output"]
-    ).get("content", "")
+    resposta = (
+        output.get("agent_output").get("resposta_gpt")
+        or output.get("agent_output", {}).get("texto")
+        or final_response(output["agent_output"]).get("content", "")
+    )
 
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", resposta)
     plain_links = re.findall(r"https?://[^\s)\]]+", resposta)
@@ -545,6 +550,7 @@ async def answer_completeness(input, output, expected) -> tuple:
         explanation = "Label not recognized or not in mapping"
 
     return (eval_result, explanation)
+
 
 @create_evaluator(name="Answer Completeness V2", kind="LLM")
 async def answer_completeness_v2(input, output, expected) -> tuple:

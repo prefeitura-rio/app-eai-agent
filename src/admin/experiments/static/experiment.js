@@ -519,6 +519,12 @@ function handleRunClick(e) {
  * MODIFIED: No longer calls the renderErrors function.
  */
 function renderDetailsPanel() {
+  // Salvar a posição de rolagem atual do painel de detalhes
+  let previousScrollTop = 0;
+  if (elements.mainContentWrapper) {
+    previousScrollTop = elements.mainContentWrapper.scrollTop;
+  }
+
   if (!appState.selectedRunId) {
     resetDetailsPanel();
     return;
@@ -552,9 +558,9 @@ function renderDetailsPanel() {
       elements.detailsContent.classList.remove("d-none");
     }
 
-    // Scroll to top of details panel when new run is selected
+    // Restaurar a posição de rolagem do painel de detalhes
     if (elements.mainContentWrapper) {
-      elements.mainContentWrapper.scrollTop = 0;
+      elements.mainContentWrapper.scrollTop = previousScrollTop;
     }
   } catch (error) {
     console.error("Erro ao renderizar painel de detalhes:", error);
