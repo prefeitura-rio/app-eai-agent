@@ -176,7 +176,7 @@ async def main():
         #     "system_prompt": SYSTEM_PROMPT_EAI,
         # },
         {
-            "dataset_name": "golden_dataset_v5",
+            "dataset_name": "golden_dataset_v5_30_samples",
             "experiment_name": "eai-2025-07-05",
             "evaluators": evaluators,
             "tools": ["google_search"],
