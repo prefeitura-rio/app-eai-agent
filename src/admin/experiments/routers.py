@@ -104,19 +104,34 @@ async def get_experiment_data_clean(
     phoenix_service: PhoenixServiceDep,
     data_processor: DataProcessorDep,
     number_of_random_experiments: Optional[int] = None,
+    filters: Optional[str] = None,
 ):
     """
     Dados de um experimento específico, limpos e organizados.
     Se number_of_random_experiments for fornecido, retorna um número aleatório de experimentos.
+    Se filters for fornecido, aplica filtros específicos (JSON string).
     Apenas para download!
     """
     raw_data = await phoenix_service.get_experiment_json_data(
         experiment_id=experiment_id
     )
     processed_data = data_processor.process_experiment_output(output=raw_data)
+
+    # Parse filters if provided
+    filter_config = None
+    if filters:
+        import json
+
+        try:
+            filter_config = json.loads(filters)
+        except json.JSONDecodeError:
+            # Se houver erro no JSON, ignorar filtros
+            filter_config = None
+
     clean_experiment = data_processor.get_experiment_json_data_clean(
         processed_data=processed_data,
         number_of_random_experiments=number_of_random_experiments,
+        filter_config=filter_config,
     )
 
     # Enriquecer com informações adicionais

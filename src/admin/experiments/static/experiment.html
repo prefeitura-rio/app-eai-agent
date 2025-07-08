@@ -162,6 +162,125 @@
                         <input type="number" class="form-control" id="numberOfExperimentsLlm" min="1" placeholder="Deixe em branco para baixar todos">
                         <div class="form-text">Realiza o download de uma versão mais limpa dos dados do experimento. Se não especificar um número, todos os experimentos serão baixados. Se especificar, será feita uma seleção aleatória.</div>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Filtros de Conteúdo</label>
+                        <div class="form-text mb-3">Selecione quais tipos de dados incluir no download</div>
+                        
+                        <!-- Campos Básicos -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Campos Básicos</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="filter_message_id" checked>
+                                            <label class="form-check-label" for="filter_message_id">ID da Mensagem</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="filter_menssagem" checked>
+                                            <label class="form-check-label" for="filter_menssagem">Mensagem do Usuário</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="filter_golden_answer" checked>
+                                            <label class="form-check-label" for="filter_golden_answer">Resposta Esperada</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="filter_model_response" checked>
+                                            <label class="form-check-label" for="filter_model_response">Resposta do Modelo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reasoning Messages -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter_reasoning_messages" checked>
+                                    <label class="form-check-label fw-bold" for="filter_reasoning_messages">Mensagens de Raciocínio (reasoning_message)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tool Call Messages -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter_tool_call_messages" checked>
+                                    <label class="form-check-label fw-bold" for="filter_tool_call_messages">Chamadas de Ferramentas (tool_call_message)</label>
+                                </div>
+                            </div>
+                            <div class="card-body" id="tool_call_options" style="display: none;">
+                                <div class="form-text mb-2">Selecione quais ferramentas incluir:</div>
+                                <div id="tool_call_tools_list">
+                                    <!-- Será populado dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tool Return Messages -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter_tool_return_messages" checked>
+                                    <label class="form-check-label fw-bold" for="filter_tool_return_messages">Retornos de Ferramentas (tool_return_message)</label>
+                                </div>
+                            </div>
+                            <div class="card-body" id="tool_return_options" style="display: none;">
+                                <div class="form-text mb-2">Selecione quais ferramentas incluir:</div>
+                                <div id="tool_return_tools_list" class="mb-3">
+                                    <!-- Será populado dinamicamente -->
+                                </div>
+                                
+                                <div class="form-text mb-2">Selecione quais conteúdos incluir:</div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input tool-return-content" type="checkbox" id="content_text" checked>
+                                            <label class="form-check-label" for="content_text">Texto de Resposta</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input tool-return-content" type="checkbox" id="content_sources" checked>
+                                            <label class="form-check-label" for="content_sources">Fontes</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input tool-return-content" type="checkbox" id="content_web_search_queries" checked>
+                                            <label class="form-check-label" for="content_web_search_queries">Consultas Web</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter_metrics" checked>
+                                    <label class="form-check-label fw-bold" for="filter_metrics">Métricas de Avaliação</label>
+                                </div>
+                            </div>
+                            <div class="card-body" id="metrics_options" style="display: none;">
+                                <div class="form-text mb-2">Selecione quais métricas incluir:</div>
+                                <div id="metrics_list">
+                                    <!-- Será populado dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="selectAllFiltersBtn">Selecionar Todos</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllFiltersBtn">Limpar Seleção</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

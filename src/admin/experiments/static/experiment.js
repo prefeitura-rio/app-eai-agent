@@ -4,14 +4,30 @@
  * Refactored to implement new data display requirements.
  */
 
-// --- GLOBAL STATE ---
-let appState = {
-  allRuns: [],
-  selectedRunId: null,
-  filters: {},
-  originalJsonData: null,
+// Estado global da aplicação
+const appState = {
   currentDatasetId: null,
   currentExperimentId: null,
+  originalJsonData: null,
+  allRuns: [],
+  selectedRunId: null,
+  // Adicionar estado para persistir filtros
+  savedFilters: {
+    basic_fields: [
+      "message_id",
+      "menssagem",
+      "golden_answer",
+      "model_response",
+    ],
+    reasoning_messages: { include: true },
+    tool_call_messages: { include: true, selected_tools: null },
+    tool_return_messages: {
+      include: true,
+      selected_tools: null,
+      selected_content: ["text", "sources", "web_search_queries"],
+    },
+    metrics: { include: true, selected_metrics: null },
+  },
 };
 
 // --- DOM ELEMENT SELECTORS ---
@@ -153,6 +169,68 @@ document.addEventListener("DOMContentLoaded", () => {
   if (confirmDownloadJsonLlmBtn) {
     confirmDownloadJsonLlmBtn.addEventListener("click", downloadJsonForLlm);
   }
+
+  // Event listeners para mostrar/esconder opções de filtro
+  document.addEventListener("change", function (e) {
+    if (
+      e.target.id === "filter_tool_call_messages" ||
+      e.target.id === "filter_tool_return_messages" ||
+      e.target.id === "filter_metrics"
+    ) {
+      showDetailedOptions();
+      // Salvar filtros automaticamente quando houver mudanças
+      saveCurrentFilters();
+    }
+
+    // Salvar filtros para outros checkboxes também
+    if (
+      e.target.id === "filter_message_id" ||
+      e.target.id === "filter_menssagem" ||
+      e.target.id === "filter_golden_answer" ||
+      e.target.id === "filter_model_response" ||
+      e.target.id === "filter_reasoning_messages" ||
+      e.target.id === "content_text" ||
+      e.target.id === "content_sources" ||
+      e.target.id === "content_web_search_queries" ||
+      e.target.closest("#tool_call_tools_list") ||
+      e.target.closest("#tool_return_tools_list") ||
+      e.target.closest("#metrics_list")
+    ) {
+      saveCurrentFilters();
+    }
+  });
+
+  // Event listeners para botões de seleção
+  const selectAllFiltersBtn = getElement("selectAllFiltersBtn");
+  const deselectAllFiltersBtn = getElement("deselectAllFiltersBtn");
+
+  if (selectAllFiltersBtn) {
+    selectAllFiltersBtn.addEventListener("click", () => {
+      document
+        .querySelectorAll('#downloadJsonLlmModal input[type="checkbox"]')
+        .forEach((checkbox) => {
+          checkbox.checked = true;
+        });
+      // Mostrar todas as opções
+      showDetailedOptions();
+      // Salvar filtros
+      saveCurrentFilters();
+    });
+  }
+
+  if (deselectAllFiltersBtn) {
+    deselectAllFiltersBtn.addEventListener("click", () => {
+      document
+        .querySelectorAll('#downloadJsonLlmModal input[type="checkbox"]')
+        .forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+      // Esconder todas as opções
+      showDetailedOptions();
+      // Salvar filtros
+      saveCurrentFilters();
+    });
+  }
   // elements.toggleDiffBtn.addEventListener("click", handleToggleDiff); // Removed as requested
 });
 
@@ -279,6 +357,9 @@ function fetchExperimentData(datasetId = null, experimentId = null) {
       appState.originalJsonData = data;
       appState.allRuns = data.experiment;
       appState.selectedRunId = null;
+
+      // Resetar filtros salvos para o novo experimento
+      resetSavedFilters();
 
       // Atualizar informações no cabeçalho
       updateExperimentHeader(
@@ -1233,10 +1314,398 @@ function applyTheme(theme) {
 }
 
 function showDownloadJsonLlmModal() {
+  // Popular opções de filtro baseadas nos dados carregados
+  populateFilterOptions();
+
+  // Restaurar filtros salvos
+  restoreSavedFilters();
+
+  // Mostrar opções detalhadas baseadas no estado dos checkboxes
+  showDetailedOptions();
+
   const modal = new bootstrap.Modal(
     document.getElementById("downloadJsonLlmModal")
   );
   modal.show();
+}
+
+function saveCurrentFilters() {
+  const filterConfig = getSelectedFilters();
+
+  // Salvar apenas os campos que queremos persistir
+  appState.savedFilters = {
+    basic_fields: filterConfig.basic_fields,
+    reasoning_messages: { include: filterConfig.reasoning_messages.include },
+    tool_call_messages: {
+      include: filterConfig.tool_call_messages.include,
+      selected_tools: filterConfig.tool_call_messages.selected_tools,
+    },
+    tool_return_messages: {
+      include: filterConfig.tool_return_messages.include,
+      selected_tools: filterConfig.tool_return_messages.selected_tools,
+      selected_content: filterConfig.tool_return_messages.selected_content,
+    },
+    metrics: {
+      include: filterConfig.metrics.include,
+      selected_metrics: filterConfig.metrics.selected_metrics,
+    },
+  };
+}
+
+function restoreSavedFilters() {
+  const saved = appState.savedFilters;
+
+  // Restaurar campos básicos
+  getElement("filter_message_id").checked =
+    saved.basic_fields.includes("message_id");
+  getElement("filter_menssagem").checked =
+    saved.basic_fields.includes("menssagem");
+  getElement("filter_golden_answer").checked =
+    saved.basic_fields.includes("golden_answer");
+  getElement("filter_model_response").checked =
+    saved.basic_fields.includes("model_response");
+
+  // Restaurar reasoning messages
+  getElement("filter_reasoning_messages").checked =
+    saved.reasoning_messages.include;
+
+  // Restaurar tool call messages
+  getElement("filter_tool_call_messages").checked =
+    saved.tool_call_messages.include;
+
+  // Restaurar tool return messages
+  getElement("filter_tool_return_messages").checked =
+    saved.tool_return_messages.include;
+
+  // Restaurar métricas
+  getElement("filter_metrics").checked = saved.metrics.include;
+
+  // Restaurar ferramentas selecionadas (após um pequeno delay para garantir que as listas foram populadas)
+  setTimeout(() => {
+    restoreSelectedTools(
+      "tool_call_tools_list",
+      saved.tool_call_messages.selected_tools
+    );
+    restoreSelectedTools(
+      "tool_return_tools_list",
+      saved.tool_return_messages.selected_tools
+    );
+    restoreSelectedMetrics(saved.metrics.selected_metrics);
+    restoreSelectedContent(saved.tool_return_messages.selected_content);
+  }, 100);
+}
+
+function resetSavedFilters() {
+  // Resetar para valores padrão
+  appState.savedFilters = {
+    basic_fields: [
+      "message_id",
+      "menssagem",
+      "golden_answer",
+      "model_response",
+    ],
+    reasoning_messages: { include: true },
+    tool_call_messages: { include: true, selected_tools: null },
+    tool_return_messages: {
+      include: true,
+      selected_tools: null,
+      selected_content: ["text", "sources", "web_search_queries"],
+    },
+    metrics: { include: true, selected_metrics: null },
+  };
+}
+
+function restoreSelectedTools(containerId, selectedTools) {
+  if (!selectedTools) return;
+
+  const container = getElement(containerId);
+  if (!container) return;
+
+  container.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    const toolName = checkbox.getAttribute("data-original-name");
+    checkbox.checked = selectedTools.includes(toolName);
+  });
+}
+
+function restoreSelectedMetrics(selectedMetrics) {
+  if (!selectedMetrics) return;
+
+  const container = getElement("metrics_list");
+  if (!container) return;
+
+  container.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    const metricName = checkbox.getAttribute("data-original-name");
+    checkbox.checked = selectedMetrics.includes(metricName);
+  });
+}
+
+function restoreSelectedContent(selectedContent) {
+  if (!selectedContent) return;
+
+  // Restaurar checkboxes de conteúdo
+  if (selectedContent.includes("text")) {
+    getElement("content_text").checked = true;
+  }
+  if (selectedContent.includes("sources")) {
+    getElement("content_sources").checked = true;
+  }
+  if (selectedContent.includes("web_search_queries")) {
+    getElement("content_web_search_queries").checked = true;
+  }
+}
+
+function showDetailedOptions() {
+  // Mostrar/esconder opções de tool_call baseadas no checkbox
+  const toolCallCheckbox = getElement("filter_tool_call_messages");
+  const toolCallOptions = getElement("tool_call_options");
+  if (toolCallCheckbox && toolCallOptions) {
+    toolCallOptions.style.display = toolCallCheckbox.checked
+      ? "block"
+      : "none";
+  }
+
+  // Mostrar/esconder opções de tool_return baseadas no checkbox
+  const toolReturnCheckbox = getElement("filter_tool_return_messages");
+  const toolReturnOptions = getElement("tool_return_options");
+  if (toolReturnCheckbox && toolReturnOptions) {
+    toolReturnOptions.style.display = toolReturnCheckbox.checked
+      ? "block"
+      : "none";
+  }
+
+  // Mostrar/esconder opções de metrics baseadas no checkbox
+  const metricsCheckbox = getElement("filter_metrics");
+  const metricsOptions = getElement("metrics_options");
+  if (metricsCheckbox && metricsOptions) {
+    metricsOptions.style.display = metricsCheckbox.checked ? "block" : "none";
+  }
+}
+
+function populateFilterOptions() {
+  if (!appState.allRuns || appState.allRuns.length === 0) {
+    return;
+  }
+
+  // Coletar ferramentas únicas
+  const toolsFound = new Set();
+  const metricsFound = new Set();
+
+  appState.allRuns.forEach((run) => {
+    // Coletar ferramentas das reasoning messages
+    const reasoningMessages = run.output?.agent_output?.ordered || [];
+    reasoningMessages.forEach((msg) => {
+      if (
+        msg.type === "tool_call_message" ||
+        msg.type === "tool_return_message"
+      ) {
+        const toolName = msg.message?.tool_call?.name || msg.message?.name;
+        if (toolName) {
+          toolsFound.add(toolName);
+        }
+      }
+    });
+
+    // Coletar métricas das annotations
+    const annotations = run.annotations || [];
+    annotations.forEach((annotation) => {
+      if (annotation.name) {
+        metricsFound.add(annotation.name);
+      }
+    });
+  });
+
+  // Popular lista de ferramentas para tool_call
+  populateToolsList("tool_call_tools_list", toolsFound, "tool_call_tool_");
+
+  // Popular lista de ferramentas para tool_return
+  populateToolsList(
+    "tool_return_tools_list",
+    toolsFound,
+    "tool_return_tool_"
+  );
+
+  // Popular lista de métricas
+  populateMetricsList(metricsFound);
+}
+
+function populateToolsList(containerId, tools, idPrefix) {
+  const container = getElement(containerId);
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (tools.size === 0) {
+    container.innerHTML =
+      '<div class="text-muted">Nenhuma ferramenta encontrada</div>';
+    return;
+  }
+
+  const sortedTools = Array.from(tools).sort();
+  sortedTools.forEach((tool) => {
+    const div = document.createElement("div");
+    div.className = "form-check";
+    div.innerHTML = `
+      <input class="form-check-input" type="checkbox" id="${idPrefix}${tool.replace(
+      /[^a-zA-Z0-9]/g,
+      "_"
+    )}" data-original-name="${tool}" checked>
+      <label class="form-check-label" for="${idPrefix}${tool.replace(
+      /[^a-zA-Z0-9]/g,
+      "_"
+    )}">${tool}</label>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function populateMetricsList(metrics) {
+  const container = getElement("metrics_list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (metrics.size === 0) {
+    container.innerHTML =
+      '<div class="text-muted">Nenhuma métrica encontrada</div>';
+    return;
+  }
+
+  const sortedMetrics = Array.from(metrics).sort();
+  sortedMetrics.forEach((metric) => {
+    const div = document.createElement("div");
+    div.className = "form-check";
+    div.innerHTML = `
+      <input class="form-check-input" type="checkbox" id="metric_${metric.replace(
+        /[^a-zA-Z0-9]/g,
+        "_"
+      )}" data-original-name="${metric}" checked>
+      <label class="form-check-label" for="metric_${metric.replace(
+        /[^a-zA-Z0-9]/g,
+        "_"
+      )}">${metric}</label>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function getSelectedFilters() {
+  const filterConfig = {
+    basic_fields: [],
+    reasoning_messages: { include: false },
+    tool_call_messages: { include: false, selected_tools: null },
+    tool_return_messages: {
+      include: false,
+      selected_tools: null,
+      selected_content: null,
+    },
+    metrics: { include: false, selected_metrics: null },
+  };
+
+  // Campos básicos
+  if (getElement("filter_message_id")?.checked) {
+    filterConfig.basic_fields.push("message_id");
+  }
+  if (getElement("filter_menssagem")?.checked) {
+    filterConfig.basic_fields.push("menssagem");
+  }
+  if (getElement("filter_golden_answer")?.checked) {
+    filterConfig.basic_fields.push("golden_answer");
+  }
+  if (getElement("filter_model_response")?.checked) {
+    filterConfig.basic_fields.push("model_response");
+  }
+
+  // Reasoning messages
+  if (getElement("filter_reasoning_messages")?.checked) {
+    filterConfig.reasoning_messages.include = true;
+  }
+
+  // Tool call messages
+  if (getElement("filter_tool_call_messages")?.checked) {
+    filterConfig.tool_call_messages.include = true;
+
+    // Coletar ferramentas selecionadas
+    const selectedTools = [];
+    document
+      .querySelectorAll(
+        '#tool_call_tools_list input[type="checkbox"]:checked'
+      )
+      .forEach((checkbox) => {
+        // Usar o nome original da ferramenta do atributo data
+        const toolName = checkbox.getAttribute("data-original-name");
+        if (toolName) {
+          selectedTools.push(toolName);
+        }
+      });
+
+    if (selectedTools.length > 0) {
+      filterConfig.tool_call_messages.selected_tools = selectedTools;
+    }
+  }
+
+  // Tool return messages
+  if (getElement("filter_tool_return_messages")?.checked) {
+    filterConfig.tool_return_messages.include = true;
+
+    // Coletar ferramentas selecionadas
+    const selectedTools = [];
+    document
+      .querySelectorAll(
+        '#tool_return_tools_list input[type="checkbox"]:checked'
+      )
+      .forEach((checkbox) => {
+        // Usar o nome original da ferramenta do atributo data
+        const toolName = checkbox.getAttribute("data-original-name");
+        if (toolName) {
+          selectedTools.push(toolName);
+        }
+      });
+
+    if (selectedTools.length > 0) {
+      filterConfig.tool_return_messages.selected_tools = selectedTools;
+    }
+
+    // Coletar conteúdo selecionado
+    const selectedContent = [];
+    document
+      .querySelectorAll(".tool-return-content:checked")
+      .forEach((checkbox) => {
+        if (checkbox.id === "content_text") {
+          selectedContent.push("text");
+        } else if (checkbox.id === "content_sources") {
+          selectedContent.push("sources");
+        } else if (checkbox.id === "content_web_search_queries") {
+          selectedContent.push("web_search_queries");
+        }
+      });
+
+    if (selectedContent.length > 0) {
+      filterConfig.tool_return_messages.selected_content = selectedContent;
+    }
+  }
+
+  // Metrics
+  if (getElement("filter_metrics")?.checked) {
+    filterConfig.metrics.include = true;
+
+    // Coletar métricas selecionadas
+    const selectedMetrics = [];
+    document
+      .querySelectorAll('#metrics_list input[type="checkbox"]:checked')
+      .forEach((checkbox) => {
+        // Usar o nome original da métrica do atributo data
+        const metricName = checkbox.getAttribute("data-original-name");
+        if (metricName) {
+          selectedMetrics.push(metricName);
+        }
+      });
+
+    if (selectedMetrics.length > 0) {
+      filterConfig.metrics.selected_metrics = selectedMetrics;
+    }
+  }
+
+  return filterConfig;
 }
 
 async function downloadJsonForLlm() {
@@ -1245,10 +1714,16 @@ async function downloadJsonForLlm() {
     return;
   }
 
+  // Salvar filtros atuais antes de fazer o download
+  saveCurrentFilters();
+
   const numberOfExperimentsInput = getElement("numberOfExperimentsLlm");
   const numberOfExperiments = numberOfExperimentsInput?.value
     ? parseInt(numberOfExperimentsInput.value)
     : null;
+
+  // Coletar filtros selecionados
+  const filterConfig = getSelectedFilters();
 
   try {
     const API_BASE_URL = window.API_BASE_URL_OVERRIDE;
@@ -1256,8 +1731,19 @@ async function downloadJsonForLlm() {
       appState.currentDatasetId
     )}/${encodeURIComponent(appState.currentExperimentId)}/data_clean`;
 
+    const params = new URLSearchParams();
+
     if (numberOfExperiments && numberOfExperiments > 0) {
-      url += `?number_of_random_experiments=${numberOfExperiments}`;
+      params.append("number_of_random_experiments", numberOfExperiments);
+    }
+
+    // Adicionar filtros como parâmetro JSON
+    if (Object.keys(filterConfig).length > 0) {
+      params.append("filters", JSON.stringify(filterConfig));
+    }
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
     }
 
     const response = await fetch(url, {

@@ -221,7 +221,10 @@ class ExperimentDataProcessor:
         }
 
     def get_experiment_json_data_clean(
-        self, processed_data: Dict[str, Any], number_of_random_experiments: int = None
+        self,
+        processed_data: Dict[str, Any],
+        number_of_random_experiments: int = None,
+        filter_config: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
         """Limpa os dados do experimento para um formato mais limpo e organizado"""
         experiment_metadata = processed_data.get("experiment_metadata", {})
@@ -324,6 +327,10 @@ class ExperimentDataProcessor:
 
         experiment_metadata["total_runs"] = len(clean_experiment)
 
+        # Apply filters if provided
+        if filter_config:
+            clean_experiment = self._apply_filters(clean_experiment, filter_config)
+
         if number_of_random_experiments:
             runs = len(clean_experiment)
             # generate N random experiment numbers
@@ -334,6 +341,159 @@ class ExperimentDataProcessor:
             "experiment_metadata": experiment_metadata,
             "experiment": clean_experiment,
         }
+
+    def _apply_filters(
+        self, experiments: List[Dict[str, Any]], filter_config: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Aplica filtros aos experimentos conforme configuração.
+
+        Filter config structure:
+        {
+            "basic_fields": ["message_id", "menssagem", "golden_answer", "model_response"],
+            "reasoning_messages": {
+                "include": True/False,
+                "selected_tools": ["tool1", "tool2"] or None for all
+            },
+            "tool_call_messages": {
+                "include": True/False,
+                "selected_tools": ["tool1", "tool2"] or None for all
+            },
+            "tool_return_messages": {
+                "include": True/False,
+                "selected_tools": ["tool1", "tool2"] or None for all,
+                "selected_content": ["sources", "text", "web_search_queries"] or None for all
+            },
+            "metrics": {
+                "include": True/False,
+                "selected_metrics": ["metric1", "metric2"] or None for all
+            }
+        }
+        """
+        filtered_experiments = []
+
+        for exp in experiments:
+            filtered_exp = {}
+
+            # Filter basic fields
+            basic_fields = filter_config.get("basic_fields", [])
+            for field in basic_fields:
+                if field in exp:
+                    filtered_exp[field] = exp[field]
+
+            # Filter reasoning messages
+            reasoning_config = filter_config.get("reasoning_messages", {})
+            tool_call_config = filter_config.get("tool_call_messages", {})
+            tool_return_config = filter_config.get("tool_return_messages", {})
+
+            if (
+                reasoning_config.get("include")
+                or tool_call_config.get("include")
+                or tool_return_config.get("include")
+            ):
+                filtered_reasoning = self._filter_reasoning_messages(
+                    exp.get("reasoning_messages", []),
+                    reasoning_config,
+                    tool_call_config,
+                    tool_return_config,
+                )
+                if filtered_reasoning:
+                    filtered_exp["reasoning_messages"] = filtered_reasoning
+
+            # Filter metrics
+            metrics_config = filter_config.get("metrics", {})
+            if metrics_config.get("include"):
+                filtered_metrics = self._filter_metrics(
+                    exp.get("metrics", []), metrics_config
+                )
+                if filtered_metrics:
+                    filtered_exp["metrics"] = filtered_metrics
+
+            # Only add experiment if it has content
+            if filtered_exp:
+                filtered_experiments.append(filtered_exp)
+
+        return filtered_experiments
+
+    def _filter_reasoning_messages(
+        self,
+        reasoning_messages: List[Dict[str, Any]],
+        reasoning_config: Dict[str, Any],
+        tool_call_config: Dict[str, Any],
+        tool_return_config: Dict[str, Any],
+    ) -> List[Dict[str, Any]]:
+        """Filter reasoning messages based on type and tool selection"""
+        filtered_messages = []
+
+        for msg in reasoning_messages:
+            msg_type = msg.get("type")
+            include_message = False
+            filtered_msg = {}
+
+            # Include reasoning_message if configured
+            if msg_type == "reasoning_message" and reasoning_config.get("include"):
+                include_message = True
+                filtered_msg = msg.copy()
+
+            # Include tool_call_message if configured
+            elif msg_type == "tool_call_message" and tool_call_config.get("include"):
+                tool_name = msg.get("content", {}).get("name")
+                selected_tools = tool_call_config.get("selected_tools")
+
+                if selected_tools is None or tool_name in selected_tools:
+                    include_message = True
+                    filtered_msg = msg.copy()
+
+            # Include tool_return_message if configured
+            elif msg_type == "tool_return_message" and tool_return_config.get(
+                "include"
+            ):
+                tool_name = msg.get("content", {}).get("name")
+                selected_tools = tool_return_config.get("selected_tools")
+                selected_content = tool_return_config.get("selected_content")
+
+                if selected_tools is None or tool_name in selected_tools:
+                    include_message = True
+
+                    # Filter content if specific content fields are selected
+                    if selected_content is not None:
+                        filtered_content = {}
+                        content = msg.get("content", {})
+
+                        # Always include basic fields
+                        if "name" in content:
+                            filtered_content["name"] = content["name"]
+
+                        # Include selected content fields
+                        for field in selected_content:
+                            if field in content:
+                                filtered_content[field] = content[field]
+
+                        filtered_msg = msg.copy()
+                        filtered_msg["content"] = filtered_content
+                    else:
+                        filtered_msg = msg.copy()
+
+            if include_message:
+                filtered_messages.append(filtered_msg)
+
+        return filtered_messages
+
+    def _filter_metrics(
+        self, metrics: List[Dict[str, Any]], metrics_config: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Filter metrics based on selection"""
+        selected_metrics = metrics_config.get("selected_metrics")
+
+        if selected_metrics is None:
+            return metrics  # Return all metrics
+
+        filtered_metrics = []
+        for metric in metrics:
+            if metric.get("annotation_name") in selected_metrics:
+                filtered_metrics.append(metric)
+
+        return filtered_metrics
 
 
 @dataclass
