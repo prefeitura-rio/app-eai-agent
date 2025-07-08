@@ -13,6 +13,7 @@ from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_4O,
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
+    SYSTEM_PROMPT_EAI_BASE,
 )
 from src.evaluations.letta.agents.final_response import ANSWER_COMPLETENESS_PROMPT
 
@@ -175,7 +176,7 @@ async def main():
         #     "system_prompt": SYSTEM_PROMPT_EAI,
         # },
         {
-            "dataset_name": "golden_dataset_v5_30_samples",
+            "dataset_name": "golden_dataset_v5",
             "experiment_name": "eai-2025-07-05",
             "evaluators": evaluators,
             "tools": ["google_search"],
