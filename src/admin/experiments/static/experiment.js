@@ -635,20 +635,31 @@ function renderEvaluations(annotations) {
     return "score-mid";
   };
 
-  const desiredOrder = [
+  // Ordem preferencial para métricas conhecidas
+  const preferredOrder = [
     "Answer Completeness",
     "Answer Similarity",
     "Activate Search Tools",
     "Golden Link in Answer",
     "Golden Link in Tool Calling",
   ];
+
+  // Ordenar: primeiro as preferidas (na ordem definida), depois as demais (alfabeticamente)
   const sortedAnnotations = [...annotations].sort((a, b) => {
-    const indexA = desiredOrder.indexOf(a.name);
-    const indexB = desiredOrder.indexOf(b.name);
-    return (
-      (indexA === -1 ? Infinity : indexA) -
-      (indexB === -1 ? Infinity : indexB)
-    );
+    const indexA = preferredOrder.indexOf(a.name);
+    const indexB = preferredOrder.indexOf(b.name);
+
+    // Se ambas estão na lista preferida, ordenar pela posição na lista
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+
+    // Se apenas uma está na lista preferida, ela vem primeiro
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+
+    // Se nenhuma está na lista preferida, ordenar alfabeticamente
+    return a.name.localeCompare(b.name);
   });
 
   elements.evaluationsContainer.innerHTML = sortedAnnotations
@@ -658,6 +669,7 @@ function renderEvaluations(annotations) {
 
       if (ann.explanation) {
         if (typeof ann.explanation === "object") {
+          // JSON: renderizar como código JSON formatado
           explanationContentHtml = `<pre class="evaluation-json-code"><code>${JSON.stringify(
             ann.explanation,
             null,
@@ -665,28 +677,15 @@ function renderEvaluations(annotations) {
           )}</code></pre>`;
           isJsonExplanation = true;
         } else if (typeof ann.explanation === "string") {
-          if (
-            ann.name === "Answer Similarity" ||
-            ann.name === "Answer Completeness"
-          ) {
-            explanationContentHtml = marked.parse(ann.explanation);
-          } else {
-            // This covers plain text explanations for all other annotations,
-            // including Golden Link in Answer/Tool Calling when they are plain text.
-            explanationContentHtml = `<div class="p-2 bg-light border rounded">${ann.explanation}</div>`;
-          }
+          // Markdown: renderizar como markdown
+          explanationContentHtml = marked.parse(ann.explanation);
         }
       }
 
       let finalExplanationSection = "";
       if (explanationContentHtml) {
-        // Apply collapse button only for specific annotations and if the content is JSON
-        if (
-          (ann.name === "Golden Link in Tool Calling" ||
-            ann.name === "Golden Link in Answer") &&
-          isJsonExplanation
-        ) {
-          // Using a combination of annotation name and selectedRunId for a robust unique ID
+        // Para JSON, usar botão de collapse
+        if (isJsonExplanation) {
           const collapseId = `collapse-explanation-${
             appState.selectedRunId
           }-${ann.name.replace(/\s+/g, "-")}`;
@@ -701,8 +700,7 @@ function renderEvaluations(annotations) {
                 </div>
             `;
         } else {
-          // For Answer Similarity (always displayed directly), and any Golden Link explanation that is NOT JSON,
-          // and other annotations that don't need a collapse button.
+          // Para markdown, mostrar diretamente
           finalExplanationSection = `<div class="explanation">${explanationContentHtml}</div>`;
         }
       }
@@ -1215,7 +1213,8 @@ function calculateAndRenderSummaryMetrics(experimentData) {
     });
   });
 
-  const desiredOrder = [
+  // Ordem preferencial para métricas conhecidas
+  const preferredOrder = [
     "Answer Completeness",
     "Answer Similarity",
     "Activate Search Tools",
@@ -1223,13 +1222,34 @@ function calculateAndRenderSummaryMetrics(experimentData) {
     "Golden Link in Tool Calling",
   ];
 
-  // 2. Render HTML only for available metrics, in desired order
-  let metricsHtml = desiredOrder
+  // 2. Criar lista de todas as métricas disponíveis
+  const allMetricNames = Object.keys(metrics);
+
+  // Ordenar: primeiro as preferidas (na ordem definida), depois as demais (alfabeticamente)
+  const sortedMetricNames = [];
+
+  // Adicionar métricas preferidas na ordem definida
+  preferredOrder.forEach((name) => {
+    if (allMetricNames.includes(name)) {
+      sortedMetricNames.push(name);
+    }
+  });
+
+  // Adicionar métricas restantes em ordem alfabética
+  allMetricNames
+    .filter((name) => !preferredOrder.includes(name))
+    .sort()
+    .forEach((name) => {
+      sortedMetricNames.push(name);
+    });
+
+  // 3. Render HTML para todas as métricas disponíveis
+  let metricsHtml = sortedMetricNames
     .map((name) => {
       const metric = metrics[name];
-      // ALTERED LOGIC: If metric does not exist in the data OR has no scores, return null to be filtered out
+      // Se a métrica não tem scores válidos, não renderizar
       if (!metric || metric.scores.length === 0) {
-        return null; // This will be filtered out later
+        return null;
       }
 
       // Existing rendering logic for available metrics
