@@ -118,7 +118,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.25.0" },
     { name = "langchain-google-genai", specifier = ">=2.0.10" },
     { name = "langgraph", specifier = ">=0.5.0" },
-    { name = "letta-client", specifier = ">=0.1.186" },
+    { name = "letta-client", specifier = ">=0.1.192" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "mlflow", specifier = ">=2.22.0" },
     { name = "nest-asyncio", specifier = ">=1.6.0" },
@@ -1220,7 +1220,7 @@ wheels = [
 
 [[package]]
 name = "letta-client"
-version = "0.1.186"
+version = "0.1.192"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1229,9 +1229,9 @@ dependencies = [
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3b/84/4aa6aa8ebbbdec93641f643360e403d45f2ee3a3e523487bfb68e53860d5/letta_client-0.1.186.tar.gz", hash = "sha256:3a79d5c5db20a6ae34d9b6a77b5a76810946530c25a340d148a3922796f5cf1a", size = 115585 }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/14/42d5e9c72bc4a5f73ec231ac42d6db845ad1c46aff00d299101dc4cf6711/letta_client-0.1.192.tar.gz", hash = "sha256:88c9861b634fc7e06f787e3b56e9a2be2bcb6d3e35e2fb93ba9d014e11d46beb", size = 117687 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/80/81/cbda1b0b922b788f7a706917009d99a0eb9ee65caaac8d029dcbf0d42966/letta_client-0.1.186-py3-none-any.whl", hash = "sha256:5733b37ec49ccd14334145071339b69a814484d7511f85bc70d920f161a62b97", size = 303974 },
+    { url = "https://files.pythonhosted.org/packages/b6/d6/aad255c549c375ff739e885776b7c5550d76429e49e9b86c570e2ad707ae/letta_client-0.1.192-py3-none-any.whl", hash = "sha256:57fe1b16b42ffd91a2f7fcea34a53bcae9d34ed619b4a981a652d1264f493ed8", size = 307965 },
 ]
 
 [[package]]
