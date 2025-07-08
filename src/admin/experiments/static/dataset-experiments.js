@@ -348,6 +348,11 @@ function createExperimentRow(experiment, allMetrics) {
     )
     .join("");
 
+  // Link real para o experimento
+  const experimentUrl = `/eai-agent/admin/experiments/${DATASET_ID}/${encodeURIComponent(
+    experiment.id
+  )}`;
+
   row.innerHTML = `
     <td class="align-middle" style="text-align: left !important;">
       <div class="d-flex align-items-center">
@@ -355,7 +360,11 @@ function createExperimentRow(experiment, allMetrics) {
           experiment.sequenceNumber
         }</span>
         <div>
-          <div class="fw-medium">${escapeHtml(experiment.name)}</div>
+          <div class="fw-medium">
+            <a href="${experimentUrl}" class="experiment-link">${escapeHtml(
+    experiment.name
+  )}</a>
+          </div>
         </div>
       </div>
     </td>
@@ -387,14 +396,32 @@ function createExperimentRow(experiment, allMetrics) {
     </td>
   `;
 
-  // Adicionar evento de clique na linha
+  // Evento de clique na linha: ignora se for botão ou link
   row.addEventListener("click", (e) => {
-    // Não navegar se clicou no botão
     if (e.target.closest("button")) return;
+    if (e.target.closest("a.experiment-link")) return;
     viewExperiment(experiment.id);
   });
 
-  // Adicionar evento de clique no botão de download
+  // Evento de clique no link: só intercepta clique simples para SPA
+  const link = row.querySelector("a.experiment-link");
+  if (link) {
+    link.addEventListener("click", (e) => {
+      if (
+        e.button === 0 &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        viewExperiment(experiment.id);
+      }
+      // Qualquer outro caso, deixa o navegador agir normalmente
+    });
+  }
+
+  // Evento de clique no botão de download
   const downloadBtn = row.querySelector(".download-metadata-btn");
   if (downloadBtn) {
     downloadBtn.addEventListener("click", (e) => {
