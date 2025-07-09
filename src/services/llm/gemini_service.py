@@ -3,7 +3,15 @@ from typing import Dict, Any, List, Optional, Union
 import asyncio
 from pathlib import Path
 from google import genai
-from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
+from google.genai.types import (
+    Tool,
+    UrlContext,
+    ThinkingConfig,
+    GenerateContentConfig,
+    GoogleSearch,
+    Content,
+    Part,
+)
 import src.config.env as env
 from datetime import datetime
 import httpx
@@ -29,74 +37,99 @@ class GeminiService:
     async def google_search(
         self,
         query: str,
-        model: str = "gemini-2.5-flash-lite-preview-06-17",
+        model: str = "gemini-2.5-flash",
         temperature: float = 0.0,
+        retry_attempts: int = 3,
     ):
         logger.info(f"Iniciando pesquisa Google para: {query}")
+        max_retry_attempts = retry_attempts
+        while retry_attempts > 0:
+            try:
+                # Timeout total para toda a operação
+                async with asyncio.timeout(90):  # 90 segundos para toda a operação
+                    formatted_prompt = web_searcher_instructions(research_topic=query)
 
-        try:
-            # Timeout total para toda a operação
-            async with asyncio.timeout(90):  # 90 segundos para toda a operação
-                formatted_prompt = web_searcher_instructions(research_topic=query)
+                    logger.info("Gerando conteúdo com Gemini...")
 
-                logger.info("Gerando conteúdo com Gemini...")
-                response = await self.client.aio.models.generate_content(
-                    model=model,
-                    contents=formatted_prompt,
-                    config={
-                        "tools": [{"google_search": {}}],
-                        "temperature": temperature,
-                    },
-                )
+                    tools = [
+                        Tool(google_search=GoogleSearch()),
+                        Tool(url_context=UrlContext()),
+                    ]
 
-                logger.info("Resposta recebida do Gemini")
-                candidate = response.candidates[0]
+                    response = await self.client.aio.models.generate_content(
+                        model=model,
+                        contents=[
+                            Content(role="user", parts=[Part(text=formatted_prompt)])
+                        ],
+                        config=GenerateContentConfig(
+                            temperature=temperature,
+                            thinking_config=ThinkingConfig(
+                                thinking_budget=-1,
+                            ),
+                            tools=tools,
+                            response_mime_type="text/plain",
+                        ),
+                    )
 
-                if candidate.grounding_metadata.grounding_chunks:
+                    logger.info("Resposta recebida do Gemini")
+                    candidate = response.candidates[0]
                     logger.info("Resolvendo URLs das fontes...")
                     resolved_urls_map = await resolve_urls(
                         urls_to_resolve=candidate.grounding_metadata.grounding_chunks
                     )
-                else:
-                    logger.warning(
-                        f"No grounding chunks found for query: '{query}'. Candidate: {candidate}"
+
+                    logger.info("Processando citações...")
+                    citations = get_citations(
+                        response=response, resolved_urls_map=resolved_urls_map
                     )
-                    # Em vez de lançar uma exceção, retorne uma resposta vazia ou informativa
+                    modified_text = format_text_with_citations(response.text, citations)
+                    sources_gathered = get_sources_list(citations, modified_text)
+
+                    web_search_queries = []
+                    if (
+                        candidate.grounding_metadata
+                        and candidate.grounding_metadata.web_search_queries
+                    ):
+                        web_search_queries = (
+                            candidate.grounding_metadata.web_search_queries
+                        )
+
+                    logger.info(
+                        f"Pesquisa concluída com {len(sources_gathered)} fontes"
+                    )
+                    retry_attempts = -1
+                    return response, {
+                        "text": modified_text,
+                        "sources": sources_gathered,
+                        "web_search_queries": web_search_queries,
+                    }
+
+            except asyncio.TimeoutError:
+                if retry_attempts == 0:
                     return {
-                        "text": response.text or "Falha na busca! Tente novamente.",
+                        "text": "Pesquisa Google demorou muito tempo (timeout de 90s)",
                         "sources": [],
                         "web_search_queries": [],
                     }
 
-                logger.info("Processando citações...")
-                citations = get_citations(
-                    response=response, resolved_urls_map=resolved_urls_map
+                logger.error(
+                    f"Timeout na pesquisa Google após 90 segundos para query: {query}"
                 )
-                modified_text = format_text_with_citations(response.text, citations)
-                sources_gathered = get_sources_list(citations, modified_text)
+                logger.info(f"Tentativa {retry_attempts} de {max_retry_attempts}")
+                retry_attempts -= 1
 
-                web_search_queries = []
-                if (
-                    candidate.grounding_metadata
-                    and candidate.grounding_metadata.web_search_queries
-                ):
-                    web_search_queries = candidate.grounding_metadata.web_search_queries
+            except Exception as e:
 
-                logger.info(f"Pesquisa concluída com {len(sources_gathered)} fontes")
-                return {
-                    "text": modified_text,
-                    "sources": sources_gathered,
-                    "web_search_queries": web_search_queries,
-                }
+                if retry_attempts == 0:
+                    return {
+                        "text": str(e),
+                        "sources": [],
+                        "web_search_queries": [],
+                    }
 
-        except asyncio.TimeoutError:
-            logger.error(
-                f"Timeout na pesquisa Google após 90 segundos para query: {query}"
-            )
-            raise Exception("Pesquisa Google demorou muito tempo (timeout de 90s)")
-        except Exception as e:
-            logger.error(f"Erro na pesquisa Google: {e}")
-            raise
+                logger.error(f"Erro na pesquisa Google: {e}")
+                logger.info(f"Tentativa {retry_attempts} de {max_retry_attempts}")
+                retry_attempts -= 1
 
     async def generate_content(
         self,
@@ -578,7 +611,7 @@ def web_searcher_instructions(research_topic: str):
     current_date = datetime.now().strftime("%Y-%m-%d")
 
     return f"""### Persona
-You are a diligent and meticulous Investigative Research Analyst specializing in Rio de Janeiro municipal government services. Your superpower is sifting through web search results to find the ground truth. You are skeptical, fact-driven, and obsessed with source integrity.
+You are a diligent and meticulous Investigative Research Analyst specializing in Rio de Janeiro municipal government services. Your superpower is sifting through web search results to find the ground truth. You are skeptical, fact-driven, and obsessed with source integrity. You always use the `google_search` tool to find the ground truth using at least 5 different queries.
 
 ### Objective
 Your mission is to execute a web search query, critically evaluate the top results, and synthesize the findings into a clear, factual, and perfectly cited text artifact. The quality of your work is the foundation for all subsequent analysis.
@@ -606,7 +639,7 @@ You must follow this precise four-step process for every query:
 - **FOCUS ON THE QUERY:** Your synthesis must ONLY answer the specific research topic provided. Do not include interesting but tangential information from the sources. Stick to the mission.
 
 ### Output Format
-A long, detailed markdown "Research Artifact" with all the information from the sources and the citations.
+A long, detailed markdown "Research Artifact" with all the information from the sources and the citations and the date of the search.
 
 
 ### Your Turn
