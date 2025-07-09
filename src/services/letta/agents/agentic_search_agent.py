@@ -142,7 +142,7 @@ async def create_agentic_search_agent(
                 context_window=1048576,
                 put_inner_thoughts_in_kwargs=True,
                 handle=model_name,
-                enable_reasoner=False,
+                enable_reasoner=True,
                 temperature=temperature,
             ),
             # model=model_name,
