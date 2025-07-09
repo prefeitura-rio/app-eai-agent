@@ -9,7 +9,10 @@ sys.path.append(
 )
 from src.config import env
 from src.evaluations.letta.phoenix.training_dataset.evaluators import *
-from src.evaluations.letta.phoenix.training_dataset.utils import coletar_todas_respostas
+from src.evaluations.letta.phoenix.training_dataset.utils import (
+    coletar_todas_respostas,
+    get_system_prompt_version,
+)
 from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_4O,
     SYSTEM_PROMPT_BASELINE_GEMINI,
@@ -170,10 +173,10 @@ async def main():
         # },
         {
             "dataset_name": "golden_dataset_v7_30_samples",
-            "experiment_name": "eai-azure",
+            "experiment_name": "eai",
             "evaluators": evaluators,
             "tools": ["google_search"],
-            "model_name": "azure/gpt-4o-mini",
+            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
             "batch_size": 10,
             "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
@@ -182,8 +185,19 @@ async def main():
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
         current_date = get_current_date()
+
+        if "eai" in experiment_config["experiment_name"]:
+            system_prompt_version = await get_system_prompt_version(
+                experiment_config["system_prompt"]
+            )
+            experiment_name = (
+                experiment_config["experiment_name"]
+                + f"-{current_date}-v{system_prompt_version}"
+            )
+        else:
+            experiment_name = experiment_config["experiment_name"] + f"-{current_date}"
+
         dataset_name = experiment_config["dataset_name"]
-        experiment_name = experiment_config["experiment_name"] + f"-{current_date}"
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)

@@ -150,7 +150,7 @@ async def create_agentic_search_agent(
         )
         embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
 
-        if "googe_ai" in model_name:
+        if "google_ai" in model_name:
             agent = await client.agents.create(
                 agent_type="memgpt_agent",
                 name=f"agentic_search_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",

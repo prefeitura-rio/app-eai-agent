@@ -18,6 +18,10 @@ from typing import Dict, List, Any, Literal
 
 from src.services.llm.openai_service import openai_service
 from src.services.llm.gemini_service import gemini_service
+from src.services.letta.agents.agentic_search_agent import (
+    _get_system_prompt_from_api,
+    _update_system_prompt_from_api,
+)
 from phoenix.evals import llm_classify
 from phoenix.evals.models import OpenAIModel
 from phoenix.experiments.types import Example
@@ -56,6 +60,28 @@ else:
     raise ValueError(
         f"Invalid model type: {env.EVAL_MODEL_TYPE}. Accept only `gpt` or `gemini`"
     )
+
+
+async def get_system_prompt_version(system_prompt: str):
+    result = await _get_system_prompt_from_api(agent_type="agentic_search")
+
+    current_api_system_prompt_clean = (
+        result["prompt"].replace(" ", "").replace("\n", "")
+    )
+    system_prompt_clean = system_prompt.replace(" ", "").replace("\n", "")
+    if current_api_system_prompt_clean == system_prompt_clean:
+        logger.info(
+            f"Same system prompt detected. Returning version: {result['version']}"
+        )
+        return result["version"]
+    else:
+        response = await _update_system_prompt_from_api(
+            agent_type="agentic_search", new_system_prompt=system_prompt
+        )
+        logger.info(
+            f"Different system prompt detected. Returning version: {result['version']}"
+        )
+        return response["version"]
 
 
 async def get_response_from_gpt(example: Example) -> dict:
@@ -437,7 +463,10 @@ async def experiment_eval(
     df = pd.DataFrame(
         {
             "query": [input.get("mensagem_whatsapp_simulada")],
-            "model_response": [output.get("agent_output").get("resposta_gpt") or final_response(output["agent_output"]).get("content", "")],
+            "model_response": [
+                output.get("agent_output").get("resposta_gpt")
+                or final_response(output["agent_output"]).get("content", "")
+            ],
             "ideal_response": [expected.get("golden_answer") if expected else ""],
         }
     )
