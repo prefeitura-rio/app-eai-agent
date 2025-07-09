@@ -123,7 +123,7 @@ async def create_agentic_search_agent(
             description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
             context_window_limit=20000,
             include_base_tools=True,
-            include_base_tool_rules=False,
+            include_base_tool_rules=True,
             tools=tools,
             tool_rules=[
                 ContinueToolRule(tool_name="conversation_search"),
@@ -132,8 +132,6 @@ async def create_agentic_search_agent(
                 ContinueToolRule(tool_name="archival_memory_search"),
                 ContinueToolRule(tool_name="archival_memory_insert"),
                 ContinueToolRule(tool_name="google_search"),
-                ContinueToolRule(tool_name="public_services_grounded_search"),
-                ContinueToolRule(tool_name="gpt_search"),
             ],
             tags=["agentic_search"] + (tags if tags else []),
             llm_config=LlmConfig(
