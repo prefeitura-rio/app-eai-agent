@@ -115,7 +115,9 @@ class GeminiService:
                 logger.error(
                     f"Timeout na pesquisa Google após 90 segundos para query: {query}"
                 )
-                logger.info(f"Tentativa {retry_attempts} de {max_retry_attempts}")
+                logger.info(
+                    f"Remaning attempts {retry_attempts} of {max_retry_attempts}"
+                )
                 retry_attempts -= 1
 
             except Exception as e:
@@ -128,7 +130,9 @@ class GeminiService:
                     }
 
                 logger.error(f"Erro na pesquisa Google: {e}")
-                logger.info(f"Tentativa {retry_attempts} de {max_retry_attempts}")
+                logger.info(
+                    f"Remaning attempts {retry_attempts} of {max_retry_attempts}"
+                )
                 retry_attempts -= 1
 
     async def generate_content(
