@@ -98,7 +98,7 @@ class GeminiService:
                         f"Pesquisa concluída com {len(sources_gathered)} fontes"
                     )
                     retry_attempts = -1
-                    return response, {
+                    return {
                         "text": modified_text,
                         "sources": sources_gathered,
                         "web_search_queries": web_search_queries,

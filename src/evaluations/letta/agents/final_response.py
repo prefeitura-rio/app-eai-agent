@@ -56,7 +56,7 @@ explanation: Your reasoning step by step, comparing the model response to the id
 label: "equivalent" or "different"
 """
 
-ANSWER_COMPLETENESS_V2_PROMPT = """
+ANSWER_COMPLETENESS_V0_PROMPT = """
 Evaluate the degree of similarity between the given model response and the ideal response on a scale from 1 to 5, using a chain of thought to ensure step-by-step reasoning before reaching the conclusion.
 
 Consider the following criteria:

@@ -123,7 +123,6 @@ async def main():
         golden_link_in_tool_calling,
         golden_link_in_answer,
         activate_search,
-        answer_completeness_v2,
     ]
     experiments_configs = [
         # {
@@ -148,25 +147,24 @@ async def main():
         #     "temperature": 0.7,
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
+        # {
+        #     "dataset_name": "golden_dataset_v5_30_samples",
+        #     "experiment_name": "baseline-gpt-2025-07-05",
+        #     "experiment_description": "Respostas geradas usando o ChatGPT",
+        #     "evaluators": [
+        #         answer_completeness,
+        #         golden_link_in_tool_calling,
+        #         golden_link_in_answer,
+        #     ],
+        #     "tools": None,
+        #     "model_name": "gpt-4o",
+        #     "batch_size": None,
+        #     "temperature": None,
+        #     "system_prompt": None,
+        #     "type": "resposta_gpt",
+        # },
         {
-            "dataset_name": "golden_dataset_v5_30_samples",
-            "experiment_name": "baseline-gpt-2025-07-05",
-            "experiment_description": "Respostas geradas usando o ChatGPT",
-            "evaluators": [
-                golden_link_in_tool_calling,
-                golden_link_in_answer,
-                answer_completeness,
-                answer_completeness_v2,
-            ],
-            "tools": None,
-            "model_name": "gpt-4o",
-            "batch_size": None,
-            "temperature": None,
-            "system_prompt": None,
-            "type": "resposta_gpt",
-        },
-        {
-            "dataset_name": "golden_dataset_v5_30_samples",
+            "dataset_name": "golden_dataset_v7_30_samples",
             "experiment_name": "eai-2025-07-05",
             "evaluators": evaluators,
             "tools": ["google_search"],

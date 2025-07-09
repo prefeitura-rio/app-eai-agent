@@ -6,7 +6,7 @@ import pandas as pd
 import json
 from src.evaluations.letta.agents.final_response import (
     ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
-    ANSWER_COMPLETENESS_V2_PROMPT,
+    ANSWER_COMPLETENESS_V0_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
     ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
@@ -528,14 +528,14 @@ async def golden_link_in_answer(output) -> bool | tuple:
 
 
 @create_evaluator(name="Answer Completeness", kind="LLM")
-async def answer_completeness(input, output, expected) -> tuple:
+async def answer_completeness_v0(input, output, expected) -> tuple:
     rails = ["equivalent", "similar", "different"]
     mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
 
     response = await experiment_eval(
         input=input,
         output=output,
-        prompt=ANSWER_COMPLETENESS_PROMPT,
+        prompt=ANSWER_COMPLETENESS_V0_PROMPT,
         rails=rails,
         expected=expected,
     )
@@ -552,15 +552,15 @@ async def answer_completeness(input, output, expected) -> tuple:
     return (eval_result, explanation)
 
 
-@create_evaluator(name="Answer Completeness V2", kind="LLM")
-async def answer_completeness_v2(input, output, expected) -> tuple:
+@create_evaluator(name="Answer Completeness", kind="LLM")
+async def answer_completeness(input, output, expected) -> tuple:
     rails = ["1", "2", "3", "4", "5"]
     mapping = {"1": 0, "2": 0.25, "3": 0.5, "4": 0.75, "5": 1}
 
     response = await experiment_eval(
         input=input,
         output=output,
-        prompt=ANSWER_COMPLETENESS_V2_PROMPT,
+        prompt=ANSWER_COMPLETENESS_PROMPT,
         rails=rails,
         expected=expected,
     )
