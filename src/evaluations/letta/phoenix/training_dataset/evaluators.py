@@ -527,7 +527,7 @@ async def golden_link_in_answer(output) -> bool | tuple:
     return match_found, explanation
 
 
-@create_evaluator(name="Answer Completeness", kind="LLM")
+@create_evaluator(name="Answer Completeness V0", kind="LLM")
 async def answer_completeness_v0(input, output, expected) -> tuple:
     rails = ["equivalent", "similar", "different"]
     mapping = {"equivalent": 1, "similar": 0.5, "different": 0}
