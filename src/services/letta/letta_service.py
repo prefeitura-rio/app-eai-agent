@@ -174,14 +174,9 @@ class LettaService:
         letta_message = MessageCreate(**message_params)
 
         try:
-
-            def create_response():
-                return client.agents.messages.create_stream(
-                    agent_id=agent_id, messages=[letta_message]
-                )
-
-            agent_message_response = await process_stream(create_response())
-            return agent_message_response or ""
+            return await client.agents.messages.create(
+                agent_id=agent_id, messages=[letta_message]
+            )
 
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar message: {error}")
