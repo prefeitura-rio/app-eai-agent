@@ -46,7 +46,7 @@ class GeminiService:
         while retry_attempts > 0:
             try:
                 # Timeout total para toda a operação
-                async with asyncio.timeout(90):  # 90 segundos para toda a operação
+                async with asyncio.timeout(120):  # 120 segundos para toda a operação
                     formatted_prompt = web_searcher_instructions(research_topic=query)
 
                     logger.info("Gerando conteúdo com Gemini...")
