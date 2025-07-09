@@ -28,7 +28,7 @@ explanation: Your reasoning step by step about the clarity of the response.
 label: "clear" or "unclear"
 """
 
-ANSWER_COMPLETENESS_PROMPT = """
+ANSWER_COMPLETENESS_V0_PROMPT = """
 In this task, you will evaluate how well a model's response captures the core topics and essential concepts present in an ideal (gold standard) response.
 
 The evaluation is based on content coverage, not stylistic similarity or phrasing.
@@ -56,7 +56,7 @@ explanation: Your reasoning step by step, comparing the model response to the id
 label: "equivalent" or "different"
 """
 
-ANSWER_COMPLETENESS_V0_PROMPT = """
+ANSWER_COMPLETENESS_PROMPT = """
 Evaluate the degree of similarity between the given model response and the ideal response on a scale from 1 to 5, using a chain of thought to ensure step-by-step reasoning before reaching the conclusion.
 
 Consider the following criteria:
