@@ -25,8 +25,9 @@ async def google_search_tool(
         gemini_service = GeminiService()
         response = await gemini_service.google_search(
             query=query,
-            model="gemini-2.5-flash-lite-preview-06-17",
+            model="gemini-2.5-flash",
             temperature=0.0,
+            retry_attempts=3,
         )
 
         if not response or response.get("text") is None:
