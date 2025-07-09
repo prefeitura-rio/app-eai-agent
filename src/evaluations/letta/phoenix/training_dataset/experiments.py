@@ -2,6 +2,7 @@ import sys
 import os
 import asyncio
 import json
+from datetime import datetime
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
@@ -29,6 +30,10 @@ import nest_asyncio
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
 import logging
+
+
+def get_current_date():
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 ## NOTE: MANDEI A IA COMENTAR O CÓDIGO PARA QUALQUER UM ENTENDA O QUE ESTÁ ACONTECENDO AQUI.
@@ -165,10 +170,10 @@ async def main():
         # },
         {
             "dataset_name": "golden_dataset_v7_30_samples",
-            "experiment_name": "eai-2025-07-05",
+            "experiment_name": "eai-azure",
             "evaluators": evaluators,
             "tools": ["google_search"],
-            "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            "model_name": "azure/gpt-4o-mini",
             "batch_size": 10,
             "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
@@ -176,8 +181,9 @@ async def main():
     ]
 
     for experiment_index, experiment_config in enumerate(experiments_configs):
+        current_date = get_current_date()
         dataset_name = experiment_config["dataset_name"]
-        experiment_name = experiment_config["experiment_name"]
+        experiment_name = experiment_config["experiment_name"] + f"-{current_date}"
 
         logger.info(f"{'='*100}")
         percentage = 100 * (experiment_index + 1) / len(experiments_configs)

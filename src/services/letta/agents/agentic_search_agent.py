@@ -29,7 +29,7 @@ async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str
             data = response.json()
 
             logger.info(f"System prompt obtido via API para agent_type: {agent_type}")
-            return data.get("prompt", "")
+            return data
 
     except Exception as e:
         logger.warning(
@@ -42,6 +42,39 @@ Follow these guidelines:
 2. Use tools when necessary
 3. Focus on providing factual information
 4. Be helpful, harmless, and honest"""
+
+
+async def _update_system_prompt_from_api(
+    agent_type: str = "agentic_search", new_system_prompt: str = None
+) -> str:
+    """Atualiza o system prompt via API"""
+    try:
+        base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
+        api_url = f"{base_url}system-prompt?agent_type={agent_type}"
+        bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
+
+        headers = {}
+        if bearer_token:
+            headers["Authorization"] = f"Bearer {bearer_token}"
+            headers["Content-Type"] = "application/json"
+        payload = {
+            "agent_type": agent_type,
+            "update_agents": True,
+            "new_prompt": new_system_prompt,
+        }
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(api_url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+            logger.info(
+                f"System prompt atualizado via API para agent_type: {agent_type}"
+            )
+            return data
+    except Exception as e:
+        logger.warning(f"Erro ao atualizar system prompt via API.")
+        raise e
 
 
 async def _get_agent_config_from_api(agent_type: str = "agentic_search") -> dict:
@@ -117,39 +150,52 @@ async def create_agentic_search_agent(
         )
         embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
 
-        agent = await client.agents.create(
-            agent_type="memgpt_agent",
-            name=f"agentic_search_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",
-            description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
-            context_window_limit=20000,
-            include_base_tools=True,
-            include_base_tool_rules=True,
-            tools=tools,
-            tool_rules=[
-                ContinueToolRule(tool_name="conversation_search"),
-                ContinueToolRule(tool_name="core_memory_append"),
-                ContinueToolRule(tool_name="core_memory_replace"),
-                ContinueToolRule(tool_name="archival_memory_search"),
-                ContinueToolRule(tool_name="archival_memory_insert"),
-                ContinueToolRule(tool_name="google_search"),
-            ],
-            tags=["agentic_search"] + (tags if tags else []),
-            llm_config=LlmConfig(
-                model=model_name.split("/")[-1],
-                model_endpoint_type="google_ai",
-                model_endpoint="https://generativelanguage.googleapis.com",
-                model_wrapper=None,
-                context_window=1048576,
-                put_inner_thoughts_in_kwargs=True,
-                handle=model_name,
-                enable_reasoner=True,
-                temperature=temperature,
-            ),
-            # model=model_name,
-            embedding=embedding_name,
-            system=system_prompt,
-            memory_blocks=memory_blocks,
-        )
+        if "googe_ai" in model_name:
+            agent = await client.agents.create(
+                agent_type="memgpt_agent",
+                name=f"agentic_search_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",
+                description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
+                context_window_limit=20000,
+                include_base_tools=True,
+                include_base_tool_rules=True,
+                tools=tools,
+                tool_rules=[
+                    ContinueToolRule(tool_name="conversation_search"),
+                    ContinueToolRule(tool_name="core_memory_append"),
+                    ContinueToolRule(tool_name="core_memory_replace"),
+                    ContinueToolRule(tool_name="archival_memory_search"),
+                    ContinueToolRule(tool_name="archival_memory_insert"),
+                    ContinueToolRule(tool_name="google_search"),
+                ],
+                tags=["agentic_search"] + (tags if tags else []),
+                llm_config=LlmConfig(
+                    model=model_name.split("/")[-1],
+                    model_endpoint_type="google_ai",
+                    model_endpoint="https://generativelanguage.googleapis.com",
+                    model_wrapper=None,
+                    context_window=1048576,
+                    put_inner_thoughts_in_kwargs=True,
+                    handle=model_name,
+                    enable_reasoner=True,
+                    temperature=temperature,
+                ),
+                # model=model_name,
+                embedding=embedding_name,
+                system=system_prompt,
+                memory_blocks=memory_blocks,
+            )
+        elif "azure" in model_name:
+            agent = await client.agents.create(
+                model=model_name,
+                name=f"agentic_search_azure_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",
+                embedding="azure/text-embedding-3-small",
+                # optional configuration
+                context_window_limit=16000,
+            )
+        else:
+            raise ValueError(
+                f"Invalid model: {model_name}. Current supported handles are: google_ai and azure."
+            )
         return agent
     except Exception as e:
         logger.error(f"Erro ao criar agente agentic_search: {str(e)}")
