@@ -29,7 +29,7 @@ async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str
             data = response.json()
 
             logger.info(f"System prompt obtido via API para agent_type: {agent_type}")
-            return data
+            return data.get("prompt", data) if isinstance(data, dict) else data
 
     except Exception as e:
         logger.warning(
@@ -71,7 +71,7 @@ async def _update_system_prompt_from_api(
             logger.info(
                 f"System prompt atualizado via API para agent_type: {agent_type}"
             )
-            return data
+            return data.get("prompt", data) if isinstance(data, dict) else data
     except Exception as e:
         logger.warning(f"Erro ao atualizar system prompt via API.")
         raise e
