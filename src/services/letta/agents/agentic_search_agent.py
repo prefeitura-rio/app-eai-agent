@@ -15,7 +15,7 @@ async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str
     """Obtém o system prompt via API"""
     try:
         base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
-        api_url = f"{base_url}system-prompt?agent_type={agent_type}"
+        api_url = f"{base_url}api/v1/system-prompt?agent_type={agent_type}"
 
         bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
 
@@ -81,7 +81,7 @@ async def _get_agent_config_from_api(agent_type: str = "agentic_search") -> dict
     """Obtém a configuração do agente via API"""
     try:
         base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
-        api_url = f"{base_url}agent-config?agent_type={agent_type}"
+        api_url = f"{base_url}api/v1/agent-config?agent_type={agent_type}"
 
         bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
 

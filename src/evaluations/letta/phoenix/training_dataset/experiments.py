@@ -123,12 +123,12 @@ async def main():
     ##TODO: ALTERAR AQUI O DATASET QUE SERÁ AVALIADO
 
     evaluators = [
-        answer_completeness,
-        golden_link_in_tool_calling,
-        golden_link_in_answer,
-        activate_search,
-        # answer_adressing,
-        # clarity,
+        # answer_completeness,
+        # golden_link_in_tool_calling,
+        # golden_link_in_answer,
+        # activate_search,
+        answer_adressing,
+        clarity,
     ]
     experiments_configs = [
         # {
@@ -158,11 +158,11 @@ async def main():
         #     "experiment_name": "baseline-gpt",
         #     "experiment_description": "Respostas geradas usando o ChatGPT",
         #     "evaluators": [
-                    # answer_adressing,
-                    # clarity,
-        #         # answer_completeness,
-        #         # golden_link_in_tool_calling,
-        #         # golden_link_in_answer,
+        #         answer_adressing,
+        #         clarity,
+        #         answer_completeness,
+        #         golden_link_in_tool_calling,
+        #         golden_link_in_answer,
         #     ],
         #     "tools": None,
         #     "model_name": "gpt-4o",
@@ -172,11 +172,12 @@ async def main():
         #     "type": "resposta_gpt",
         # },
         {
-            "dataset_name": "golden_dataset_v7_10_samples",
+            "dataset_name": "golden_dataset_v7",
             "experiment_name": "eai",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+            # "model_name": "google_ai/gemini-2.5-flash",
             "batch_size": 10,
             "temperature": 0.7,
             "system_prompt": SYSTEM_PROMPT_EAI,
