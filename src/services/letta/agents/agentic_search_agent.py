@@ -15,7 +15,7 @@ async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str
     """Obtém o system prompt via API"""
     try:
         base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
-        api_url = f"{base_url}system-prompt?agent_type={agent_type}"
+        api_url = f"{base_url}api/v1/system-prompt?agent_type={agent_type}"
 
         bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
 
@@ -29,7 +29,7 @@ async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str
             data = response.json()
 
             logger.info(f"System prompt obtido via API para agent_type: {agent_type}")
-            return data
+            return data.get("prompt", data) if isinstance(data, dict) else data
 
     except Exception as e:
         logger.warning(
@@ -71,7 +71,7 @@ async def _update_system_prompt_from_api(
             logger.info(
                 f"System prompt atualizado via API para agent_type: {agent_type}"
             )
-            return data
+            return data.get("prompt", data) if isinstance(data, dict) else data
     except Exception as e:
         logger.warning(f"Erro ao atualizar system prompt via API.")
         raise e
@@ -81,7 +81,7 @@ async def _get_agent_config_from_api(agent_type: str = "agentic_search") -> dict
     """Obtém a configuração do agente via API"""
     try:
         base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
-        api_url = f"{base_url}agent-config?agent_type={agent_type}"
+        api_url = f"{base_url}api/v1/agent-config?agent_type={agent_type}"
 
         bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
 
@@ -119,14 +119,14 @@ async def create_agentic_search_agent(
     model_name: str = None,
     system_prompt: str = None,
     temperature: float = 0.7,
+    use_api_system_prompt: bool = True,
 ):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
 
         # Obtém system prompt e configuração ativa via API
-        use_api_system_prompt = False
-        if system_prompt is None:
+        if system_prompt is None or use_api_system_prompt:
             use_api_system_prompt = True
             system_prompt = await _get_system_prompt_from_api(
                 agent_type="agentic_search"

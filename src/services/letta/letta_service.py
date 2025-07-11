@@ -84,6 +84,7 @@ class LettaService:
         model_name: str = None,
         system_prompt: str = None,
         temperature: float = 0.7,
+        use_api_system_prompt: bool = True,
     ):
         """Cria um novo agente de acordo com o tipo de agente passado."""
         if agent_type == "agentic_search":
@@ -98,6 +99,7 @@ class LettaService:
                 model_name=model_name,
                 system_prompt=system_prompt,
                 temperature=temperature,
+                use_api_system_prompt=use_api_system_prompt,
             )
         else:
             raise ValueError(f"Tipo de agente não suportado: {agent_type}")
