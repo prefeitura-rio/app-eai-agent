@@ -119,14 +119,14 @@ async def create_agentic_search_agent(
     model_name: str = None,
     system_prompt: str = None,
     temperature: float = 0.7,
+    use_api_system_prompt: bool = True,
 ):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
 
         # Obtém system prompt e configuração ativa via API
-        use_api_system_prompt = False
-        if system_prompt is None:
+        if system_prompt is None or use_api_system_prompt:
             use_api_system_prompt = True
             system_prompt = await _get_system_prompt_from_api(
                 agent_type="agentic_search"

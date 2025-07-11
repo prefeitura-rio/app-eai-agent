@@ -18,6 +18,7 @@ from src.evaluations.letta.phoenix.training_dataset.prompts import (
     SYSTEM_PROMPT_BASELINE_GEMINI,
     SYSTEM_PROMPT_EAI,
     SYSTEM_PROMPT_EAI_BASE,
+    SYSTEM_PROMPT_EAI_RAFAEL,
 )
 from src.evaluations.letta.agents.final_response import ANSWER_COMPLETENESS_PROMPT
 
@@ -145,19 +146,19 @@ async def main():
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_4O,
         # },
         # {
-        #     "dataset_name": "golden_dataset_v4",
-        #     "experiment_name": "baseline-gemini-2025-07-01",
+        #     "dataset_name": "golden_dataset_v7",
+        #     "experiment_name": "baseline-gemini",
         #     "experiment_description": "Temperature: 0.7, Model: gemini-2.5-flash-lite-preview-06-17",
         #     "evaluators": evaluators,
         #     "tools": ["google_search"],
         #     "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-        #     "batch_size": 15,
+        #     "batch_size": 10,
         #     "temperature": 0.7,
         #     "system_prompt": SYSTEM_PROMPT_BASELINE_GEMINI,
         # },
         # {
-        #     "dataset_name": "golden_dataset_v5_30_samples",
-        #     "experiment_name": "baseline-gpt-2025-07-05",
+        #     "dataset_name": "golden_dataset_v7",
+        #     "experiment_name": "baseline-gpt",
         #     "experiment_description": "Respostas geradas usando o ChatGPT",
         #     "evaluators": [
         #         answer_completeness,
@@ -172,8 +173,8 @@ async def main():
         #     "type": "resposta_gpt",
         # },
         {
-            "dataset_name": "golden_dataset_v7_30_samples",
-            "experiment_name": "eai",
+            "dataset_name": "golden_dataset_v7_10_samples",
+            "experiment_name": "bruno_teste",
             "evaluators": evaluators,
             "tools": ["google_search"],
             "model_name": "google_ai/gemini-2.5-flash-lite-preview-06-17",
