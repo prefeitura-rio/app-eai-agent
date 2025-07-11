@@ -1,21 +1,62 @@
 CLARITY_LLM_JUDGE_PROMPT = """
-In this task, you will be presented with a query and an answer. Your objective is to evaluate the clarity of the answer in addressing the query.
+In this task, you will evaluate if a response in Portuguese is clear and understandable for the common citizens of Rio de Janeiro seeking public services or information.
 
-A response is "clear" if it is:
-- Precise, coherent, and easy to understand.
-- Directly addresses the query without unnecessary complexity or ambiguity.
+A clear response for municipal services must be easily understood by citizens with varying education levels, avoiding bureaucratic language while remaining accurate and helpful.
 
-A response is "unclear" if it is:
-- Vague, disorganized, confusing, or contains ambiguous phrasing.
-- Difficult to understand, even if factually correct.
+Evaluation criteria for citizen-friendly clarity:
 
-Your response must be a single word: either "clear" or "unclear", with no other text.
+1. **Simple Language**: 
+   - Avoids complex bureaucratic terms ("juridiquês")
+   - Uses everyday Portuguese that a person with basic education can understand
+   - Explains technical terms when they must be used
+   - Avoids excessive use of acronyms without explanation
 
-After analyzing the query and the answer, write a detailed explanation justifying your label. Your reasoning should mention:
-- Specific aspects of the response that affect clarity (e.g., organization, phrasing, coherence).
-- Whether it was easy to follow and directly addressed the query.
+2. **Direct and Practical**:
+   - Answers the citizen's question without unnecessary detours
+   - Provides actionable information (where to go, what to bring, when to do it)
+   - Focuses on what the citizen needs to know to solve their problem
+   - Includes specific addresses, phone numbers, or websites when relevant
 
-Minor grammar or stylistic issues do not make a response unclear if the meaning is still obvious.
+3. **Well-Organized**:
+   - Information is presented in logical order (most important first)
+   - Uses simple lists or steps when explaining procedures
+   - Breaks down complex processes into manageable parts
+   - Clear separation between different topics or requirements
+
+4. **Complete but Concise**:
+   - Includes all essential information without overwhelming details
+   - Appropriate length for WhatsApp or mobile reading
+   - Avoids repetition
+   - Doesn't assume prior knowledge of government processes
+
+Labels:
+- "clear": The response is easily understood by common citizens and provides practical, actionable information
+- "unclear": The response uses complex language, is confusing, or fails to provide practical guidance
+
+Analyze the response from the perspective of a common citizen seeking help with municipal services. Consider someone who may have limited formal education, may be unfamiliar with government processes, and needs practical information to resolve their issue.
+
+Write a detailed explanation evaluating:
+- Whether bureaucratic or complex terms are used without explanation
+- If the response provides clear, actionable steps
+- Whether the information is organized in a helpful way
+- If the length and detail level are appropriate
+- Any issues that might confuse or frustrate a citizen
+
+Provide specific examples from the response to support your assessment.
+
+# Examples of unclear vs clear language in Portuguese:
+
+unclear: "Dirija-se à repartição competente munido da documentação pertinente para protocolar sua solicitação"
+clear: "Vá à delegacia (Rua X, número Y) com RG, CPF e comprovante de residência"
+
+unclear: "A emissão da certidão está condicionada à quitação dos débitos tributários"
+clear: "Para pegar a certidão, você precisa primeiro pagar todos os impostos em atraso"
+
+unclear: "O requerente deve observar os prazos regimentais"
+clear: "Você tem 30 dias para entregar os documentos"
+
+unclear: "Proceda ao agendamento através dos canais oficiais"
+clear: "Marque seu atendimento pelo site www.exemplo.com"
 
 [BEGIN DATA]
 Query: {query}
@@ -24,7 +65,7 @@ Model Response: {model_response}
 
 Please analyze the data carefully and then provide:
 
-explanation: Your reasoning step by step about the clarity of the response.
+explanation: Your reasoning step by step, focusing on clarity, simplicity, and practical guidance for citizens.
 label: "clear" or "unclear"
 """
 
@@ -328,7 +369,7 @@ explanation: Your reasoning step by step, covering length, allowed formats (ital
 label: "compliant_format" or "non_compliant_format"
 """
 
-ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT = """
+ANSWER_ADRESSING_JUDGE_PROMPT = """
 In this task, you will evaluate whether the model's response directly and sufficiently answers the user's question or addresses their underlying need. Often, a user's query, especially if phrased as a complaint or a question about a problem (e.g., "is it normal for X not to work?"), implies a request for a solution or a next step. An effective answer addresses this implicit need.
 
 You will categorize the model's response using one of two labels:

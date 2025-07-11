@@ -5,7 +5,7 @@ import httpx
 import pandas as pd
 import json
 from src.evaluations.letta.agents.final_response import (
-    ANSWER_COMPLETENESS_LLM_JUDGE_PROMPT,
+    ANSWER_ADRESSING_JUDGE_PROMPT,
     ANSWER_COMPLETENESS_V0_PROMPT,
     CLARITY_LLM_JUDGE_PROMPT,
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
@@ -561,6 +561,54 @@ async def answer_completeness(input, output, expected) -> tuple:
         input=input,
         output=output,
         prompt=ANSWER_COMPLETENESS_PROMPT,
+        rails=rails,
+        expected=expected,
+    )
+
+    label = response.iloc[0]["label"]
+    explanation = response.iloc[0]["explanation"]
+
+    if label in mapping:
+        eval_result = mapping[label]
+    else:
+        eval_result = 0
+        explanation = "Label not recognized or not in mapping: {label}"
+
+    return (eval_result, explanation)
+
+@create_evaluator(name="Answer Adressing", kind="LLM")
+async def answer_adressing(input, output, expected) -> tuple:
+    rails = ["answered", "unanswered"]
+    mapping = {"unanswered": 0, "answered": 1}
+
+    response = await experiment_eval(
+        input=input,
+        output=output,
+        prompt=ANSWER_ADRESSING_JUDGE_PROMPT,
+        rails=rails,
+        expected=expected,
+    )
+
+    label = response.iloc[0]["label"]
+    explanation = response.iloc[0]["explanation"]
+
+    if label in mapping:
+        eval_result = mapping[label]
+    else:
+        eval_result = 0
+        explanation = "Label not recognized or not in mapping: {label}"
+
+    return (eval_result, explanation)
+
+@create_evaluator(name="Clarity", kind="LLM")
+async def clarity(input, output, expected) -> tuple:
+    rails = ["unclear", "clear"]
+    mapping = {"unclear": 0, "clear": 1}
+
+    response = await experiment_eval(
+        input=input,
+        output=output,
+        prompt=CLARITY_LLM_JUDGE_PROMPT,
         rails=rails,
         expected=expected,
     )

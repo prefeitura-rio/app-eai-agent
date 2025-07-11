@@ -486,4 +486,7 @@ async def experiment_eval(
         run_sync=False,
     )
 
+    print(f"Experiment Eval Response: {response}")
+    print("=" * 50)
+
     return response
