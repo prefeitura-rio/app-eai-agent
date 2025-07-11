@@ -23,7 +23,7 @@ async def get_equipaments(
         response = await get_pluscode_equipments(address=address)
 
         if not response:
-            raise HTTPException(status_code=500, detail="Falha ao gerar resumo")
+            raise HTTPException(status_code=500, detail="Falha ao buscar equipamentos")
 
         return {"equipamentos": response}
     except Exception as e:
@@ -38,7 +38,7 @@ async def get_category():
     try:
         response = await get_category_equipments()
         if not response:
-            raise HTTPException(status_code=500, detail="Falha ao gerar resumo")
+            raise HTTPException(status_code=500, detail="Falha ao buscar categorias")
 
         return {"categorias": response}
     except Exception as e:
