@@ -21,7 +21,7 @@ async def get_equipaments(
     address: str = Query(..., description="Endereço"),
     categories: Optional[List[str]] = Query(
         default=[],
-        description="Endereço",
+        description="Categorias dos equipamentos",
     ),
 ):
     try:
@@ -44,7 +44,7 @@ async def get_equipaments(
 
 @router.get(
     "/equipments_instructions",
-    name="Instruções tematicas para utilização de equipamentos",
+    name="Instruções para utilização dos equipamentos",
 )
 async def get_equipments_instructions():
     try:
