@@ -39,7 +39,7 @@ for var in [
 
 
 async def get_response_from_letta(query: str) -> dict:
-    url = os.getenv("EAI_AGENT_URL") + "/letta/test-message-raw"
+    url = os.getenv("EAI_AGENT_URL") + "api/v1/letta/test-message-raw"
     payload = {
         "agent_id": "agent-23301e87-a554-4487-be6e-18f299af803a",
         "message": query,
@@ -61,7 +61,7 @@ async def get_response_from_letta(query: str) -> dict:
 
 
 def get_system_prompt() -> str:
-    url = os.getenv("EAI_AGENT_URL") + "/system-prompt?agent_type=agentic_search"
+    url = os.getenv("EAI_AGENT_URL") + "api/v1/system-prompt?agent_type=agentic_search"
     bearer_token = os.getenv("EAI_AGENT_TOKEN")
     headers = {"accept": "application/json", "Authorization": f"Bearer {bearer_token}"}
     response = httpx.get(url, headers=headers)

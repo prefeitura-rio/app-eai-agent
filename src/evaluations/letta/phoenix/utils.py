@@ -59,7 +59,7 @@ async def extrair_query(raw_text: str):
 
 
 async def get_system_prompt() -> str:
-    url = f"{env.EAI_AGENT_URL}/system-prompt?agent_type=agentic_search"
+    url = f"{env.EAI_AGENT_URL}api/v1/system-prompt?agent_type=agentic_search"
     headers = {
         "accept": "application/json",
         "Authorization": f"Bearer {env.EAI_AGENT_TOKEN}",

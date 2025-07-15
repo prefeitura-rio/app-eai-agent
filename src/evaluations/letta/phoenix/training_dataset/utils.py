@@ -64,7 +64,6 @@ else:
 
 async def get_system_prompt_version(system_prompt: str):
     result = await _get_system_prompt_from_api(agent_type="agentic_search")
-
     current_api_system_prompt_clean = (
         result["prompt"].replace(" ", "").replace("\n", "")
     )
@@ -446,7 +445,7 @@ Comece a conversa com base na premissa abaixo, escrevendo de forma natural.
     )
 
     for idx, exemplo in enumerate(exemplos):
-        premissa = exemplo.input['premissa']
+        premissa = exemplo.input["premissa"]
         conversa = []
         trocas = 0
         resolveu = False
@@ -470,13 +469,19 @@ Comece a conversa com base na premissa abaixo, escrevendo de forma natural.
             if any(
                 frase in resposta_bot2.lower()
                 for frase in [
-                    "então você deve", "sugiro que", "recomendo que",
-                    "o ideal é", "o melhor seria", "você pode", "procure", "entre em contato"
+                    "então você deve",
+                    "sugiro que",
+                    "recomendo que",
+                    "o ideal é",
+                    "o melhor seria",
+                    "você pode",
+                    "procure",
+                    "entre em contato",
                 ]
             ):
                 resolveu = True
                 break
-            
+
             historico = ""
             for exchange in conversa:
                 for speaker, msg in exchange.items():
@@ -497,10 +502,7 @@ Responda agora como Bot1: envie a próxima mensagem, mantendo o tom carioca (abr
             msg_bot1 = bot1_response["text"]
             conversa.append({"bot1": msg_bot1})
             trocas += 1
-        todas_conversas[f"exemplo_{idx}"] = {
-            "premissa": premissa,
-            "conversa": conversa
-        }
+        todas_conversas[f"exemplo_{idx}"] = {"premissa": premissa, "conversa": conversa}
 
     return todas_conversas
 

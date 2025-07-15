@@ -29,7 +29,7 @@ async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str
             data = response.json()
 
             logger.info(f"System prompt obtido via API para agent_type: {agent_type}")
-            return data.get("prompt", data) if isinstance(data, dict) else data
+            return data
 
     except Exception as e:
         logger.warning(
@@ -50,7 +50,7 @@ async def _update_system_prompt_from_api(
     """Atualiza o system prompt via API"""
     try:
         base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
-        api_url = f"{base_url}system-prompt?agent_type={agent_type}"
+        api_url = f"{base_url}api/v1/system-prompt?agent_type={agent_type}"
         bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
 
         headers = {}
@@ -128,9 +128,8 @@ async def create_agentic_search_agent(
         # Obtém system prompt e configuração ativa via API
         if system_prompt is None or use_api_system_prompt:
             use_api_system_prompt = True
-            system_prompt = await _get_system_prompt_from_api(
-                agent_type="agentic_search"
-            )
+            data = await _get_system_prompt_from_api(agent_type="agentic_search")
+            system_prompt = data.get("prompt", data) if isinstance(data, dict) else data
         agent_cfg = await _get_agent_config_from_api(agent_type="agentic_search")
 
         if tools is None:

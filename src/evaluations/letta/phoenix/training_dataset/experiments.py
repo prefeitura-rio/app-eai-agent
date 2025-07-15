@@ -172,7 +172,7 @@ async def main():
         #     "type": "resposta_gpt",
         # },
         {
-            "dataset_name": "golden_dataset_v7",
+            "dataset_name": "golden_dataset_v7_10_samples",
             "experiment_name": "eai",
             "evaluators": evaluators,
             "tools": ["google_search"],
