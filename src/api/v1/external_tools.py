@@ -26,7 +26,6 @@ async def get_equipaments(
 ):
     try:
         response = await get_pluscode_equipments(address=address, categories=categories)
-        logger.info(f"Response: {response}")
         if response == []:
             raise HTTPException(
                 status_code=500,
