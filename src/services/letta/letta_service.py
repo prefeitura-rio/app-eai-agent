@@ -188,6 +188,18 @@ class LettaService:
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar message: {error}")
             logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            # Verificar se é erro específico do servidor Letta
+            if hasattr(error, 'status_code'):
+                if error.status_code == 500:
+                    return "Erro interno do servidor Letta. Tente novamente em alguns instantes ou verifique se o agente está configurado corretamente."
+                elif error.status_code == 401:
+                    return "Erro de autenticação com o servidor Letta. Verifique as credenciais."
+                elif error.status_code == 404:
+                    return "Agente não encontrado. Verifique se o ID do agente está correto."
+                else:
+                    return f"Erro do servidor Letta (código {error.status_code}). Tente novamente mais tarde."
+            
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
     async def send_message_raw(
@@ -227,15 +239,34 @@ class LettaService:
             return await process_stream_raw(create_response())
         except Exception as error:
             logger.error(f"Erro ao enviar mensagem: {error}")
+            
+            # Criar resposta de erro mais informativa
+            error_message = "Ocorreu um erro ao enviar a mensagem para o agente."
+            
+            # Verificar se é erro específico do servidor Letta
+            if hasattr(error, 'status_code'):
+                if error.status_code == 500:
+                    error_message = "Erro interno do servidor Letta. Verifique se o agente está configurado corretamente."
+                elif error.status_code == 401:
+                    error_message = "Erro de autenticação com o servidor Letta. Verifique as credenciais."
+                elif error.status_code == 404:
+                    error_message = "Agente não encontrado. Verifique se o ID do agente está correto."
+                else:
+                    error_message = f"Erro do servidor Letta (código {error.status_code}). Tente novamente mais tarde."
+            
             return {
-                "error": str(error),
-                "system_messages": [],
-                "user_messages": [],
-                "reasoning_messages": [],
-                "tool_call_messages": [],
-                "tool_return_messages": [],
-                "assistant_messages": [],
-                "letta_usage_statistics": [],
+                "error": error_message,
+                "error_details": str(error),
+                "grouped": {
+                    "system_messages": [],
+                    "user_messages": [],
+                    "reasoning_messages": [],
+                    "tool_call_messages": [],
+                    "tool_return_messages": [],
+                    "assistant_messages": [],
+                    "letta_usage_statistics": [],
+                },
+                "ordered": [],
             }
 
 

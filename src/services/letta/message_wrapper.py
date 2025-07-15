@@ -9,6 +9,7 @@ from letta_client.agents.messages.types.letta_streaming_response import (
     LettaStreamingResponse,
 )
 from letta_client.types.assistant_message import AssistantMessage
+from letta_client.core.api_error import ApiError
 import src.config.env as env
 
 
@@ -184,6 +185,34 @@ async def process_stream(response: typing.AsyncIterator[LettaStreamingResponse])
         logger.error(f"Timeout ao processar stream: {e}")
     except ValueError as e:
         logger.error(f"Erro de valor/formato ao processar stream: {e}")
+    except ApiError as e:
+        # Erro específico do Letta client (ex: 500, 401, etc.)
+        status_code = getattr(e, 'status_code', 'unknown')
+        body = getattr(e, 'body', str(e))
+        
+        if status_code == 500:
+            logger.error(f"Servidor Letta retornou erro interno (500). Verifique o status do servidor.")
+            logger.error(f"Detalhes do erro: {body}")
+        elif status_code == 401:
+            logger.error(f"Erro de autenticação (401). Verifique o token LETTA_API_TOKEN.")
+        elif status_code == 404:
+            logger.error(f"Agente não encontrado (404). Verifique se o agent_id existe.")
+        else:
+            logger.error(f"Erro da API Letta (status {status_code}): {body}")
+        
+        # Se é um SSE error event, extrair a mensagem real
+        if "event: error" in body and "data:" in body:
+            try:
+                # Extrair a parte JSON do SSE
+                lines = body.split('\n')
+                for line in lines:
+                    if line.startswith('data:'):
+                        data_json = line.replace('data:', '').strip()
+                        error_data = json.loads(data_json)
+                        if 'error' in error_data and 'message' in error_data['error']:
+                            logger.error(f"Mensagem do servidor: {error_data['error']['message']}")
+            except Exception as parse_error:
+                logger.debug(f"Não foi possível extrair mensagem de erro detalhada: {parse_error}")
     except Exception as e:
         logger.error(f"Erro inesperado ao processar stream: {type(e).__name__}: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
