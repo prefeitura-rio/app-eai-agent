@@ -3,7 +3,7 @@ import traceback
 import logging
 from typing import List, Optional
 import httpx
-from letta_client import Letta, AsyncLetta
+from letta_client import Letta, AsyncLetta, LettaResponse
 from letta_client.types import MessageCreate, TextContent
 
 import src.config.env as env
@@ -177,13 +177,10 @@ class LettaService:
 
         try:
 
-            def create_response():
-                return client.agents.messages.create_stream(
-                    agent_id=agent_id, messages=[letta_message]
-                )
-
-            agent_message_response = await process_stream(create_response())
-            return agent_message_response or ""
+            agent_message_response: LettaResponse = await client.agents.messages.create(
+                agent_id=agent_id, messages=[letta_message]
+            )
+            return agent_message_response.messages or ""
 
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar message: {error}")
