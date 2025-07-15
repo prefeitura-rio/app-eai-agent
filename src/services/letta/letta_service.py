@@ -49,6 +49,47 @@ class LettaService:
         """Retorna a instância do cliente Letta assíncrono."""
         return self.client_async
 
+    def _clean_string(self, text: str) -> str:
+        """
+        Função para limpeza robusta de strings, removendo caracteres problemáticos
+        que podem causar erros de encoding na API do Letta.
+        
+        Args:
+            text: String a ser limpa
+            
+        Returns:
+            str: String limpa e segura para UTF-8
+        """
+        if not text:
+            return text
+        try:
+            # Primeiro, tentar normalizar caracteres especiais
+            import unicodedata
+            # Normalizar para NFD (decompor) e depois para NFC (recompor)
+            normalized = unicodedata.normalize('NFD', text)
+            normalized = unicodedata.normalize('NFC', normalized)
+            
+            # Remover caracteres de controle e não-printáveis, mantendo espaços e quebras de linha
+            cleaned = ''.join(
+                char for char in normalized 
+                if unicodedata.category(char)[0] != 'C' or char in '\n\r\t '
+            )
+            
+            # Forçar encoding/decoding para garantir UTF-8 válido
+            cleaned = cleaned.encode('utf-8', errors='ignore').decode('utf-8')
+            
+            # Remover sequências problemáticas conhecidas
+            problematic_chars = ['\x84', '\x97', '\x91', '\x92', '\x93', '\x94', '\x96', '\x85']
+            for char in problematic_chars:
+                cleaned = cleaned.replace(char, '')
+            
+            return cleaned
+            
+        except Exception as e:
+            logger.error(f"Erro na limpeza de string: {e}")
+            # Em caso de erro, retornar apenas caracteres ASCII seguros
+            return ''.join(char for char in text if ord(char) < 128 and (ord(char) >= 32 or char in '\n\r\t '))
+
     async def get_agent_id_by_tags(self, tags: List[str]):
         """Retorna o ID do agente que possui as tags especificadas."""
         agents = await self.client_async.agents.list(tags=tags)
@@ -165,24 +206,32 @@ class LettaService:
         """
         client = self.client_async
 
-        # Limpar e validar o conteúdo da mensagem para evitar problemas de encoding
+        # Limpar mensagem usando o método da classe
         try:
-            # Garantir que a string está em UTF-8 válido
-            cleaned_message = message_content.encode('utf-8', errors='replace').decode('utf-8')
-            # Remover caracteres de controle problemáticos
-            cleaned_message = ''.join(char for char in cleaned_message if ord(char) >= 32 or char in '\n\r\t')
-        
+            cleaned_message = self._clean_string(message_content)
+            
+            logger.info(f"Mensagem original (bytes): {message_content.encode('utf-8', errors='replace')}")
+            logger.info(f"Mensagem original (repr): {repr(message_content)}")
+            logger.info(f"Mensagem limpa (repr): {repr(cleaned_message)}")
+            
         except Exception as encoding_error:
             logger.error(f"Erro ao limpar mensagem: {encoding_error}")
             cleaned_message = "Erro: mensagem contém caracteres inválidos"
+
+        # Limpar o nome também se fornecido
+        cleaned_name = None
+        if name:
+            cleaned_name = self._clean_string(name)
+            logger.info(f"Nome original: {repr(name)}")
+            logger.info(f"Nome limpo: {repr(cleaned_name)}")
 
         message_params = {
             "role": "user",
             "content": [TextContent(text=cleaned_message)],
         }
 
-        if name:
-            message_params["name"] = name
+        if cleaned_name:
+            message_params["name"] = cleaned_name
 
         letta_message = MessageCreate(**message_params)
 
@@ -249,24 +298,26 @@ class LettaService:
         """
         client = self.client_async
 
-        # Limpar e validar o conteúdo da mensagem para evitar problemas de encoding
+        # Limpar mensagem usando o método da classe
         try:
-            # Garantir que a string está em UTF-8 válido
-            cleaned_message = message_content.encode('utf-8', errors='replace').decode('utf-8')
-            # Remover caracteres de controle problemáticos
-            cleaned_message = ''.join(char for char in cleaned_message if ord(char) >= 32 or char in '\n\r\t')
+            cleaned_message = self._clean_string(message_content)
             
         except Exception as encoding_error:
             logger.error(f"Erro ao limpar mensagem: {encoding_error}")
             cleaned_message = "Erro: mensagem contém caracteres inválidos"
+
+        # Limpar o nome também se fornecido
+        cleaned_name = None
+        if name:
+            cleaned_name = self._clean_string(name)
 
         message_params = {
             "role": "user",
             "content": [TextContent(text=cleaned_message)],
         }
 
-        if name:
-            message_params["name"] = name
+        if cleaned_name:
+            message_params["name"] = cleaned_name
 
         letta_message = MessageCreate(**message_params)
 
