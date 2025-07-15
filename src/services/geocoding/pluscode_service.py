@@ -70,7 +70,7 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
             controle as (
                 select distinct
                     concat(trim(secretaria_responsavel), "__", trim(tipo)) tipo_controle,
-                from `rj-iplanrio.plus_codes.controle_tipos_equipamentos`
+                from `rj-iplanrio.plus_codes.equipamentos_controle_categorias`
                 where use = '0'
             )
 
