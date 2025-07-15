@@ -121,6 +121,16 @@ async def get_category_equipments():
     return categories
 
 
+def get_tematic_instructions_for_equipments():
+    query = f"""
+        SELECT 
+            * 
+        FROM `rj-iplanrio.plus_codes.equipamentos_instrucoes`
+    """
+    data = get_bigquery_result(query=query)
+    return data
+
+
 # if __name__ == "__main__":
 # import asyncio
 
