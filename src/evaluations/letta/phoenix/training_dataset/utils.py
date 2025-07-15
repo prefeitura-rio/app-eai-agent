@@ -84,9 +84,7 @@ async def get_system_prompt_version(system_prompt: str):
         return response["version"]
 
 
-async def get_response_from_gpt(example: Example) -> dict:
-    query = f"Moro no Rio de Janeiro. {example.input.get("mensagem_whatsapp_simulada")}"
-
+async def get_response_from_gpt(query: str) -> dict:
     response = await openai_service.generate_content(
         query,
         use_web_search=True,
@@ -106,9 +104,7 @@ async def get_response_from_gpt(example: Example) -> dict:
     return response
 
 
-async def get_response_from_gemini(example: Example) -> str:
-    query = f"Moro no Rio de Janeiro. {example.input.get("mensagem_whatsapp_simulada")}"
-
+async def get_response_from_gemini(query: str) -> str:
     response = await gemini_service.generate_content(
         query,
         model="gemini-2.5-flash-preview-05-20",
@@ -300,7 +296,8 @@ async def processar_batch(
         tarefas_respostas = []
 
         for exemplo in exemplos:
-            tarefas_respostas.append(get_response_from_gpt(exemplo))
+            query = f"Moro no Rio de Janeiro. {exemplo.input.get("mensagem_whatsapp_simulada")}"
+            tarefas_respostas.append(get_response_from_gpt(query))
         respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
 
         for i, resposta in enumerate(respostas):
@@ -317,7 +314,8 @@ async def processar_batch(
         tarefas_respostas = []
 
         for exemplo in exemplos:
-            tarefas_respostas.append(get_response_from_gemini(exemplo))
+            query = f"Moro no Rio de Janeiro. {exemplo.input.get("mensagem_whatsapp_simulada")}"
+            tarefas_respostas.append(get_response_from_gemini(query))
 
         respostas = await asyncio.gather(*tarefas_respostas, return_exceptions=True)
 
@@ -396,11 +394,115 @@ async def coletar_todas_respostas(
     return todas_respostas
 
 
-# def final_response(agent_stream: dict) -> dict:
-#     if not agent_stream or "assistant_messages" not in agent_stream:
-#         return {}
+async def coletar_respostas(
+    dataset,
+    tools: list = None,
+    model_name: str = None,
+    system_prompt: str = None,
+    temperature: float = 0.7,
+) -> Dict[str, Any]:
+    """
+    Coleta respostas para todo o dataset em batches.
 
-#     return agent_stream["assistant_messages"][-1]
+    Args:
+        dataset: Dataset do Phoenix
+
+    Returns:
+        Dict[str, Any]: Dicionário com todas as respostas
+    """
+
+    exemplos = list(dataset.examples.values())
+    todas_conversas = {}
+
+    prompt = """
+Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão carioca comum.
+
+Comece a conversa com base na premissa abaixo, escrevendo de forma natural.
+
+### Como você deve agir:
+✅ Fale como um carioca conversando no WhatsApp:
+- Use abreviações naturais: “pq”, “blz”, “vlw”, “to”, “tô”, “q”, “tbm”.
+- Use expressões e gírias cariocas leves: “pô”, “cara”, “ih”, “então”, “beleza?”.
+- Frases curtas, diretas; emojis são permitidos (😥🙏😂 etc).
+- Demonstre emoções reais (preocupação, alívio, gratidão etc).
+
+✅ Comece a conversa enviando a primeira mensagem que representa a premissa, de forma natural.
+
+✅ Nas trocas seguintes, responda sempre ao que o bot perguntar ou sugerir, mantendo coerência com a premissa.
+
+✅ Tente levar a conversa até que o problema inicial seja resolvido de forma razoável.
+
+**Premissa:**
+> {premissa}
+"""
+
+    agent_id = await criar_agente_letta(
+        index=0,
+        name="Agente Teste",
+        tools=tools,
+        model_name=model_name,
+        system_prompt=system_prompt,
+        temperature=temperature,
+    )
+
+    for idx, exemplo in enumerate(exemplos):
+        premissa = exemplo.input['premissa']
+        conversa = []
+        trocas = 0
+        resolveu = False
+
+        prompt_inicial = prompt.format(premissa=premissa)
+        pergunta = await get_response_from_gpt(prompt_inicial)
+        msg_bot1 = pergunta["text"]
+        print(f"msg_bot1: {msg_bot1}")
+        conversa.append({"bot1": msg_bot1})
+        trocas += 1
+        # add mais prints
+        while trocas < 5 and not resolveu:
+            resposta_bot2 = await obter_resposta_letta(agent_id, msg_bot1)
+            if not resposta_bot2:
+                conversa.append({"bot2": "Sem resposta do bot"})
+                break
+            resposta_bot2 = final_response(resposta_bot2).content
+            print(f"msg_bot2:", resposta_bot2)
+            conversa.append({"bot2": resposta_bot2})
+
+            if any(
+                frase in resposta_bot2.lower()
+                for frase in [
+                    "então você deve", "sugiro que", "recomendo que",
+                    "o ideal é", "o melhor seria", "você pode", "procure", "entre em contato"
+                ]
+            ):
+                resolveu = True
+                break
+            
+            historico = ""
+            for exchange in conversa:
+                for speaker, msg in exchange.items():
+                    historico += f"{speaker}: {msg}\n"
+
+            prompt_continuacao = f"""
+Você é uma pessoa carioca no WhatsApp.
+Premissa original: "{premissa}"
+
+Histórico da conversa até agora:
+{historico}
+
+Responda agora como Bot1: envie a próxima mensagem, mantendo o tom carioca (abreviações, gírias, emojis).
+"""
+            print(f"prompt_continuacao: {historico}")
+            # 🟢 Bot1 responde de novo
+            bot1_response = await get_response_from_gpt(prompt_continuacao)
+            msg_bot1 = bot1_response["text"]
+            conversa.append({"bot1": msg_bot1})
+            trocas += 1
+        todas_conversas[f"exemplo_{idx}"] = {
+            "premissa": premissa,
+            "conversa": conversa
+        }
+
+    return todas_conversas
 
 
 def final_response(agent_stream: dict) -> dict:
