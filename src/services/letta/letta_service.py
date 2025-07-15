@@ -168,7 +168,7 @@ class LettaService:
         try:
 
             agent_message_response: LettaResponse = await client.agents.messages.create(
-                agent_id=agent_id, messages=[MessageCreate(role="user", content=message_content)]
+                agent_id=agent_id, messages=[MessageCreate(role="user", content=[TextContent(text=message_content)])]
             )
             
             # Extrair o conteúdo das mensagens da resposta
