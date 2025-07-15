@@ -165,9 +165,20 @@ class LettaService:
         """
         client = self.client_async
 
+        # Limpar e validar o conteúdo da mensagem para evitar problemas de encoding
+        try:
+            # Garantir que a string está em UTF-8 válido
+            cleaned_message = message_content.encode('utf-8', errors='replace').decode('utf-8')
+            # Remover caracteres de controle problemáticos
+            cleaned_message = ''.join(char for char in cleaned_message if ord(char) >= 32 or char in '\n\r\t')
+        
+        except Exception as encoding_error:
+            logger.error(f"Erro ao limpar mensagem: {encoding_error}")
+            cleaned_message = "Erro: mensagem contém caracteres inválidos"
+
         message_params = {
             "role": "user",
-            "content": [TextContent(text=message_content)],
+            "content": [TextContent(text=cleaned_message)],
         }
 
         if name:
@@ -180,7 +191,22 @@ class LettaService:
             agent_message_response: LettaResponse = await client.agents.messages.create(
                 agent_id=agent_id, messages=[letta_message]
             )
-            return agent_message_response.messages or ""
+            
+            # Extrair o conteúdo das mensagens da resposta
+            if agent_message_response.messages:
+                # Procurar por mensagens do assistente
+                assistant_messages = []
+                for message in agent_message_response.messages:
+                    if hasattr(message, 'role') and message.role == 'assistant':
+                        if hasattr(message, 'content') and message.content:
+                            # Extrair texto do conteúdo
+                            for content_item in message.content:
+                                if hasattr(content_item, 'text'):
+                                    assistant_messages.append(content_item.text)
+                
+                return '\n'.join(assistant_messages) if assistant_messages else ""
+            
+            return ""
 
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar message: {error}")
@@ -188,7 +214,14 @@ class LettaService:
             
             # Verificar se é erro específico do servidor Letta
             if hasattr(error, 'status_code'):
-                if error.status_code == 500:
+                if error.status_code == 400:
+                    # Verificar se é erro de encoding
+                    error_body = str(error)
+                    if "codec can't decode" in error_body or "invalid start byte" in error_body:
+                        return "Erro de codificação na mensagem. A mensagem contém caracteres inválidos que não podem ser processados."
+                    else:
+                        return "Requisição inválida para o servidor Letta. Verifique os parâmetros enviados."
+                elif error.status_code == 500:
                     return "Erro interno do servidor Letta. Tente novamente em alguns instantes ou verifique se o agente está configurado corretamente."
                 elif error.status_code == 401:
                     return "Erro de autenticação com o servidor Letta. Verifique as credenciais."
@@ -216,9 +249,20 @@ class LettaService:
         """
         client = self.client_async
 
+        # Limpar e validar o conteúdo da mensagem para evitar problemas de encoding
+        try:
+            # Garantir que a string está em UTF-8 válido
+            cleaned_message = message_content.encode('utf-8', errors='replace').decode('utf-8')
+            # Remover caracteres de controle problemáticos
+            cleaned_message = ''.join(char for char in cleaned_message if ord(char) >= 32 or char in '\n\r\t')
+            
+        except Exception as encoding_error:
+            logger.error(f"Erro ao limpar mensagem: {encoding_error}")
+            cleaned_message = "Erro: mensagem contém caracteres inválidos"
+
         message_params = {
             "role": "user",
-            "content": [TextContent(text=message_content)],
+            "content": [TextContent(text=cleaned_message)],
         }
 
         if name:
@@ -242,7 +286,14 @@ class LettaService:
             
             # Verificar se é erro específico do servidor Letta
             if hasattr(error, 'status_code'):
-                if error.status_code == 500:
+                if error.status_code == 400:
+                    # Verificar se é erro de encoding
+                    error_body = str(error)
+                    if "codec can't decode" in error_body or "invalid start byte" in error_body:
+                        error_message = "Erro de codificação na mensagem. A mensagem contém caracteres inválidos que não podem ser processados."
+                    else:
+                        error_message = "Requisição inválida para o servidor Letta. Verifique os parâmetros enviados."
+                elif error.status_code == 500:
                     error_message = "Erro interno do servidor Letta. Verifique se o agente está configurado corretamente."
                 elif error.status_code == 401:
                     error_message = "Erro de autenticação com o servidor Letta. Verifique as credenciais."
