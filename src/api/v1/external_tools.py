@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from loguru import logger
+from typing import List, Optional
 
 from src.core.security.dependencies import validar_token
 from src.services.geocoding.pluscode_service import (
@@ -18,10 +19,14 @@ router = APIRouter(
 @router.get("/equipments", name="Equipamentos")
 async def get_equipaments(
     address: str = Query(..., description="Endereço"),
+    categories: Optional[List[str]] = Query(
+        default=[],
+        description="Endereço",
+    ),
 ):
     try:
 
-        response = await get_pluscode_equipments(address=address)
+        response = await get_pluscode_equipments(address=address, categories=categories)
 
         if not response:
             raise HTTPException(status_code=500, detail="Falha ao buscar equipamentos")

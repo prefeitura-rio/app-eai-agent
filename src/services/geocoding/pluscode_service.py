@@ -1,5 +1,5 @@
 import json
-
+from typing import List, Optional
 from google.cloud.bigquery.table import Row
 
 from src.services.geocoding.utils import (
@@ -26,7 +26,7 @@ def get_bigquery_result(query: str):
     return json.loads(data_str)
 
 
-async def get_pluscode_equipments(address):
+async def get_pluscode_equipments(address, categories: Optional[List[str]] = []):
     plus8 = get_plus8_from_address(address=address)
     if plus8:
         query = f"""
@@ -57,6 +57,7 @@ async def get_pluscode_equipments(address):
                     eq.updated_at,
                 from `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
                 where t.plus8 = "{plus8}"
+                __replace_categories__
                 qualify
                     row_number() over (
                         partition by t.plus8, t.secretaria_responsavel, t.categoria
@@ -79,6 +80,19 @@ async def get_pluscode_equipments(address):
                 not in (select tipo_controle from controle)
             order by eq.secretaria_responsavel, eq.categoria, eq.distancia_metros
         """
+        if categories:
+            categorias_filter = "and t.categoria in ("
+            for i in range(len(categories)):
+                if i != len(categories) - 1:
+                    categorias_filter += f"'{categories[i]}', "
+                else:
+                    categorias_filter += f"'{categories[i]}'"
+
+            categorias_filter += ")"
+
+            query = query.replace("__replace_categories__", categorias_filter)
+        else:
+            query = query.replace("__replace_categories__", "")
         data = get_bigquery_result(query=query)
         return data
     return None
