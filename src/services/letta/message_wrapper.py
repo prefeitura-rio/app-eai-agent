@@ -13,111 +13,6 @@ from letta_client.core.api_error import ApiError
 import src.config.env as env
 
 
-def extract_text_from_any_object(obj, depth=0, max_depth=3):
-    """
-    Extrai texto de qualquer objeto, fazendo busca recursiva em atributos e estruturas.
-    """
-    if depth > max_depth:
-        return ""
-    
-    text_content = ""
-    found_content = set()  # Para evitar duplicações
-    
-    try:
-        # Se é string, retorna direto
-        if isinstance(obj, str):
-            return obj.strip()
-        
-        # Se é número, converte para string
-        if isinstance(obj, (int, float)):
-            return str(obj)
-        
-        # Se tem método dict(), tenta usar
-        if hasattr(obj, 'dict') and callable(getattr(obj, 'dict')):
-            try:
-                obj_dict = obj.dict()
-                extracted = extract_text_from_any_object(obj_dict, depth + 1, max_depth)
-                if extracted and extracted not in found_content:
-                    found_content.add(extracted)
-                    text_content += extracted + " "
-            except:
-                pass
-        
-        # Se é dicionário
-        if isinstance(obj, dict):
-            for key, value in obj.items():
-                # Procurar por chaves que podem conter texto
-                if key.lower() in ['content', 'text', 'message', 'response', 'answer']:
-                    extracted = extract_text_from_any_object(value, depth + 1, max_depth)
-                    if extracted and extracted not in found_content:
-                        found_content.add(extracted)
-                        text_content += extracted + " "
-                # Verificar role assistant
-                elif key.lower() == 'role' and str(value).lower() == 'assistant':
-                    # Se tem role assistant, procurar content nos outros valores
-                    for k, v in obj.items():
-                        if k.lower() == 'content':
-                            extracted = extract_text_from_any_object(v, depth + 1, max_depth)
-                            if extracted and extracted not in found_content:
-                                found_content.add(extracted)
-                                text_content += extracted + " "
-        
-        # Se é lista
-        elif isinstance(obj, list):
-            for item in obj:
-                extracted = extract_text_from_any_object(item, depth + 1, max_depth)
-                if extracted and extracted not in found_content:
-                    found_content.add(extracted)
-                    text_content += extracted + " "
-        
-        # Se é objeto com atributos (e não foi processado ainda)
-        elif hasattr(obj, '__dict__') and not found_content:
-            for attr_name in dir(obj):
-                if attr_name.startswith('_'):
-                    continue
-                try:
-                    attr_value = getattr(obj, attr_name)
-                    # Procurar por atributos que podem conter texto
-                    if attr_name.lower() in ['content', 'text', 'message', 'response', 'answer']:
-                        extracted = extract_text_from_any_object(attr_value, depth + 1, max_depth)
-                        if extracted and extracted not in found_content:
-                            found_content.add(extracted)
-                            text_content += extracted + " "
-                    # Verificar se é AssistantMessage
-                    elif attr_name.lower() == 'role' and str(attr_value).lower() == 'assistant':
-                        # Procurar content no objeto
-                        if hasattr(obj, 'content'):
-                            extracted = extract_text_from_any_object(obj.content, depth + 1, max_depth)
-                            if extracted and extracted not in found_content:
-                                found_content.add(extracted)
-                                text_content += extracted + " "
-                except:
-                    continue
-        
-        # Como último recurso, tentar converter para string e procurar padrões (apenas se não achou nada ainda)
-        elif not found_content:
-            obj_str = str(obj)
-            if obj_str and len(obj_str) < 1000:  # Evitar strings muito grandes
-                # Procurar por padrões comuns
-                patterns = [
-                    r'"content"\s*:\s*"([^"]+)"',
-                    r"'content'\s*:\s*'([^']+)'",
-                    r'content[=:]\s*([^,\}]+)',
-                    r'PONG',  # Padrão específico do teste
-                ]
-                for pattern in patterns:
-                    matches = re.findall(pattern, obj_str, re.IGNORECASE)
-                    for match in matches:
-                        if isinstance(match, str) and match.strip() and match.strip() not in found_content:
-                            found_content.add(match.strip())
-                            text_content += match.strip() + " "
-                            
-    except Exception as e:
-        logger.debug(f"Erro ao extrair texto: {e}")
-    
-    return text_content.strip()
-
-
 async def process_stream(response: typing.AsyncIterator[LettaStreamingResponse]) -> str:
     """
     Processa o stream de resposta do agente Letta, filtrando apenas mensagens do assistente.
@@ -129,96 +24,27 @@ async def process_stream(response: typing.AsyncIterator[LettaStreamingResponse])
         str: Conteúdo da mensagem do assistente concatenado
     """
     agent_message_response = ""
-    chunk_count = 0
-    
     try:
         async for chunk in response:
-            chunk_count += 1
-            logger.debug(f"Processando chunk #{chunk_count} - Tipo: {type(chunk).__name__}")
-            
-            # Estratégia robusta para extrair conteúdo
-            extracted_content = ""
-            
-            # Método 1: Verificação específica para AssistantMessage
-            if isinstance(chunk, AssistantMessage):
-                extracted_content = extract_text_from_any_object(chunk)
-                if extracted_content:
-                    logger.debug(f"Conteúdo extraído de AssistantMessage: {extracted_content[:100]}...")
-            
-            # Método 2: Busca genérica por qualquer conteúdo de texto
-            if not extracted_content:
-                extracted_content = extract_text_from_any_object(chunk)
-                if extracted_content:
-                    logger.debug(f"Conteúdo extraído genérico: {extracted_content[:100]}...")
-            
-            # Método 3: Último recurso - regex no string do objeto
-            if not extracted_content:
-                chunk_str = str(chunk)
-                # Procurar por palavras que parecem resposta do assistente
-                if any(word in chunk_str.upper() for word in ['PONG', 'OLÁ', 'SIM', 'NÃO', 'OK']):
-                    # Tentar extrair usando regex mais agressiva
-                    text_patterns = [
-                        r'(?:content|text|message|response)["\']?\s*[:\=]\s*["\']?([^"\'}\],\n]+)',
-                        r'"([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][^"]{1,100})"',  # Texto em português com maiúscula
-                        r"'([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][^']{1,100})'",   # Texto em português com maiúscula
-                        r'\b(PONG|Olá|Oi|Sim|Não|OK)\b',      # Palavras comuns
-                    ]
-                    for pattern in text_patterns:
-                        matches = re.findall(pattern, chunk_str, re.IGNORECASE)
-                        for match in matches:
-                            if isinstance(match, str) and len(match.strip()) > 0:
-                                extracted_content += match.strip() + " "
-                                logger.debug(f"Conteúdo extraído por regex: {match.strip()}")
-                                break
-                        if extracted_content:
-                            break
-            
-            # Adicionar conteúdo extraído se houver
-            if extracted_content and extracted_content.strip():
-                cleaned_content = extracted_content.strip()
-                agent_message_response += cleaned_content
-                logger.debug(f"Conteúdo adicionado à resposta: '{cleaned_content[:100]}...'")
-                
-    except ConnectionError as e:
-        logger.error(f"Erro de conexão ao processar stream: {e}")
-    except TimeoutError as e:
-        logger.error(f"Timeout ao processar stream: {e}")
-    except ValueError as e:
-        logger.error(f"Erro de valor/formato ao processar stream: {e}")
-    except ApiError as e:
-        # Erro específico do Letta client (ex: 500, 401, etc.)
-        status_code = getattr(e, 'status_code', 'unknown')
-        body = getattr(e, 'body', str(e))
-        
-        if status_code == 500:
-            logger.error(f"Servidor Letta retornou erro interno (500). Verifique o status do servidor.")
-            logger.error(f"Detalhes do erro: {body}")
-        elif status_code == 401:
-            logger.error(f"Erro de autenticação (401). Verifique o token LETTA_API_TOKEN.")
-        elif status_code == 404:
-            logger.error(f"Agente não encontrado (404). Verifique se o agent_id existe.")
-        else:
-            logger.error(f"Erro da API Letta (status {status_code}): {body}")
-        
-        # Se é um SSE error event, extrair a mensagem real
-        if "event: error" in body and "data:" in body:
-            try:
-                # Extrair a parte JSON do SSE
-                lines = body.split('\n')
-                for line in lines:
-                    if line.startswith('data:'):
-                        data_json = line.replace('data:', '').strip()
-                        error_data = json.loads(data_json)
-                        if 'error' in error_data and 'message' in error_data['error']:
-                            logger.error(f"Mensagem do servidor: {error_data['error']['message']}")
-            except Exception as parse_error:
-                logger.debug(f"Não foi possível extrair mensagem de erro detalhada: {parse_error}")
+            if (
+                isinstance(chunk, AssistantMessage)
+                and hasattr(chunk, "content")
+                and chunk.content
+            ):
+                agent_message_response += chunk.content
+            elif hasattr(chunk, "message") and isinstance(
+                chunk.message, AssistantMessage
+            ):
+                if hasattr(chunk.message, "content") and chunk.message.content:
+                    agent_message_response += chunk.message.content
+            elif hasattr(chunk, "text") and chunk.text:
+                agent_message_response += chunk.text
     except Exception as e:
-        logger.error(f"Erro inesperado ao processar stream: {type(e).__name__}: {e}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        if "peer closed connection" in str(e) or "incomplete chunked read" in str(e):
+            logger.warning(f"Conexão fechada prematuramente durante o processamento do stream: {e}")
+        else:
+            logger.error(f"Erro ao processar stream: {e}")
 
-    logger.info(f"Stream processado: {chunk_count} chunks -> resposta de {len(agent_message_response)} caracteres")
-    
     return agent_message_response
 
 async def process_stream_raw(response: typing.AsyncIterator[LettaStreamingResponse]) -> typing.Dict[str, typing.List]:
