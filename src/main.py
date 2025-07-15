@@ -27,6 +27,25 @@ class InterceptHandler(logging.Handler):
 
 
 logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG)
+
+for _log in ["uvicorn", "uvicorn.error", "fastapi"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.DEBUG)
+
+for _log in ["httpcore._trace", "httpx._client"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.DEBUG)
+
+_logger = logging.getLogger("src.services.letta")
+_logger.handlers = [InterceptHandler()]
+_logger.propagate = False
+_logger.setLevel(logging.DEBUG)
+
+# Configurar loguru
 logger.configure(
     handlers=[
         {
@@ -45,23 +64,6 @@ logger.configure(
         },
     ]
 )
-
-for _log in ["uvicorn", "uvicorn.error", "fastapi"]:
-    _logger = logging.getLogger(_log)
-    _logger.handlers = [InterceptHandler()]
-    _logger.propagate = False
-    _logger.setLevel(logging.DEBUG)
-
-for _log in ["httpcore._trace", "httpx._client"]:
-    _logger = logging.getLogger(_log)
-    _logger.handlers = [InterceptHandler()]
-    _logger.propagate = False
-    _logger.setLevel(logging.DEBUG)
-
-_logger = logging.getLogger("src.services.letta")
-_logger.handlers = [InterceptHandler()]
-_logger.propagate = False
-_logger.setLevel(logging.DEBUG)
 
 
 app = FastAPI(
