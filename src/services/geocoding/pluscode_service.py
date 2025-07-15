@@ -114,9 +114,9 @@ async def get_category_equipments():
         with
             equipamentos as (
                 SELECT
-                    DISTINCT 
-                    secretaria_responsavel,
-                    categoria
+                    DISTINCT
+                        TRIM(secretaria_responsavel) as secretaria_responsavel,
+                        TRIM(categoria) as categoria
                 FROM `rj-iplanrio.plus_codes.codes`
                 WHERE categoria IS NOT NULL
             ),
@@ -124,7 +124,7 @@ async def get_category_equipments():
             controle as (
                 select distinct
                     concat(trim(secretaria_responsavel), "__", trim(tipo)) tipo_controle,
-                from `rj-iplanrio.plus_codes.controle_tipos_equipamentos`
+                from `rj-iplanrio.plus_codes.equipamentos_controle_categorias`
                 where use = '0'
             )
 
@@ -135,6 +135,7 @@ async def get_category_equipments():
             not in (select tipo_controle from controle)
         order by eq.secretaria_responsavel, eq.categoria
     """
+
     data = get_bigquery_result(query=query)
     categories = {}
     for d in data:
