@@ -8,6 +8,7 @@ from src.services.geocoding.utils import (
     get_bigquery_client,
 )
 from src.config import env as config
+from loguru import logger
 
 
 def get_bigquery_result(query: str):
@@ -81,6 +82,7 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
             order by eq.secretaria_responsavel, eq.categoria, eq.distancia_metros
         """
         if categories:
+            logger.info(f"Categories: {categories}")
             categorias_filter = "and t.categoria in ("
             for i in range(len(categories)):
                 if i != len(categories) - 1:
@@ -92,9 +94,18 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
 
             query = query.replace("__replace_categories__", categorias_filter)
         else:
+            logger.info("No categories provided. Returning all categories.")
             query = query.replace("__replace_categories__", "")
-        data = get_bigquery_result(query=query)
-        return data
+
+        try:
+            data = get_bigquery_result(query=query)
+            return data
+        except Exception as e:
+            logger.error(f"Erro no request do bigquery: {e}")
+            return {
+                "error": "Erro no request do bigquery",
+                "message": str(e),
+            }
     return None
 
 
@@ -135,7 +146,7 @@ async def get_category_equipments():
     return categories
 
 
-def get_tematic_instructions_for_equipments():
+async def get_tematic_instructions_for_equipments():
     query = f"""
         SELECT 
             * 

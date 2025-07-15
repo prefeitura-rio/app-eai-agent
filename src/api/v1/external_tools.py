@@ -25,12 +25,15 @@ async def get_equipaments(
     ),
 ):
     try:
-
         response = await get_pluscode_equipments(address=address, categories=categories)
-
+        logger.info(f"Response: {response}")
+        if response == []:
+            raise HTTPException(
+                status_code=500,
+                detail="Nao foi possivel encontrar equipamentos para endereço/categoria(s) informado(s)",
+            )
         if not response:
             raise HTTPException(status_code=500, detail="Falha ao buscar equipamentos")
-
         return {"equipamentos": response}
     except Exception as e:
         logger.error(f"Erro: {e}")
