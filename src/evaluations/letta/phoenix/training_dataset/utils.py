@@ -423,19 +423,24 @@ Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão ca
 - Demonstre emoções reais (preocupação, alívio, gratidão etc).
 """
 
-    agent_id = await criar_agente_letta(
-        index=0,
-        name="Agente Teste",
-        tools=tools,
-        model_name=model_name,
-        system_prompt=system_prompt,
-        temperature=temperature,
-    )
 
     for idx, exemplo in enumerate(exemplos):
+        agent_id = await criar_agente_letta(
+            index=0,
+            name="Agente Teste",
+            tools=tools,
+            model_name=model_name,
+            system_prompt=system_prompt,
+            temperature=temperature,
+        )
+
         premissa = exemplo.input.get("context")
         pergunta_inicial = exemplo.input.get("initial_message")
-        
+
+        print(f"\n=== Exemplo {idx} ===")
+        print(f"Premissa: {premissa}")
+        print(f"Primeira mensagem: {pergunta_inicial}")
+
         conversa = []
         trocas = 0
         resolveu = False
@@ -443,7 +448,6 @@ Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão ca
         msg_bot1 = pergunta_inicial
         conversa.append({"bot1": msg_bot1})
         trocas += 1
-        print(f"msg_bot1: {msg_bot1}")
  
         while trocas < 5 and not resolveu:
             resposta_bot2 = await obter_resposta_letta(agent_id, msg_bot1)
@@ -455,26 +459,24 @@ Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão ca
             print(f"msg_bot2:", resposta_bot2)
             conversa.append({"bot2": resposta_bot2})
 
-            if any(
-                frase in resposta_bot2.lower()
-                for frase in [
-                    "então você deve",
-                    "sugiro que",
-                    "recomendo que",
-                    "o ideal é",
-                    "o melhor seria",
-                    "você pode",
-                    "procure",
-                    "entre em contato",
-                ]
-            ):
-                resolveu = True
-                break
-
             historico = ""
             for exchange in conversa:
                 for speaker, msg in exchange.items():
                     historico += f"{speaker}: {msg}\n"
+
+            prompt_verificacao = f"""
+Premissa original: "{premissa}"
+
+Histórico da conversa até agora:
+{historico}
+
+Com base nessa conversa, o problema inicial foi razoavelmente resolvido/respondido? Responda apenas com SIM ou NÃO.
+"""
+            veredito = await get_response_from_gpt(prompt_verificacao)
+            if "SIM" in veredito["text"].strip().upper():
+                resolveu = True
+                print("Problema resolvido")
+                break
 
             prompt_continuacao = f"""
 {prompt_orientacao}
@@ -484,15 +486,22 @@ Premissa original: "{premissa}"
 Histórico da conversa até agora:
 {historico}
 
-Responda agora como Bot1: envie a próxima mensagem, mantendo o tom carioca (abreviações, gírias, emojis).
+Responda agora como Bot1, mantendo o tom carioca (abreviações, gírias, emojis).
 """
-            print(f"prompt_continuacao: {historico}")
 
             bot1_response = await get_response_from_gpt(prompt_continuacao)
             msg_bot1 = bot1_response["text"]
             conversa.append({"bot1": msg_bot1})
             trocas += 1
-        todas_conversas[f"exemplo_{idx}"] = {"premissa": premissa, "pergunta_inicial": pergunta_inicial, "conversa": conversa}
+
+        todas_conversas[f"exemplo_{idx}"] = {
+            "premissa": premissa, 
+            "pergunta_inicial": pergunta_inicial, 
+            "conversa": conversa,
+            "turnos": trocas
+        }
+
+        await excluir_agente_letta(agent_id)
 
     return todas_conversas
 
