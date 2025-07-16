@@ -15,6 +15,7 @@ from google.genai.types import (
 )
 import src.config.env as env
 from src.utils.bigquery import get_bigquery_client
+from uuid import uuid4
 
 from datetime import datetime
 import httpx
@@ -46,6 +47,8 @@ class GeminiService:
     ):
         logger.info(f"Iniciando pesquisa Google para: {query}")
         max_retry_attempts = retry_attempts
+        request_id = str(uuid4())
+        retry_count = 0
         while retry_attempts > 0:
             try:
                 # Timeout total para toda a operação
@@ -104,21 +107,29 @@ class GeminiService:
                     retry_attempts = -1
 
                     return {
+                        "id": request_id,
                         "text": modified_text,
                         "sources": sources_gathered,
                         "web_search_queries": web_search_queries,
                         "tokens_metadata": tokens_metadata,
-                        "retry_attempts": retry_attempts,
+                        "retry_attempts": retry_count,
+                        "model": model,
+                        "temperature": temperature,
+                        "query": query,
                     }
 
             except asyncio.TimeoutError:
                 if retry_attempts == 0:
                     return {
+                        "id": request_id,
                         "text": "Pesquisa Google demorou muito tempo (timeout de 90s)",
                         "sources": [],
                         "web_search_queries": [],
                         "tokens_metadata": {},
                         "retry_attempts": retry_attempts,
+                        "model": model,
+                        "temperature": temperature,
+                        "query": query,
                     }
 
                 logger.error(
@@ -128,23 +139,27 @@ class GeminiService:
                     f"Remaning attempts {retry_attempts} of {max_retry_attempts}"
                 )
                 retry_attempts -= 1
-
+                retry_count += 1
             except Exception as e:
 
                 if retry_attempts == 0:
                     return {
+                        "id": request_id,
                         "text": str(e),
                         "sources": [],
                         "web_search_queries": [],
                         "tokens_metadata": {},
                         "retry_attempts": retry_attempts,
+                        "model": model,
+                        "temperature": temperature,
+                        "query": query,
                     }
-
                 logger.error(f"Erro na pesquisa Google: {e}")
                 logger.info(
                     f"Remaning attempts {retry_attempts} of {max_retry_attempts}"
                 )
                 retry_attempts -= 1
+                retry_count += 1
 
     def get_tokens_metadata(self, response: GenerateContentResponse) -> dict:
         usage_metadata = response.usage_metadata

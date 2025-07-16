@@ -27,7 +27,7 @@ async def google_search_tool(
         gemini_service = GeminiService()
         response = await gemini_service.google_search(
             query=query,
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite-preview-06-17",
             temperature=0.0,
             retry_attempts=3,
         )
@@ -45,7 +45,12 @@ async def google_search_tool(
             table_id="api",
         )
 
-        return response
+        return {
+            "text": response.get("text"),
+            "sources": response.get("sources"),
+            "web_search_queries": response.get("web_search_queries"),
+            "id": response.get("id"),
+        }
     except Exception as e:
         logger.error(f"Erro ao gerar resposta do Gemini: {e}")
         raise HTTPException(
