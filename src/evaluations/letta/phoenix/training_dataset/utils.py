@@ -413,26 +413,14 @@ async def coletar_respostas(
     exemplos = list(dataset.examples.values())
     todas_conversas = {}
 
-    prompt = """
+    prompt_orientacao = """
 Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão carioca comum.
 
-Comece a conversa com base na premissa abaixo, escrevendo de forma natural.
-
-### Como você deve agir:
 ✅ Fale como um carioca conversando no WhatsApp:
 - Use abreviações naturais: “pq”, “blz”, “vlw”, “to”, “tô”, “q”, “tbm”.
 - Use expressões e gírias cariocas leves: “pô”, “cara”, “ih”, “então”, “beleza?”.
 - Frases curtas, diretas; emojis são permitidos (😥🙏😂 etc).
 - Demonstre emoções reais (preocupação, alívio, gratidão etc).
-
-✅ Comece a conversa enviando a primeira mensagem que representa a premissa, de forma natural.
-
-✅ Nas trocas seguintes, responda sempre ao que o bot perguntar ou sugerir, mantendo coerência com a premissa.
-
-✅ Tente levar a conversa até que o problema inicial seja resolvido de forma razoável.
-
-**Premissa:**
-> {premissa}
 """
 
     agent_id = await criar_agente_letta(
@@ -445,23 +433,24 @@ Comece a conversa com base na premissa abaixo, escrevendo de forma natural.
     )
 
     for idx, exemplo in enumerate(exemplos):
-        premissa = exemplo.input["premissa"]
+        premissa = exemplo.input.get("context")
+        pergunta_inicial = exemplo.input.get("initial_message")
+        
         conversa = []
         trocas = 0
         resolveu = False
 
-        prompt_inicial = prompt.format(premissa=premissa)
-        pergunta = await get_response_from_gpt(prompt_inicial)
-        msg_bot1 = pergunta["text"]
-        print(f"msg_bot1: {msg_bot1}")
+        msg_bot1 = pergunta_inicial
         conversa.append({"bot1": msg_bot1})
         trocas += 1
-        # add mais prints
+        print(f"msg_bot1: {msg_bot1}")
+ 
         while trocas < 5 and not resolveu:
             resposta_bot2 = await obter_resposta_letta(agent_id, msg_bot1)
             if not resposta_bot2:
                 conversa.append({"bot2": "Sem resposta do bot"})
                 break
+
             resposta_bot2 = final_response(resposta_bot2).content
             print(f"msg_bot2:", resposta_bot2)
             conversa.append({"bot2": resposta_bot2})
@@ -488,7 +477,8 @@ Comece a conversa com base na premissa abaixo, escrevendo de forma natural.
                     historico += f"{speaker}: {msg}\n"
 
             prompt_continuacao = f"""
-Você é uma pessoa carioca no WhatsApp.
+{prompt_orientacao}
+
 Premissa original: "{premissa}"
 
 Histórico da conversa até agora:
@@ -497,12 +487,12 @@ Histórico da conversa até agora:
 Responda agora como Bot1: envie a próxima mensagem, mantendo o tom carioca (abreviações, gírias, emojis).
 """
             print(f"prompt_continuacao: {historico}")
-            # 🟢 Bot1 responde de novo
+
             bot1_response = await get_response_from_gpt(prompt_continuacao)
             msg_bot1 = bot1_response["text"]
             conversa.append({"bot1": msg_bot1})
             trocas += 1
-        todas_conversas[f"exemplo_{idx}"] = {"premissa": premissa, "conversa": conversa}
+        todas_conversas[f"exemplo_{idx}"] = {"premissa": premissa, "pergunta_inicial": pergunta_inicial, "conversa": conversa}
 
     return todas_conversas
 
