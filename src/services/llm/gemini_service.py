@@ -11,8 +11,11 @@ from google.genai.types import (
     GoogleSearch,
     Content,
     Part,
+    GenerateContentResponse,
 )
 import src.config.env as env
+from src.utils.bigquery import get_bigquery_client
+
 from datetime import datetime
 import httpx
 
@@ -93,15 +96,19 @@ class GeminiService:
                         web_search_queries = (
                             candidate.grounding_metadata.web_search_queries
                         )
+                    tokens_metadata = self.get_tokens_metadata(response=response)
 
                     logger.info(
                         f"Pesquisa concluída com {len(sources_gathered)} fontes"
                     )
                     retry_attempts = -1
+
                     return {
                         "text": modified_text,
                         "sources": sources_gathered,
                         "web_search_queries": web_search_queries,
+                        "tokens_metadata": tokens_metadata,
+                        "retry_attempts": retry_attempts,
                     }
 
             except asyncio.TimeoutError:
@@ -110,6 +117,8 @@ class GeminiService:
                         "text": "Pesquisa Google demorou muito tempo (timeout de 90s)",
                         "sources": [],
                         "web_search_queries": [],
+                        "tokens_metadata": {},
+                        "retry_attempts": retry_attempts,
                     }
 
                 logger.error(
@@ -127,6 +136,8 @@ class GeminiService:
                         "text": str(e),
                         "sources": [],
                         "web_search_queries": [],
+                        "tokens_metadata": {},
+                        "retry_attempts": retry_attempts,
                     }
 
                 logger.error(f"Erro na pesquisa Google: {e}")
@@ -134,6 +145,44 @@ class GeminiService:
                     f"Remaning attempts {retry_attempts} of {max_retry_attempts}"
                 )
                 retry_attempts -= 1
+
+    def get_tokens_metadata(self, response: GenerateContentResponse) -> dict:
+        usage_metadata = response.usage_metadata
+        tokens_metadata = {}
+        if usage_metadata:
+            tokens_metadata["cache_tokens_details"] = (
+                usage_metadata.cache_tokens_details
+            )
+            tokens_metadata["cached_content_token_count"] = (
+                usage_metadata.cached_content_token_count
+            )
+            tokens_metadata["candidates_token_count"] = (
+                usage_metadata.candidates_token_count
+            )
+            tokens_metadata["candidates_tokens_details"] = (
+                usage_metadata.candidates_tokens_details
+            )
+            tokens_metadata["prompt_token_count"] = usage_metadata.prompt_token_count
+            tokens_metadata["thoughts_token_count"] = (
+                usage_metadata.thoughts_token_count
+            )
+            tokens_metadata["tool_use_prompt_token_count"] = (
+                usage_metadata.tool_use_prompt_token_count
+            )
+            tokens_metadata["tool_use_prompt_tokens_details"] = (
+                usage_metadata.tool_use_prompt_tokens_details
+            )
+            tokens_metadata["total_token_count"] = usage_metadata.total_token_count
+
+        return tokens_metadata
+
+    async def save_metadata_in_bq(
+        self,
+        dataset_id: str,
+        table_id: str,
+        metadata: dict,
+    ):
+        print(f"Salvando metadata no BigQuery: {dataset_id} - {table_id}")
 
     async def generate_content(
         self,

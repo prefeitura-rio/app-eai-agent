@@ -5,9 +5,10 @@ from google.cloud.bigquery.table import Row
 from src.services.geocoding.utils import (
     CustomJSONEncoder,
     get_plus8_from_address,
-    get_bigquery_client,
 )
 from src.config import env as config
+from src.utils.bigquery import get_bigquery_client
+
 from loguru import logger
 
 

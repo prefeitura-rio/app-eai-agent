@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
 from loguru import logger
 
 from src.services.llm.openai_service import OpenAIService
@@ -9,6 +9,7 @@ from src.config import env
 from src.services.deep_research.graph import graph, log_graph_event
 from src.services.deep_research.configuration import Configuration
 from langchain_core.messages import HumanMessage
+from src.utils.bigquery import save_response_in_bq
 
 router = APIRouter(
     prefix="/letta/tools",
@@ -20,6 +21,7 @@ router = APIRouter(
 @router.get("/google_search", name="Google Search")
 async def google_search_tool(
     query: str = Query(..., description="Texto da consulta"),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     try:
         gemini_service = GeminiService()
@@ -34,6 +36,14 @@ async def google_search_tool(
             raise HTTPException(
                 status_code=500, detail="Falha ao gerar resposta do Gemini"
             )
+
+        background_tasks.add_task(
+            save_response_in_bq,
+            data=response,
+            endpoint="letta/tools/google_search",
+            dataset_id="brutos_eai_logs",
+            table_id="api",
+        )
 
         return response
     except Exception as e:

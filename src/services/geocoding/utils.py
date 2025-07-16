@@ -1,11 +1,8 @@
-import base64
 import json
 import datetime
 
 import requests
-from google.cloud import bigquery
-from google.oauth2 import service_account
-from typing import List
+
 from src.config import env
 import src.services.geocoding.openlocationcode as olc
 from loguru import logger
@@ -83,34 +80,3 @@ def get_plus8_from_address(address: str):
     plus8 = olc.encode(latitude=coords["lat"], longitude=coords["lng"], codeLength=8)
     logger.info(f"Encoded plus8 {plus8}")
     return plus8
-
-
-def get_bigquery_client() -> bigquery.Client:
-    """Get the BigQuery client.
-
-    Returns:
-        bigquery.Client: The BigQuery client.
-    """
-    credentials = get_gcp_credentials(
-        scopes=[
-            "https://www.googleapis.com/auth/drive",
-            "https://www.googleapis.com/auth/cloud-platform",
-        ]
-    )
-    return bigquery.Client(credentials=credentials, project=credentials.project_id)
-
-
-def get_gcp_credentials(scopes: List[str] = None) -> service_account.Credentials:
-    """Get the GCP credentials.
-
-    Args:
-        scopes (List[str], optional): The scopes to use. Defaults to None.
-
-    Returns:
-        service_account.Credentials: The GCP credentials.
-    """
-    info: dict = json.loads(base64.b64decode(env.GCP_SERVICE_ACCOUNT_CREDENTIALS))
-    creds = service_account.Credentials.from_service_account_info(info)
-    if scopes:
-        creds = creds.with_scopes(scopes)
-    return creds
