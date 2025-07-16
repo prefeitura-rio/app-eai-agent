@@ -85,7 +85,6 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
         else:
             logger.info("No categories provided. Returning all categories.")
             query = query.replace("__replace_categories__", "")
-        logger.info(f"Query: {query}")
         try:
             data = get_bigquery_result(query=query)
             return data
