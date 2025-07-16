@@ -56,7 +56,8 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
                     eq.horario_funcionamento,
                     eq.updated_at,
                 from `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
-                where t.plus8 = "{plus8}"
+                where eq.use = TRUE 
+                and t.plus8 = "{plus8}"
                 __replace_categories__
                 qualify
                     row_number() over (
@@ -64,20 +65,9 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
                         order by cast(eq.distancia_metros as int64)
                     )
                     = 1
-            ),
-
-            controle as (
-                select distinct
-                    concat(trim(secretaria_responsavel), "__", trim(tipo)) tipo_controle,
-                from `rj-iplanrio.plus_codes.equipamentos_controle_categorias`
-                where use = '0'
             )
-
             select *
             from equipamentos eq
-            where
-                concat(eq.secretaria_responsavel, "__", eq.categoria)
-                not in (select tipo_controle from controle)
             order by eq.secretaria_responsavel, eq.categoria, eq.distancia_metros
         """
         if categories:
@@ -95,7 +85,7 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
         else:
             logger.info("No categories provided. Returning all categories.")
             query = query.replace("__replace_categories__", "")
-
+        logger.info(f"Query: {query}")
         try:
             data = get_bigquery_result(query=query)
             return data
@@ -114,24 +104,13 @@ async def get_category_equipments():
             equipamentos as (
                 SELECT
                     DISTINCT
-                        TRIM(secretaria_responsavel) as secretaria_responsavel,
-                        TRIM(categoria) as categoria
-                FROM `rj-iplanrio.plus_codes.codes`
-                WHERE categoria IS NOT NULL
-            ),
-
-            controle as (
-                select distinct
-                    concat(trim(secretaria_responsavel), "__", trim(tipo)) tipo_controle,
-                from `rj-iplanrio.plus_codes.equipamentos_controle_categorias`
-                where use = '0'
+                        TRIM(t.secretaria_responsavel) as secretaria_responsavel,
+                        TRIM(t.categoria) as categoria
+                FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
+                WHERE t.categoria IS NOT NULL and eq.use = TRUE
             )
-
         select *
         from equipamentos eq
-        where
-            concat(eq.secretaria_responsavel, "__", eq.categoria)
-            not in (select tipo_controle from controle)
         order by eq.secretaria_responsavel, eq.categoria
     """
 
