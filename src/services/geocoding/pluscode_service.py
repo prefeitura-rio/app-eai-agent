@@ -41,7 +41,6 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
                     cast(eq.distancia_metros as int64) as distancia_metros,
                     t.secretaria_responsavel,
                     t.categoria,
-                    eq.tipo_equipamento,
                     eq.nome_oficial,
                     eq.nome_popular,
                     eq.endereco.logradouro,
