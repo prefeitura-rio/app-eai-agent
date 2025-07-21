@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from src.core.security.dependencies import validar_token
 from src.services.geocoding.pluscode_service import (
-    get_pluscode_equipments,
+    get_pluscode_coords_equipments,
     get_category_equipments,
     get_tematic_instructions_for_equipments,
 )
@@ -25,7 +25,9 @@ async def get_equipaments(
     ),
 ):
     try:
-        response = await get_pluscode_equipments(address=address, categories=categories)
+        response = await get_pluscode_coords_equipments(
+            address=address, categories=categories
+        )
         if response == []:
             raise HTTPException(
                 status_code=500,

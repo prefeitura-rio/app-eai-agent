@@ -56,7 +56,7 @@ def get_coords_from_google_maps_api(address: str):
     return {}
 
 
-def get_plus8_from_address(address: str):
+def get_plus8_coords_from_address(address: str):
     """Get the plus8 from an address.
 
     Args:
@@ -79,4 +79,4 @@ def get_plus8_from_address(address: str):
     logger.info(f"\nGeolocated info:\n {coords_info}")
     plus8 = olc.encode(latitude=coords["lat"], longitude=coords["lng"], codeLength=8)
     logger.info(f"Encoded plus8 {plus8}")
-    return plus8
+    return plus8, coords

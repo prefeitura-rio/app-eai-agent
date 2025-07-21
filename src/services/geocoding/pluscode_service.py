@@ -4,7 +4,7 @@ from google.cloud.bigquery.table import Row
 
 from src.services.geocoding.utils import (
     CustomJSONEncoder,
-    get_plus8_from_address,
+    get_plus8_coords_from_address,
 )
 from src.config import env as config
 from src.utils.bigquery import get_bigquery_client
@@ -28,9 +28,13 @@ def get_bigquery_result(query: str):
     return json.loads(data_str)
 
 
-async def get_pluscode_equipments(address, categories: Optional[List[str]] = []):
-    plus8 = get_plus8_from_address(address=address)
+async def get_pluscode_coords_equipments(address, categories: Optional[List[str]] = []):
+
+    plus8, coords = get_plus8_coords_from_address(address=address)
+
     if plus8:
+        latitude = coords["lat"]
+        longitude = coords["lng"]
         query = f"""
             with
             equipamentos as (
@@ -66,52 +70,110 @@ async def get_pluscode_equipments(address, categories: Optional[List[str]] = [])
                         order by cast(eq.distancia_metros as int64)
                     )
                     = 1
+            ),
+
+            tb_territorio as (
+            SELECT 
+                secretaria_responsavel,
+                categoria,
+                geometry,
+                equipamentos as eq
+            FROM `rj-iplanrio.plus_codes.territorio`
+            ),
+            
+            equipamentos_territorio as (
+                SELECT 
+                    CAST(NULL as STRING) as plus8_grid,
+                    eq.plus8,
+                    eq.plus10,
+                    eq.plus11,
+                    CAST(st_distance(ST_GEOGPOINT(eq.longitude,eq.latitude), ST_GEOGPOINT({longitude}, {latitude})) AS INT64) as distancia_metros,                    t.secretaria_responsavel,
+                    t.categoria,
+                    eq.nome_oficial,
+                    eq.nome_popular,
+                    eq.endereco.logradouro,
+                    eq.endereco.numero,
+                    eq.endereco.complemento,
+                    coalesce(eq.bairro.bairro, eq.endereco.bairro) as bairro,
+                    eq.bairro.regiao_planejamento,
+                    eq.bairro.regiao_administrativa,
+                    eq.bairro.subprefeitura,
+                    eq.contato,
+                    eq.ativo,
+                    eq.aberto_ao_publico,
+                    eq.horario_funcionamento,
+                    eq.updated_at,
+                FROM tb_territorio t
+                where eq.use = TRUE 
+                and ST_WITHIN(ST_GEOGPOINT({longitude}, {latitude}), geometry)
+                __replace_categories__
+                order by eq.secretaria_responsavel, eq.categoria
+            ),
+            
+           final_tb as (
+                select *
+                from equipamentos eq
+                UNION ALL
+                SELECT * 
+                FROM equipamentos_territorio
             )
-            select *
-            from equipamentos eq
-            order by eq.secretaria_responsavel, eq.categoria, eq.distancia_metros
+
+            SELECT *
+            FROM final_tb
+            order by secretaria_responsavel, categoria
         """
-        if categories:
-            logger.info(f"Categories: {categories}")
-            categorias_filter = "and t.categoria in ("
-            for i in range(len(categories)):
-                if i != len(categories) - 1:
-                    categorias_filter += f"'{categories[i]}', "
-                else:
-                    categorias_filter += f"'{categories[i]}'"
 
-            categorias_filter += ")"
+    if categories:
+        logger.info(f"Categories: {categories}")
+        categorias_filter = "and t.categoria in ("
+        for i in range(len(categories)):
+            if i != len(categories) - 1:
+                categorias_filter += f"'{categories[i]}', "
+            else:
+                categorias_filter += f"'{categories[i]}'"
 
-            query = query.replace("__replace_categories__", categorias_filter)
-        else:
-            logger.info("No categories provided. Returning all categories.")
-            query = query.replace("__replace_categories__", "")
-        try:
-            data = get_bigquery_result(query=query)
-            return data
-        except Exception as e:
-            logger.error(f"Erro no request do bigquery: {e}")
-            return {
-                "error": "Erro no request do bigquery",
-                "message": str(e),
-            }
+        categorias_filter += ")"
+        query = query.replace("__replace_categories__", categorias_filter)
+    else:
+        logger.info("No categories provided. Returning all categories.")
+        query = query.replace("__replace_categories__", "")
+
+    print(query)
+
+    try:
+        data = get_bigquery_result(query=query)
+        return data
+    except Exception as e:
+        logger.error(f"Erro no request do bigquery: {e}")
+        return {
+            "error": "Erro no request do bigquery",
+            "message": str(e),
+        }
     return None
 
 
 async def get_category_equipments():
     query = f"""
         with
-            equipamentos as (
-                SELECT
-                    DISTINCT
-                        TRIM(t.secretaria_responsavel) as secretaria_responsavel,
-                        TRIM(t.categoria) as categoria
-                FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
-                WHERE t.categoria IS NOT NULL and eq.use = TRUE
-            )
-        select *
-        from equipamentos eq
-        order by eq.secretaria_responsavel, eq.categoria
+        equipamentos as (
+            SELECT
+                DISTINCT
+                    TRIM(t.secretaria_responsavel) as secretaria_responsavel,
+                    TRIM(t.categoria) as categoria
+            FROM `rj-iplanrio.plus_codes.codes` t, unnest(equipamentos) as eq
+            WHERE t.categoria IS NOT NULL and eq.use = TRUE
+            UNION ALL
+            SELECT 
+            DISTINCT
+                    TRIM(t.secretaria_responsavel) as secretaria_responsavel,
+                    TRIM(t.categoria) as categoria
+            FROM `rj-iplanrio.plus_codes.territorio` t
+            WHERE t.categoria IS NOT NULL and equipamentos.use = TRUE
+        )
+
+    select *
+    from equipamentos eq
+    order by eq.secretaria_responsavel, eq.categoria
     """
 
     data = get_bigquery_result(query=query)
