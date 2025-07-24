@@ -191,6 +191,7 @@ async def main():
         create_response = await api_client.create_agent(
             user_number="test-123",
             tools=["google_search"],
+            tags=["test"],
         )
         agent_id = create_response.get("agent_id")
 
@@ -206,7 +207,6 @@ async def main():
         message_to_send = (
             "Olá, qual a capital da França e qual a sua população estimada?"
         )
-
         # O método agora lida com a espera internamente!
         final_response = await api_client.send_message_and_get_response(
             agent_id=agent_id,
