@@ -138,8 +138,6 @@ async def get_pluscode_coords_equipments(address, categories: Optional[List[str]
         logger.info("No categories provided. Returning all categories.")
         query = query.replace("__replace_categories__", "")
 
-    print(query)
-
     try:
         data = get_bigquery_result(query=query)
         return data

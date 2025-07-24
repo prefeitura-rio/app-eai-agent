@@ -63,3 +63,6 @@ GPT_EVAL_MODEL = getenv_or_action("GPT_EVAL_MODEL", default="gpt-4o")
 USE_LOCAL_API = (
     getenv_or_action("USE_LOCAL_API", default="false", action="ignore") == "true"
 )
+
+EAI_GATEWAY_API_URL = getenv_or_action("EAI_GATEWAY_API_URL")
+EAI_GATEWAY_API_TOKEN = getenv_or_action("EAI_GATEWAY_API_TOKEN")
