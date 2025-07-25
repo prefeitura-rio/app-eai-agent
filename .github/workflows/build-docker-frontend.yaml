@@ -7,6 +7,7 @@ on:
       - staging
     paths:
       - 'src/frontend/**'
+      - '.github/workflows/build-docker-frontend.yaml'
 
 jobs:
   build:
@@ -39,7 +40,7 @@ jobs:
         run: |
           cd src/frontend
           for TAG in $(echo $TAGS | tr "," "\n"); do
-            docker build -t $IMAGE_NAME:$TAG .
+            docker build --build-arg NEXT_PUBLIC_API_BASE_URL="https://services.staging.app.dados.rio/eai-agent" -t $IMAGE_NAME:$TAG .
           done
 
       - name: Push Docker image
