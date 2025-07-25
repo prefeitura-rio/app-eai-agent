@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import ExperimentDetailsClient from '@/app/experiments/components/experiment-details-client';
 import { notFound } from 'next/navigation';
 import { API_BASE_URL } from '@/app/components/config';
@@ -9,16 +9,16 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { ExperimentData } from '@/app/components/types';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     dataset_id: string;
     experiment_id: string;
-  };
+  }>;
 }
 
 export default function ExperimentDetailsPage({ params }: PageProps) {
+  const { dataset_id, experiment_id } = use(params);
   const [data, setData] = useState<ExperimentData | null>(null);
   const { token } = useAuth();
-  const { dataset_id, experiment_id } = params;
 
   useEffect(() => {
     if (token) {
