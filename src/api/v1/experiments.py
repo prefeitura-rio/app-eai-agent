@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
 
 from src.services.phoenix.dependencies import (
@@ -8,28 +8,28 @@ from src.services.phoenix.dependencies import (
     DataProcessorDep,
 )
 from src.services.phoenix.schemas import ExperimentData
+from src.core.security.dependencies import validar_token
 
 # Configurações e constantes
-router = APIRouter()
-tags = ["Phoenix Experiments"]
+router = APIRouter(dependencies=[Depends(validar_token)], tags=["Phoenix Experiments"])
 
 
 # ==================== ROTAS ====================
 
 
-@router.get("/datasets", tags=tags)
+@router.get("/datasets")
 async def get_datasets_data(phoenix_service: PhoenixServiceDep):
     """Dados dos datasets."""
     return await phoenix_service.get_datasets()
 
 
-@router.get("/dataset_experiments", tags=tags)
+@router.get("/dataset_experiments")
 async def get_dataset_data(dataset_id: str, phoenix_service: PhoenixServiceDep):
     """Dados de um dataset específico."""
     return await phoenix_service.get_dataset_experiments(dataset_id=dataset_id)
 
 
-@router.get("/dataset_examples", tags=tags)
+@router.get("/dataset_examples")
 async def get_dataset_examples(
     dataset_id: str,
     phoenix_service: PhoenixServiceDep,
@@ -42,11 +42,7 @@ async def get_dataset_examples(
     )
 
 
-@router.get(
-    "/experiment_data",
-    response_model=ExperimentData,
-    tags=tags,
-)
+@router.get("/experiment_data", response_model=ExperimentData)
 async def get_experiment_data(
     dataset_id: str,
     experiment_id: str,
@@ -77,11 +73,7 @@ async def get_experiment_data(
     return result
 
 
-@router.get(
-    "/experiment_data_clean",
-    response_model=ExperimentData,
-    tags=tags,
-)
+@router.get("/experiment_data_clean", response_model=ExperimentData)
 async def get_experiment_data_clean(
     dataset_id: str,
     experiment_id: str,

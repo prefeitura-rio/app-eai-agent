@@ -44,6 +44,11 @@ export default function ExperimentsHeader() {
                     <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Painel de Experimentos</h1>
                 </div>
                 <div className="flex items-center gap-2">
+                    {pathname === '/experiments' && (
+                        <Link href="/" className="px-3 py-2 border rounded-md border-gray-300 dark:border-gray-600">
+                            Voltar
+                        </Link>
+                    )}
                     { (pathParts.length > 1) &&
                         <Link href={pathParts.length > 2 ? `/experiments/${datasetId}` : '/experiments'} className="px-3 py-2 border rounded-md border-gray-300 dark:border-gray-600">
                             Voltar
