@@ -93,7 +93,7 @@ class ExperimentDataProcessor:
                 "assistant_messages": {"content": agent_output["resposta_gpt"]},
             },
             "tool_return_messages": [
-                {"tool_return": {"text": "", "sources": agent_output["fontes"]}}
+                {"tool_return": {"text": "", "sources": agent_output.get("fontes", [])}}
             ],
             "ordered": [
                 {
@@ -101,7 +101,7 @@ class ExperimentDataProcessor:
                     "message": {
                         "tool_return": {
                             "text": "",
-                            "sources": agent_output["fontes"],
+                            "sources": agent_output.get("fontes", []),
                             "message_type": "tool_return_message",
                         }
                     },
