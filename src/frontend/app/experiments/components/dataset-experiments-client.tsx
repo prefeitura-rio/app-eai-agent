@@ -44,6 +44,10 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
       );
     }
 
+    type SortableExperimentKeys = 'name' | 'description' | 'createdAt' | 'runCount' | 'averageRunLatencyMs' | 'errorRate' | 'sequenceNumber';
+
+// ...
+
     if (expSortConfig.key) {
       sortableItems.sort((a, b) => {
         let aValue: string | number | null, bValue: string | number | null;
@@ -55,8 +59,8 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
             aValue = aAnn ? aAnn.meanScore : -1;
             bValue = bAnn ? bAnn.meanScore : -1;
         } else {
-            aValue = a[expSortConfig.key as keyof Experiment];
-            bValue = b[expSortConfig.key as keyof Experiment];
+            aValue = a[expSortConfig.key as SortableExperimentKeys];
+            bValue = b[expSortConfig.key as SortableExperimentKeys];
         }
 
         if (aValue < bValue) return expSortConfig.direction === 'ascending' ? -1 : 1;
