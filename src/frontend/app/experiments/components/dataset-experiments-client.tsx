@@ -63,6 +63,8 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
             bValue = b[expSortConfig.key as SortableExperimentKeys];
         }
 
+        if (aValue === null) return 1;
+        if (bValue === null) return -1;
         if (aValue < bValue) return expSortConfig.direction === 'ascending' ? -1 : 1;
         if (aValue > bValue) return expSortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
