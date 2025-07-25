@@ -1,0 +1,87 @@
+.header {
+    width: 100%;
+    padding: 1.5rem 0;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 2rem;
+}
+
+.header_content {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title_section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.dataset_name {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    padding-left: 1rem;
+    border-left: 2px solid var(--color-border);
+}
+
+.actions_section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.action_btn {
+    background-color: rgba(0, 0, 0, 0.05); /* Subtle dark background */
+    border: 1px solid rgba(0, 0, 0, 0.08); /* Slightly darker border */
+    color: var(--color-text-muted);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+[data-bs-theme="dark"] .action_btn {
+    background-color: rgba(255, 255, 255, 0.08); /* Subtle light background in dark mode */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.action_btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: var(--color-text);
+    transform: scale(1.05);
+}
+
+[data-bs-theme="dark"] .action_btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.logout_btn {
+    composes: action_btn;
+    color: var(--color-danger);
+}
+
+.logout_btn:hover {
+    background-color: var(--color-danger);
+    color: white;
+    border-color: var(--color-danger);
+}
