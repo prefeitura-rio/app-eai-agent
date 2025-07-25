@@ -8,8 +8,8 @@ export default function ExperimentsLayout({
   return (
     <div>
         <ExperimentsHeader />
-        <main className="flex-grow p-4">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <main className="">
+            <div className="">
                 {children}
             </div>
         </main>

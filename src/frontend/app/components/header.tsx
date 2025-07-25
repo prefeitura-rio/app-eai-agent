@@ -38,26 +38,26 @@ export default function ExperimentsHeader() {
     };
 
     return (
-        <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex justify-between items-center flex-wrap gap-3">
+        <header className="">
+            <div className="">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Painel de Experimentos</h1>
+                    <h1 className="">Painel de Experimentos</h1>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="">
                     {pathname === '/experiments' && (
-                        <Link href="/" className="px-3 py-2 border rounded-md border-gray-300 dark:border-gray-600">
+                        <Link href="/" className="">
                             Voltar
                         </Link>
                     )}
                     { (pathParts.length > 1) &&
-                        <Link href={pathParts.length > 2 ? `/experiments/${datasetId}` : '/experiments'} className="px-3 py-2 border rounded-md border-gray-300 dark:border-gray-600">
+                        <Link href={pathParts.length > 2 ? `/experiments/${datasetId}` : '/experiments'} className="">
                             Voltar
                         </Link>
                     }
-                    <button onClick={toggleTheme} className="px-3 py-2 border rounded-md border-gray-300 dark:border-gray-600">
+                    <button onClick={toggleTheme} className="">
                         {theme === 'light' ? 'Dark' : 'Light'}
                     </button>
-                    <button onClick={handleLogout} className="px-3 py-2 border rounded-md border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+                    <button onClick={handleLogout} className="">
                         Sair
                     </button>
                 </div>

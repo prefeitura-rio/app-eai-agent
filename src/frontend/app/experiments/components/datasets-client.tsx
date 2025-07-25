@@ -69,53 +69,53 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Datasets Disponíveis ({filteredAndSortedDatasets.length})</h2>
+    <div className="">
+      <div className="">
+        <h2 className="">Datasets Disponíveis ({filteredAndSortedDatasets.length})</h2>
         <input
           type="text"
           placeholder="Filtrar por nome..."
-          className="px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"
+          className=""
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+      <div className="">
+        <table className="">
+          <thead className="">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('name')}>
+              <th scope="col" className="" onClick={() => requestSort('name')}>
                 Nome {getSortIndicator('name')}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('description')}>
+              <th scope="col" className="" onClick={() => requestSort('description')}>
                 Descrição {getSortIndicator('description')}
               </th>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('exampleCount')}>
+              <th scope="col" className="" onClick={() => requestSort('exampleCount')}>
                 Exemplos {getSortIndicator('exampleCount')}
               </th>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('experimentCount')}>
+              <th scope="col" className="" onClick={() => requestSort('experimentCount')}>
                 Experimentos {getSortIndicator('experimentCount')}
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('createdAt')}>
+              <th scope="col" className="" onClick={() => requestSort('createdAt')}>
                 Criado em {getSortIndicator('createdAt')}
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="">
             {filteredAndSortedDatasets.map((dataset) => (
-              <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{dataset.name}</td>
-                <td className="px-6 py-4 whitespace-normal text-sm text-gray-500 dark:text-gray-300">{dataset.description || 'Sem descrição'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-300">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+              <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="">
+                <td className="">{dataset.name}</td>
+                <td className="">{dataset.description || 'Sem descrição'}</td>
+                <td className="">
+                  <span className="">
                     {dataset.exampleCount}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-300">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                <td className="">
+                  <span className="">
                     {dataset.experimentCount}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
+                <td className="">{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
               </tr>
             ))}
           </tbody>
