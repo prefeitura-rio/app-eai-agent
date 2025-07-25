@@ -2,12 +2,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-search-frontend
+  name: eai-agent-frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: agentic-search-frontend
+      app: eai-agent-frontend
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -15,10 +15,10 @@ spec:
   template:
     metadata:
       labels:
-        app: agentic-search-frontend
+        app: eai-agent-frontend
     spec:
       containers:
-        - name: agentic-search-frontend
+        - name: eai-agent-frontend
           image: ghcr.io/prefeitura-rio/app-agentic-search-frontend:latest
           ports:
             - containerPort: 80
@@ -38,13 +38,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-search-frontend
+  name: eai-agent-frontend
 spec:
   selector:
-    app: agentic-search-frontend
+    app: eai-agent-frontend
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 80
+      targetPort: 3000
   type: ClusterIP
 
