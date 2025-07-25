@@ -8,10 +8,8 @@ interface DatasetsClientProps {
   datasets: Dataset[];
 }
 
-export default function DatasetsClient({ datasets: initialDatasets }: DatasetsClientProps) {
+export default function DatasetsClient({ datasets }: DatasetsClientProps) {
   const router = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [datasets, setDatasets] = useState<Dataset[]>(initialDatasets);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof Dataset | null; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
 
