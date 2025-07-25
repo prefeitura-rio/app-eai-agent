@@ -1,18 +1,30 @@
 /* Shared styles for the /experiments pages */
 
+.container {
+    width: 100%;
+    max-width: 1400px; /* Sets a max width for large screens */
+    margin: 0 auto; /* Centers the content */
+    padding: 0 2rem; /* Ensures space from the edges */
+}
+
 .card {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
-    padding: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 4px 16px var(--color-shadow);
+    overflow: hidden; /* Important for containing child elements */
+}
+
+.card_body {
+    padding: 1.5rem; /* The guaranteed padding */
 }
 
 .table {
     background-color: var(--color-surface);
     color: var(--color-text);
     margin-bottom: 0;
+    width: 100%; /* Ensure table takes full width */
 }
 
 .table th {
@@ -26,6 +38,7 @@
     top: 0;
     z-index: 10;
     box-shadow: 0 2px 4px var(--color-shadow);
+    vertical-align: middle;
 }
 
 .table td {
@@ -66,4 +79,9 @@
     transform: translateY(-50%);
     z-index: 2;
     color: var(--color-text-muted);
+}
+
+.sortable_header {
+    cursor: pointer;
+    user-select: none;
 }

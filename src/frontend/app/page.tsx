@@ -41,7 +41,7 @@ export default function HomePage() {
 
   return (
     <div className={styles.page_container}>
-      <AppHeader title="Painel Administrativo EAI" actions={headerActions} />
+      <AppHeader title="Painel Administrativo EAI" actions={headerActions} centerTitle={true} />
 
       <main className={styles.main_content}>
         <p className={styles.description}>

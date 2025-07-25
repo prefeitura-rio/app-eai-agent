@@ -1,7 +1,7 @@
 .header {
     width: 100%;
     padding: 1.5rem 0;
-    background-color: var(--color-surface);
+    background-color: var(--color-bg);
     border-bottom: 1px solid var(--color-border);
     margin-bottom: 2rem;
 }
@@ -22,6 +22,11 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-grow: 1; /* Allow title to take up space */
+}
+
+.title_section_center {
+    justify-content: center;
 }
 
 .title {
@@ -46,8 +51,8 @@
 }
 
 .action_btn {
-    background-color: rgba(0, 0, 0, 0.05); /* Subtle dark background */
-    border: 1px solid rgba(0, 0, 0, 0.08); /* Slightly darker border */
+    background-color: var(--color-button-bg);
+    border: 1px solid transparent;
     color: var(--color-text-muted);
     width: 40px;
     height: 40px;
@@ -57,31 +62,89 @@
     justify-content: center;
     font-size: 1.1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-[data-bs-theme="dark"] .action_btn {
-    background-color: rgba(255, 255, 255, 0.08); /* Subtle light background in dark mode */
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.2s ease-in-out;
 }
 
 .action_btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: var(--color-text);
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
-[data-bs-theme="dark"] .action_btn:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+/* Base Icon Color */
+.action_btn i {
+    transition: color 0.2s ease-in-out;
 }
 
+/* Home Button */
+.home_btn {
+    composes: action_btn;
+}
+.home_btn i {
+    color: var(--color-icon-home);
+}
+.home_btn:hover {
+    background-color: var(--color-icon-home);
+    border-color: var(--color-icon-home);
+}
+.home_btn:hover i {
+    color: white;
+}
+
+/* Back Button */
+.back_btn {
+    composes: action_btn;
+}
+.back_btn i {
+    color: var(--color-icon-back);
+}
+.back_btn:hover {
+    background-color: var(--color-icon-back);
+    border-color: var(--color-icon-back);
+}
+.back_btn:hover i {
+    color: white;
+}
+
+/* Refresh Button */
+.refresh_btn {
+    composes: action_btn;
+}
+.refresh_btn i {
+    color: var(--color-icon-refresh);
+}
+.refresh_btn:hover {
+    background-color: var(--color-icon-refresh);
+    border-color: var(--color-icon-refresh);
+}
+.refresh_btn:hover i {
+    color: white;
+}
+
+/* Theme Button */
+.theme_btn {
+    composes: action_btn;
+}
+.theme_btn i {
+    color: var(--color-icon-theme);
+}
+.theme_btn:hover {
+    background-color: var(--color-icon-theme);
+    border-color: var(--color-icon-theme);
+}
+.theme_btn:hover i {
+    color: white;
+}
+
+/* Logout Button */
 .logout_btn {
     composes: action_btn;
+}
+.logout_btn i {
     color: var(--color-danger);
 }
-
 .logout_btn:hover {
     background-color: var(--color-danger);
-    color: white;
     border-color: var(--color-danger);
+}
+.logout_btn:hover i {
+    color: white;
 }

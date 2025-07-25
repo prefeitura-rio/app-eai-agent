@@ -1,34 +1,41 @@
 /* === DESIGN SYSTEM === */
 :root {
-    /* Core Colors */
-    --color-bg: #F8FAFC;
-    --color-surface: #FFFFFF;
-    --color-surface-hover: #F0F3F7;
-    --color-surface-code: #F5F7FA;
+    /* Core Colors - Softer Light Theme */
+    --color-bg: #f1f5f9; /* A soft, cool gray */
+    --color-surface: #f8fafc; /* A very light, off-white for cards */
+    --color-surface-hover: #ffffff; /* Pure white for hovers */
+    --color-surface-code: #f5f7fa;
     
     /* Text Colors */
-    --color-text: #2C3E50;
-    --color-text-muted: #7F8C8D;
-    --color-text-link: #3498DB;
+    --color-text: #2c3e50;
+    --color-text-muted: #7f8c8d;
+    --color-text-link: #3498db;
     
     /* Brand */
-    --color-primary: #0A74DA;
-    --color-primary-light: #E6F3FC;
+    --color-primary: #0a74da;
+    --color-primary-light: #e6f3fc;
     
     /* Status Colors */
-    --color-success: #2ECC71;
-    --color-warning: #F39C12;
-    --color-danger: #E74C3C;
-    --color-info: #3498DB;
+    --color-success: #2ecc71;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-info: #3498db;
     
     /* Borders & Shadows */
-    --color-border: #EAECEF;
-    --color-border-strong: #D5DBDE;
+    --color-border: #e2e8f0; /* Adjusted for the new gray scale */
+    --color-border-strong: #d5dbde;
     --color-shadow: rgba(0, 0, 0, 0.08);
     
     /* Table Specific */
     --color-table-header: var(--color-surface-hover);
     --color-table-hover: var(--color-primary-light);
+    
+    /* Button Background */
+    --color-button-bg: #e9ecef;
+    --color-icon-home: #198754; /* Green */
+    --color-icon-back: #0d6efd; /* Blue */
+    --color-icon-theme: #ffc107; /* Yellow */
+    --color-icon-refresh: #0dcaf0; /* Cyan */
     
     /* Progress Bar Colors */
     --color-metric-high: var(--color-success);
@@ -63,6 +70,13 @@
     --color-border: #3A4753;
     --color-border-strong: #4D5C6B;
     --color-shadow: rgba(0, 0, 0, 0.3);
+
+    /* Button Background */
+    --color-button-bg: var(--color-surface-hover);
+    --color-icon-home: #20c997; /* Lighter Green */
+    --color-icon-back: #0dcaf0; /* Lighter Blue */
+    --color-icon-theme: #ffc107; /* Yellow */
+    --color-icon-refresh: #3dd5f3; /* Lighter Cyan */
     
     /* Progress Bar Colors */
     --color-metric-high: var(--color-success);

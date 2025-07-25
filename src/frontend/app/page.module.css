@@ -13,6 +13,8 @@
     padding: 2rem;
     text-align: center;
     animation: fadeIn 0.6s ease-out;
+    background-color: var(--color-bg); /* Match the page background */
+    box-shadow: none; /* Remove shadow as it's no longer a distinct card */
 }
 
 .title {
@@ -43,7 +45,7 @@
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
-    background-color: var(--color-surface);
+    background-color: var(--color-surface); /* Make cards white again */
     border-radius: 1rem;
     text-decoration: none;
     color: var(--color-text);

@@ -67,7 +67,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
 
   return (
     <div className={styles.card}>
-      <div className="card-header">
+      <div className="card-header bg-transparent p-3">
         <div className="d-flex align-items-center gap-3">
           <h5 className="mb-0">Datasets Disponíveis (<span className="fw-normal">{filteredAndSortedDatasets.length}</span>)</h5>
           <span className="text-muted">|</span>
@@ -84,47 +84,49 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
           </div>
         </div>
       </div>
-      <div className={`card-body p-0 ${styles.table_responsive}`}>
-        <table className={`table table-hover ${styles.table}`}>
-          <thead className="table-light">
-            <tr>
-              <th scope="col" className="sortable-header" onClick={() => requestSort('name')}>
-                Nome {getSortIndicator('name')}
-              </th>
-              <th scope="col" className="sortable-header" onClick={() => requestSort('description')}>
-                Descrição {getSortIndicator('description')}
-              </th>
-              <th scope="col" className="text-center sortable-header" onClick={() => requestSort('exampleCount')}>
-                Exemplos {getSortIndicator('exampleCount')}
-              </th>
-              <th scope="col" className="text-center sortable-header" onClick={() => requestSort('experimentCount')}>
-                Experimentos {getSortIndicator('experimentCount')}
-              </th>
-              <th scope="col" className="sortable-header" onClick={() => requestSort('createdAt')}>
-                Criado em {getSortIndicator('createdAt')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredAndSortedDatasets.map((dataset) => (
-              <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)}>
-                <td>{dataset.name}</td>
-                <td>{dataset.description || 'Sem descrição'}</td>
-                <td className="text-center">
-                  <span className="badge bg-primary rounded-pill">
-                    {dataset.exampleCount}
-                  </span>
-                </td>
-                <td className="text-center">
-                  <span className="badge bg-success rounded-pill">
-                    {dataset.experimentCount}
-                  </span>
-                </td>
-                <td>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
+      <div className={styles.card_body}>
+        <div className={styles.table_responsive}>
+          <table className={`table table-hover ${styles.table}`}>
+            <thead className="table-light">
+              <tr>
+                <th scope="col" className={styles.sortable_header} onClick={() => requestSort('name')}>
+                  Nome {getSortIndicator('name')}
+                </th>
+                <th scope="col" className={styles.sortable_header} onClick={() => requestSort('description')}>
+                  Descrição {getSortIndicator('description')}
+                </th>
+                <th scope="col" className={`text-center ${styles.sortable_header}`} onClick={() => requestSort('exampleCount')}>
+                  Exemplos {getSortIndicator('exampleCount')}
+                </th>
+                <th scope="col" className={`text-center ${styles.sortable_header}`} onClick={() => requestSort('experimentCount')}>
+                  Experimentos {getSortIndicator('experimentCount')}
+                </th>
+                <th scope="col" className={styles.sortable_header} onClick={() => requestSort('createdAt')}>
+                  Criado em {getSortIndicator('createdAt')}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredAndSortedDatasets.map((dataset) => (
+                <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)}>
+                  <td>{dataset.name}</td>
+                  <td>{dataset.description || 'Sem descrição'}</td>
+                  <td className="text-center">
+                    <span className="badge bg-primary rounded-pill">
+                      {dataset.exampleCount}
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <span className="badge bg-success rounded-pill">
+                      {dataset.experimentCount}
+                    </span>
+                  </td>
+                  <td>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
