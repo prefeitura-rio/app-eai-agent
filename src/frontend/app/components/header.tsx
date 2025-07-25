@@ -1,11 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function ExperimentsHeader() {
     const pathname = usePathname();
+    const router = useRouter();
+    const { logout } = useAuth();
     const pathParts = pathname.split('/').filter(p => p);
     const datasetId = pathParts[1];
     const [theme, setTheme] = useState('light');
@@ -29,6 +32,11 @@ export default function ExperimentsHeader() {
         }
     };
 
+    const handleLogout = () => {
+        logout();
+        router.push(`/login?redirect_url=${pathname}`);
+    };
+
     return (
         <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center flex-wrap gap-3">
@@ -43,6 +51,9 @@ export default function ExperimentsHeader() {
                     }
                     <button onClick={toggleTheme} className="px-3 py-2 border rounded-md border-gray-300 dark:border-gray-600">
                         {theme === 'light' ? 'Dark' : 'Light'}
+                    </button>
+                    <button onClick={handleLogout} className="px-3 py-2 border rounded-md border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+                        Sair
                     </button>
                 </div>
             </div>
