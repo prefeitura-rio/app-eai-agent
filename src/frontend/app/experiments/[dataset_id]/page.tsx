@@ -8,16 +8,17 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { Experiment, Example } from '@/app/components/types';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     dataset_id: string;
-  };
+  }>;
 }
 
-export default function DatasetExperimentsPage({ params }: PageProps) {
+export default async function DatasetExperimentsPage({ params }: PageProps) {
+  // Await params first
+  const { dataset_id } = await params;
   const [experimentsData, setExperimentsData] = useState<{ experiments: { edges: Array<{ experiment: Experiment }> }, name: string } | null>(null);
   const [examplesData, setExamplesData] = useState<Example[] | null>(null);
   const { token } = useAuth();
-  const { dataset_id } = params;
 
   useEffect(() => {
     if (token) {

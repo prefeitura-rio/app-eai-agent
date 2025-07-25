@@ -8,16 +8,17 @@ import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     dataset_id: string;
     experiment_id: string;
-  };
+  }>;
 }
 
-export default function ExperimentDetailsPage({ params }: PageProps) {
+export default async function ExperimentDetailsPage({ params }: PageProps) {
+  // Await params first
+  const { dataset_id, experiment_id } = await params;
   const [data, setData] = useState(null);
   const { token } = useAuth();
-  const { dataset_id, experiment_id } = params;
 
   useEffect(() => {
     if (token) {
