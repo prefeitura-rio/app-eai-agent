@@ -1,117 +1,13 @@
 import ast
-import os
 import httpx
 import json
 import random
 
-import mimetypes
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 from loguru import logger
 
 from fastapi import HTTPException, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
-
-
-class FrontendManager:
-    """Gerencia o serviço de arquivos estáticos e a renderização de templates HTML."""
-
-    def __init__(
-        self,
-        static_dir: str,
-        admin_static_dir: str,
-        use_local_api: bool = False,
-        base_url_local: str = "http://localhost:8089/eai-agent",
-        base_url_staging: str = "https://services.staging.app.dados.rio/eai-agent",
-    ):
-        self.static_dir = static_dir
-        self.admin_static_dir = admin_static_dir
-        self.use_local_api = use_local_api
-        self.base_url_local = base_url_local
-        self.base_url_staging = base_url_staging
-
-    def _replace_api_base_url(self, html_content: str) -> str:
-        """Substitui a URL base da API no conteúdo HTML."""
-        base_url = self.base_url_local if self.use_local_api else self.base_url_staging
-        return html_content.replace("{{BASE_API_URL}}", base_url)
-
-    def _get_mime_type(self, file_path: str) -> str:
-        """Determina o MIME type correto para um arquivo."""
-        mime_type, _ = mimetypes.guess_type(file_path)
-
-        # Forçar MIME types específicos
-        if file_path.endswith(".css"):
-            return "text/css"
-        elif file_path.endswith(".js"):
-            return "application/javascript"
-        elif file_path.endswith(".html"):
-            return "text/html"
-        elif file_path.endswith(".ico"):
-            return "image/x-icon"
-
-        return mime_type or "application/octet-stream"
-
-    def serve_file(
-        self, file_path: str, cache_control: str = "no-cache, max-age=0"
-    ) -> FileResponse:
-        """Serve um arquivo estático com headers apropriados."""
-        if not os.path.exists(file_path):
-            logger.error(f"Arquivo não encontrado: {file_path}")
-            raise HTTPException(status_code=404, detail="Arquivo não encontrado")
-
-        mime_type = self._get_mime_type(file_path)  # Usar o método interno
-
-        logger.info(f"Servindo arquivo: {file_path} com MIME type: {mime_type}")
-
-        return FileResponse(
-            file_path,
-            media_type=mime_type,
-            headers={
-                "Cache-Control": cache_control,
-                "Pragma": "no-cache",
-                "Expires": "0",
-            },
-        )
-
-    def serve_static_file(self, file_path: str) -> FileResponse:
-        """Serve arquivo do diretório estático principal."""
-        full_path = os.path.join(self.static_dir, file_path)
-        return self.serve_file(full_path)
-
-    def serve_favicon(self) -> FileResponse:
-        """Serve o favicon do admin."""
-        favicon_path = os.path.join(self.admin_static_dir, "favicon.ico")
-        return self.serve_file(favicon_path, cache_control="public, max-age=86400")
-
-    def render_html_page(
-        self, template_name: str, replacements: Dict[str, str] = None
-    ) -> HTMLResponse:
-        """Renderiza uma página HTML com substituições opcionais."""
-        html_path = os.path.join(self.static_dir, template_name)
-
-        try:
-            with open(html_path, "r", encoding="utf-8") as f:
-                html_content = f.read()
-
-            # Aplicar substituições
-            html_content = self._replace_api_base_url(
-                html_content
-            )  # Usar o método interno
-
-            if replacements:
-                for key, value in replacements.items():
-                    html_content = html_content.replace(f"{{{{{key}}}}}", value)
-
-            return HTMLResponse(content=html_content)
-
-        except FileNotFoundError:
-            logger.error(f"Arquivo não encontrado: {html_path}")
-            raise HTTPException(status_code=404, detail="Página não encontrada")
-        except Exception as e:
-            logger.error(f"Erro ao carregar {template_name}: {str(e)}")
-            raise HTTPException(
-                status_code=500, detail=f"Erro ao carregar a página: {e}"
-            )
 
 
 class ExperimentDataProcessor:
@@ -223,7 +119,7 @@ class ExperimentDataProcessor:
     def get_experiment_json_data_clean(
         self,
         processed_data: Dict[str, Any],
-        number_of_random_experiments: int = None,
+        number_of_random_experiments: int = 10,
         filter_config: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
         """Limpa os dados do experimento para um formato mais limpo e organizado"""

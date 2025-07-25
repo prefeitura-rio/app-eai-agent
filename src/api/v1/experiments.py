@@ -3,57 +3,33 @@ from typing import Optional
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
-from src.admin.experiments.dependencies import (
+from src.services.phoenix.dependencies import (
     PhoenixServiceDep,
     DataProcessorDep,
-    FrontendManagerDep,
 )
-from src.admin.experiments.schemas import ExperimentData
+from src.services.phoenix.schemas import ExperimentData
 
 # Configurações e constantes
 router = APIRouter()
+tags = ["Phoenix Experiments"]
 
 
 # ==================== ROTAS ====================
 
 
-@router.get("/favicon.ico")
-async def get_favicon(frontend_manager: FrontendManagerDep):
-    """Serve o favicon do admin."""
-    return frontend_manager.serve_favicon()
-
-
-@router.get("/static/{file_path:path}")
-async def get_static_file(file_path: str, frontend_manager: FrontendManagerDep):
-    """Serve arquivos estáticos."""
-    return frontend_manager.serve_static_file(file_path=file_path)
-
-
-@router.get("/auth", response_class=HTMLResponse)
-async def get_auth_page(frontend_manager: FrontendManagerDep):
-    """Página de autenticação."""
-    return frontend_manager.render_html_page(template_name="auth.html")
-
-
-@router.get("/data")
+@router.get("/datasets", tags=tags)
 async def get_datasets_data(phoenix_service: PhoenixServiceDep):
     """Dados dos datasets."""
     return await phoenix_service.get_datasets()
 
 
-@router.get("/", response_class=HTMLResponse)
-async def get_datasets_page(frontend_manager: FrontendManagerDep):
-    """Página principal de visualização de datasets."""
-    return frontend_manager.render_html_page(template_name="datasets.html")
-
-
-@router.get("/{dataset_id}/data")
+@router.get("/dataset_experiments", tags=tags)
 async def get_dataset_data(dataset_id: str, phoenix_service: PhoenixServiceDep):
     """Dados de um dataset específico."""
     return await phoenix_service.get_dataset_experiments(dataset_id=dataset_id)
 
 
-@router.get("/{dataset_id}/examples")
+@router.get("/dataset_examples", tags=tags)
 async def get_dataset_examples(
     dataset_id: str,
     phoenix_service: PhoenixServiceDep,
@@ -66,7 +42,11 @@ async def get_dataset_examples(
     )
 
 
-@router.get("/{dataset_id}/{experiment_id}/data", response_model=ExperimentData)
+@router.get(
+    "/experiment_data",
+    response_model=ExperimentData,
+    tags=tags,
+)
 async def get_experiment_data(
     dataset_id: str,
     experiment_id: str,
@@ -97,13 +77,17 @@ async def get_experiment_data(
     return result
 
 
-@router.get("/{dataset_id}/{experiment_id}/data_clean", response_model=ExperimentData)
+@router.get(
+    "/experiment_data_clean",
+    response_model=ExperimentData,
+    tags=tags,
+)
 async def get_experiment_data_clean(
     dataset_id: str,
     experiment_id: str,
     phoenix_service: PhoenixServiceDep,
     data_processor: DataProcessorDep,
-    number_of_random_experiments: Optional[int] = None,
+    number_of_random_experiments: Optional[int] = 10,
     filters: Optional[str] = None,
 ):
     """
@@ -147,25 +131,3 @@ async def get_experiment_data_clean(
     )
 
     return result
-
-
-@router.get("/{dataset_id}/{experiment_id}", response_class=HTMLResponse)
-async def get_experiment_page(
-    dataset_id: str, experiment_id: str, frontend_manager: FrontendManagerDep
-):
-    """Página de visualização de um experimento específico."""
-    return frontend_manager.render_html_page(
-        template_name="experiment.html",
-        replacements={"DATASET_ID": dataset_id, "EXPERIMENT_ID": experiment_id},
-    )
-
-
-@router.get("/{dataset_id}", response_class=HTMLResponse)
-async def get_dataset_experiments_page(
-    dataset_id: str, frontend_manager: FrontendManagerDep
-):
-    """Página de experimentos de um dataset específico."""
-    return frontend_manager.render_html_page(
-        template_name="dataset-experiments.html",
-        replacements={"DATASET_ID": dataset_id},
-    )
