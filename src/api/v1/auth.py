@@ -16,9 +16,6 @@ async def check_auth(token: str):
     A successful response (200 OK) indicates a valid token.
     An unsuccessful response (401 Unauthorized) indicates an invalid token.
     """
-
-    logger.info(f"TOKEN: {token}")
-
     if not token:
         raise HTTPException(
             status_code=401,
