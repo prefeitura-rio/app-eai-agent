@@ -84,7 +84,7 @@ const RunDetails = ({ run }: { run: Run }) => {
 };
 
 
-export default function ExperimentDetailsClient({ initialData, datasetId, experimentId }: ExperimentDetailsClientProps) {
+export default function ExperimentDetailsClient({ initialData }: ExperimentDetailsClientProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [data, setData] = useState<ExperimentData>(initialData);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);

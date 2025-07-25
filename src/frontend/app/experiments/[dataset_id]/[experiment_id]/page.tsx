@@ -6,19 +6,19 @@ import ExperimentDetailsClient from '@/app/experiments/components/experiment-det
 import { notFound } from 'next/navigation';
 import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { ExperimentData } from '@/app/components/types';
 
 interface PageProps {
-  params: Promise<{
+  params: {
     dataset_id: string;
     experiment_id: string;
-  }>;
+  };
 }
 
-export default async function ExperimentDetailsPage({ params }: PageProps) {
-  // Await params first
-  const { dataset_id, experiment_id } = await params;
-  const [data, setData] = useState(null);
+export default function ExperimentDetailsPage({ params }: PageProps) {
+  const [data, setData] = useState<ExperimentData | null>(null);
   const { token } = useAuth();
+  const { dataset_id, experiment_id } = params;
 
   useEffect(() => {
     if (token) {
