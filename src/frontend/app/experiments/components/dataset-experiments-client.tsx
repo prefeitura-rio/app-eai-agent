@@ -2,31 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-
-// Define types
-interface Experiment {
-  id: string;
-  name: string;
-  description: string | null;
-  createdAt: string;
-  runCount: number;
-  averageRunLatencyMs: number | null;
-  errorRate: number;
-  sequenceNumber: number;
-  annotationSummaries: {
-    annotationName: string;
-    meanScore: number;
-  }[];
-}
-
-interface Example {
-  id: string;
-  latestRevision: {
-    input: any;
-    output: any;
-    metadata: any;
-  };
-}
+import { Experiment, Example } from '@/app/components/types';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -41,11 +17,13 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
   // Experiments state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [experiments, setExperiments] = useState<Experiment[]>(initialExperiments);
   const [expSearchTerm, setExpSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending'; metricName?: string }>({ key: 'createdAt', direction: 'descending' });
 
   // Examples state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [examples, setExamples] = useState<Example[]>(initialExamples);
   const [exSearchTerm, setExSearchTerm] = useState('');
 
@@ -68,7 +46,7 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
 
     if (expSortConfig.key) {
       sortableItems.sort((a, b) => {
-        let aValue: any, bValue: any;
+        let aValue: string | number | null, bValue: string | number | null;
 
         if (expSortConfig.key === 'metric') {
             const metricName = expSortConfig.metricName!;
@@ -114,9 +92,8 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
     router.push(`/experiments/${datasetId}/${experimentId}`);
   };
 
-  const formatObjectForDisplay = (obj: any) => {
+  const formatObjectForDisplay = (obj: Record<string, unknown>) => {
     if (!obj) return '';
-    if (typeof obj === 'string') return obj;
     return JSON.stringify(obj, null, 2);
   }
 

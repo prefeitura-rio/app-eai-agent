@@ -5,6 +5,7 @@ import DatasetExperimentsClient from '@/app/experiments/components/dataset-exper
 import { notFound } from 'next/navigation';
 import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { Experiment, Example } from '@/app/components/types';
 
 interface PageProps {
   params: {
@@ -13,8 +14,8 @@ interface PageProps {
 }
 
 export default function DatasetExperimentsPage({ params }: PageProps) {
-  const [experimentsData, setExperimentsData] = useState(null);
-  const [examplesData, setExamplesData] = useState(null);
+  const [experimentsData, setExperimentsData] = useState<{ experiments: { edges: Array<{ experiment: Experiment }> }, name: string } | null>(null);
+  const [examplesData, setExamplesData] = useState<Example[] | null>(null);
   const { token } = useAuth();
   const { dataset_id } = params;
 
@@ -43,7 +44,7 @@ export default function DatasetExperimentsPage({ params }: PageProps) {
           return;
         }
         const data = await res.json();
-        setExamplesData(data.data.dataset.examples.edges.map((edge: any) => edge.example));
+        setExamplesData(data.data.dataset.examples.edges.map((edge: { example: Example }) => edge.example));
       };
 
       getDatasetExperiments(dataset_id);
@@ -55,7 +56,7 @@ export default function DatasetExperimentsPage({ params }: PageProps) {
     return <div>Loading...</div>;
   }
 
-  const experiments = experimentsData.experiments.edges.map((edge: any) => edge.experiment);
+  const experiments = experimentsData.experiments.edges.map((edge: { experiment: Experiment }) => edge.experiment);
 
   return (
     <DatasetExperimentsClient

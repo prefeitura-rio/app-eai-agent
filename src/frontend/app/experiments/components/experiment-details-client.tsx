@@ -1,32 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-
-// Define types based on the data structure from experiment.js
-interface Run {
-  example_id_clean: string;
-  input: {
-    mensagem_whatsapp_simulada: string;
-  };
-  reference_output: {
-    golden_answer: string;
-  };
-  output: {
-    agent_output?: {
-      ordered?: any[];
-    };
-  };
-  annotations: {
-    name: string;
-    score: number;
-    explanation: any;
-  }[];
-}
-
-interface ExperimentData {
-  experiment_metadata: any;
-  experiment: Run[];
-}
+import { ExperimentData, Run } from '@/app/components/types';
 
 interface ExperimentDetailsClientProps {
   initialData: ExperimentData;
@@ -59,7 +34,7 @@ const DetailsPlaceholder = () => (
 
 const RunDetails = ({ run }: { run: Run }) => {
     const agentMessage = run.output?.agent_output?.ordered?.find(m => m.type === 'assistant_message');
-    const agentAnswer = agentMessage?.message?.content || 'N/A';
+    const agentAnswer = (agentMessage?.message as { content: string })?.content || 'N/A';
     const goldenAnswer = run.reference_output.golden_answer || 'N/A';
 
     return (
@@ -85,7 +60,6 @@ const RunDetails = ({ run }: { run: Run }) => {
                 </div>
             </div>
             
-            {/* Placeholder for Evaluations and Timeline */}
             <div>
                 <h4 className="text-lg font-semibold mb-2">Avaliações</h4>
                 <div className="space-y-4">
@@ -103,7 +77,6 @@ const RunDetails = ({ run }: { run: Run }) => {
 
             <div>
                 <h4 className="text-lg font-semibold mb-2">Cadeia de Pensamento (Reasoning)</h4>
-                {/* Timeline would be implemented here */}
                 <div className="text-sm text-gray-500">A timeline de eventos será implementada aqui.</div>
             </div>
         </div>
@@ -112,6 +85,7 @@ const RunDetails = ({ run }: { run: Run }) => {
 
 
 export default function ExperimentDetailsClient({ initialData, datasetId, experimentId }: ExperimentDetailsClientProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [data, setData] = useState<ExperimentData>(initialData);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
@@ -122,11 +96,9 @@ export default function ExperimentDetailsClient({ initialData, datasetId, experi
 
   return (
     <div className="flex h-full">
-      {/* Left Panel: Run List */}
       <div className="w-1/4 h-full flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h5 className="font-semibold">Execuções ({data.experiment.length})</h5>
-          {/* Filters will go here */}
         </div>
         <div>
           {data.experiment.map(run => (
@@ -140,7 +112,6 @@ export default function ExperimentDetailsClient({ initialData, datasetId, experi
         </div>
       </div>
 
-      {/* Right Panel: Main Content */}
       <div className="flex-grow h-full overflow-y-auto">
         {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
       </div>

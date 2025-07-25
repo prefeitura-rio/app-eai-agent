@@ -2,16 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-
-// Define the type for a single dataset
-interface Dataset {
-  id: string;
-  name: string;
-  description: string | null;
-  exampleCount: number;
-  experimentCount: number;
-  createdAt: string;
-}
+import { Dataset } from '@/app/components/types';
 
 interface DatasetsClientProps {
   datasets: Dataset[];
@@ -19,6 +10,7 @@ interface DatasetsClientProps {
 
 export default function DatasetsClient({ datasets: initialDatasets }: DatasetsClientProps) {
   const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [datasets, setDatasets] = useState<Dataset[]>(initialDatasets);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof Dataset | null; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
