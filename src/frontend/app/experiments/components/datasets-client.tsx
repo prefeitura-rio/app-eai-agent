@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dataset } from '@/app/components/types';
+import styles from '../page.module.css';
 
 interface DatasetsClientProps {
   datasets: Dataset[];
@@ -21,14 +22,12 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   const filteredAndSortedDatasets = useMemo(() => {
     let sortableItems = [...datasets];
 
-    // Filter
     if (searchTerm) {
       sortableItems = sortableItems.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Sort
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key!];
@@ -48,8 +47,6 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
 
     return sortableItems;
   }, [datasets, searchTerm, sortConfig]);
-  
-  // ... rest of the component is the same
 
   const requestSort = (key: keyof Dataset) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -69,53 +66,61 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   };
 
   return (
-    <div className="">
-      <div className="">
-        <h2 className="">Datasets Disponíveis ({filteredAndSortedDatasets.length})</h2>
-        <input
-          type="text"
-          placeholder="Filtrar por nome..."
-          className=""
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <div className={styles.card}>
+      <div className="card-header">
+        <div className="d-flex align-items-center gap-3">
+          <h5 className="mb-0">Datasets Disponíveis (<span className="fw-normal">{filteredAndSortedDatasets.length}</span>)</h5>
+          <span className="text-muted">|</span>
+          <div className={styles.search_container}>
+            <i className="bi bi-search text-muted"></i>
+            <input
+              type="text"
+              id="dataset-search"
+              className="form-control"
+              placeholder="Filtrar por nome do dataset..."
+              style={{ width: '250px' }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
-      <div className="">
-        <table className="">
-          <thead className="">
+      <div className={`card-body p-0 ${styles.table_responsive}`}>
+        <table className={`table table-hover ${styles.table}`}>
+          <thead className="table-light">
             <tr>
-              <th scope="col" className="" onClick={() => requestSort('name')}>
+              <th scope="col" className="sortable-header" onClick={() => requestSort('name')}>
                 Nome {getSortIndicator('name')}
               </th>
-              <th scope="col" className="" onClick={() => requestSort('description')}>
+              <th scope="col" className="sortable-header" onClick={() => requestSort('description')}>
                 Descrição {getSortIndicator('description')}
               </th>
-              <th scope="col" className="" onClick={() => requestSort('exampleCount')}>
+              <th scope="col" className="text-center sortable-header" onClick={() => requestSort('exampleCount')}>
                 Exemplos {getSortIndicator('exampleCount')}
               </th>
-              <th scope="col" className="" onClick={() => requestSort('experimentCount')}>
+              <th scope="col" className="text-center sortable-header" onClick={() => requestSort('experimentCount')}>
                 Experimentos {getSortIndicator('experimentCount')}
               </th>
-              <th scope="col" className="" onClick={() => requestSort('createdAt')}>
+              <th scope="col" className="sortable-header" onClick={() => requestSort('createdAt')}>
                 Criado em {getSortIndicator('createdAt')}
               </th>
             </tr>
           </thead>
-          <tbody className="">
+          <tbody>
             {filteredAndSortedDatasets.map((dataset) => (
-              <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="">
-                <td className="">{dataset.name}</td>
-                <td className="">{dataset.description || 'Sem descrição'}</td>
-                <td className="">
-                  <span className="">
+              <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)}>
+                <td>{dataset.name}</td>
+                <td>{dataset.description || 'Sem descrição'}</td>
+                <td className="text-center">
+                  <span className="badge bg-primary rounded-pill">
                     {dataset.exampleCount}
                   </span>
                 </td>
-                <td className="">
-                  <span className="">
+                <td className="text-center">
+                  <span className="badge bg-success rounded-pill">
                     {dataset.experimentCount}
                   </span>
                 </td>
-                <td className="">{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
+                <td>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
               </tr>
             ))}
           </tbody>

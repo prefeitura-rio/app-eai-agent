@@ -1,0 +1,69 @@
+/* Styles for the dataset-specific page */
+.card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    margin-top: -1px; /* Overlap with the tab border */
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.table_responsive {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+    position: relative;
+}
+
+.table {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--color-table-header);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--color-border-strong);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px var(--color-shadow);
+    cursor: pointer;
+}
+
+.table td {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--color-border-strong);
+    color: var(--color-text);
+}
+
+.table tbody tr:hover {
+    background-color: var(--color-table-hover);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search_container {
+    position: relative;
+}
+
+.search_container input {
+    border-radius: 20px;
+    padding-left: 2.5rem;
+    transition: all 0.2s ease;
+}
+
+.search_container i {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    color: var(--color-text-muted);
+}

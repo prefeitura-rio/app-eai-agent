@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Experiment, Example } from '@/app/components/types';
+import styles from '../[dataset_id]/page.module.css';
+import ProgressBar from './ProgressBar';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -16,14 +18,10 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
-  // Experiments state
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [experiments, setExperiments] = useState<Experiment[]>(initialExperiments);
   const [expSearchTerm, setExpSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending'; metricName?: string }>({ key: 'createdAt', direction: 'descending' });
 
-  // Examples state
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [examples, setExamples] = useState<Example[]>(initialExamples);
   const [exSearchTerm, setExSearchTerm] = useState('');
 
@@ -44,10 +42,6 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
       );
     }
 
-    type SortableExperimentKeys = 'name' | 'description' | 'createdAt' | 'runCount' | 'averageRunLatencyMs' | 'errorRate' | 'sequenceNumber';
-
-// ...
-
     if (expSortConfig.key) {
       sortableItems.sort((a, b) => {
         let aValue: string | number | null, bValue: string | number | null;
@@ -59,8 +53,8 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
             aValue = aAnn ? aAnn.meanScore : -1;
             bValue = bAnn ? bAnn.meanScore : -1;
         } else {
-            aValue = a[expSortConfig.key as SortableExperimentKeys];
-            bValue = b[expSortConfig.key as SortableExperimentKeys];
+            aValue = a[expSortConfig.key as keyof Experiment];
+            bValue = b[expSortConfig.key as keyof Experiment];
         }
 
         if (aValue === null) return 1;
@@ -105,107 +99,131 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
 
   return (
     <div>
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      <ul className="nav nav-tabs" id="datasetTabs" role="tablist">
+        <li className="nav-item" role="presentation">
           <button
+            className={`nav-link ${activeTab === 'experiments' ? 'active' : ''}`}
             onClick={() => setActiveTab('experiments')}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'experiments' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            type="button"
           >
             Experimentos ({filteredAndSortedExperiments.length})
           </button>
+        </li>
+        <li className="nav-item" role="presentation">
           <button
+            className={`nav-link ${activeTab === 'examples' ? 'active' : ''}`}
             onClick={() => setActiveTab('examples')}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'examples' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            type="button"
           >
             Exemplos ({filteredExamples.length})
           </button>
-        </nav>
-      </div>
+        </li>
+      </ul>
 
-      <div className="mt-4">
-        {activeTab === 'experiments' && (
-          <div className="">
-            <div className="">
-              <h2 className="">Experimentos</h2>
-              <input
-                type="text"
-                placeholder="Filtrar por nome..."
-                className=""
-                onChange={(e) => setExpSearchTerm(e.target.value)}
-              />
+      <div className="tab-content" id="datasetTabContent">
+        <div className={`tab-pane fade ${activeTab === 'experiments' ? 'show active' : ''}`}>
+          <div className={styles.card}>
+            <div className="card-header">
+              <div className="d-flex align-items-center gap-3">
+                <h5 className="mb-0">Experimentos</h5>
+                <span className="text-muted">|</span>
+                <div className={styles.search_container}>
+                  <i className="bi bi-search text-muted"></i>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Filtrar por nome do experimento..."
+                    style={{ width: '250px' }}
+                    onChange={(e) => setExpSearchTerm(e.target.value)}
+                  />
+                </div>
+                <button className="btn btn-sm btn-outline-success">
+                  <i className="bi bi-download me-1"></i>CSV
+                </button>
+              </div>
             </div>
-            <div className="">
-              <table className="">
-                <thead className="">
+            <div className={`card-body p-0 ${styles.table_responsive}`}>
+              <table className={`table table-hover ${styles.table}`}>
+                <thead className="table-light">
                   <tr>
-                    <th scope="col" className="" onClick={() => requestExpSort('name')}>Nome</th>
-                    <th scope="col" className="" onClick={() => requestExpSort('description')}>Descrição</th>
-                    <th scope="col" className="" onClick={() => requestExpSort('createdAt')}>Criado em</th>
+                    <th onClick={() => requestExpSort('name')}>Nome</th>
+                    <th onClick={() => requestExpSort('description')}>Descrição</th>
+                    <th onClick={() => requestExpSort('createdAt')}>Criado em</th>
                     {allMetrics.map(metric => (
-                        <th key={metric} scope="col" className="" onClick={() => requestExpSort('metric', metric)}>{metric}</th>
+                      <th key={metric} onClick={() => requestExpSort('metric', metric)}>{metric}</th>
                     ))}
-                    <th scope="col" className="" onClick={() => requestExpSort('runCount')}>Execuções</th>
-                    <th scope="col" className="" onClick={() => requestExpSort('averageRunLatencyMs')}>Latência</th>
-                    <th scope="col" className="" onClick={() => requestExpSort('errorRate')}>Erro</th>
+                    <th onClick={() => requestExpSort('runCount')}>Execuções</th>
+                    <th onClick={() => requestExpSort('averageRunLatencyMs')}>Latência</th>
+                    <th onClick={() => requestExpSort('errorRate')}>Erro</th>
                   </tr>
                 </thead>
-                <tbody className="">
+                <tbody>
                   {filteredAndSortedExperiments.map((exp) => (
-                    <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="">
-                      <td className="">#{exp.sequenceNumber} {exp.name}</td>
-                      <td className="">{exp.description || 'Sem descrição'}</td>
-                      <td className="">{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
+                    <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
+                      <td>#{exp.sequenceNumber} {exp.name}</td>
+                      <td>{exp.description || 'Sem descrição'}</td>
+                      <td>{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
                       {allMetrics.map(metric => {
-                          const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
-                          const score = ann ? ann.meanScore.toFixed(2) : '-';
-                          return <td key={metric} className="">{score}</td>
+                        const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
+                        const score = ann ? ann.meanScore : 0;
+                        return <td key={metric}><ProgressBar score={score} metricName={metric} /></td>
                       })}
-                      <td className="">{exp.runCount}</td>
-                      <td className="">{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
-                      <td className="">{(exp.errorRate * 100).toFixed(2)}%</td>
+                      <td>{exp.runCount}</td>
+                      <td>{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
+                      <td>{(exp.errorRate * 100).toFixed(2)}%</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-        )}
+        </div>
 
-        {activeTab === 'examples' && (
-          <div className="">
-             <div className="">
-              <h2 className="">Exemplos</h2>
-              <input
-                type="text"
-                placeholder="Filtrar por conteúdo..."
-                className=""
-                onChange={(e) => setExSearchTerm(e.target.value)}
-              />
+        <div className={`tab-pane fade ${activeTab === 'examples' ? 'show active' : ''}`}>
+          <div className={styles.card}>
+            <div className="card-header">
+              <div className="d-flex align-items-center gap-3">
+                <h5 className="mb-0">Examples</h5>
+                <span className="text-muted">|</span>
+                <div className={styles.search_container}>
+                  <i className="bi bi-search text-muted"></i>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Filtrar por conteúdo do exemplo..."
+                    style={{ width: '250px' }}
+                    onChange={(e) => setExSearchTerm(e.target.value)}
+                  />
+                </div>
+                <button className="btn btn-sm btn-outline-success">
+                  <i className="bi bi-download me-1"></i>CSV
+                </button>
+              </div>
             </div>
-            <div className="">
-              <table className="">
-                <thead className="">
+            <div className={`card-body p-0 ${styles.table_responsive}`}>
+              <table className={`table table-hover ${styles.table}`} style={{ tableLayout: 'fixed' }}>
+                <thead className="table-light">
                   <tr>
-                    <th scope="col" className="">ID</th>
-                    <th scope="col" className="">Input</th>
-                    <th scope="col" className="">Output</th>
-                    <th scope="col" className="">Metadata</th>
+                    <th>ID</th>
+                    <th>Input</th>
+                    <th>Output</th>
+                    <th>Metadata</th>
                   </tr>
                 </thead>
-                <tbody className="">
+                <tbody>
                   {filteredExamples.map((ex) => (
                     <tr key={ex.id}>
-                      <td className="">{ex.id}</td>
-                      <td className="">{formatObjectForDisplay(ex.latestRevision.input)}</td>
-                      <td className="">{formatObjectForDisplay(ex.latestRevision.output)}</td>
-                      <td className="">{formatObjectForDisplay(ex.latestRevision.metadata)}</td>
+                      <td>{ex.id}</td>
+                      <td><pre>{formatObjectForDisplay(ex.latestRevision.input)}</pre></td>
+                      <td><pre>{formatObjectForDisplay(ex.latestRevision.output)}</pre></td>
+                      <td><pre>{formatObjectForDisplay(ex.latestRevision.metadata)}</pre></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

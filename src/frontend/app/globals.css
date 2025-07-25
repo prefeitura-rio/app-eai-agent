@@ -1,42 +1,83 @@
+/* === DESIGN SYSTEM === */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    /* Core Colors */
+    --color-bg: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-hover: #F0F3F7;
+    --color-surface-code: #F5F7FA;
+    
+    /* Text Colors */
+    --color-text: #2C3E50;
+    --color-text-muted: #7F8C8D;
+    --color-text-link: #3498DB;
+    
+    /* Brand */
+    --color-primary: #0A74DA;
+    --color-primary-light: #E6F3FC;
+    
+    /* Status Colors */
+    --color-success: #2ECC71;
+    --color-warning: #F39C12;
+    --color-danger: #E74C3C;
+    --color-info: #3498DB;
+    
+    /* Borders & Shadows */
+    --color-border: #EAECEF;
+    --color-border-strong: #D5DBDE;
+    --color-shadow: rgba(0, 0, 0, 0.08);
+    
+    /* Table Specific */
+    --color-table-header: var(--color-surface-hover);
+    --color-table-hover: var(--color-primary-light);
+    
+    /* Progress Bar Colors */
+    --color-metric-high: var(--color-success);
+    --color-metric-mid: var(--color-warning);
+    --color-metric-low: var(--color-danger);
+    --color-metric-default: #6c757d;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-bs-theme="dark"] {
+    /* Core Colors */
+    --color-bg: #1A2129;
+    --color-surface: #222B36;
+    --color-surface-hover: #2E3A46;
+    --color-surface-code: #161B22;
+    
+    /* Text Colors */
+    --color-text: #E0E6EF;
+    --color-text-muted: #9BAAB8;
+    --color-text-link: #6FC3FF;
+    
+    /* Brand */
+    --color-primary: #6FC3FF;
+    --color-primary-light: rgba(111, 195, 255, 0.15);
+    
+    /* Status Colors */
+    --color-success: #52D887;
+    --color-warning: #DAA000;
+    --color-danger: #FF7B7B;
+    --color-info: #6FC3FF;
+    
+    /* Borders & Shadows */
+    --color-border: #3A4753;
+    --color-border-strong: #4D5C6B;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    
+    /* Progress Bar Colors */
+    --color-metric-high: var(--color-success);
+    --color-metric-mid: var(--color-warning);
+    --color-metric-low: var(--color-danger);
+    --color-metric-default: #6c757d;
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* === BASE STYLES === */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
 }
