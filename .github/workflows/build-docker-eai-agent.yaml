@@ -1,4 +1,4 @@
-name: Build Docker image
+name: Build Docker eai-agent image
 
 on:
   push:

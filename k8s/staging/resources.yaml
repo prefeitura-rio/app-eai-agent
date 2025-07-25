@@ -2,12 +2,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-search
+  name: eai-agent
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: agentic-search
+      app: eai-agent
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -15,25 +17,16 @@ spec:
   template:
     metadata:
       labels:
-        app: agentic-search
+        app: eai-agent
     spec:
       containers:
-        - name: agentic-search
+        - name: eai-agent
           image: ghcr.io/prefeitura-rio/app-agentic-search:latest
           ports:
             - containerPort: 80
           envFrom:
             - secretRef:
-                name: agentic-search-secrets
-          # Adicione recursos para garantir que o pod tenha CPU e memória suficientes
-          # Isso pode ajudar a evitar lentidão devido a restrições de recursos
-          resources:
-            requests:
-              cpu: "200m"  # Solicita 0.2 de um core de CPU
-              memory: "256Mi" # Solicita 256 Megabytes de memória
-            limits:
-              cpu: "500m"  # Limita a 0.5 de um core de CPU (permite bursts)
-              memory: "512Mi" # Limita a 512 Megabytes de memória
+                name: eai-agent-secrets
           livenessProbe:
             httpGet:
               path: /health
@@ -59,45 +52,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-search
+  name: eai-agent
 spec:
   selector:
-    app: agentic-search
+    app: eai-agent
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
   type: ClusterIP
-
----
-# Ingress
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: agentic-search
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    cert-manager.io/cluster-issuer: 'letsencrypt'
-    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
-    # Definindo um timeout maior para permitir que a aplicação responda
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "120" # Tempo para o Nginx conectar ao seu serviço (pod)
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"    # Tempo para o Nginx enviar a requisição completa ao seu serviço
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"    # Tempo para o Nginx ler a resposta completa do seu serviço
-spec:
-spec:
-  tls:
-    - hosts:
-        - agentic-search.staging.dados.rio
-      secretName: agentic-search-tls
-  rules:
-    - host: agentic-search.staging.dados.rio
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: agentic-search
-                port:
-                  number: 80
