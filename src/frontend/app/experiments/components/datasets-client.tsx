@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dataset } from '@/app/components/types';
 
@@ -8,10 +8,15 @@ interface DatasetsClientProps {
   datasets: Dataset[];
 }
 
-export default function DatasetsClient({ datasets }: DatasetsClientProps) {
+export default function DatasetsClient({ datasets: initialDatasets }: DatasetsClientProps) {
   const router = useRouter();
+  const [datasets, setDatasets] = useState<Dataset[]>(initialDatasets);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof Dataset | null; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
+
+  useEffect(() => {
+    setDatasets(initialDatasets);
+  }, [initialDatasets]);
 
   const filteredAndSortedDatasets = useMemo(() => {
     let sortableItems = [...datasets];
@@ -26,10 +31,15 @@ export default function DatasetsClient({ datasets }: DatasetsClientProps) {
     // Sort
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
-        if (a[sortConfig.key!] < b[sortConfig.key!]) {
+        const aValue = a[sortConfig.key!];
+        const bValue = b[sortConfig.key!];
+
+        if (aValue === null) return 1;
+        if (bValue === null) return -1;
+        if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key!] > b[sortConfig.key!]) {
+        if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -38,6 +48,8 @@ export default function DatasetsClient({ datasets }: DatasetsClientProps) {
 
     return sortableItems;
   }, [datasets, searchTerm, sortConfig]);
+  
+  // ... rest of the component is the same
 
   const requestSort = (key: keyof Dataset) => {
     let direction: 'ascending' | 'descending' = 'ascending';
