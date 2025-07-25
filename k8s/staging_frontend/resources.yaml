@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-search-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentic-search-frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: agentic-search-frontend
+    spec:
+      containers:
+        - name: agentic-search-frontend
+          image: ghcr.io/prefeitura-rio/app-agentic-search-frontend:latest
+          ports:
+            - containerPort: 80
+          # Adicione recursos para garantir que o pod tenha CPU e memória suficientes
+          # Isso pode ajudar a evitar lentidão devido a restrições de recursos
+          resources:
+            requests:
+              cpu: "200m"  # Solicita 0.2 de um core de CPU
+              memory: "256Mi" # Solicita 256 Megabytes de memória
+            limits:
+              cpu: "500m"  # Limita a 0.5 de um core de CPU (permite bursts)
+              memory: "512Mi" # Limita a 512 Megabytes de memória
+      restartPolicy: Always
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentic-search-frontend
+spec:
+  selector:
+    app: agentic-search-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+
