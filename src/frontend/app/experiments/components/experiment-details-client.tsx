@@ -9,7 +9,7 @@ interface ExperimentDetailsClientProps {
   experimentId: string;
 }
 
-const RunListItem = ({ run, isSelected, onClick }: { run: Run, isSelected: boolean, onClick: () => void }) => (
+const RunListItem = ({ run, onClick }: { run: Run, onClick: () => void }) => (
   <a
     href="#"
     onClick={(e) => {

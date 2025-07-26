@@ -1,40 +1,33 @@
 # UI Refactoring Plan (Revised)
 
-This document outlines the step-by-step plan to refactor the UI of the `experiments` pages using a modular CSS architecture with CSS Modules and a centralized design system, based on the original HTML/CSS files provided in `GEMINI.md`.
+  Current State:
 
-### **Phase 1: Establish a Design System in `globals.css`**
+   * Project Setup: We have successfully removed all Tailwind CSS dependencies and established a new, modular styling
+     architecture using CSS Modules and a global design system in globals.css.
+   * Login Page: The login page (/login) has been completely redesigned with a modern, user-friendly interface that includes
+     a theme toggle.
+   * Home Page: The main dashboard (/) has been redesigned. It features a consistent, top-aligned header, a welcoming title,
+     and a responsive two-column grid for navigation cards.
+   * Experiments Page (`/experiments`):
+       * The shared header is now fully responsive and displays context-aware titles and buttons.
+       * The datasets table page is styled in a card, but we are still finalizing its responsiveness to ensure it looks
+         perfect on all screen sizes.
 
-1.  **Goal:** Create a consistent look and feel by defining a design system based on the original `experiment.css`. This will centralize design tokens.
-2.  **Source File:** `static/experiment.css` (from `GEMINI.md`).
-3.  **Target File:** `src/frontend/app/globals.css`.
-4.  **Action:**
-    *   Analyze `experiment.css` to identify foundational design tokens (colors, fonts, spacing, border-radius).
-    *   Define these as CSS custom properties (variables) under the `:root` selector in `globals.css`. This will serve as the project's design system.
-    *   Add any truly global styles (e.g., body background, link styles) that should apply everywhere.
+  Next Steps:
 
-### **Phase 2: Create Modular & Page-Specific Stylesheets**
+   1. Finalize Datasets Table Responsiveness: Our immediate next step is to perfect the responsiveness of the datasets
+      table on the /experiments page, ensuring it looks and functions correctly on all devices, especially on medium-sized
+      screens.
+   2. Refactor Dataset-Specific Page (`/experiments/[dataset_id]`): Once the main datasets page is complete, we will move
+      on to the page for a specific dataset. This involves:
+       * Implementing the tabbed interface to switch between "Experimentos" and "Exemplos".
+       * Styling the "Experimentos" table, including the custom progress bars for metrics.
+       * Styling the "Exemplos" table and implementing the "Load More" functionality.
+   3. Refactor Experiment Details Page (`/experiments/[dataset_id]/[experiment_id]`): Finally, we will style the deepest
+      level of the experiments section, focusing on a clear and organized presentation of the run details, comparisons, and
+      evaluations.
 
-1.  **Goal:** Create a structured and scoped styling system using CSS Modules.
-2.  **Source File:** `static/experiment.css`.
-3.  **Action:**
-    *   **General Styles (`page.module.css`):** Create `src/frontend/app/experiments/page.module.css`. This file will contain styles that are shared across the different pages within the `/experiments` route, such as the main layout containers or common card styles.
-    *   **Page-Specific Styles:** For styles that are unique to a single page, create dedicated CSS modules within that page's directory. For example:
-        *   `src/frontend/app/experiments/[dataset_id]/page.module.css`
-        *   `src/frontend/app/experiments/[dataset_id]/[experiment_id]/page.module.css`
-    *   Strategically move relevant styles from the original `experiment.css` into these new, scoped module files.
-
-### **Phase 3: Refactor Datasets Page (`/experiments`)**
-
-1.  **Goal:** Replicate the UI of `datasets.html` using the new modular CSS architecture.
-2.  **Source Files:** `datasets.html`, `datasets.js`.
-3.  **Target Files:**
-    *   `src/frontend/app/experiments/components/datasets-client.tsx`
-    *   `src/frontend/app/experiments/page.module.css`
-4.  **Detailed Plan:**
-    *   Use the layout and structure from `datasets.html` as a blueprint.
-    *   The styles for the main card and table structure will be defined in `page.module.css` and imported into `datasets-client.tsx`.
-    *   Apply the modular classes (e.g., `styles.card`, `styles.table`) to the Bootstrap components, ensuring the styling is scoped.
-
+  When you are ready to resume, we will pick up with perfecting the responsiveness of the datasets table.
 ### **Phase 4: Refactor Dataset-Specific Page (`/experiments/[dataset_id]`)**
 
 1.  **Goal:** Replicate the tabbed UI from `dataset-experiments.html`.

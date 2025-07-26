@@ -18,10 +18,12 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
+  // Experiments state
   const [experiments, setExperiments] = useState<Experiment[]>(initialExperiments);
   const [expSearchTerm, setExpSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending'; metricName?: string }>({ key: 'createdAt', direction: 'descending' });
 
+  // Examples state
   const [examples, setExamples] = useState<Example[]>(initialExamples);
   const [exSearchTerm, setExSearchTerm] = useState('');
 
@@ -42,6 +44,9 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
       );
     }
 
+    // Define which keys of Experiment are sortable
+    type SortableExperimentKeys = 'name' | 'description' | 'createdAt' | 'runCount' | 'averageRunLatencyMs' | 'errorRate' | 'sequenceNumber';
+
     if (expSortConfig.key) {
       sortableItems.sort((a, b) => {
         let aValue: string | number | null, bValue: string | number | null;
@@ -53,8 +58,10 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
             aValue = aAnn ? aAnn.meanScore : -1;
             bValue = bAnn ? bAnn.meanScore : -1;
         } else {
-            aValue = a[expSortConfig.key as keyof Experiment];
-            bValue = b[expSortConfig.key as keyof Experiment];
+            // Ensure we only access sortable keys
+            const key = expSortConfig.key as SortableExperimentKeys;
+            aValue = a[key];
+            bValue = b[key];
         }
 
         if (aValue === null) return 1;
