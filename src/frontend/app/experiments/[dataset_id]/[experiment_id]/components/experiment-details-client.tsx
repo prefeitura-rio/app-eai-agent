@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { marked } from 'marked';
 import styles from '../page.module.css';
 import { ExperimentData, Run, Annotation, OrderedStep, ExperimentMetadata } from '@/app/components/types';
@@ -251,7 +251,7 @@ const Evaluations = ({ annotations, runId }: { annotations: Annotation[], runId:
     return sortedAnnotations.map((ann, index) => {
         const explanationContentHtml = ann.explanation
             ? typeof ann.explanation === 'object'
-                ? `<pre class="evaluation-json-code"><code>${JSON.stringify(ann.explanation, null, 2)}</code></pre>`
+                ? `<pre><code>${JSON.stringify(ann.explanation, null, 2)}</code></pre>`
                 : marked(ann.explanation)
             : '';
         const isJsonExplanation = typeof ann.explanation === 'object';
@@ -260,7 +260,7 @@ const Evaluations = ({ annotations, runId }: { annotations: Annotation[], runId:
         return (
             <div className={styles.evaluationCard} key={index}>
                 <div className={styles.evaluationHeader}>
-                    <div className={`${styles.score} ${getScoreClass(ann.score)} me-3`}>{ann.score.toFixed(1)}</div>
+                    <div className={`${styles.score} ${getScoreClass(ann.score)}`}>{ann.score.toFixed(1)}</div>
                     <p className="fw-bold mb-0">{ann.name}</p>
                 </div>
                 {explanationContentHtml && (
@@ -293,61 +293,113 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
     let sequenceCounter = 0;
     let currentStepPrefix = "";
 
+    const getIcon = (stepType: string) => {
+        switch (stepType) {
+            case "reasoning_message": return { class: styles.timelineIconReasoning, icon: "bi-lightbulb" };
+            case "tool_call_message": return { class: styles.timelineIconToolcall, icon: "bi-tools" };
+            case "tool_return_message": return { class: styles.timelineIconReturn, icon: "bi-box-arrow-in-left" };
+            case "assistant_message": return { class: styles.timelineIconAssistant, icon: "bi-chat-text" };
+            case "letta_usage_statistics": return { class: styles.timelineIconStats, icon: "bi-bar-chart-fill" };
+            default: return { class: '', icon: '' };
+        }
+    };
+
     return (
-        <div className="timeline">
+        <div className={styles.timeline}>
             {orderedSteps.map((step, index) => {
-                let iconClass = "", icon = "", title = "", content = "", isNumberedStep = true;
+                let title: string = "";
+                let content: React.ReactNode = null;
+                const { class: iconClass, icon: iconName } = getIcon(step.type);
 
                 switch (step.type) {
                     case "reasoning_message":
                         sequenceCounter++;
                         currentStepPrefix = `${sequenceCounter}. `;
-                        iconClass = "timeline-icon-reasoning";
-                        icon = "bi-lightbulb";
                         title = `${currentStepPrefix}Raciocínio`;
-                        content = `<p class="mb-0 fst-italic">"${step.message.reasoning}"</p>`;
+                        content = <p className="mb-0 fst-italic" dangerouslySetInnerHTML={{ __html: `"${step.message.reasoning}"` }} />;
                         break;
                     case "tool_call_message":
-                        iconClass = "timeline-icon-toolcall";
-                        icon = "bi-tools";
                         title = `${currentStepPrefix}Chamada de Ferramenta: ${step.message.tool_call.name}`;
-                        content = `<pre><code>${JSON.stringify(step.message.tool_call.arguments, null, 2)}</code></pre>`;
+                        content = <pre>{JSON.stringify(step.message.tool_call.arguments, null, 2)}</pre>;
                         break;
                     case "tool_return_message":
-                        iconClass = "timeline-icon-return";
-                        icon = "bi-box-arrow-in-left";
                         title = `${currentStepPrefix}Retorno da Ferramenta: ${step.message.name}`;
-                        content = `<pre><code>${JSON.stringify(step.message.tool_return, null, 2)}</code></pre>`;
+                        const toolReturn = step.message.tool_return;
+                        const collapseId = `collapse-sources-${index}`;
+                        
+                        const sections = [];
+                        if (toolReturn.text) {
+                            sections.push(
+                                <div key="text" className={styles.toolReturnSection}>
+                                    <strong>Content:</strong>
+                                    <div dangerouslySetInnerHTML={{ __html: marked(toolReturn.text) }} />
+                                </div>
+                            );
+                        }
+                        if (toolReturn.sources && toolReturn.sources.length > 0) {
+                            sections.push(
+                                <div key="sources" className={styles.toolReturnSection}>
+                                    <div className={styles.toolReturnHeader}>
+                                        <strong>Sources:</strong>
+                                        <label className={`btn btn-sm btn-outline-secondary ${styles.collapseButton}`} htmlFor={collapseId}>
+                                            <i className="bi bi-arrows-expand me-1"></i> Ver/Ocultar
+                                        </label>
+                                    </div>
+                                    <input type="checkbox" className={styles.collapseInput} id={collapseId} />
+                                    <div className={styles.collapseContent}>
+                                        <pre>{JSON.stringify(toolReturn.sources, null, 2)}</pre>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        if (toolReturn.web_search_queries && toolReturn.web_search_queries.length > 0) {
+                            sections.push(
+                                <div key="queries" className={styles.toolReturnSection}>
+                                    <strong>Web Search Queries:</strong>
+                                    <pre>{JSON.stringify(toolReturn.web_search_queries, null, 2)}</pre>
+                                </div>
+                            );
+                        }
+
+                        content = (
+                            <div>
+                                {sections.map((section, i) => (
+                                    <React.Fragment key={i}>
+                                        {i > 0 && <hr className={styles.dashedSeparator} />}
+                                        {section}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        );
                         break;
                     case "assistant_message":
                         sequenceCounter++;
                         currentStepPrefix = `${sequenceCounter}. `;
-                        iconClass = "timeline-icon-assistant";
-                        icon = "bi-chat-text";
                         title = `Mensagem do Assistente`;
-                        content = marked(step.message.content);
+                        content = <div dangerouslySetInnerHTML={{ __html: marked(step.message.content) }} />;
                         break;
                     case "letta_usage_statistics":
-                        isNumberedStep = false;
-                        iconClass = "timeline-icon-stats";
-                        icon = "bi-bar-chart-fill";
                         title = "Estatísticas de Uso";
-                        content = `<p class="mb-0"><strong>Tokens Totais:</strong> ${step.message.total_tokens}</p>
-                                   <p class="mb-0"><strong>Tokens de Prompt:</strong> ${step.message.prompt_tokens}</p>
-                                   <p class="mb-0"><strong>Tokens de Conclusão:</strong> ${step.message.completion_tokens}</p>`;
+                        content = (
+                            <div>
+                                <p className="mb-0"><strong>Tokens Totais:</strong> {step.message.total_tokens}</p>
+                                <p className="mb-0"><strong>Tokens de Prompt:</strong> {step.message.prompt_tokens}</p>
+                                <p className="mb-0"><strong>Tokens de Conclusão:</strong> {step.message.completion_tokens}</p>
+                            </div>
+                        );
                         break;
                     default:
                         return null;
                 }
 
                 return (
-                    <div className="timeline-item" key={index}>
-                        <div className={`timeline-icon ${iconClass}`}>
-                            <i className={`bi ${icon}`}></i>
+                    <div className={styles.timelineItem} key={index}>
+                        <div className={`${styles.timelineIcon} ${iconClass}`}>
+                            <i className={`bi ${iconName}`}></i>
                         </div>
-                        <div className="timeline-content">
+                        <div className={styles.timelineContent}>
                             <h6>{title}</h6>
-                            <div dangerouslySetInnerHTML={{ __html: content }} />
+                            {content}
                         </div>
                     </div>
                 );

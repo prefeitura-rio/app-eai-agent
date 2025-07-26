@@ -164,7 +164,7 @@
 }
 
 .score {
-    font-size: 0.75rem; /* Reduced font size */
+    font-size: 0.9rem; /* Reduced font size */
     font-weight: bold;
     padding: 0.25rem 0.6rem; /* Adjusted padding */
     border-radius: 99px;
@@ -181,6 +181,100 @@
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px dashed var(--color-border);
+}
+
+/* --- Reasoning Timeline --- */
+.timeline {
+    position: relative;
+    padding-left: 10px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--color-border);
+}
+
+.timelineItem {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-top: 1.5rem;
+}
+
+.timelineIcon {
+    position: absolute;
+    left: 15px;
+    transform: translateX(-70%);
+    top: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 5;
+}
+
+.timelineIconReasoning { color: #9d4edd; border-color: #9d4edd; }
+.timelineIconToolcall { color: var(--color-warning); border-color: var(--color-warning); }
+.timelineIconReturn { color: var(--color-success); border-color: var(--color-success); }
+.timelineIconAssistant { color: var(--color-primary); border-color: var(--color-primary); }
+.timelineIconStats { color: var(--color-danger); border-color: var(--color-danger); }
+
+.timelineContent {
+    margin-left: 50px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px var(--color-shadow);
+    transition: box-shadow 0.3s ease;
+}
+
+.timelineContent:hover {
+    box-shadow: 0 4px 16px var(--color-shadow);
+}
+
+/* FINAL FIX for all code blocks */
+.timelineContent pre, .timelineContent code,
+.explanation pre, .explanation code {
+    background-color: var(--color-surface-code);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    word-break: break-all !important; /* The definitive fix */
+}
+
+
+.toolReturnSection {
+    margin-bottom: 1rem;
+}
+.toolReturnSection:last-child {
+    margin-bottom: 0;
+}
+
+.toolReturnHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem; /* Space between header and content */
+}
+
+.dashedSeparator {
+    border: 0;
+    border-top: 1px dashed var(--color-border-strong);
+    margin: 1rem 0;
 }
 
 
