@@ -19,11 +19,13 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
   // Experiments state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [experiments, setExperiments] = useState<Experiment[]>(initialExperiments);
   const [expSearchTerm, setExpSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending'; metricName?: string }>({ key: 'createdAt', direction: 'descending' });
 
   // Examples state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [examples, setExamples] = useState<Example[]>(initialExamples);
   const [exSearchTerm, setExSearchTerm] = useState('');
 

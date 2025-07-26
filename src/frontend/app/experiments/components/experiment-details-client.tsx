@@ -103,7 +103,6 @@ export default function ExperimentDetailsClient({ initialData }: ExperimentDetai
             <RunListItem
               key={run.example_id_clean}
               run={run}
-              isSelected={run.example_id_clean === selectedRunId}
               onClick={() => setSelectedRunId(run.example_id_clean)}
             />
           ))}

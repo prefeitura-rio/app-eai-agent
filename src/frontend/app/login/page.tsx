@@ -56,6 +56,7 @@ function LoginForm() {
       login(token);
       const redirectUrl = searchParams.get('redirect_url');
       router.push(redirectUrl || '/');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_err) {
       setError('Token inválido. Por favor, tente novamente.');
     } finally {
