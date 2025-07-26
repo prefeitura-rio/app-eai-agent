@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import AppHeader from '@/app/components/AppHeader';
+import AppHeader, { ActionButton } from '@/app/components/AppHeader';
 import styles from './page.module.css';
 
 export default function HomePage() {
@@ -31,7 +31,7 @@ export default function HomePage() {
     router.push(`/login?redirect_url=${pathname}`);
   };
 
-  const headerActions = [
+  const headerActions: ActionButton[] = [
     { id: 'theme', label: 'Mudar tema', icon: theme === 'light' ? 'bi-moon-fill' : 'bi-sun-fill', onClick: toggleTheme },
   ];
 

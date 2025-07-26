@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import styles from './AppHeader.module.css';
 
-interface ActionButton {
+export interface ActionButton {
   id: string;
   label: string;
   icon: string;
