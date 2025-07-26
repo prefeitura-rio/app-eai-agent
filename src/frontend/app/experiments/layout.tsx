@@ -65,7 +65,7 @@ export default function ExperimentsLayout({
         subtitle={getSubtitle()}
         actions={getHeaderActions()}
       />
-      <main className={styles.container}>
+      <main>
         {children}
       </main>
     </div>

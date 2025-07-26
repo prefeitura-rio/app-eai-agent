@@ -66,30 +66,26 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   };
 
   return (
-    <div className={styles.card}>
-      <div className="card-header bg-transparent p-3">
-        <div className="d-flex align-items-center gap-3">
-          <h5 className="mb-0">Datasets Disponíveis (<span className="fw-normal">{filteredAndSortedDatasets.length}</span>)</h5>
-          <span className="text-muted">|</span>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className="card-header d-flex flex-wrap align-items-center gap-3">
+          <h5 className="mb-0 me-auto">Datasets Disponíveis ({filteredAndSortedDatasets.length})</h5>
           <div className={styles.search_container}>
-            <i className="bi bi-search text-muted"></i>
+            <i className="bi bi-search"></i>
             <input
               type="text"
-              id="dataset-search"
               className="form-control"
               placeholder="Filtrar por nome do dataset..."
-              style={{ width: '250px' }}
+              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
-      </div>
-      <div className={styles.card_body}>
-        <div className={styles.table_responsive}>
+        <div className={`card-body p-0 ${styles.table_responsive}`}>
           <table className={`table table-hover ${styles.table}`}>
             <thead className="table-light">
               <tr>
-                <th scope="col" className={styles.sortable_header} onClick={() => requestSort('name')}>
+                <th onClick={() => requestSort('name')} className={styles.sortable_header}>
                   Nome {getSortIndicator('name')}
                 </th>
                 <th scope="col" className={styles.sortable_header} onClick={() => requestSort('description')}>

@@ -10,19 +10,21 @@
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 0.5rem; /* Padding reduzido */
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
+    box-sizing: border-box; /* Garante que o padding seja incluído na largura */
 }
 
 .title_section {
     display: flex;
     align-items: center;
     gap: 1rem;
-    flex-grow: 1; /* Allow title to take up space */
+    flex-grow: 1;
+    min-width: 0; /* Permite que o título seja truncado se necessário */
 }
 
 .title_section_center {
@@ -34,6 +36,10 @@
     font-weight: 600;
     color: var(--color-text);
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .dataset_name {
@@ -42,12 +48,17 @@
     margin: 0;
     padding-left: 1rem;
     border-left: 2px solid var(--color-border);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .actions_section {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-shrink: 0; /* Impede que os botões sejam comprimidos */
 }
 
 .action_btn {
@@ -147,4 +158,70 @@
 }
 .logout_btn:hover i {
     color: white;
+}
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
+    .header_content {
+        padding: 0 0.25rem; /* Padding ainda menor */
+        gap: 0.5rem;
+    }
+    
+    .title {
+        font-size: 1.5rem;
+    }
+    
+    .dataset_name {
+        font-size: 0.9rem;
+        padding-left: 0.75rem;
+    }
+    
+    .title_section {
+        gap: 0.75rem;
+    }
+    
+    .actions_section {
+        gap: 0.5rem;
+    }
+    
+    .action_btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .header_content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 0 0.125rem; /* Padding mínimo */
+    }
+    
+    .title_section {
+        justify-content: center;
+        text-align: center;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .title_section_center {
+        flex-direction: column;
+    }
+    
+    .dataset_name {
+        border-left: none;
+        border-top: 2px solid var(--color-border);
+        padding-left: 0;
+        padding-top: 0.5rem;
+    }
+    
+    .actions_section {
+        justify-content: center;
+    }
+    
+    .title {
+        font-size: 1.25rem;
+    }
 }

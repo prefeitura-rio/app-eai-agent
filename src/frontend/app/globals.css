@@ -90,7 +90,6 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text);
