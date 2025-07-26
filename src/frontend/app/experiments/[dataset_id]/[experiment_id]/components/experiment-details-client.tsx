@@ -17,9 +17,9 @@ interface ExperimentDetailsClientProps {
 const getRunId = (run: Run, index: number) => run.example_id_clean || `run-${index}`;
 
 const getScoreClass = (score: number) => {
-    if (score === 1.0) return "score-high";
-    if (score === 0.0) return "score-low";
-    return "score-mid";
+    if (score === 1.0) return styles.scoreHigh;
+    if (score === 0.0) return styles.scoreLow;
+    return styles.scoreMid;
 };
 
 const Filters = ({ runs, onFilterChange }: { runs: Run[], onFilterChange: (filteredRuns: Run[]) => void }) => {
@@ -258,13 +258,13 @@ const Evaluations = ({ annotations, runId }: { annotations: Annotation[], runId:
         const collapseId = `collapse-explanation-${runId}-${index}`;
 
         return (
-            <div className="evaluation-card" key={index}>
-                <div className="d-flex justify-content-between align-items-center">
-                    <div className={`score ${getScoreClass(ann.score)} me-3`}>{ann.score.toFixed(1)}</div>
-                    <p className="fw-bold mb-0 flex-grow-1">{ann.name}</p>
+            <div className={styles.evaluationCard} key={index}>
+                <div className={styles.evaluationHeader}>
+                    <div className={`${styles.score} ${getScoreClass(ann.score)} me-3`}>{ann.score.toFixed(1)}</div>
+                    <p className="fw-bold mb-0">{ann.name}</p>
                 </div>
                 {explanationContentHtml && (
-                    <div className="explanation">
+                    <div className={styles.explanation}>
                         {isJsonExplanation ? (
                             <>
                                 <input type="checkbox" className={styles.collapseInput} id={collapseId} />
@@ -362,12 +362,12 @@ const Comparison = ({ run }: { run: Run }) => {
     const goldenAnswerHtml = run.reference_output.golden_answer ? marked(run.reference_output.golden_answer) : "<p>N/A</p>";
 
     return (
-        <div className="comparison-grid">
-            <div className="comparison-box">
+        <div className={styles.comparisonGrid}>
+            <div className={styles.comparisonBox}>
                 <h5>🤖 Resposta do Agente</h5>
                 <div className="agent-answer-content" dangerouslySetInnerHTML={{ __html: agentAnswerHtml }} />
             </div>
-            <div className="comparison-box">
+            <div className={styles.comparisonBox}>
                 <h5>🏆 Resposta de Referência (Golden)</h5>
                 <div className="golden-answer-content" dangerouslySetInnerHTML={{ __html: goldenAnswerHtml }} />
             </div>
@@ -376,23 +376,29 @@ const Comparison = ({ run }: { run: Run }) => {
 };
 
 const RunDetails = ({ run }: { run: Run }) => (
-    <div className={styles.card}>
-        <h4 className="section-title">Mensagem do Usuário</h4>
-        <div className="alert alert-light">{run.input.mensagem_whatsapp_simulada || "Mensagem não disponível"}</div>
+    <>
+        <div className={styles.card}>
+            <h4 className="section-title">Mensagem do Usuário</h4>
+            <div className={styles.comparisonBox}>
+                {run.input.mensagem_whatsapp_simulada || "Mensagem não disponível"}
+            </div>
 
-        <h4 className="section-title mb-0">Comparação de Respostas</h4>
-        <div className="mt-3">
+            <h4 className="section-title mb-3 mt-4">Comparação de Respostas</h4>
             <Comparison run={run} />
         </div>
 
-        <h4 className="section-title">Avaliações</h4>
-        <Evaluations annotations={run.annotations} runId={getRunId(run, -1)} />
-
-        <div className="section-header mt-4">
-            <h4 className="section-title">Cadeia de Pensamento (Reasoning)</h4>
+        <div className={styles.card}>
+            <h4 className="section-title">Avaliações</h4>
+            <Evaluations annotations={run.annotations} runId={getRunId(run, -1)} />
         </div>
-        <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered} />
-    </div>
+
+        <div className={styles.card}>
+            <div className="section-header">
+                <h4 className="section-title">Cadeia de Pensamento (Reasoning)</h4>
+            </div>
+            <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered} />
+        </div>
+    </>
 );
 
 const DetailsPlaceholder = () => (
