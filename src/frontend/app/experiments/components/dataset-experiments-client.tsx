@@ -117,11 +117,11 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
         </li>
       </ul>
 
-      <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
-        {/* Unified, Conditional Header */}
-        <div className={sharedStyles.cardHeader}>
-          {activeTab === 'experiments' ? (
-            <>
+      <div className="tab-content">
+        {/* Experiments Tab Pane */}
+        <div className={`tab-pane fade ${activeTab === 'experiments' ? 'show active' : ''}`}>
+          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
+            <div className={sharedStyles.cardHeader}>
               <div className={sharedStyles.headerLeft}>
                 <h5 className={sharedStyles.cardTitle}>Experimentos</h5>
                 <div className={sharedStyles.search_container}>
@@ -137,96 +137,88 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
               <button className={sharedStyles.actionButton} title="Download CSV">
                 <i className="bi bi-download"></i>
               </button>
-            </>
-          ) : (
-            <>
-              <div className={sharedStyles.headerLeft}>
-                <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
-                <div className={sharedStyles.search_container}>
-                  <i className="bi bi-search"></i>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Filtrar por conteúdo..."
-                    onChange={(e) => setExSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-              <button className={sharedStyles.actionButton} title="Download CSV">
-                <i className="bi bi-download"></i>
-              </button>
-            </>
-          )}
+            </div>
+            <div className={`card-body p-0 ${sharedStyles.table_responsive}`}>
+              <table className={`table table-hover ${sharedStyles.table}`}>
+                <thead className="table-light">
+                  <tr>
+                    <th onClick={() => requestExpSort('name')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Nome{getSortIndicator('name')}</th>
+                    <th onClick={() => requestExpSort('description')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Descrição{getSortIndicator('description')}</th>
+                    <th onClick={() => requestExpSort('createdAt')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Criado em{getSortIndicator('createdAt')}</th>
+                    {allMetrics.map(metric => (
+                      <th key={metric} onClick={() => requestExpSort('metric', metric)} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>{metric}{getSortIndicator('metric', metric)}</th>
+                    ))}
+                    <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Execuções{getSortIndicator('runCount')}</th>
+                    <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Latência{getSortIndicator('averageRunLatencyMs')}</th>
+                    <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Erro{getSortIndicator('errorRate')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedExperiments.map((exp) => (
+                    <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
+                      <td className={sharedStyles.textAlignLeft}>
+                        <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className={sharedStyles.link}>
+                          #{exp.sequenceNumber} {exp.name}
+                        </Link>
+                      </td>
+                      <td className={sharedStyles.textAlignLeft}>{exp.description || 'Sem descrição'}</td>
+                      <td className={sharedStyles.textAlignCenter}>{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
+                      {allMetrics.map(metric => {
+                        const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
+                        return <td key={metric} className={sharedStyles.textAlignCenter}><ProgressBar score={ann ? ann.meanScore : 0} /></td>
+                      })}
+                      <td className={sharedStyles.textAlignCenter}>{exp.runCount}</td>
+                      <td className={sharedStyles.textAlignCenter}>{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
+                      <td className={sharedStyles.textAlignCenter}>{(exp.errorRate * 100).toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        {/* Unified Card Body with Tab Content */}
-        <div className="card-body p-0">
-          <div className="tab-content">
-            {/* Experiments Tab Pane */}
-            <div className={`tab-pane fade ${activeTab === 'experiments' ? 'show active' : ''}`}>
-              <div className={sharedStyles.table_responsive}>
-                <table className={`table table-hover ${sharedStyles.table}`}>
-                  <thead className="table-light">
-                    <tr>
-                      <th onClick={() => requestExpSort('name')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Nome{getSortIndicator('name')}</th>
-                      <th onClick={() => requestExpSort('description')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Descrição{getSortIndicator('description')}</th>
-                      <th onClick={() => requestExpSort('createdAt')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Criado em{getSortIndicator('createdAt')}</th>
-                      {allMetrics.map(metric => (
-                        <th key={metric} onClick={() => requestExpSort('metric', metric)} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>{metric}{getSortIndicator('metric', metric)}</th>
-                      ))}
-                      <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Execuções{getSortIndicator('runCount')}</th>
-                      <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Latência{getSortIndicator('averageRunLatencyMs')}</th>
-                      <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Erro{getSortIndicator('errorRate')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAndSortedExperiments.map((exp) => (
-                      <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
-                        <td className={sharedStyles.textAlignLeft}>
-                          <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className={sharedStyles.link}>
-                            #{exp.sequenceNumber} {exp.name}
-                          </Link>
-                        </td>
-                        <td className={sharedStyles.textAlignLeft}>{exp.description || 'Sem descrição'}</td>
-                        <td className={sharedStyles.textAlignCenter}>{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
-                        {allMetrics.map(metric => {
-                          const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
-                          return <td key={metric} className={sharedStyles.textAlignCenter}><ProgressBar score={ann ? ann.meanScore : 0} /></td>
-                        })}
-                        <td className={sharedStyles.textAlignCenter}>{exp.runCount}</td>
-                        <td className={sharedStyles.textAlignCenter}>{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
-                        <td className={sharedStyles.textAlignCenter}>{(exp.errorRate * 100).toFixed(2)}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        {/* Examples Tab Pane */}
+        <div className={`tab-pane fade ${activeTab === 'examples' ? 'show active' : ''}`}>
+          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
+            <div className={sharedStyles.cardHeader}>
+                <div className={sharedStyles.headerLeft}>
+                    <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
+                    <div className={sharedStyles.search_container}>
+                        <i className="bi bi-search"></i>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Filtrar por conteúdo..."
+                            onChange={(e) => setExSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <button className={sharedStyles.actionButton} title="Download CSV">
+                    <i className="bi bi-download"></i>
+                </button>
             </div>
-
-            {/* Examples Tab Pane */}
-            <div className={`tab-pane fade ${activeTab === 'examples' ? 'show active' : ''}`}>
-              <div className={sharedStyles.table_responsive}>
-                <table className={`table table-hover ${sharedStyles.table}`} style={{ tableLayout: 'fixed' }}>
-                  <thead className="table-light">
-                    <tr>
-                      <th className={sharedStyles.textAlignLeft}>ID</th>
-                      <th className={sharedStyles.textAlignLeft}>Input</th>
-                      <th className={sharedStyles.textAlignLeft}>Output</th>
-                      <th className={sharedStyles.textAlignLeft}>Metadata</th>
+            <div className={`card-body p-0 ${sharedStyles.table_responsive}`}>
+              <table className={`table table-hover ${sharedStyles.table}`} style={{ tableLayout: 'fixed' }}>
+                <thead className="table-light">
+                  <tr>
+                    <th className={sharedStyles.textAlignLeft}>ID</th>
+                    <th className={sharedStyles.textAlignLeft}>Input</th>
+                    <th className={sharedStyles.textAlignLeft}>Output</th>
+                    <th className={sharedStyles.textAlignLeft}>Metadata</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredExamples.map((ex) => (
+                    <tr key={ex.id}>
+                      <td className={sharedStyles.textAlignLeft}>{ex.id}</td>
+                      <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.input)}</pre></td>
+                      <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.output)}</pre></td>
+                      <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.metadata)}</pre></td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredExamples.map((ex) => (
-                      <tr key={ex.id}>
-                        <td className={sharedStyles.textAlignLeft}>{ex.id}</td>
-                        <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.input)}</pre></td>
-                        <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.output)}</pre></td>
-                        <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.metadata)}</pre></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

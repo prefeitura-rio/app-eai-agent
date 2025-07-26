@@ -42,7 +42,6 @@
     z-index: 10;
     box-shadow: 0 2px 4px var(--color-shadow);
     vertical-align: middle;
-    white-space: nowrap; /* Previne quebra de linha nos cabeçalhos */
 }
 
 .table td {
@@ -52,6 +51,7 @@
     border-bottom: 1px solid var(--color-border-strong);
     color: var(--color-text);
     word-wrap: break-word; /* Permite quebra de palavras longas */
+    white-space: normal; /* Garante a quebra de linha */
     max-width: 0; /* Necessário para o text-overflow funcionar */
 }
 
