@@ -68,36 +68,38 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <div className="card-header d-flex flex-wrap align-items-center gap-3">
-          <h5 className="mb-0 me-auto">Datasets Disponíveis ({filteredAndSortedDatasets.length})</h5>
-          <div className={styles.search_container}>
-            <i className="bi bi-search"></i>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Filtrar por nome do dataset..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className={styles.cardHeader}>
+          <div className={styles.headerLeft}>
+            <h5 className={styles.cardTitle}>Datasets Disponíveis ({filteredAndSortedDatasets.length})</h5>
+            <div className={styles.search_container}>
+              <i className="bi bi-search"></i>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Filtrar por nome do dataset..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
         <div className={`card-body p-0 ${styles.table_responsive}`}>
           <table className={`table table-hover ${styles.table}`}>
             <thead className="table-light">
               <tr>
-                <th onClick={() => requestSort('name')} className={styles.sortable_header}>
+                <th onClick={() => requestSort('name')} className={`${styles.sortable_header} ${styles.textAlignLeft}`}>
                   Nome {getSortIndicator('name')}
                 </th>
-                <th scope="col" className={styles.sortable_header} onClick={() => requestSort('description')}>
+                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignLeft}`} onClick={() => requestSort('description')}>
                   Descrição {getSortIndicator('description')}
                 </th>
-                <th scope="col" className={`text-center ${styles.sortable_header}`} onClick={() => requestSort('exampleCount')}>
+                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('exampleCount')}>
                   Exemplos {getSortIndicator('exampleCount')}
                 </th>
-                <th scope="col" className={`text-center ${styles.sortable_header}`} onClick={() => requestSort('experimentCount')}>
+                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('experimentCount')}>
                   Experimentos {getSortIndicator('experimentCount')}
                 </th>
-                <th scope="col" className={styles.sortable_header} onClick={() => requestSort('createdAt')}>
+                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('createdAt')}>
                   Criado em {getSortIndicator('createdAt')}
                 </th>
               </tr>
@@ -105,19 +107,19 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
             <tbody>
               {filteredAndSortedDatasets.map((dataset) => (
                 <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)}>
-                  <td>{dataset.name}</td>
-                  <td>{dataset.description || 'Sem descrição'}</td>
-                  <td className="text-center">
+                  <td className={styles.textAlignLeft}>{dataset.name}</td>
+                  <td className={styles.textAlignLeft}>{dataset.description || 'Sem descrição'}</td>
+                  <td className={styles.textAlignCenter}>
                     <span className="badge bg-primary rounded-pill">
                       {dataset.exampleCount}
                     </span>
                   </td>
-                  <td className="text-center">
+                  <td className={styles.textAlignCenter}>
                     <span className="badge bg-success rounded-pill">
                       {dataset.experimentCount}
                     </span>
                   </td>
-                  <td>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
+                  <td className={styles.textAlignCenter}>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
                 </tr>
               ))}
             </tbody>

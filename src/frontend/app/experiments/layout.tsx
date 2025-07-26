@@ -4,7 +4,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import AppHeader from '@/app/components/AppHeader';
-import styles from './page.module.css'; // Import the styles
 
 export default function ExperimentsLayout({
   children,

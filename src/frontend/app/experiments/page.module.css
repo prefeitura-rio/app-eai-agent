@@ -85,6 +85,8 @@
 
 .search_container input {
     border-radius: 20px;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
     padding-left: 2.5rem;
     transition: all 0.2s ease;
     min-width: 200px; /* Define uma largura mínima */
@@ -104,32 +106,55 @@
     user-select: none;
 }
 
-/* Estilos específicos para o cabeçalho do card */
-.card .card-header {
+/* Alignment Classes */
+.textAlignLeft {
+    text-align: left !important;
+}
+
+.textAlignCenter {
+    text-align: center !important;
+}
+
+.cardHeader {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
     padding: 1rem;
     background-color: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
 }
 
-.card .card-header .d-flex {
+.headerLeft {
+    display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
     align-items: center;
+    gap: 1rem;
+}
+
+.cardTitle {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 500;
+}
+
+/* Estilos específicos para o cabeçalho do card */
+.card .card-header {
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
 }
 
 .card .card-header h5 {
     margin: 0;
-    flex-shrink: 0;
 }
 
-.card .card-header .text-muted {
-    display: none; /* Esconde o separador em telas pequenas */
-}
-
-.card .card-header .btn {
-    flex-shrink: 0;
-    white-space: nowrap;
-}
 
 /* Media Queries para Responsividade */
 @media (max-width: 992px) {
@@ -182,7 +207,6 @@
     }
     
     .card .card-header .d-flex {
-        flex-direction: column;
         align-items: stretch;
         gap: 0.5rem;
     }
