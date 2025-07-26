@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Experiment, Example } from '@/app/components/types';
 import sharedStyles from '../page.module.css';
+import pageStyles from '../[dataset_id]/page.module.css';
 import ProgressBar from './ProgressBar';
 
 interface DatasetExperimentsClientProps {
@@ -103,94 +104,26 @@ export default function DatasetExperimentsClient({
     return JSON.stringify(obj, null, 2);
   };
 
-  // Estilos customizados para as tabs
-  const tabStyles = {
-    tabsContainer: {
-      display: 'flex',
-      borderBottom: `1px solid var(--color-border)`,
-      backgroundColor: 'var(--color-bg)',
-      marginBottom: 0,
-    } as React.CSSProperties,
-    tab: {
-      padding: '12px 24px',
-      backgroundColor: 'transparent',
-      border: 'none',
-      borderBottom: '3px solid transparent',
-      color: 'var(--color-text-muted)',
-      cursor: 'pointer',
-      fontSize: '0.9rem',
-      fontWeight: '500',
-      transition: 'all 0.2s ease',
-      outline: 'none',
-    } as React.CSSProperties,
-    activeTab: {
-      color: 'var(--color-primary)',
-      borderBottomColor: 'var(--color-primary)',
-      backgroundColor: 'var(--color-surface)',
-    } as React.CSSProperties,
-    tabContent: {
-      backgroundColor: 'var(--color-surface)',
-      borderTopLeftRadius: 0,
-      borderTopRightRadius: 0,
-    } as React.CSSProperties
-  };
-
   return (
     <div className={sharedStyles.container}>
-      {/* Custom Tabs */}
-      <div style={tabStyles.tabsContainer}>
+      <div className={pageStyles.tabsContainer}>
         <button
-          style={{
-            ...tabStyles.tab,
-            ...(activeTab === 'experiments' ? tabStyles.activeTab : {})
-          }}
+          className={`${pageStyles.tabButton} ${activeTab === 'experiments' ? pageStyles.activeTab : ''}`}
           onClick={() => setActiveTab('experiments')}
-          onMouseEnter={(e) => {
-            if (activeTab !== 'experiments') {
-              (e.target as HTMLElement).style.color = 'var(--color-text)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'experiments') {
-              (e.target as HTMLElement).style.color = 'var(--color-text-muted)';
-            }
-          }}
         >
           Experimentos ({filteredAndSortedExperiments.length})
         </button>
         <button
-          style={{
-            ...tabStyles.tab,
-            ...(activeTab === 'examples' ? tabStyles.activeTab : {})
-          }}
+          className={`${pageStyles.tabButton} ${activeTab === 'examples' ? pageStyles.activeTab : ''}`}
           onClick={() => setActiveTab('examples')}
-          onMouseEnter={(e) => {
-            if (activeTab !== 'examples') {
-              (e.target as HTMLElement).style.color = 'var(--color-text)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'examples') {
-              (e.target as HTMLElement).style.color = 'var(--color-text-muted)';
-            }
-          }}
         >
           Exemplos ({filteredExamples.length})
         </button>
       </div>
 
-      {/* Tab Content */}
-      <div style={tabStyles.tabContent}>
-        {/* Experiments Tab */}
+      <div className={pageStyles.tabContent}>
         {activeTab === 'experiments' && (
-          <div className={sharedStyles.card} style={{ 
-            borderTopLeftRadius: 0, 
-            borderTopRightRadius: 0, 
-            marginTop: 0,
-            marginBottom: '1.5rem',
-            border: 'none',
-            boxShadow: 'none'
-          }}>
+          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
             <div className={sharedStyles.cardHeader}>
               <div className={sharedStyles.headerLeft}>
                 <h5 className={sharedStyles.cardTitle}>Experimentos</h5>
@@ -205,65 +138,35 @@ export default function DatasetExperimentsClient({
                   />
                 </div>
               </div>
-              <button 
-                className="btn btn-outline-secondary btn-sm" 
-                title="Download CSV"
-                style={{
-                  backgroundColor: 'var(--color-button-bg)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-muted)'
-                }}
-              >
+              <button className={sharedStyles.actionButton} title="Download CSV">
                 <i className="bi bi-download"></i>
               </button>
             </div>
-            <div className={sharedStyles.table_responsive} style={{ padding: 0 }}>
+            <div className={`${sharedStyles.table_responsive} ${pageStyles.table_responsive}`}>
               <table className={`table table-hover ${sharedStyles.table}`}>
                 <thead>
                   <tr>
-                    <th 
-                      onClick={() => requestExpSort('name')} 
-                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}
-                    >
+                    <th onClick={() => requestExpSort('name')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>
                       Nome{getSortIndicator('name')}
                     </th>
-                    <th 
-                      onClick={() => requestExpSort('description')} 
-                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}
-                    >
+                    <th onClick={() => requestExpSort('description')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>
                       Descrição{getSortIndicator('description')}
                     </th>
-                    <th 
-                      onClick={() => requestExpSort('createdAt')} 
-                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
-                    >
+                    <th onClick={() => requestExpSort('createdAt')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Criado em{getSortIndicator('createdAt')}
                     </th>
                     {allMetrics.map(metric => (
-                      <th 
-                        key={metric} 
-                        onClick={() => requestExpSort('metric', metric)} 
-                        className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
-                      >
+                      <th key={metric} onClick={() => requestExpSort('metric', metric)} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                         {metric}{getSortIndicator('metric', metric)}
                       </th>
                     ))}
-                    <th 
-                      onClick={() => requestExpSort('runCount')} 
-                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
-                    >
+                    <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Execuções{getSortIndicator('runCount')}
                     </th>
-                    <th 
-                      onClick={() => requestExpSort('averageRunLatencyMs')} 
-                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
-                    >
+                    <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Latência{getSortIndicator('averageRunLatencyMs')}
                     </th>
-                    <th 
-                      onClick={() => requestExpSort('errorRate')} 
-                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
-                    >
+                    <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Erro{getSortIndicator('errorRate')}
                     </th>
                   </tr>
@@ -272,14 +175,7 @@ export default function DatasetExperimentsClient({
                   {filteredAndSortedExperiments.map((exp) => (
                     <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
                       <td className={sharedStyles.textAlignLeft}>
-                        <Link 
-                          href={`/experiments/${datasetId}/${exp.id}`} 
-                          onClick={(e) => e.stopPropagation()} 
-                          style={{ 
-                            color: 'var(--color-text-link)', 
-                            textDecoration: 'none' 
-                          }}
-                        >
+                        <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className={sharedStyles.link}>
                           #{exp.sequenceNumber} {exp.name}
                         </Link>
                       </td>
@@ -312,16 +208,8 @@ export default function DatasetExperimentsClient({
           </div>
         )}
 
-        {/* Examples Tab */}
         {activeTab === 'examples' && (
-          <div className={sharedStyles.card} style={{ 
-            borderTopLeftRadius: 0, 
-            borderTopRightRadius: 0, 
-            marginTop: 0,
-            marginBottom: '1.5rem',
-            border: 'none',
-            boxShadow: 'none'
-          }}>
+          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
             <div className={sharedStyles.cardHeader}>
               <div className={sharedStyles.headerLeft}>
                 <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
@@ -336,19 +224,11 @@ export default function DatasetExperimentsClient({
                   />
                 </div>
               </div>
-              <button 
-                className="btn btn-outline-secondary btn-sm" 
-                title="Download CSV"
-                style={{
-                  backgroundColor: 'var(--color-button-bg)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-muted)'
-                }}
-              >
+              <button className={sharedStyles.actionButton} title="Download CSV">
                 <i className="bi bi-download"></i>
               </button>
             </div>
-            <div className={sharedStyles.table_responsive} style={{ padding: 0 }}>
+            <div className={`${sharedStyles.table_responsive} ${pageStyles.table_responsive}`}>
               <table className={`table table-hover ${sharedStyles.table}`} style={{ tableLayout: 'fixed' }}>
                 <thead>
                   <tr>
@@ -365,47 +245,17 @@ export default function DatasetExperimentsClient({
                         {ex.id}
                       </td>
                       <td className={sharedStyles.textAlignLeft}>
-                        <pre style={{ 
-                          fontSize: '0.8rem', 
-                          maxHeight: '150px', 
-                          overflow: 'auto',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          backgroundColor: 'var(--color-surface-code)',
-                          padding: '0.5rem',
-                          borderRadius: '0.25rem',
-                          margin: 0
-                        }}>
+                        <pre className={pageStyles.preformatted}>
                           {formatObjectForDisplay(ex.latestRevision.input)}
                         </pre>
                       </td>
                       <td className={sharedStyles.textAlignLeft}>
-                        <pre style={{ 
-                          fontSize: '0.8rem', 
-                          maxHeight: '150px', 
-                          overflow: 'auto',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          backgroundColor: 'var(--color-surface-code)',
-                          padding: '0.5rem',
-                          borderRadius: '0.25rem',
-                          margin: 0
-                        }}>
+                        <pre className={pageStyles.preformatted}>
                           {formatObjectForDisplay(ex.latestRevision.output)}
                         </pre>
                       </td>
                       <td className={sharedStyles.textAlignLeft}>
-                        <pre style={{ 
-                          fontSize: '0.8rem', 
-                          maxHeight: '150px', 
-                          overflow: 'auto',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          backgroundColor: 'var(--color-surface-code)',
-                          padding: '0.5rem',
-                          borderRadius: '0.25rem',
-                          margin: 0
-                        }}>
+                        <pre className={pageStyles.preformatted}>
                           {formatObjectForDisplay(ex.latestRevision.metadata)}
                         </pre>
                       </td>
