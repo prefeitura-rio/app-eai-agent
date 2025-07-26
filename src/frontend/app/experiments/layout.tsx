@@ -10,12 +10,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
-  const { title, subtitle, setTitle, setSubtitle } = useHeader();
+  const { title, subtitle, setTitle, setSubtitle, pageActions } = useHeader(); // Get pageActions
   const pathParts = pathname.split('/').filter(p => p);
 
   const isRootExperimentsPage = pathname === '/experiments';
   const isDatasetPage = pathParts.length === 2 && pathParts[0] === 'experiments';
-  const isExperimentRunPage = pathParts.length === 4 && pathParts[1] === 'experiments';
+  const isExperimentRunPage = pathParts.length === 3 && pathParts[0] === 'experiments';
 
   const [theme, setTheme] = useState('light');
 
@@ -31,9 +31,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       setSubtitle('Selecione um dataset para ver os experimentos');
     } else if (isDatasetPage) {
         setTitle('Experimentos do Dataset');
-        // Subtitle for dataset page will be set by the page itself
     }
-    // For experiment run page, title and subtitle are set by the page
   }, [pathname, isRootExperimentsPage, isDatasetPage, setTitle, setSubtitle]);
 
   const toggleTheme = () => {
@@ -56,21 +54,21 @@ function LayoutContent({ children }: { children: ReactNode }) {
     ];
 
     if (isRootExperimentsPage) {
-      return [{ id: 'home', label: 'Voltar para Home', icon: 'bi-house-door', href: '/' }, ...baseActions];
+      return [{ id: 'home', label: 'Voltar para Home', icon: 'bi-house-door', href: '/' }, ...pageActions, ...baseActions];
     }
     
-    const backLink = isExperimentRunPage ? `/experiments/${pathParts[2]}` : '/experiments';
-    return [{ id: 'back', label: 'Voltar', icon: 'bi-arrow-left', href: backLink }, ...baseActions];
+    const backLink = isExperimentRunPage ? `/experiments/${pathParts[1]}` : '/experiments';
+    return [...pageActions, { id: 'back', label: 'Voltar', icon: 'bi-arrow-left', href: backLink }, ...baseActions];
   };
   
   return (
-    <div>
+    <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <AppHeader
         title={title}
         subtitle={subtitle}
         actions={getHeaderActions()}
       />
-      <main>
+      <main style={{ flexGrow: 1, overflow: 'hidden' }}>
         {children}
       </main>
     </div>

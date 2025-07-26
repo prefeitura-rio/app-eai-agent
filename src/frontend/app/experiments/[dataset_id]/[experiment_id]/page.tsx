@@ -8,6 +8,8 @@ import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { ExperimentData } from '@/app/components/types';
 
+import ExperimentDetailsSkeleton from './components/ExperimentDetailsSkeleton';
+
 interface PageProps {
   params: Promise<{
     dataset_id: string;
@@ -39,7 +41,7 @@ export default function ExperimentDetailsPage({ params }: PageProps) {
   }, [token, dataset_id, experiment_id]);
 
   if (!data) {
-    return <div>Loading...</div>;
+    return <ExperimentDetailsSkeleton />;
   }
 
   return (

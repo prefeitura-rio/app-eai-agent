@@ -74,10 +74,51 @@
     font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+    position: relative; /* Needed for tooltip positioning */
 }
 
 .action_btn:hover {
     transform: scale(1.1);
+}
+
+/* CSS-only Tooltip */
+.action_btn::before,
+.action_btn::after {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.action_btn::after {
+    content: attr(data-tooltip);
+    background-color: #333;
+    color: #fff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    top: 130%; /* Position below the button */
+}
+
+.action_btn::before {
+    content: '';
+    border: 5px solid transparent;
+    border-bottom-color: #333;
+    top: 130%;
+    margin-top: -10px; /* Connects the arrow to the tooltip box */
+}
+
+.action_btn:hover::before,
+.action_btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.1s; /* A very short delay before showing */
 }
 
 /* Base Icon Color */
@@ -97,6 +138,21 @@
     border-color: var(--color-icon-home);
 }
 .home_btn:hover i {
+    color: white;
+}
+
+/* Download Button */
+.download_btn {
+    composes: action_btn;
+}
+.download_btn i {
+    color: var(--color-success);
+}
+.download_btn:hover {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+}
+.download_btn:hover i {
     color: white;
 }
 
@@ -120,11 +176,11 @@
     composes: action_btn;
 }
 .refresh_btn i {
-    color: var(--color-icon-refresh);
+    color: var(--color-info); /* Changed to info color */
 }
 .refresh_btn:hover {
-    background-color: var(--color-icon-refresh);
-    border-color: var(--color-icon-refresh);
+    background-color: var(--color-info);
+    border-color: var(--color-info);
 }
 .refresh_btn:hover i {
     color: white;

@@ -3,10 +3,9 @@
 .twoColumnLayout {
     display: flex;
     flex-direction: row;
-    flex-grow: 1;
-    overflow: hidden;
-    gap: 0.5rem;
-    padding: 1rem 0.5rem;
+    gap: 1rem; /* Increased gap between columns */
+    padding: 0.1rem 2rem; /* Reduced top padding */
+    height: calc(100vh - 135px); /* Adjust 80px based on your header's height */
 }
 
 .runListColumn {
@@ -17,16 +16,16 @@
     background-color: var(--color-surface);
     border-radius: 0.75rem;
     box-shadow: 0 4px 16px var(--color-shadow);
-    overflow: hidden;
 }
 
 .detailsColumn {
     flex-grow: 1;
     overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal overflow on the main column */
-    background-color: var(--color-bg);
+    overflow-x: hidden;
+    background-color: var(--color-surface); /* Changed to surface for consistency */
     border-radius: 0.75rem;
-    padding: 1rem;
+    padding: 1.5rem 2.5rem; /* Increased horizontal padding */
+    box-shadow: 0 4px 16px var(--color-shadow);
 }
 
 /* --- Sidebar Filters --- */
@@ -83,6 +82,11 @@
 
 
 /* --- Run List --- */
+.runList {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
 .runListHeader {
     display: flex;
     justify-content: space-between;
@@ -101,7 +105,7 @@
     border: none;
     border-bottom: 1px solid var(--color-border);
     background-color: transparent;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.8rem; /* Reduced padding */
     transition: all 0.2s ease;
 }
 
@@ -114,12 +118,16 @@
 
 .runListItem:hover {
     background-color: var(--color-surface-hover);
-    transform: translateX(2px);
+    /* transform: translateX(2px); */ /* Removed to prevent overflow */
 }
 
 .runListItemId {
-    font-weight: 600;
+    font-weight: 500; /* Slightly reduced font-weight */
+    font-size: 1rem; /* Reduced font size */
     display: block;
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Add ellipsis for very long text */
 }
 
 /* --- Generic Card for all sections --- */
@@ -146,6 +154,8 @@
     border-radius: 0.5rem;
     padding: 1.25rem;
     background-color: var(--color-surface-hover);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* --- Evaluations Section --- */

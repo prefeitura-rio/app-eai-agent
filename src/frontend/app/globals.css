@@ -9,7 +9,7 @@
     /* Text Colors */
     --color-text: #2c3e50;
     --color-text-muted: #7f8c8d;
-    --color-text-link: #3498db;
+    --color-text-link: #0a74da;
     
     /* Brand */
     --color-primary: #0a74da;
@@ -54,7 +54,7 @@
     /* Text Colors */
     --color-text: #E0E6EF;
     --color-text-muted: #9BAAB8;
-    --color-text-link: #6FC3FF;
+    --color-text-link: #82c3ff;
     
     /* Brand */
     --color-primary: #82c3ff;
@@ -93,4 +93,13 @@ html, body {
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     background-color: var(--color-bg);
     color: var(--color-text);
+}
+
+a {
+    color: var(--color-text-link);
+    text-decoration: none; /* Optional: removes underline */
+}
+
+a:hover {
+    text-decoration: underline; /* Optional: adds underline on hover */
 }

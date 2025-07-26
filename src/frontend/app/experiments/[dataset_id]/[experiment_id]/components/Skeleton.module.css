@@ -1,0 +1,67 @@
+/* src/frontend/app/components/skeletons/Skeleton.module.css */
+.skeleton {
+    background-color: var(--color-surface);
+    border-radius: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    height: 100%;
+    width: 150%;
+    background: linear-gradient(to right, transparent 0%, var(--color-surface-hover) 50%, transparent 100%);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -150%;
+    }
+    100% {
+        left: 150%;
+    }
+}
+
+.skeletonText {
+    height: 1em;
+    width: 100%;
+}
+
+.skeletonTitle {
+    height: 1.5em;
+    width: 40%;
+    margin-bottom: 1rem;
+}
+
+.skeletonCard {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.twoColumnLayout {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+}
+
+.runListColumn {
+    width: 350px;
+    flex-shrink: 0;
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border-radius: 0.75rem;
+}
+
+.detailsColumn {
+    flex-grow: 1;
+    padding: 1rem;
+}

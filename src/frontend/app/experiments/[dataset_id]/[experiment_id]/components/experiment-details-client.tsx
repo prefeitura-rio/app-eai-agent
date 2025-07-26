@@ -5,6 +5,8 @@ import { marked } from 'marked';
 import styles from '../page.module.css';
 import { ExperimentData, Run, Annotation, OrderedStep, ExperimentMetadata } from '@/app/components/types';
 import { useHeader } from '@/app/contexts/HeaderContext';
+import JsonViewerModal from '@/app/components/JsonViewerModal'; // Import the modal
+import { downloadFile } from '@/app/utils/csv'; // Import the download utility
 
 // Props for the component
 interface ExperimentDetailsClientProps {
@@ -331,6 +333,7 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
                         if (toolReturn.text) {
                             sections.push(
                                 <div key="text" className={styles.toolReturnSection}>
+                                    <hr className={styles.dashedSeparator} />
                                     <strong>Content:</strong>
                                     <div dangerouslySetInnerHTML={{ __html: marked(toolReturn.text) }} />
                                 </div>
@@ -398,7 +401,7 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
                             <i className={`bi ${iconName}`}></i>
                         </div>
                         <div className={styles.timelineContent}>
-                            <h6>{title}</h6>
+                            <h4>{title}</h4>
                             {content}
                         </div>
                     </div>
@@ -464,16 +467,47 @@ const DetailsPlaceholder = () => (
 
 export default function ExperimentDetailsClient({ initialData }: ExperimentDetailsClientProps) {
     const { experiment: runs, experiment_metadata, dataset_name, experiment_name } = initialData;
-    const { setTitle, setSubtitle } = useHeader();
+    const { setTitle, setSubtitle, setPageActions } = useHeader();
+    const [isJsonModalOpen, setJsonModalOpen] = useState(false);
 
     const [filteredRuns, setFilteredRuns] = useState(runs);
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+
+    const handleDownloadJson = () => {
+        const jsonString = JSON.stringify(initialData, null, 2);
+        downloadFile(
+            `experiment_${initialData.experiment_name}.json`,
+            jsonString,
+            'application/json'
+        );
+    };
 
     useEffect(() => {
         setTitle('Detalhes do Experimento');
         const newSubtitle = `${dataset_name || 'Dataset'} <br /> ${experiment_name || 'Experimento'}`;
         setSubtitle(newSubtitle);
-    }, [dataset_name, experiment_name, setTitle, setSubtitle]);
+
+        // Add page-specific actions
+        setPageActions([
+            {
+                id: 'download-json',
+                label: 'Baixar JSON',
+                icon: 'bi-download',
+                onClick: handleDownloadJson,
+            },
+            {
+                id: 'view-json',
+                label: 'Ver JSON',
+                icon: 'bi-file-earmark-code',
+                onClick: () => setJsonModalOpen(true),
+            }
+        ]);
+
+        // Clear actions on component unmount
+        return () => {
+            setPageActions([]);
+        };
+    }, [dataset_name, experiment_name, setTitle, setSubtitle, setPageActions]);
     
     useEffect(() => {
         setFilteredRuns(runs);
@@ -493,34 +527,42 @@ export default function ExperimentDetailsClient({ initialData }: ExperimentDetai
     };
 
     return (
-        <div className={styles.twoColumnLayout}>
-            <aside className={styles.runListColumn}>
-                <Filters runs={runs} onFilterChange={handleFilterChange} />
-                <div className={styles.runListHeader}>
-                    <h5 className="mb-0">Execuções (Runs)</h5>
-                    <span className={`badge bg-secondary-subtle text-secondary-emphasis rounded-pill ${styles.runCountBadge}`}>{filteredRuns.length}</span>
-                </div>
-                <div className="list-group list-group-flush overflow-auto">
-                    {filteredRuns.map((run, index) => {
-                        const runId = getRunId(run, index);
-                        return (
-                            <div
-                                key={runId}
-                                className={`${styles.runListItem} ${selectedRunId === runId ? styles.active : ''}`}
-                                onClick={() => setSelectedRunId(runId)}
-                            >
-                                <span className={styles.runListItemId}>ID: {run.output?.metadata?.id || runId}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            </aside>
+        <>
+            {isJsonModalOpen && (
+                <JsonViewerModal 
+                    data={initialData} 
+                    onClose={() => setJsonModalOpen(false)} 
+                />
+            )}
+            <div className={styles.twoColumnLayout}>
+                <aside className={styles.runListColumn}>
+                    <Filters runs={runs} onFilterChange={handleFilterChange} />
+                    <div className={styles.runListHeader}>
+                        <h5 className="mb-0">Execuções (Runs)</h5>
+                        <span className={`badge bg-secondary-subtle text-secondary-emphasis rounded-pill ${styles.runCountBadge}`}>{filteredRuns.length}</span>
+                    </div>
+                    <div className={`${styles.runList} list-group list-group-flush`}>
+                        {filteredRuns.map((run, index) => {
+                            const runId = getRunId(run, index);
+                            return (
+                                <div
+                                    key={runId}
+                                    className={`${styles.runListItem} ${selectedRunId === runId ? styles.active : ''}`}
+                                    onClick={() => setSelectedRunId(runId)}
+                                >
+                                    <span className={styles.runListItemId}>ID: {run.output?.metadata?.id || runId}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </aside>
 
-            <main className={styles.detailsColumn}>
-                <Metadata metadata={experiment_metadata} />
-                <SummaryMetrics runs={runs} />
-                {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
-            </main>
-        </div>
+                <main className={styles.detailsColumn}>
+                    <Metadata metadata={experiment_metadata} />
+                    <SummaryMetrics runs={runs} />
+                    {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
+                </main>
+            </div>
+        </>
     );
 }

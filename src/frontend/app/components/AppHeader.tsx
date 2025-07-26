@@ -33,6 +33,8 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
         return styles.theme_btn;
       case 'logout':
         return styles.logout_btn;
+      case 'download-json':
+        return styles.download_btn;
       default:
         return styles.action_btn;
     }
@@ -53,14 +55,14 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
             
             if (action.href) {
               return (
-                <Link key={action.id} href={action.href} className={buttonClass} title={action.label}>
+                <Link key={action.id} href={action.href} className={buttonClass} data-tooltip={action.label}>
                   <i className={`bi ${action.icon}`}></i>
                 </Link>
               );
             }
             
             return (
-              <button key={action.id} onClick={action.onClick} className={buttonClass} title={action.label}>
+              <button key={action.id} onClick={action.onClick} className={buttonClass} data-tooltip={action.label}>
                 <i className={`bi ${action.icon}`}></i>
               </button>
             );
@@ -70,3 +72,7 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
     </header>
   );
 }
+
+
+
+
