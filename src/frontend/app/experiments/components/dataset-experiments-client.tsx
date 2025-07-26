@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Experiment, Example } from '@/app/components/types';
 import sharedStyles from '../page.module.css';
-import pageStyles from '../[dataset_id]/page.module.css';
 import ProgressBar from './ProgressBar';
 
 interface DatasetExperimentsClientProps {
@@ -17,13 +16,21 @@ interface DatasetExperimentsClientProps {
 
 type SortKey = keyof Experiment | 'metric';
 
-export default function DatasetExperimentsClient({ experiments: initialExperiments, examples: initialExamples, datasetId }: DatasetExperimentsClientProps) {
+export default function DatasetExperimentsClient({ 
+  experiments: initialExperiments, 
+  examples: initialExamples, 
+  datasetId 
+}: DatasetExperimentsClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
   const [experiments] = useState<Experiment[]>(initialExperiments);
   const [expSearchTerm, setExpSearchTerm] = useState('');
-  const [expSortConfig, setExpSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending'; metricName?: string }>({ key: 'createdAt', direction: 'descending' });
+  const [expSortConfig, setExpSortConfig] = useState<{ 
+    key: SortKey | null; 
+    direction: 'ascending' | 'descending'; 
+    metricName?: string 
+  }>({ key: 'createdAt', direction: 'descending' });
 
   const [examples] = useState<Example[]>(initialExamples);
   const [exSearchTerm, setExSearchTerm] = useState('');
@@ -94,33 +101,96 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   const formatObjectForDisplay = (obj: Record<string, unknown>) => {
     if (!obj) return '';
     return JSON.stringify(obj, null, 2);
-  }
+  };
+
+  // Estilos customizados para as tabs
+  const tabStyles = {
+    tabsContainer: {
+      display: 'flex',
+      borderBottom: `1px solid var(--color-border)`,
+      backgroundColor: 'var(--color-bg)',
+      marginBottom: 0,
+    } as React.CSSProperties,
+    tab: {
+      padding: '12px 24px',
+      backgroundColor: 'transparent',
+      border: 'none',
+      borderBottom: '3px solid transparent',
+      color: 'var(--color-text-muted)',
+      cursor: 'pointer',
+      fontSize: '0.9rem',
+      fontWeight: '500',
+      transition: 'all 0.2s ease',
+      outline: 'none',
+    } as React.CSSProperties,
+    activeTab: {
+      color: 'var(--color-primary)',
+      borderBottomColor: 'var(--color-primary)',
+      backgroundColor: 'var(--color-surface)',
+    } as React.CSSProperties,
+    tabContent: {
+      backgroundColor: 'var(--color-surface)',
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+    } as React.CSSProperties
+  };
 
   return (
     <div className={sharedStyles.container}>
-      <ul className={`nav nav-tabs ${pageStyles.navTabs}`} role="tablist">
-        <li className="nav-item" role="presentation">
-          <button
-            className={`nav-link ${activeTab === 'experiments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('experiments')}
-          >
-            Experimentos ({filteredAndSortedExperiments.length})
-          </button>
-        </li>
-        <li className="nav-item" role="presentation">
-          <button
-            className={`nav-link ${activeTab === 'examples' ? 'active' : ''}`}
-            onClick={() => setActiveTab('examples')}
-          >
-            Exemplos ({filteredExamples.length})
-          </button>
-        </li>
-      </ul>
+      {/* Custom Tabs */}
+      <div style={tabStyles.tabsContainer}>
+        <button
+          style={{
+            ...tabStyles.tab,
+            ...(activeTab === 'experiments' ? tabStyles.activeTab : {})
+          }}
+          onClick={() => setActiveTab('experiments')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'experiments') {
+              (e.target as HTMLElement).style.color = 'var(--color-text)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'experiments') {
+              (e.target as HTMLElement).style.color = 'var(--color-text-muted)';
+            }
+          }}
+        >
+          Experimentos ({filteredAndSortedExperiments.length})
+        </button>
+        <button
+          style={{
+            ...tabStyles.tab,
+            ...(activeTab === 'examples' ? tabStyles.activeTab : {})
+          }}
+          onClick={() => setActiveTab('examples')}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'examples') {
+              (e.target as HTMLElement).style.color = 'var(--color-text)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'examples') {
+              (e.target as HTMLElement).style.color = 'var(--color-text-muted)';
+            }
+          }}
+        >
+          Exemplos ({filteredExamples.length})
+        </button>
+      </div>
 
-      <div className="tab-content">
-        {/* Experiments Tab Pane */}
-        <div className={`tab-pane fade ${activeTab === 'experiments' ? 'show active' : ''}`}>
-          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
+      {/* Tab Content */}
+      <div style={tabStyles.tabContent}>
+        {/* Experiments Tab */}
+        {activeTab === 'experiments' && (
+          <div className={sharedStyles.card} style={{ 
+            borderTopLeftRadius: 0, 
+            borderTopRightRadius: 0, 
+            marginTop: 0,
+            marginBottom: '1.5rem',
+            border: 'none',
+            boxShadow: 'none'
+          }}>
             <div className={sharedStyles.cardHeader}>
               <div className={sharedStyles.headerLeft}>
                 <h5 className={sharedStyles.cardTitle}>Experimentos</h5>
@@ -130,98 +200,222 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
                     type="text"
                     className="form-control"
                     placeholder="Filtrar por nome..."
+                    value={expSearchTerm}
                     onChange={(e) => setExpSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
-              <button className={sharedStyles.actionButton} title="Download CSV">
+              <button 
+                className="btn btn-outline-secondary btn-sm" 
+                title="Download CSV"
+                style={{
+                  backgroundColor: 'var(--color-button-bg)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)'
+                }}
+              >
                 <i className="bi bi-download"></i>
               </button>
             </div>
-            <div className={`card-body p-0 ${sharedStyles.table_responsive}`}>
+            <div className={sharedStyles.table_responsive} style={{ padding: 0 }}>
               <table className={`table table-hover ${sharedStyles.table}`}>
-                <thead className="table-light">
+                <thead>
                   <tr>
-                    <th onClick={() => requestExpSort('name')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Nome{getSortIndicator('name')}</th>
-                    <th onClick={() => requestExpSort('description')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Descrição{getSortIndicator('description')}</th>
-                    <th onClick={() => requestExpSort('createdAt')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Criado em{getSortIndicator('createdAt')}</th>
+                    <th 
+                      onClick={() => requestExpSort('name')} 
+                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}
+                    >
+                      Nome{getSortIndicator('name')}
+                    </th>
+                    <th 
+                      onClick={() => requestExpSort('description')} 
+                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}
+                    >
+                      Descrição{getSortIndicator('description')}
+                    </th>
+                    <th 
+                      onClick={() => requestExpSort('createdAt')} 
+                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
+                    >
+                      Criado em{getSortIndicator('createdAt')}
+                    </th>
                     {allMetrics.map(metric => (
-                      <th key={metric} onClick={() => requestExpSort('metric', metric)} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>{metric}{getSortIndicator('metric', metric)}</th>
+                      <th 
+                        key={metric} 
+                        onClick={() => requestExpSort('metric', metric)} 
+                        className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
+                      >
+                        {metric}{getSortIndicator('metric', metric)}
+                      </th>
                     ))}
-                    <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Execuções{getSortIndicator('runCount')}</th>
-                    <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Latência{getSortIndicator('averageRunLatencyMs')}</th>
-                    <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Erro{getSortIndicator('errorRate')}</th>
+                    <th 
+                      onClick={() => requestExpSort('runCount')} 
+                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
+                    >
+                      Execuções{getSortIndicator('runCount')}
+                    </th>
+                    <th 
+                      onClick={() => requestExpSort('averageRunLatencyMs')} 
+                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
+                    >
+                      Latência{getSortIndicator('averageRunLatencyMs')}
+                    </th>
+                    <th 
+                      onClick={() => requestExpSort('errorRate')} 
+                      className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}
+                    >
+                      Erro{getSortIndicator('errorRate')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAndSortedExperiments.map((exp) => (
                     <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
                       <td className={sharedStyles.textAlignLeft}>
-                        <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className={sharedStyles.link}>
+                        <Link 
+                          href={`/experiments/${datasetId}/${exp.id}`} 
+                          onClick={(e) => e.stopPropagation()} 
+                          style={{ 
+                            color: 'var(--color-text-link)', 
+                            textDecoration: 'none' 
+                          }}
+                        >
                           #{exp.sequenceNumber} {exp.name}
                         </Link>
                       </td>
-                      <td className={sharedStyles.textAlignLeft}>{exp.description || 'Sem descrição'}</td>
-                      <td className={sharedStyles.textAlignCenter}>{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
+                      <td className={sharedStyles.textAlignLeft}>
+                        {exp.description || 'Sem descrição'}
+                      </td>
+                      <td className={sharedStyles.textAlignCenter}>
+                        {new Date(exp.createdAt).toLocaleString('pt-BR')}
+                      </td>
                       {allMetrics.map(metric => {
                         const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
-                        return <td key={metric} className={sharedStyles.textAlignCenter}><ProgressBar score={ann ? ann.meanScore : 0} /></td>
+                        return (
+                          <td key={metric} className={sharedStyles.textAlignCenter}>
+                            <ProgressBar score={ann ? ann.meanScore : 0} metricName={metric} />
+                          </td>
+                        );
                       })}
                       <td className={sharedStyles.textAlignCenter}>{exp.runCount}</td>
-                      <td className={sharedStyles.textAlignCenter}>{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
-                      <td className={sharedStyles.textAlignCenter}>{(exp.errorRate * 100).toFixed(2)}%</td>
+                      <td className={sharedStyles.textAlignCenter}>
+                        {exp.averageRunLatencyMs ? `${exp.averageRunLatencyMs.toFixed(2)}ms` : 'N/A'}
+                      </td>
+                      <td className={sharedStyles.textAlignCenter}>
+                        {(exp.errorRate * 100).toFixed(2)}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Examples Tab Pane */}
-        <div className={`tab-pane fade ${activeTab === 'examples' ? 'show active' : ''}`}>
-          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
+        {/* Examples Tab */}
+        {activeTab === 'examples' && (
+          <div className={sharedStyles.card} style={{ 
+            borderTopLeftRadius: 0, 
+            borderTopRightRadius: 0, 
+            marginTop: 0,
+            marginBottom: '1.5rem',
+            border: 'none',
+            boxShadow: 'none'
+          }}>
             <div className={sharedStyles.cardHeader}>
-                <div className={sharedStyles.headerLeft}>
-                    <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
-                    <div className={sharedStyles.search_container}>
-                        <i className="bi bi-search"></i>
-                        <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Filtrar por conteúdo..."
-                            onChange={(e) => setExSearchTerm(e.target.value)}
-                        />
-                    </div>
+              <div className={sharedStyles.headerLeft}>
+                <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
+                <div className={sharedStyles.search_container}>
+                  <i className="bi bi-search"></i>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Filtrar por conteúdo..."
+                    value={exSearchTerm}
+                    onChange={(e) => setExSearchTerm(e.target.value)}
+                  />
                 </div>
-                <button className={sharedStyles.actionButton} title="Download CSV">
-                    <i className="bi bi-download"></i>
-                </button>
+              </div>
+              <button 
+                className="btn btn-outline-secondary btn-sm" 
+                title="Download CSV"
+                style={{
+                  backgroundColor: 'var(--color-button-bg)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)'
+                }}
+              >
+                <i className="bi bi-download"></i>
+              </button>
             </div>
-            <div className={`card-body p-0 ${sharedStyles.table_responsive}`}>
+            <div className={sharedStyles.table_responsive} style={{ padding: 0 }}>
               <table className={`table table-hover ${sharedStyles.table}`} style={{ tableLayout: 'fixed' }}>
-                <thead className="table-light">
+                <thead>
                   <tr>
-                    <th className={sharedStyles.textAlignLeft}>ID</th>
-                    <th className={sharedStyles.textAlignLeft}>Input</th>
-                    <th className={sharedStyles.textAlignLeft}>Output</th>
+                    <th className={sharedStyles.textAlignLeft} style={{ width: '200px' }}>ID</th>
+                    <th className={sharedStyles.textAlignLeft} style={{ width: '300px' }}>Input</th>
+                    <th className={sharedStyles.textAlignLeft} style={{ width: '300px' }}>Output</th>
                     <th className={sharedStyles.textAlignLeft}>Metadata</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredExamples.map((ex) => (
                     <tr key={ex.id}>
-                      <td className={sharedStyles.textAlignLeft}>{ex.id}</td>
-                      <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.input)}</pre></td>
-                      <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.output)}</pre></td>
-                      <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.metadata)}</pre></td>
+                      <td className={sharedStyles.textAlignLeft} style={{ wordBreak: 'break-all' }}>
+                        {ex.id}
+                      </td>
+                      <td className={sharedStyles.textAlignLeft}>
+                        <pre style={{ 
+                          fontSize: '0.8rem', 
+                          maxHeight: '150px', 
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          backgroundColor: 'var(--color-surface-code)',
+                          padding: '0.5rem',
+                          borderRadius: '0.25rem',
+                          margin: 0
+                        }}>
+                          {formatObjectForDisplay(ex.latestRevision.input)}
+                        </pre>
+                      </td>
+                      <td className={sharedStyles.textAlignLeft}>
+                        <pre style={{ 
+                          fontSize: '0.8rem', 
+                          maxHeight: '150px', 
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          backgroundColor: 'var(--color-surface-code)',
+                          padding: '0.5rem',
+                          borderRadius: '0.25rem',
+                          margin: 0
+                        }}>
+                          {formatObjectForDisplay(ex.latestRevision.output)}
+                        </pre>
+                      </td>
+                      <td className={sharedStyles.textAlignLeft}>
+                        <pre style={{ 
+                          fontSize: '0.8rem', 
+                          maxHeight: '150px', 
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          backgroundColor: 'var(--color-surface-code)',
+                          padding: '0.5rem',
+                          borderRadius: '0.25rem',
+                          margin: 0
+                        }}>
+                          {formatObjectForDisplay(ex.latestRevision.metadata)}
+                        </pre>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
