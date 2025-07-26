@@ -1,0 +1,263 @@
+/* src/frontend/app/experiments/[dataset_id]/[experiment_id]/page.module.css */
+
+.twoColumnLayout {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+}
+
+.runListColumn {
+    width: 350px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-surface);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px var(--color-shadow);
+    overflow: hidden;
+}
+
+.detailsColumn {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal overflow on the main column */
+    background-color: var(--color-bg);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+/* --- Sidebar Filters --- */
+.filterContainer {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.filterGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Explicit 2-column grid */
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.filterItem {
+    display: flex;
+    flex-direction: column;
+}
+
+.filterItem label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--color-text-muted);
+    min-height: 2.5em; /* Allow for 2 lines of text, ensuring alignment */
+    line-height: 1.25;
+}
+
+.filterItem select {
+    width: 100%;
+}
+
+.filterButtons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.applyButton {
+    flex-grow: 2;
+    background-color: #198754;
+    border-color: #198754;
+    color: #fff;
+}
+.applyButton:hover {
+    background-color: #146c43;
+    border-color: #13653f;
+    color: #fff;
+}
+
+.clearButton {
+    flex-grow: 1;
+}
+
+
+/* --- Run List --- */
+.runListHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.runCountBadge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.runListItem {
+    cursor: pointer;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    background-color: transparent;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.runListItem.active {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border-left: 4px solid var(--color-primary);
+    font-weight: 600;
+}
+
+.runListItem:hover {
+    background-color: var(--color-surface-hover);
+    transform: translateX(2px);
+}
+
+.runListItemId {
+    font-weight: 600;
+    display: block;
+}
+
+/* --- Generic Card for all sections --- */
+.card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 16px var(--color-shadow);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Metadata Grid */
+.metadataGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem 1rem;
+    align-items: start;
+}
+
+.metadataItem {
+    margin-bottom: 0.25rem;
+}
+
+.metadataItemFullWidth {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.metadataItemFullWidth pre {
+    margin: 0;
+    background-color: var(--color-surface-code);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Summary Metrics Grid - Final Solution */
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+.summaryMetricCard {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.summaryMetricCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--color-shadow);
+}
+
+.summaryMetricCard h6 {
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    min-height: 2.4rem;
+    display: flex;
+    align-items: center;
+}
+
+.metricMainValue {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+}
+
+.metricDistributionHeader {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.distributionItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.distributionBarBg {
+    flex-grow: 1;
+    height: 4px;
+    background-color: var(--color-border);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.distributionBar {
+    height: 100%;
+    background-color: var(--color-primary);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+}
+
+/* CSS-only Collapse */
+.collapseInput {
+    display: none;
+}
+
+.collapseButton {
+    cursor: pointer;
+    margin-left: 0.5rem; /* Space from title */
+    border: 1px solid var(--color-border-strong);
+    transition: all 0.2s ease-in-out;
+}
+
+.collapseButton:hover {
+    background-color: var(--color-surface-hover);
+    border-color: var(--color-primary);
+}
+
+.collapseContent {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out;
+}
+
+.collapseInput:checked ~ .collapseContent {
+    max-height: 5000px; /* Large value to prevent clipping */
+}

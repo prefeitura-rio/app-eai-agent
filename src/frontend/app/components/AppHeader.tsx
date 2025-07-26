@@ -45,7 +45,7 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
       <div className={styles.header_content}>
         <div className={titleSectionClass}>
           <h1 className={styles.title}>{title}</h1>
-          {subtitle && <small className={styles.dataset_name}>{subtitle}</small>}
+          {subtitle && <small className={styles.dataset_name} dangerouslySetInnerHTML={{ __html: subtitle }} />}
         </div>
         <div className={styles.actions_section}>
           {actions.map(action => {

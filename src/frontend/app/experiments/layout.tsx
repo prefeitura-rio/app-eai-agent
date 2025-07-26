@@ -10,12 +10,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
-  const { subtitle, setSubtitle } = useHeader();
+  const { title, subtitle, setTitle, setSubtitle } = useHeader();
   const pathParts = pathname.split('/').filter(p => p);
 
   const isRootExperimentsPage = pathname === '/experiments';
   const isDatasetPage = pathParts.length === 2 && pathParts[0] === 'experiments';
-  const isExperimentRunPage = pathParts.length === 3 && pathParts[0] === 'experiments';
+  const isExperimentRunPage = pathParts.length === 4 && pathParts[1] === 'experiments';
 
   const [theme, setTheme] = useState('light');
 
@@ -27,9 +27,14 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isRootExperimentsPage) {
-      setSubtitle(null);
+      setTitle('Painel de Datasets');
+      setSubtitle('Selecione um dataset para ver os experimentos');
+    } else if (isDatasetPage) {
+        setTitle('Experimentos do Dataset');
+        // Subtitle for dataset page will be set by the page itself
     }
-  }, [pathname, isRootExperimentsPage, setSubtitle]);
+    // For experiment run page, title and subtitle are set by the page
+  }, [pathname, isRootExperimentsPage, isDatasetPage, setTitle, setSubtitle]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -54,20 +59,14 @@ function LayoutContent({ children }: { children: ReactNode }) {
       return [{ id: 'home', label: 'Voltar para Home', icon: 'bi-house-door', href: '/' }, ...baseActions];
     }
     
-    const backLink = isExperimentRunPage ? `/experiments/${pathParts[1]}` : '/experiments';
+    const backLink = isExperimentRunPage ? `/experiments/${pathParts[2]}` : '/experiments';
     return [{ id: 'back', label: 'Voltar', icon: 'bi-arrow-left', href: backLink }, ...baseActions];
-  };
-
-  const getTitle = () => {
-    if (isRootExperimentsPage) return 'Painel de Datasets';
-    if (isDatasetPage) return 'Experimentos do Dataset';
-    return 'Detalhes do Experimento'; // For the experiment run page
   };
   
   return (
     <div>
       <AppHeader
-        title={getTitle()}
+        title={title}
         subtitle={subtitle}
         actions={getHeaderActions()}
       />

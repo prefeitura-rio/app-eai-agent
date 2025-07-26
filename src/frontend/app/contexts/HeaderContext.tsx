@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface HeaderContextType {
+  title: string | null;
+  setTitle: (title: string | null) => void;
   subtitle: string | null;
   setSubtitle: (subtitle: string | null) => void;
 }
@@ -10,10 +12,11 @@ interface HeaderContextType {
 const HeaderContext = createContext<HeaderContextType | undefined>(undefined);
 
 export const HeaderProvider = ({ children }: { children: ReactNode }) => {
-  const [subtitle, setSubtitle] = useState<string | null>(null);
+  const [title, setTitle] = useState<string | null>('Página de Experimentos');
+  const [subtitle, setSubtitle] = useState<string | null>('Selecione um dataset para começar');
 
   return (
-    <HeaderContext.Provider value={{ subtitle, setSubtitle }}>
+    <HeaderContext.Provider value={{ title, setTitle, subtitle, setSubtitle }}>
       {children}
     </HeaderContext.Provider>
   );
