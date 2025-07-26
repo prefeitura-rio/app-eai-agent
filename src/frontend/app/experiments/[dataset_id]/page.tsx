@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, use } from 'react';
-import DatasetExperimentsClient from '@/app/experiments/components/dataset-experiments-client';
+import DatasetExperimentsClient from './components/dataset-experiments-client';
 import { notFound } from 'next/navigation';
 import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';

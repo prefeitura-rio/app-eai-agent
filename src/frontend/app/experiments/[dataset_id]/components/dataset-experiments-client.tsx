@@ -4,8 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Experiment, Example } from '@/app/components/types';
-import sharedStyles from '../page.module.css';
-import pageStyles from '../[dataset_id]/page.module.css';
+import sharedStyles from '@/app/experiments/page.module.css';
+import pageStyles from '../page.module.css';
 import ProgressBar from './ProgressBar';
 
 interface DatasetExperimentsClientProps {
@@ -163,9 +163,9 @@ export default function DatasetExperimentsClient({
                     <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Execuções{getSortIndicator('runCount')}
                     </th>
-                    <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
+                    {/* <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Latência{getSortIndicator('averageRunLatencyMs')}
-                    </th>
+                    </th> */}
                     <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
                       Erro{getSortIndicator('errorRate')}
                     </th>
@@ -194,9 +194,9 @@ export default function DatasetExperimentsClient({
                         );
                       })}
                       <td className={sharedStyles.textAlignCenter}>{exp.runCount}</td>
-                      <td className={sharedStyles.textAlignCenter}>
+                      {/* <td className={sharedStyles.textAlignCenter}>
                         {exp.averageRunLatencyMs ? `${exp.averageRunLatencyMs.toFixed(2)}ms` : 'N/A'}
-                      </td>
+                      </td> */}
                       <td className={sharedStyles.textAlignCenter}>
                         {(exp.errorRate * 100).toFixed(2)}%
                       </td>

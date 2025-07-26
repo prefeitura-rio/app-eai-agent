@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dataset } from '@/app/components/types';
+import { exportToCsv } from '@/app/utils/csv';
 import styles from '../page.module.css';
 
 interface DatasetsClientProps {
@@ -65,6 +66,10 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
   };
 
+  const handleDownload = () => {
+    exportToCsv('datasets.csv', filteredAndSortedDatasets);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -82,6 +87,9 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
               />
             </div>
           </div>
+          <button className={styles.actionButton} title="Download CSV" onClick={handleDownload}>
+            <i className="bi bi-download"></i>
+          </button>
         </div>
         <div className={`card-body p-0 ${styles.table_responsive}`}>
           <table className={`table table-hover ${styles.table}`}>

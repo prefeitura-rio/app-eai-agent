@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import DatasetsClient from '@/app/experiments/components/datasets-client';
+import DatasetsClient from './components/datasets-client';
 import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { Dataset } from '@/app/components/types';

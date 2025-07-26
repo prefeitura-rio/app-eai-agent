@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useState, use } from 'react';
-import ExperimentDetailsClient from '@/app/experiments/components/experiment-details-client';
+import ExperimentDetailsClient from './components/experiment-details-client';
 import { notFound } from 'next/navigation';
 import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
