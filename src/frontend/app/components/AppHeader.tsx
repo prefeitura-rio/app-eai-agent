@@ -15,7 +15,7 @@ export interface ActionButton {
 
 interface AppHeaderProps {
   title: string;
-  subtitle?: string;
+  subtitle?: string | null;
   actions: ActionButton[];
   centerTitle?: boolean;
 }

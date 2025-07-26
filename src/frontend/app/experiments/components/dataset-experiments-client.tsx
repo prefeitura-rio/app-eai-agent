@@ -2,14 +2,17 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Experiment, Example } from '@/app/components/types';
-import styles from '../[dataset_id]/page.module.css';
+import sharedStyles from '../page.module.css';
+import pageStyles from '../[dataset_id]/page.module.css';
 import ProgressBar from './ProgressBar';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
   examples: Example[];
   datasetId: string;
+  datasetName: string;
 }
 
 type SortKey = keyof Experiment | 'metric';
@@ -18,15 +21,11 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
-  // Experiments state
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [experiments, setExperiments] = useState<Experiment[]>(initialExperiments);
+  const [experiments] = useState<Experiment[]>(initialExperiments);
   const [expSearchTerm, setExpSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending'; metricName?: string }>({ key: 'createdAt', direction: 'descending' });
 
-  // Examples state
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [examples, setExamples] = useState<Example[]>(initialExamples);
+  const [examples] = useState<Example[]>(initialExamples);
   const [exSearchTerm, setExSearchTerm] = useState('');
 
   const allMetrics = useMemo(() => {
@@ -39,62 +38,53 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
 
   const filteredAndSortedExperiments = useMemo(() => {
     let sortableItems = [...experiments];
-
     if (expSearchTerm) {
       sortableItems = sortableItems.filter(item =>
         item.name.toLowerCase().includes(expSearchTerm.toLowerCase())
       );
     }
-
-    // Define which keys of Experiment are sortable
-    type SortableExperimentKeys = 'name' | 'description' | 'createdAt' | 'runCount' | 'averageRunLatencyMs' | 'errorRate' | 'sequenceNumber';
-
     if (expSortConfig.key) {
       sortableItems.sort((a, b) => {
-        let aValue: string | number | null, bValue: string | number | null;
-
+        let aValue: any, bValue: any;
         if (expSortConfig.key === 'metric') {
-            const metricName = expSortConfig.metricName!;
-            const aAnn = a.annotationSummaries.find(ann => ann.annotationName === metricName);
-            const bAnn = b.annotationSummaries.find(ann => ann.annotationName === metricName);
-            aValue = aAnn ? aAnn.meanScore : -1;
-            bValue = bAnn ? bAnn.meanScore : -1;
+          const metricName = expSortConfig.metricName!;
+          aValue = a.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
+          bValue = b.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
         } else {
-            // Ensure we only access sortable keys
-            const key = expSortConfig.key as SortableExperimentKeys;
-            aValue = a[key];
-            bValue = b[key];
+          aValue = a[expSortConfig.key as keyof Experiment];
+          bValue = b[expSortConfig.key as keyof Experiment];
         }
-
-        if (aValue === null) return 1;
-        if (bValue === null) return -1;
         if (aValue < bValue) return expSortConfig.direction === 'ascending' ? -1 : 1;
         if (aValue > bValue) return expSortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
       });
     }
-
     return sortableItems;
   }, [experiments, expSearchTerm, expSortConfig]);
 
   const filteredExamples = useMemo(() => {
     if (!exSearchTerm) return examples;
     return examples.filter(ex => {
-      const input = JSON.stringify(ex.latestRevision.input).toLowerCase();
-      const output = JSON.stringify(ex.latestRevision.output).toLowerCase();
-      return input.includes(exSearchTerm.toLowerCase()) || output.includes(exSearchTerm.toLowerCase());
+      const content = JSON.stringify(ex.latestRevision.input) + JSON.stringify(ex.latestRevision.output);
+      return content.toLowerCase().includes(exSearchTerm.toLowerCase());
     });
   }, [examples, exSearchTerm]);
 
   const requestExpSort = (key: SortKey, metricName?: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
-    const currentKey = metricName ? `metric-${metricName}` : key;
-    const prevKey = expSortConfig.metricName ? `metric-${expSortConfig.metricName}` : expSortConfig.key;
-
-    if (currentKey === prevKey && expSortConfig.direction === 'ascending') {
+    const currentSortKey = metricName ? `metric-${metricName}` : key;
+    const prevSortKey = expSortConfig.metricName ? `metric-${expSortConfig.metricName}` : expSortConfig.key;
+    if (currentSortKey === prevSortKey && expSortConfig.direction === 'ascending') {
       direction = 'descending';
     }
     setExpSortConfig({ key, direction, metricName });
+  };
+
+  const getSortIndicator = (key: SortKey, metricName?: string) => {
+    const currentSortKey = metricName ? `metric-${metricName}` : key;
+    const prevSortKey = expSortConfig.metricName ? `metric-${expSortConfig.metricName}` : expSortConfig.key;
+    if (currentSortKey !== prevSortKey) return null;
+    return expSortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
   };
   
   const handleExpRowClick = (experimentId: string) => {
@@ -107,13 +97,12 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
   }
 
   return (
-    <div>
-      <ul className="nav nav-tabs" id="datasetTabs" role="tablist">
+    <div className={sharedStyles.container}>
+      <ul className={`nav nav-tabs ${pageStyles.navTabs}`} role="tablist">
         <li className="nav-item" role="presentation">
           <button
             className={`nav-link ${activeTab === 'experiments' ? 'active' : ''}`}
             onClick={() => setActiveTab('experiments')}
-            type="button"
           >
             Experimentos ({filteredAndSortedExperiments.length})
           </button>
@@ -122,114 +111,122 @@ export default function DatasetExperimentsClient({ experiments: initialExperimen
           <button
             className={`nav-link ${activeTab === 'examples' ? 'active' : ''}`}
             onClick={() => setActiveTab('examples')}
-            type="button"
           >
             Exemplos ({filteredExamples.length})
           </button>
         </li>
       </ul>
 
-      <div className="tab-content" id="datasetTabContent">
-        <div className={`tab-pane fade ${activeTab === 'experiments' ? 'show active' : ''}`}>
-          <div className={styles.card}>
-            <div className="card-header">
-              <div className="d-flex align-items-center gap-3">
-                <h5 className="mb-0">Experimentos</h5>
-                <span className="text-muted">|</span>
-                <div className={styles.search_container}>
-                  <i className="bi bi-search text-muted"></i>
+      <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
+        {/* Unified, Conditional Header */}
+        <div className={sharedStyles.cardHeader}>
+          {activeTab === 'experiments' ? (
+            <>
+              <div className={sharedStyles.headerLeft}>
+                <h5 className={sharedStyles.cardTitle}>Experimentos</h5>
+                <div className={sharedStyles.search_container}>
+                  <i className="bi bi-search"></i>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Filtrar por nome do experimento..."
-                    style={{ width: '250px' }}
+                    placeholder="Filtrar por nome..."
                     onChange={(e) => setExpSearchTerm(e.target.value)}
                   />
                 </div>
-                <button className="btn btn-sm btn-outline-success">
-                  <i className="bi bi-download me-1"></i>CSV
-                </button>
               </div>
-            </div>
-            <div className={`card-body p-0 ${styles.table_responsive}`}>
-              <table className={`table table-hover ${styles.table}`}>
-                <thead className="table-light">
-                  <tr>
-                    <th onClick={() => requestExpSort('name')}>Nome</th>
-                    <th onClick={() => requestExpSort('description')}>Descrição</th>
-                    <th onClick={() => requestExpSort('createdAt')}>Criado em</th>
-                    {allMetrics.map(metric => (
-                      <th key={metric} onClick={() => requestExpSort('metric', metric)}>{metric}</th>
-                    ))}
-                    <th onClick={() => requestExpSort('runCount')}>Execuções</th>
-                    <th onClick={() => requestExpSort('averageRunLatencyMs')}>Latência</th>
-                    <th onClick={() => requestExpSort('errorRate')}>Erro</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedExperiments.map((exp) => (
-                    <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
-                      <td>#{exp.sequenceNumber} {exp.name}</td>
-                      <td>{exp.description || 'Sem descrição'}</td>
-                      <td>{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
-                      {allMetrics.map(metric => {
-                        const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
-                        const score = ann ? ann.meanScore : 0;
-                        return <td key={metric}><ProgressBar score={score} metricName={metric} /></td>
-                      })}
-                      <td>{exp.runCount}</td>
-                      <td>{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
-                      <td>{(exp.errorRate * 100).toFixed(2)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div className={`tab-pane fade ${activeTab === 'examples' ? 'show active' : ''}`}>
-          <div className={styles.card}>
-            <div className="card-header">
-              <div className="d-flex align-items-center gap-3">
-                <h5 className="mb-0">Examples</h5>
-                <span className="text-muted">|</span>
-                <div className={styles.search_container}>
-                  <i className="bi bi-search text-muted"></i>
+              <button className={sharedStyles.actionButton} title="Download CSV">
+                <i className="bi bi-download"></i>
+              </button>
+            </>
+          ) : (
+            <>
+              <div className={sharedStyles.headerLeft}>
+                <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
+                <div className={sharedStyles.search_container}>
+                  <i className="bi bi-search"></i>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Filtrar por conteúdo do exemplo..."
-                    style={{ width: '250px' }}
+                    placeholder="Filtrar por conteúdo..."
                     onChange={(e) => setExSearchTerm(e.target.value)}
                   />
                 </div>
-                <button className="btn btn-sm btn-outline-success">
-                  <i className="bi bi-download me-1"></i>CSV
-                </button>
+              </div>
+              <button className={sharedStyles.actionButton} title="Download CSV">
+                <i className="bi bi-download"></i>
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Unified Card Body with Tab Content */}
+        <div className="card-body p-0">
+          <div className="tab-content">
+            {/* Experiments Tab Pane */}
+            <div className={`tab-pane fade ${activeTab === 'experiments' ? 'show active' : ''}`}>
+              <div className={sharedStyles.table_responsive}>
+                <table className={`table table-hover ${sharedStyles.table}`}>
+                  <thead className="table-light">
+                    <tr>
+                      <th onClick={() => requestExpSort('name')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Nome{getSortIndicator('name')}</th>
+                      <th onClick={() => requestExpSort('description')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>Descrição{getSortIndicator('description')}</th>
+                      <th onClick={() => requestExpSort('createdAt')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Criado em{getSortIndicator('createdAt')}</th>
+                      {allMetrics.map(metric => (
+                        <th key={metric} onClick={() => requestExpSort('metric', metric)} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>{metric}{getSortIndicator('metric', metric)}</th>
+                      ))}
+                      <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Execuções{getSortIndicator('runCount')}</th>
+                      <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Latência{getSortIndicator('averageRunLatencyMs')}</th>
+                      <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>Erro{getSortIndicator('errorRate')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedExperiments.map((exp) => (
+                      <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
+                        <td className={sharedStyles.textAlignLeft}>
+                          <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className={sharedStyles.link}>
+                            #{exp.sequenceNumber} {exp.name}
+                          </Link>
+                        </td>
+                        <td className={sharedStyles.textAlignLeft}>{exp.description || 'Sem descrição'}</td>
+                        <td className={sharedStyles.textAlignCenter}>{new Date(exp.createdAt).toLocaleString('pt-BR')}</td>
+                        {allMetrics.map(metric => {
+                          const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
+                          return <td key={metric} className={sharedStyles.textAlignCenter}><ProgressBar score={ann ? ann.meanScore : 0} /></td>
+                        })}
+                        <td className={sharedStyles.textAlignCenter}>{exp.runCount}</td>
+                        <td className={sharedStyles.textAlignCenter}>{exp.averageRunLatencyMs?.toFixed(2)}ms</td>
+                        <td className={sharedStyles.textAlignCenter}>{(exp.errorRate * 100).toFixed(2)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-            <div className={`card-body p-0 ${styles.table_responsive}`}>
-              <table className={`table table-hover ${styles.table}`} style={{ tableLayout: 'fixed' }}>
-                <thead className="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Input</th>
-                    <th>Output</th>
-                    <th>Metadata</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExamples.map((ex) => (
-                    <tr key={ex.id}>
-                      <td>{ex.id}</td>
-                      <td><pre>{formatObjectForDisplay(ex.latestRevision.input)}</pre></td>
-                      <td><pre>{formatObjectForDisplay(ex.latestRevision.output)}</pre></td>
-                      <td><pre>{formatObjectForDisplay(ex.latestRevision.metadata)}</pre></td>
+
+            {/* Examples Tab Pane */}
+            <div className={`tab-pane fade ${activeTab === 'examples' ? 'show active' : ''}`}>
+              <div className={sharedStyles.table_responsive}>
+                <table className={`table table-hover ${sharedStyles.table}`} style={{ tableLayout: 'fixed' }}>
+                  <thead className="table-light">
+                    <tr>
+                      <th className={sharedStyles.textAlignLeft}>ID</th>
+                      <th className={sharedStyles.textAlignLeft}>Input</th>
+                      <th className={sharedStyles.textAlignLeft}>Output</th>
+                      <th className={sharedStyles.textAlignLeft}>Metadata</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredExamples.map((ex) => (
+                      <tr key={ex.id}>
+                        <td className={sharedStyles.textAlignLeft}>{ex.id}</td>
+                        <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.input)}</pre></td>
+                        <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.output)}</pre></td>
+                        <td className={sharedStyles.textAlignLeft}><pre>{formatObjectForDisplay(ex.latestRevision.metadata)}</pre></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

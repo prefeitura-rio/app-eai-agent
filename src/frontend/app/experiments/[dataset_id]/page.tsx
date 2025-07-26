@@ -5,6 +5,7 @@ import DatasetExperimentsClient from '@/app/experiments/components/dataset-exper
 import { notFound } from 'next/navigation';
 import { API_BASE_URL } from '@/app/components/config';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useHeader } from '@/app/contexts/HeaderContext';
 import { Experiment, Example } from '@/app/components/types';
 
 interface PageProps {
@@ -15,54 +16,72 @@ interface PageProps {
 
 export default function DatasetExperimentsPage({ params }: PageProps) {
   const { dataset_id } = use(params);
-  const [experimentsData, setExperimentsData] = useState<{ experiments: { edges: Array<{ experiment: Experiment }> }, name: string } | null>(null);
-  const [examplesData, setExamplesData] = useState<Example[] | null>(null);
+  const [experiments, setExperiments] = useState<Experiment[]>([]);
+  const [examples, setExamples] = useState<Example[]>([]);
+  const [datasetName, setDatasetName] = useState<string>('');
+  const [loading, setLoading] = useState(true);
   const { token } = useAuth();
+  const { setSubtitle } = useHeader();
 
   useEffect(() => {
+    // Reset subtitle on component mount or when dataset_id changes
+    setSubtitle(null);
+
     if (token) {
-      const getDatasetExperiments = async (datasetId: string) => {
-        const res = await fetch(`${API_BASE_URL}/api/v1/dataset_experiments?dataset_id=${datasetId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-          cache: 'no-store'
-        });
-        if (!res.ok) {
-          if (res.status === 404) notFound();
-          throw new Error('Failed to fetch dataset experiments');
-        }
-        const data = await res.json();
-        setExperimentsData(data.data.dataset);
-      };
+      const getDatasetData = async (datasetId: string) => {
+        setLoading(true);
+        try {
+          // Fetch experiments and dataset name together
+          const expRes = await fetch(`${API_BASE_URL}/api/v1/dataset_experiments?dataset_id=${datasetId}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            cache: 'no-store'
+          });
 
-      const getDatasetExamples = async (datasetId: string) => {
-        const res = await fetch(`${API_BASE_URL}/api/v1/dataset_examples?dataset_id=${datasetId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-          cache: 'no-store'
-        });
-        if (!res.ok) {
-          console.error('Failed to fetch dataset examples');
-          return;
-        }
-        const data = await res.json();
-        setExamplesData(data.data.dataset.examples.edges.map((edge: { example: Example }) => edge.example));
-      };
+          if (!expRes.ok) {
+            if (expRes.status === 404) notFound();
+            throw new Error('Failed to fetch dataset experiments');
+          }
+          const expData = await expRes.json();
+          const dataset = expData.data.dataset;
+          
+          setExperiments(dataset.experiments.edges.map((edge: { experiment: Experiment }) => edge.experiment));
+          setDatasetName(dataset.name);
+          setSubtitle(`${dataset.name}`);
 
-      getDatasetExperiments(dataset_id);
-      getDatasetExamples(dataset_id);
+          // Fetch examples separately
+          const exRes = await fetch(`${API_BASE_URL}/api/v1/dataset_examples?dataset_id=${datasetId}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            cache: 'no-store'
+          });
+
+          if (exRes.ok) {
+            const exData = await exRes.json();
+            setExamples(exData.data.dataset.examples.edges.map((edge: { example: Example }) => edge.example));
+          } else {
+            console.error('Failed to fetch dataset examples');
+          }
+
+        } catch (error) {
+          console.error(error);
+          setSubtitle('Dataset não encontrado');
+        } finally {
+          setLoading(false);
+        }
+      };
+      getDatasetData(dataset_id);
     }
-  }, [token, dataset_id]);
+  }, [token, dataset_id, setSubtitle]);
 
-  if (!experimentsData) {
+  if (loading) {
     return <div>Loading...</div>;
   }
-
-  const experiments = experimentsData.experiments.edges.map((edge: { experiment: Experiment }) => edge.experiment);
 
   return (
     <DatasetExperimentsClient
       experiments={experiments}
-      examples={examplesData || []}
+      examples={examples}
       datasetId={dataset_id}
+      datasetName={datasetName}
     />
   );
 }

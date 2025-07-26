@@ -1,18 +1,16 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { HeaderProvider, useHeader } from '@/app/contexts/HeaderContext';
 import AppHeader from '@/app/components/AppHeader';
 
-export default function ExperimentsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
+  const { subtitle, setSubtitle } = useHeader();
   const pathParts = pathname.split('/').filter(p => p);
 
   const isRootExperimentsPage = pathname === '/experiments';
@@ -26,6 +24,12 @@ export default function ExperimentsLayout({
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-bs-theme', savedTheme);
   }, []);
+
+  useEffect(() => {
+    if (isRootExperimentsPage) {
+      setSubtitle(null);
+    }
+  }, [pathname, isRootExperimentsPage, setSubtitle]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -54,19 +58,34 @@ export default function ExperimentsLayout({
     return [{ id: 'back', label: 'Voltar', icon: 'bi-arrow-left', href: backLink }, ...baseActions];
   };
 
-  const getTitle = () => isRootExperimentsPage ? 'Painel de Datasets' : 'Painel de Experimentos';
-  const getSubtitle = () => (isDatasetPage || isExperimentRunPage) ? `Dataset: ${pathParts[1]}` : undefined;
-
+  const getTitle = () => {
+    if (isRootExperimentsPage) return 'Painel de Datasets';
+    if (isDatasetPage) return 'Experimentos do Dataset';
+    return 'Detalhes do Experimento'; // For the experiment run page
+  };
+  
   return (
     <div>
       <AppHeader
         title={getTitle()}
-        subtitle={getSubtitle()}
+        subtitle={subtitle}
         actions={getHeaderActions()}
       />
       <main>
         {children}
       </main>
     </div>
+  );
+}
+
+export default function ExperimentsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <HeaderProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </HeaderProvider>
   );
 }
