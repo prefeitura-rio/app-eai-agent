@@ -45,12 +45,11 @@ export default function DatasetExperimentsClient({
   }>({ key: 'createdAt', direction: 'descending' });
 
   const [examples] = useState<Example[]>(initialExamples);
-  const [exSearchTerm, setExSearchTerm] = useState('');
 
   const allMetrics = useMemo(() => {
     const metrics = new Set<string>();
     experiments.forEach(exp => {
-      exp.annotationSummaries.forEach(ann => metrics.add(ann.annotationName));
+      exp.annotationSummaries.forEach(ann => metrics.add(ann.name));
     });
     return Array.from(metrics).sort();
   }, [experiments]);
@@ -63,7 +62,7 @@ export default function DatasetExperimentsClient({
       );
     }
     if (expSortConfig.key) {
-      sortableItems.sort((a, b) => {
+      sortableItems.sort((a: Experiment, b: Experiment) => {
         let aValue: any, bValue: any;
         if (expSortConfig.key === 'metric') {
           const metricName = expSortConfig.metricName!;

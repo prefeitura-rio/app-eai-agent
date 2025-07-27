@@ -3,7 +3,7 @@
 import React from 'react';
 import { Run } from '@/app/components/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, MessageSquare, CheckSquare, Network } from 'lucide-react';
+import { User, CheckSquare, Network } from 'lucide-react';
 import Comparison from './Comparison';
 import Evaluations from './Evaluations';
 import ReasoningTimeline from './ReasoningTimeline';

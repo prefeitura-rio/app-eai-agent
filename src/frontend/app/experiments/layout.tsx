@@ -1,11 +1,10 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
-import { useAuth } from '@/app/contexts/AuthContext';
 import { HeaderProvider, useHeader } from '@/app/contexts/HeaderContext';
 import AppHeader, { ActionButton } from '@/app/components/AppHeader';
-import { RefreshCw, Home, ArrowLeft } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -28,7 +27,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   }, [pathname, isRootExperimentsPage, isDatasetPage, isExperimentDetailsPage, setTitle, setSubtitle]);
 
   const getHeaderActions = (): ActionButton[] => {
-    let actions: ActionButton[] = [...pageActions];
+    const actions: ActionButton[] = [...pageActions];
     
     const refreshButton: ActionButton = { id: 'refresh', label: 'Atualizar', icon: RefreshCw, onClick: () => window.location.reload() };
 

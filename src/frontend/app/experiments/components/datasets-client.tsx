@@ -5,10 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Dataset } from '@/app/components/types';
 import { exportToCsv } from '@/app/utils/csv';
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import {
   Table,
   TableBody,
   TableCell,

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Run } from '@/app/components/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BarChart2 } from 'lucide-react';
 
