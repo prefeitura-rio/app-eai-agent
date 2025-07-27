@@ -88,3 +88,11 @@ body {
   color: var(--color-foreground);
   font-size: 12px;
 }
+
+.prose a {
+    color: var(--color-primary);
+}
+
+.prose a:hover {
+    text-decoration: underline;
+}
