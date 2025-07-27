@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
 import { HeaderProvider, useHeader } from '@/app/contexts/HeaderContext';
 import AppHeader, { ActionButton } from '@/app/components/AppHeader';
-import { RefreshCw } from 'lucide-react';
 
 function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
