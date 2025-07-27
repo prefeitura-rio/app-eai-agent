@@ -111,8 +111,8 @@ return (
               </div>
           </aside>
 
-          <main className="overflow-y-auto rounded-lg space-y-6">
-              <div className="p-6">
+          <main className="overflow-y-auto rounded-lg">
+              <div className="p-6 space-y-6">
                 <Metadata metadata={experiment_metadata} />
                 <SummaryMetrics runs={runs} />
                 {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
