@@ -1,135 +1,124 @@
-# Frontend Refactoring Plan: Vanilla to Next.js
+## Part 2: Next.js, TypeScript, and CSS Best Practices
 
-This document outlines the detailed plan for migrating the legacy vanilla HTML, CSS, and JavaScript frontend to a modern Next.js application. The primary goal is to replicate the existing user interface and functionality while adhering to the new architecture.
+This section provides a comprehensive guide to best practices for building modern frontend applications using Next.js, TypeScript, and CSS.
 
-**Core Technologies:**
-- **Framework:** Next.js (with React Server and Client Components)
-- **Styling:** Vanilla CSS with CSS Modules and Bootstrap 5 (already installed).
-- **Language:** TypeScript
+### 1. Project Setup and Configuration
 
-**Guiding Principles:**
-- **Component-Based Architecture:** Break down pages into reusable React components.
-- **Scoped Styles:** Use CSS Modules (`.module.css`) for component-specific styles to avoid global namespace conflicts.
-- **Global Styles:** Use `src/frontend/app/globals.css` for base styles, design tokens (CSS variables), and Bootstrap overrides.
-- **Data Fetching:** Utilize React Server Components for initial data fetching where possible, passing data to Client Components for interactive elements.
-- **Source of Truth:** The original `static/` files will serve as the blueprint for the UI and functionality of each new page.
+*   **Start with `create-next-app`**: Always use the official `create-next-app` CLI to bootstrap your project. It provides a robust, pre-configured TypeScript environment out of the box.
+*   **Strict `tsconfig.json`**: Enable `strict: true` in your `tsconfig.json`. This activates all strict type-checking options and helps catch a wide range of potential errors during development.
+*   **Organized Folder Structure**: A well-organized folder structure is key for maintainability. Group components by feature or by type (e.g., `ui`, `layout`, `shared`). Consider a structure like this:
+    ```
+    src/
+    ├── app/
+    ├── components/
+    │   ├── ui/         # Reusable UI elements (Button, Input, etc.)
+    │   ├── layout/     # Page layout components (Header, Footer, Sidebar)
+    │   └── features/   # Components related to specific features
+    ├── lib/            # Utility functions, helpers
+    ├── styles/         # Global styles
+    └── types/          # Shared TypeScript types
+    ```
 
----
+### 2. Component Development (React & TypeScript)
 
-## Phase 1: Refactor Datasets Page (`/experiments`)
+*   **Functional Components and Hooks**: Exclusively use functional components with React Hooks (`useState`, `useEffect`, `useContext`, etc.). Avoid class-based components.
+*   **Strongly-Typed Props and State**: Always define explicit types for your component's props and state. This is the core benefit of TypeScript in a React context.
+    ```tsx
+    type UserProfileProps = {
+      userId: string;
+      name: string;
+    };
 
-**Goal:** Recreate the main datasets dashboard, which lists all available datasets.
+    const UserProfile = ({ userId, name }: UserProfileProps) => {
+      const [user, setUser] = useState<User | null>(null);
+      // ...
+    };
+    ```
+*   **Avoid `any`**: The `any` type is an escape hatch that disables type checking. Avoid it whenever possible. Use `unknown` for values where the type is truly unknown and perform type-checking before use.
+*   **Custom Hooks for Reusable Logic**: Encapsulate reusable logic (like data fetching, event listeners, etc.) into custom hooks. This keeps your components clean and focused on rendering UI.
+*   **Use Utility Types**: Leverage TypeScript's built-in utility types like `Partial`, `Pick`, `Omit`, and `Record` to manipulate and create new types without redundant definitions.
 
-- **Original Source Files:**
-    - `static/datasets.html`: Provides the HTML structure for the table and layout.
-    - `static/datasets.js`: Contains the logic for fetching, displaying, filtering, and sorting datasets.
-    - `static/experiment.css`: Contains the styling for the table, cards, and overall page appearance.
+### 3. Styling (CSS)
 
-- **New Target Files:**
-    - `src/frontend/app/experiments/page.tsx`: The main entry point for the route. This will be a Server Component responsible for fetching the initial list of datasets.
-    - `src/frontend/app/experiments/components/DatasetsClient.tsx`: A Client Component that will receive the initial datasets and manage all interactive logic (search, sorting).
-    - `src/frontend/app/experiments/page.module.css`: A CSS Module for styles specific to the datasets page.
+*   **CSS Modules**: For component-level styles, use CSS Modules (`.module.css`). This automatically scopes class names, preventing global style conflicts. This is the recommended approach for most components in Next.js.
+*   **Global Styles**: Use a global stylesheet (`globals.css`) for base styles, CSS variables (design tokens), and resets. Import it only in your root `layout.tsx`.
+*   **Tailwind CSS (or other utility-first frameworks)**: Consider using a utility-first CSS framework like Tailwind CSS for rapid development. It pairs well with Next.js and component-based architecture.
+*   **PostCSS**: Use PostCSS with plugins like `autoprefixer` to ensure cross-browser compatibility. `create-next-app` configures this for you.
 
-### Detailed Implementation Steps:
+### 4. Data Fetching
 
-1.  **`page.tsx` (Server Component):**
-    -   Fetch the list of all datasets from the backend API.
-    -   Render the main page layout, including the header.
-    -   Pass the fetched dataset list as a prop to the `<DatasetsClient />` component.
+*   **Server Components for Data Fetching**: Whenever possible, fetch data in Server Components. This reduces client-side bundle size, improves performance, and enhances security by keeping data-fetching logic and credentials on the server.
+*   **Parallel Data Fetching**: When a component needs data from multiple sources, fetch it in parallel to minimize loading times.
+    ```tsx
+    // Fetch in parallel
+    const [articles, products] = await Promise.all([
+      getArticles(),
+      getProducts(),
+    ]);
+    ```
+*   **Streaming with Suspense**: Use `Suspense` to create loading UI boundaries. This allows you to stream parts of the page to the user as they are rendered, improving perceived performance.
+*   **Type-Safe API Routes**: When creating API routes, use TypeScript to define types for your request and response bodies to ensure type safety across your application.
 
-2.  **`page.module.css` (CSS Module):**
-    -   Extract relevant styles from `experiment.css` that apply to the datasets table, card, and search bar.
-    -   Create classes for the main container, the card wrapper, and the table, adapting the styles to the CSS module format (e.g., `.table` becomes `.datasetsTable`).
+### 5. Performance Optimization
 
-3.  **`DatasetsClient.tsx` (Client Component):**
-    -   **State Management:** Use `useState` to manage the list of datasets, the current search term, and the sorting state (column and direction).
-    -   **HTML to JSX:** Convert the `<table>` structure from `datasets.html` into JSX. The table body will be rendered by mapping over the state-managed dataset list.
-    -   **Interactivity:**
-        -   **Search:** Implement the search functionality from `datasets.js`. An `onChange` handler on the search input will update the search term state and filter the displayed datasets.
-        -   **Sorting:** Implement the sorting logic from `datasets.js`. `onClick` handlers on the table headers (`<th>`) will update the sorting state and re-sort the dataset list.
-    -   **Styling:** Import `page.module.css` and apply the classes to the corresponding JSX elements.
+*   **Image Optimization**: Always use the `next/image` component. It provides automatic optimization, responsive sizing, and modern format support (like WebP). Use the `priority` prop for images in the LCP (Largest Contentful Paint) element.
+*   **Code Splitting with Dynamic Imports**: Use `next/dynamic` to lazy-load components that are not needed for the initial page view (e.g., modals, components below the fold).
+*   **Bundle Analysis**: Use `@next/bundle-analyzer` to inspect your JavaScript bundles. This helps identify large dependencies that could be optimized or replaced.
+*   **Caching Strategies**:
+    *   **SSG (Static Site Generation)**: Use for pages that can be pre-rendered at build time (e.g., marketing pages, blog posts).
+    *   **ISR (Incremental Static Regeneration)**: Use for pages that are mostly static but need to be updated periodically.
+    *   **SSR (Server-Side Rendering)**: Use for pages that require fresh data on every request.
+    *   **Client-Side Caching**: Use libraries like SWR or React Query for caching data on the client, reducing redundant API calls.
 
----
+### 6. Common Pitfalls to Avoid
 
-## Phase 2: Refactor Dataset-Specific Page (`/experiments/[dataset_id]`)
-
-**Goal:** Recreate the page that displays details for a single dataset, featuring a tabbed interface for "Experimentos" and "Exemplos".
-
-- **Original Source Files:**
-    - `static/dataset-experiments.html`: Provides the HTML for the tabs, tables, and modal.
-    - `static/dataset-experiments.js`: Contains the logic for fetching data, handling tab switching, managing tables (sorting, filtering), and the "load more" functionality for examples.
-    - `static/experiment.css`: Contains styles for the tabs, tables, and custom progress bars.
-
-- **New Target Files:**
-    - `src/frontend/app/experiments/[dataset_id]/page.tsx`: Server Component to fetch initial data for the specific dataset.
-    - `src/frontend/app/experiments/components/DatasetExperimentsClient.tsx`: The main Client Component to manage the tabbed interface and its state.
-    - `src/frontend/app/experiments/[dataset_id]/page.module.css`: Scoped styles for this page.
-    - `src/frontend/app/experiments/components/ProgressBar.tsx`: A new, reusable component for displaying metric scores.
-    - `src/frontend/app/experiments/components/ProgressBar.module.css`: Scoped styles for the `ProgressBar` component.
-
-### Detailed Implementation Steps:
-
-1.  **`page.tsx` (Server Component):**
-    -   Fetch the initial dataset details, including the first page of experiments and examples.
-    -   Render the page layout and pass the initial data to `<DatasetExperimentsClient />`.
-
-2.  **`page.module.css` (CSS Module):**
-    -   Create styles for the tab container (`.nav-tabs`), the active/inactive tab states, and the card that wraps the tab content.
-    -   Extract table styles from `experiment.css` and adapt them for the "Experimentos" and "Exemplos" tables.
-
-3.  **`ProgressBar.tsx` & `ProgressBar.module.css`:**
-    -   Create a new component that accepts a `score` prop (a number between 0 and 1).
-    -   The component will render the progress bar UI seen in `dataset-experiments.html`.
-    -   The `ProgressBar.module.css` will contain the styles for the bar's container and the dynamic width/color based on the score, replicating the logic from `createMetricCell` in `dataset-experiments.js`.
-
-4.  **`DatasetExperimentsClient.tsx` (Client Component):**
-    -   **Tab Management:** Use `useState` to manage the active tab. Render Bootstrap's `Nav` and `Tab` components to create the tabbed interface.
-    -   **"Experimentos" Tab:**
-        -   Convert the experiments table from `dataset-experiments.html` to JSX.
-        -   Use the new `<ProgressBar />` component to render the metric cells.
-        -   Implement the search and sort functionality from `dataset-experiments.js`.
-    -   **"Exemplos" Tab:**
-        -   Convert the examples table to JSX.
-        -   Implement the search filter.
-        -   Implement the "Load More" functionality. A button click will trigger an API call to fetch the next page of examples and append them to the state.
-        -   Recreate the "Example Details" modal using a React-based modal library or a custom component, populating it with data from the selected example row.
+*   **Ignoring TypeScript Errors**: Don't ignore TypeScript errors. Address them as they appear to prevent bugs later.
+*   **Large Component Trees**: Break down large components into smaller, more manageable ones. This improves readability, reusability, and performance.
+*   **Prop Drilling**: Avoid passing props down through many levels of components. Use React Context or a state management library (like Zustand or Redux) for state that needs to be accessed by many components.
 
 ---
 
-## Phase 3: Refactor Experiment Details Page (`/experiments/[dataset_id]/[experiment_id]`)
+## Part 3: Project-Specific Recommendations
 
-**Goal:** Recreate the detailed view for a single experiment run, including its parameters, metrics, comparisons, and reasoning timeline.
+Based on the analysis of the `src/frontend/app` structure, here are specific recommendations for improving the application's UI, UX, and codebase.
 
-- **Original Source Files:**
-    - `static/experiment.html`: Provides the two-column layout, metadata display, comparison view, and timeline structure.
-    - `static/experiment.js`: Contains the logic for fetching run data, filtering runs, and rendering all the detailed views.
-    - `static/experiment.css`: Contains specific styles for the two-column layout, timeline, evaluation cards, and summary metrics.
+### 1. UI/UX Enhancements
 
-- **New Target Files:**
-    - `src/frontend/app/experiments/[dataset_id]/[experiment_id]/page.tsx`: Server Component to fetch all data related to the specific experiment.
-    - `src/frontend/app/experiments/components/ExperimentDetailsClient.tsx`: A Client Component to manage the state of the selected run and render all its details.
-    - `src/frontend/app/experiments/[dataset_id]/[experiment_id]/page.module.css`: Scoped styles for the details page.
+*   **Adopt a Component Library**: The project relies on custom components and likely custom CSS. Adopting a headless component library like **shadcn/ui**, which is built on **Radix UI** and **Tailwind CSS**, can dramatically improve UI consistency, accessibility, and development speed.
+    *   **Action Plan**:
+        1.  Integrate `shadcn/ui` into the project.
+        2.  Incrementally replace existing custom components (buttons, modals, inputs) with their `shadcn/ui` equivalents.
+        3.  Use its theming capabilities to create a consistent visual identity.
 
-### Detailed Implementation Steps:
+*   **Improve Data Visualization**: Since the application is data-heavy (experiments, datasets), presenting data effectively is crucial.
+    *   **Action Plan**:
+        1.  Replace standard HTML tables with a more powerful table component like **TanStack Table**. It provides out-of-the-box sorting, filtering, and pagination.
+        2.  For data charts and graphs, consider using a library like **Recharts** or **Visx**.
 
-1.  **`page.tsx` (Server Component):**
-    -   Fetch all necessary data for the experiment, including all its runs, metadata, and summary metrics.
-    -   Render the main layout and pass all fetched data as props to `<ExperimentDetailsClient />`.
+*   **Enhance Loading States**: The presence of a `skeletons` directory is good. This can be taken further.
+    *   **Action Plan**:
+        1.  Implement skeleton loaders for all major data-fetching components (e.g., the tables in the `experiments` pages).
+        2.  Combine this with Next.js `Suspense` to create a non-blocking loading experience, showing parts of the UI that are ready while data-heavy parts are still loading.
 
-2.  **`page.module.css` (CSS Module):**
-    -   Define the two-column layout using CSS (e.g., Flexbox or Grid), replicating the structure from `experiment.html` (`run-list-panel` and `main-content-wrapper`).
-    -   Extract and adapt styles for the timeline, evaluation cards, comparison boxes, and metadata grid from `experiment.css`.
+### 2. Code and Architecture Improvements
 
-3.  **`ExperimentDetailsClient.tsx` (Client Component):**
-    -   **State Management:** Use `useState` to manage the list of all runs, the currently selected `runId`, and any active filters.
-    -   **Run List (Left Column):**
-        -   Render the list of runs from the props.
-        -   Implement `onClick` handlers to update the `selectedRunId` state.
-        -   Implement the filtering logic from `experiment.js` to filter the displayed runs.
-    -   **Details View (Right Column):**
-        -   Conditionally render the details of the selected run based on `selectedRunId`.
-        -   **Metadata:** Convert the metadata section from `experiment.html` to JSX.
-        -   **Summary Metrics:** Replicate the summary metrics grid.
-        -   **Comparison:** Recreate the "Resposta do Agente" vs. "Resposta de Referência" view.
-        -   **Evaluations:** Map over the `annotations` of the selected run and render the evaluation cards, including the score and expandable explanation.
-        -   **Reasoning Timeline:** Convert the timeline structure from `experiment.html` to JSX. Dynamically generate timeline items by mapping over the `ordered_steps` of the selected run, creating different content based on the step `type` (e.g., `reasoning_message`, `tool_call_message`).
+*   **Advanced State Management**: The `contexts` folder suggests the use of React Context. For complex, app-wide state, this can lead to performance issues due to unnecessary re-renders.
+    *   **Action Plan**:
+        1.  For simple, localized state, continue using `useState` and `useReducer`.
+        2.  For complex shared state (e.g., user session, filters that affect multiple components), evaluate a lightweight state management library like **Zustand**. It's less boilerplate than Redux and avoids the performance pitfalls of a single large context.
+
+*   **Efficient Data Fetching & Caching**:
+    *   **Action Plan**:
+        1.  Integrate **TanStack Query (React Query)** or **SWR** for client-side data fetching. These libraries provide robust caching, revalidation, and optimistic UI updates, which would be highly beneficial for the interactive tables and lists in the app.
+        2.  This would also simplify the data-fetching logic within Client Components, removing the need for manual `useEffect` and `useState` combinations to handle loading, error, and data states.
+
+*   **Component Colocation and Organization**: The structure is good, but can be more granular.
+    *   **Action Plan**:
+        1.  For pages with many specific components (like `.../[experiment_id]/page.tsx`), keep those components inside the `components` folder of that route (`.../[experiment_id]/components/`). This is the current approach and should be maintained.
+        2.  For components that are truly reusable across different major routes (e.g., a generic `Button` or `Card`), move them to the top-level `src/frontend/app/components/ui` directory, as suggested in the best practices.
+
+*   **Leverage Server Components More**:
+    *   **Action Plan**:
+        1.  Audit the Client Components (`"use client"`). Identify any that don't strictly require user interactivity or browser-only APIs.
+        2.  Refactor these components to be Server Components. Fetch data in the Server Component and pass it down as props to the necessary Client Components. This reduces the client-side JavaScript bundle size.
+
