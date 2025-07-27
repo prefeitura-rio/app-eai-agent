@@ -7,7 +7,6 @@ import JsonViewerModal from '@/app/components/JsonViewerModal';
 import { downloadFile } from '@/app/utils/csv';
 import { Badge } from "@/components/ui/badge";
 import {FileCode, Download} from 'lucide-react';
-import ExperimentDetailsSkeleton from './ExperimentDetailsSkeleton';
 import Filters from './Filters';
 import Metadata from './Metadata';
 import SummaryMetrics from './SummaryMetrics';

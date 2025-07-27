@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { marked } from 'marked';
-import { Run, OrderedStep } from '@/app/components/types';
+import { Run } from '@/app/components/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Trophy } from 'lucide-react';
 

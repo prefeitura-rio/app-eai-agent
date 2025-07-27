@@ -52,7 +52,7 @@ function LoginForm() {
       login(token);
       const redirectUrl = searchParams.get('redirect_url');
       router.push(redirectUrl || '/');
-    } catch (err) {
+    } catch  {
       setError('Token inválido. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);
