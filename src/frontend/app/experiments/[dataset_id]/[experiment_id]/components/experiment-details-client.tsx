@@ -24,7 +24,7 @@ interface ClientProps {
   handleDownloadCleanJson: (numExperiments: number | null, filters: LlmJsonFilters) => Promise<boolean>;
 }
 
-export default function ExperimentDetailsClient({ initialData, datasetId, experimentId, handleDownloadCleanJson }: ClientProps) {
+export default function ExperimentDetailsClient({ initialData, handleDownloadCleanJson }: ClientProps) {
   const { experiment: runs, experiment_metadata, dataset_name, experiment_name } = initialData;
   const { setTitle, setSubtitle, setPageActions } = useHeader();
   const [isJsonModalOpen, setJsonModalOpen] = useState(false);
