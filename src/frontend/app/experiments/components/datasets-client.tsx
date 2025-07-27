@@ -104,53 +104,54 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                   <Download className="h-4 w-4" />
             </Button>
         </div>
-      <Card>
-        <CardContent className="p-0">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background">
-                  <TableRow>
-                    {tableHeaders.map(({ key, label, className }) => (
-                      <TableHead key={key} className={cn("p-4", className)}>
-                        <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
-                          {label}
-                          {sortConfig.key === key && (
-                            sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
-                          )}
-                        </Button>
-                      </TableHead>
-                    ))}
+      <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
+              <TableRow>
+                {tableHeaders.map(({ key, label, className }) => (
+                  <TableHead key={key} className={cn("p-4", className)}>
+                    <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
+                      {label}
+                      {sortConfig.key === key && (
+                        sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAndSortedDatasets.length > 0 ? (
+                filteredAndSortedDatasets.map((dataset) => (
+                  <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
+                    <TableCell className="p-4 font-medium">
+                      <Link href={`/experiments/${dataset.id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
+                        {dataset.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
+                    <TableCell className="p-4 text-center">
+                      <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
+                    </TableCell>
+                    <TableCell className="p-4 text-center">
+                      <Badge className="text-sm">{dataset.experimentCount}</Badge>
+                    </TableCell>
+                    <TableCell className="p-4 text-center text-muted-foreground text-xs">
+                          <div>{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                          <div>{new Date(dataset.createdAt).toLocaleTimeString('pt-BR')}</div>
+                        </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedDatasets.length > 0 ? (
-                    filteredAndSortedDatasets.map((dataset) => (
-                      <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
-                        <TableCell className="p-4 font-medium">
-                          <Link href={`/experiments/${dataset.id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
-                            {dataset.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
-                        <TableCell className="p-4 text-center">
-                          <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
-                        </TableCell>
-                        <TableCell className="p-4 text-center">
-                          <Badge className="text-sm">{dataset.experimentCount}</Badge>
-                        </TableCell>
-                        <TableCell className="p-4 text-center text-muted-foreground">{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                        <TableCell colSpan={tableHeaders.length} className="h-24 text-center">
-                            Nenhum dataset encontrado.
-                        </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-        </CardContent>
-      </Card>
+                ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={tableHeaders.length} className="h-24 text-center">
+                        Nenhum dataset encontrado.
+                    </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+      </div>
     </div>
   );
 }

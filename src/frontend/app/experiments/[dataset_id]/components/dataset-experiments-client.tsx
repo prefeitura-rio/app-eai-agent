@@ -146,7 +146,7 @@ export default function DatasetExperimentsClient({
       <TabsContent value="experiments">
         <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background">
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
                       <SortableHeader sortKey="name" className="w-[250px]">Nome</SortableHeader>
                       <SortableHeader sortKey="description">Descrição</SortableHeader>
@@ -169,7 +169,10 @@ export default function DatasetExperimentsClient({
                           </Link>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>
-                        <TableCell className="text-center text-muted-foreground">{new Date(exp.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell className="text-center text-muted-foreground text-xs">
+                        <div>{new Date(exp.createdAt).toLocaleDateString('pt-BR')}</div>
+                        <div>{new Date(exp.createdAt).toLocaleTimeString('pt-BR')}</div>
+                    </TableCell>
                         {allMetrics.map(metric => {
                           const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
                           return (
@@ -189,7 +192,7 @@ export default function DatasetExperimentsClient({
       <TabsContent value="examples">
         <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background">
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
                       <TableHead className="w-[200px]">ID</TableHead>
                       <TableHead>Input</TableHead>
