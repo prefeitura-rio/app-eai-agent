@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Experiment, Example } from '@/app/components/types';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -22,8 +15,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import ProgressBar from './ProgressBar';
-import { Download } from 'lucide-react';
+import { Download, Search, ArrowUp, ArrowDown } from 'lucide-react';
+import { cn } from '@/app/utils/utils';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -37,7 +32,8 @@ type SortKey = keyof Experiment | 'metric';
 export default function DatasetExperimentsClient({ 
   experiments: initialExperiments, 
   examples: initialExamples, 
-  datasetId 
+  datasetId,
+  datasetName
 }: DatasetExperimentsClientProps) {
   const router = useRouter();
   
@@ -69,7 +65,7 @@ export default function DatasetExperimentsClient({
     }
     if (expSortConfig.key) {
       sortableItems.sort((a, b) => {
-        let aValue: string | number, bValue: string | number;
+        let aValue: any, bValue: any;
         if (expSortConfig.key === 'metric') {
           const metricName = expSortConfig.metricName!;
           aValue = a.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
@@ -103,13 +99,6 @@ export default function DatasetExperimentsClient({
     }
     setExpSortConfig({ key, direction, metricName });
   };
-
-  const getSortIndicator = (key: SortKey, metricName?: string) => {
-    const currentSortKey = metricName ? `metric-${metricName}` : key;
-    const prevSortKey = expSortConfig.metricName ? `metric-${expSortConfig.metricName}` : expSortConfig.key;
-    if (currentSortKey !== prevSortKey) return null;
-    return expSortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
-  };
   
   const handleExpRowClick = (experimentId: string) => {
     router.push(`/experiments/${datasetId}/${experimentId}`);
@@ -120,24 +109,31 @@ export default function DatasetExperimentsClient({
     return JSON.stringify(obj, null, 2);
   };
 
+  const SortableHeader = ({ sortKey, metricName, children, className }: { sortKey: SortKey, metricName?: string, children: React.ReactNode, className?: string }) => {
+    const isSorted = expSortConfig.metricName ? expSortConfig.metricName === metricName : expSortConfig.key === sortKey;
+    return (
+        <TableHead className={className}>
+            <Button variant="ghost" onClick={() => requestExpSort(sortKey, metricName)} className="w-full justify-start px-2 text-xs uppercase">
+                {children}
+                {isSorted && (
+                    expSortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                )}
+            </Button>
+        </TableHead>
+    );
+  };
+
   return (
-    <Tabs defaultValue="experiments" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="experiments">Experimentos ({filteredAndSortedExperiments.length})</TabsTrigger>
-        <TabsTrigger value="examples">Exemplos ({filteredExamples.length})</TabsTrigger>
-      </TabsList>
-      <TabsContent value="experiments">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Experimentos</CardTitle>
-                <CardDescription>Lista de experimentos realizados neste dataset.</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
+    <Tabs defaultValue="experiments" className="w-full space-y-4">
+        <div className="flex items-center justify-between">
+            <TabsList>
+                <TabsTrigger value="experiments">Experimentos ({filteredAndSortedExperiments.length})</TabsTrigger>
+                <TabsTrigger value="examples">Exemplos ({filteredExamples.length})</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
                 <Input
                   type="text"
-                  placeholder="Filtrar por nome..."
+                  placeholder="Filtrar..."
                   value={expSearchTerm}
                   onChange={(e) => setExpSearchTerm(e.target.value)}
                   className="w-64"
@@ -145,35 +141,35 @@ export default function DatasetExperimentsClient({
                 <Button variant="outline" size="icon" title="Download CSV">
                   <Download className="h-4 w-4" />
                 </Button>
-              </div>
             </div>
-          </CardHeader>
-          <CardContent>
+        </div>
+      <TabsContent value="experiments">
+        <div className="overflow-y-auto h-[calc(100vh-16rem)] border rounded-lg">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
-                  <TableHead onClick={() => requestExpSort('name')}>Nome{getSortIndicator('name')}</TableHead>
-                  <TableHead onClick={() => requestExpSort('description')}>Descrição{getSortIndicator('description')}</TableHead>
-                  <TableHead onClick={() => requestExpSort('createdAt')} className="text-center">Criado em{getSortIndicator('createdAt')}</TableHead>
+                  <SortableHeader sortKey="name" className="w-[250px]">Nome</SortableHeader>
+                  <SortableHeader sortKey="description">Descrição</SortableHeader>
+                  <SortableHeader sortKey="createdAt" className="text-center w-[150px]">Criado em</SortableHeader>
                   {allMetrics.map(metric => (
-                    <TableHead key={metric} onClick={() => requestExpSort('metric', metric)} className="text-center">
-                      {metric}{getSortIndicator('metric', metric)}
-                    </TableHead>
+                    <SortableHeader key={metric} sortKey="metric" metricName={metric} className="text-center w-[150px]">
+                      {metric}
+                    </SortableHeader>
                   ))}
-                  <TableHead onClick={() => requestExpSort('runCount')} className="text-center">Execuções{getSortIndicator('runCount')}</TableHead>
-                  <TableHead onClick={() => requestExpSort('errorRate')} className="text-center">Erro{getSortIndicator('errorRate')}</TableHead>
+                  <SortableHeader sortKey="runCount" className="text-center w-[120px]">Execuções</SortableHeader>
+                  <SortableHeader sortKey="errorRate" className="text-center w-[120px]">Erro</SortableHeader>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedExperiments.map((exp) => (
                   <TableRow key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="cursor-pointer">
                     <TableCell>
-                      <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
+                      <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">
                         #{exp.sequenceNumber} {exp.name}
                       </Link>
                     </TableCell>
-                    <TableCell>{exp.description || 'Sem descrição'}</TableCell>
-                    <TableCell className="text-center">{new Date(exp.createdAt).toLocaleString('pt-BR')}</TableCell>
+                    <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{new Date(exp.createdAt).toLocaleDateString('pt-BR')}</TableCell>
                     {allMetrics.map(metric => {
                       const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
                       return (
@@ -182,63 +178,41 @@ export default function DatasetExperimentsClient({
                         </TableCell>
                       );
                     })}
-                    <TableCell className="text-center">{exp.runCount}</TableCell>
-                    <TableCell className="text-center">{(exp.errorRate * 100).toFixed(2)}%</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{exp.runCount}</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{(exp.errorRate * 100).toFixed(2)}%</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+        </div>
       </TabsContent>
       <TabsContent value="examples">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Exemplos</CardTitle>
-                <CardDescription>Exemplos de dados de entrada e saída para este dataset.</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  placeholder="Filtrar por conteúdo..."
-                  value={exSearchTerm}
-                  onChange={(e) => setExSearchTerm(e.target.value)}
-                  className="w-64"
-                />
-                <Button variant="outline" size="icon" title="Download CSV">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div className="overflow-y-auto h-[calc(100vh-16rem)] border rounded-lg">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
-                  <TableHead style={{ width: '200px' }}>ID</TableHead>
-                  <TableHead style={{ width: '300px' }}>Input</TableHead>
-                  <TableHead style={{ width: '300px' }}>Output</TableHead>
+                  <TableHead className="w-[200px]">ID</TableHead>
+                  <TableHead>Input</TableHead>
+                  <TableHead>Output</TableHead>
                   <TableHead>Metadata</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExamples.map((ex) => (
                   <TableRow key={ex.id}>
-                    <TableCell className="font-mono text-xs">{ex.id}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{ex.id}</TableCell>
                     <TableCell>
-                      <pre className="text-xs bg-muted text-muted-foreground p-2 rounded-md whitespace-pre-wrap break-all">
+                      <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
                         {formatObjectForDisplay(ex.latestRevision.input)}
                       </pre>
                     </TableCell>
                     <TableCell>
-                      <pre className="text-xs bg-muted text-muted-foreground p-2 rounded-md whitespace-pre-wrap break-all">
+                      <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
                         {formatObjectForDisplay(ex.latestRevision.output)}
                       </pre>
                     </TableCell>
                     <TableCell>
-                      <pre className="text-xs bg-muted text-muted-foreground p-2 rounded-md whitespace-pre-wrap break-all">
+                      <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
                         {formatObjectForDisplay(ex.latestRevision.metadata)}
                       </pre>
                     </TableCell>
@@ -246,8 +220,7 @@ export default function DatasetExperimentsClient({
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+        </div>
       </TabsContent>
     </Tabs>
   );
