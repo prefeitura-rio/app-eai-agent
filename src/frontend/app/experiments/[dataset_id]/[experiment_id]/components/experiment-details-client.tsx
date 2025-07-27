@@ -21,7 +21,7 @@ interface ClientProps {
   initialData: ExperimentData;
   datasetId: string;
   experimentId: string;
-  handleDownloadCleanJson: (numExperiments: number | null, filters: LlmJsonFilters) => Promise<void>;
+  handleDownloadCleanJson: (numExperiments: number | null, filters: LlmJsonFilters) => Promise<boolean>;
 }
 
 export default function ExperimentDetailsClient({ initialData, datasetId, experimentId, handleDownloadCleanJson }: ClientProps) {

@@ -42,10 +42,10 @@ export default function ExperimentDetailsPage({ params }: PageProps) {
     }
   }, [token, dataset_id, experiment_id]);
 
-  const handleDownloadCleanJson = async (numExperiments: number | null, filters: LlmJsonFilters) => {
+  const handleDownloadCleanJson = async (numExperiments: number | null, filters: LlmJsonFilters): Promise<boolean> => {
     if (!token) {
         console.error("Authentication token not found.");
-        return;
+        return false;
     }
 
     const params = new URLSearchParams();
@@ -54,17 +54,23 @@ export default function ExperimentDetailsPage({ params }: PageProps) {
     }
     params.append('filters', JSON.stringify(filters));
 
-    const res = await fetch(`${API_BASE_URL}/api/v1/experiment_data_clean?dataset_id=${dataset_id}&experiment_id=${experiment_id}&${params.toString()}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/experiment_data_clean?dataset_id=${dataset_id}&experiment_id=${experiment_id}&${params.toString()}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    if (res.ok) {
-        const blob = await res.blob();
-        const experiment_name = data?.experiment_name || "experiment";
-        downloadFile(`experiment_${experiment_name}_clean.json`, blob);
-    } else {
-        console.error("Failed to download clean JSON");
-        // Here you could add a user-facing error message
+        if (res.ok) {
+            const blob = await res.blob();
+            const experiment_name = data?.experiment_name || "experiment";
+            downloadFile(`experiment_${experiment_name}_clean.json`, blob);
+            return true;
+        } else {
+            console.error("Failed to download clean JSON", res.status, await res.text());
+            return false;
+        }
+    } catch (error) {
+        console.error("Error during fetch for clean JSON download:", error);
+        return false;
     }
   };
 

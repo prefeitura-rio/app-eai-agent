@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download } from 'lucide-react';
+import { Download, Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 export interface LlmJsonFilters {
   basic_fields: string[];
@@ -32,7 +31,7 @@ export interface LlmJsonFilters {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (numExperiments: number | null, filters: LlmJsonFilters) => void;
+  onConfirm: (numExperiments: number | null, filters: LlmJsonFilters) => Promise<boolean>;
   allTools: string[];
   allMetrics: string[];
 }
@@ -49,12 +48,17 @@ const initialFiltersState: LlmJsonFilters = {
     metrics: { include: true, selected_metrics: [] },
 };
 
+type DownloadStatus = 'idle' | 'loading' | 'success' | 'error';
+
 export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, allTools, allMetrics }: Props) {
   const [numExperiments, setNumExperiments] = useState<number | null>(null);
   const [filters, setFilters] = useState<LlmJsonFilters>(initialFiltersState);
+  const [status, setStatus] = useState<DownloadStatus>('idle');
 
   useEffect(() => {
     if (open) {
+      // Reset states when modal opens
+      setStatus('idle');
       setFilters({
         ...initialFiltersState,
         tool_call_messages: { ...initialFiltersState.tool_call_messages, selected_tools: allTools },
@@ -64,9 +68,10 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
     }
   }, [open, allTools, allMetrics]);
 
-  const handleConfirm = () => {
-    onConfirm(numExperiments, filters);
-    onOpenChange(false);
+  const handleConfirm = async () => {
+    setStatus('loading');
+    const success = await onConfirm(numExperiments, filters);
+    setStatus(success ? 'success' : 'error');
   };
 
   const handleSelectAll = () => {
@@ -118,13 +123,31 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
     </div>
   );
 
+  const isLoading = status === 'loading';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Download JSON for LLM</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] p-4 border rounded-md">
+        
+        <div className="h-6">
+            {status === 'success' && (
+                <div className="flex items-center text-success text-sm">
+                    <CheckCircle className="h-4 w-4 mr-2"/>
+                    <span>Download iniciado.</span>
+                </div>
+            )}
+            {status === 'error' && (
+                <div className="flex items-center text-destructive text-sm">
+                    <XCircle className="h-4 w-4 mr-2"/>
+                    <span>Falha no download. Tente novamente.</span>
+                </div>
+            )}
+        </div>
+
+        <ScrollArea className="max-h-[60vh] p-4 border rounded-md">
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="num-experiments">Número de experimentos (opcional)</Label>
@@ -133,6 +156,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
                 type="number"
                 placeholder="Deixe em branco para baixar todos"
                 onChange={(e) => setNumExperiments(e.target.value ? parseInt(e.target.value) : null)}
+                disabled={isLoading}
               />
               <p className="text-sm text-muted-foreground">
                 Realiza o download de uma versão mais limpa dos dados do experimento. Se não especificar um número, todos os experimentos serão baixados. Se especificar, será feita uma seleção aleatória.
@@ -140,19 +164,19 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
             </div>
 
             <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={handleSelectAll}>Selecionar Todos</Button>
-                <Button variant="outline" size="sm" onClick={handleDeselectAll}>Limpar Seleção</Button>
+                <Button variant="outline" size="sm" onClick={handleSelectAll} disabled={isLoading}>Selecionar Todos</Button>
+                <Button variant="outline" size="sm" onClick={handleDeselectAll} disabled={isLoading}>Limpar Seleção</Button>
             </div>
 
+            {/* Filter Cards... */}
             <Card>
-              <CardHeader>
-                <CardTitle>Campos Básicos</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Campos Básicos</CardTitle></CardHeader>
               <CardContent>
                 <CheckboxGroup
                   items={['message_id', 'menssagem', 'golden_answer', 'model_response']}
                   selectedItems={filters.basic_fields}
                   onSelectionChange={(newSelection: string[]) => setFilters(f => ({ ...f, basic_fields: newSelection }))}
+                  disabled={isLoading}
                 />
               </CardContent>
             </Card>
@@ -160,11 +184,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
             <Card>
                 <CardHeader>
                     <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="reasoning-messages"
-                            checked={filters.reasoning_messages.include}
-                            onCheckedChange={(checked) => setFilters(f => ({ ...f, reasoning_messages: { include: !!checked } }))}
-                        />
+                        <Checkbox id="reasoning-messages" checked={filters.reasoning_messages.include} onCheckedChange={(checked) => setFilters(f => ({ ...f, reasoning_messages: { include: !!checked } }))} disabled={isLoading} />
                         <Label htmlFor="reasoning-messages" className="text-base font-semibold">Mensagens de Raciocínio</Label>
                     </div>
                 </CardHeader>
@@ -173,11 +193,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
             <Card>
                 <CardHeader>
                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="tool-calls"
-                            checked={filters.tool_call_messages.include}
-                            onCheckedChange={(checked) => setFilters(f => ({ ...f, tool_call_messages: { ...f.tool_call_messages, include: !!checked } }))}
-                        />
+                        <Checkbox id="tool-calls" checked={filters.tool_call_messages.include} onCheckedChange={(checked) => setFilters(f => ({ ...f, tool_call_messages: { ...f.tool_call_messages, include: !!checked } }))} disabled={isLoading}/>
                         <Label htmlFor="tool-calls" className="text-base font-semibold">Chamadas de Ferramentas</Label>
                     </div>
                 </CardHeader>
@@ -186,7 +202,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
                         items={allTools}
                         selectedItems={filters.tool_call_messages.selected_tools}
                         onSelectionChange={(newSelection: string[]) => setFilters(f => ({ ...f, tool_call_messages: { ...f.tool_call_messages, selected_tools: newSelection } }))}
-                        disabled={!filters.tool_call_messages.include}
+                        disabled={isLoading || !filters.tool_call_messages.include}
                     />
                 </CardContent>
             </Card>
@@ -194,11 +210,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
             <Card>
                 <CardHeader>
                     <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="tool-returns"
-                            checked={filters.tool_return_messages.include}
-                            onCheckedChange={(checked) => setFilters(f => ({ ...f, tool_return_messages: { ...f.tool_return_messages, include: !!checked } }))}
-                        />
+                        <Checkbox id="tool-returns" checked={filters.tool_return_messages.include} onCheckedChange={(checked) => setFilters(f => ({ ...f, tool_return_messages: { ...f.tool_return_messages, include: !!checked } }))} disabled={isLoading}/>
                         <Label htmlFor="tool-returns" className="text-base font-semibold">Retornos de Ferramentas</Label>
                     </div>
                 </CardHeader>
@@ -209,7 +221,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
                             items={allTools}
                             selectedItems={filters.tool_return_messages.selected_tools}
                             onSelectionChange={(newSelection: string[]) => setFilters(f => ({ ...f, tool_return_messages: { ...f.tool_return_messages, selected_tools: newSelection } }))}
-                            disabled={!filters.tool_return_messages.include}
+                            disabled={isLoading || !filters.tool_return_messages.include}
                         />
                     </div>
                     <div>
@@ -218,7 +230,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
                             items={['text', 'sources', 'web_search_queries']}
                             selectedItems={filters.tool_return_messages.selected_content}
                             onSelectionChange={(newSelection: string[]) => setFilters(f => ({ ...f, tool_return_messages: { ...f.tool_return_messages, selected_content: newSelection } }))}
-                            disabled={!filters.tool_return_messages.include}
+                            disabled={isLoading || !filters.tool_return_messages.include}
                         />
                     </div>
                 </CardContent>
@@ -227,11 +239,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
             <Card>
                 <CardHeader>
                     <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="metrics"
-                            checked={filters.metrics.include}
-                            onCheckedChange={(checked) => setFilters(f => ({ ...f, metrics: { ...f.metrics, include: !!checked } }))}
-                        />
+                        <Checkbox id="metrics" checked={filters.metrics.include} onCheckedChange={(checked) => setFilters(f => ({ ...f, metrics: { ...f.metrics, include: !!checked } }))} disabled={isLoading}/>
                         <Label htmlFor="metrics" className="text-base font-semibold">Métricas</Label>
                     </div>
                 </CardHeader>
@@ -240,7 +248,7 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
                         items={allMetrics}
                         selectedItems={filters.metrics.selected_metrics}
                         onSelectionChange={(newSelection: string[]) => setFilters(f => ({ ...f, metrics: { ...f.metrics, selected_metrics: newSelection } }))}
-                        disabled={!filters.metrics.include}
+                        disabled={isLoading || !filters.metrics.include}
                     />
                 </CardContent>
             </Card>
@@ -248,13 +256,16 @@ export default function DownloadLlmJsonModal({ open, onOpenChange, onConfirm, al
           </div>
         </ScrollArea>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
-          </DialogClose>
-          <Button onClick={handleConfirm}>
-            <Download className="mr-2 h-4 w-4" />
-            Baixar JSON
-          </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {status === 'success' ? 'Fechar' : 'Cancelar'}
+            </Button>
+            <Button onClick={handleConfirm} disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {status === 'loading' && 'Baixando...'}
+                {status === 'idle' && <><Download className="mr-2 h-4 w-4" /> Baixar JSON</>}
+                {status === 'error' && <><Download className="mr-2 h-4 w-4" /> Tentar Novamente</>}
+                {status === 'success' && <><Download className="mr-2 h-4 w-4" /> Baixar Novamente</>}
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
