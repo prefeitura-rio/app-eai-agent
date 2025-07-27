@@ -90,7 +90,7 @@ return (
                           <div
                               key={runId}
                               className={cn(
-                                'p-4 cursor-pointer border-b transition-colors',
+                                'p-2 cursor-pointer border-b transition-colors text-sm',
                                 isActive 
                                     ? 'bg-primary text-primary-foreground' 
                                     : 'hover:bg-muted/50'
