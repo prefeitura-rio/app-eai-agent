@@ -37,7 +37,7 @@ export default function DatasetExperimentsClient({
   const router = useRouter();
   
   const [experiments] = useState<Experiment[]>(initialExperiments);
-  const [expSearchTerm, setExpSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ 
     key: SortKey | null; 
     direction: 'ascending' | 'descending'; 
@@ -49,16 +49,16 @@ export default function DatasetExperimentsClient({
   const allMetrics = useMemo(() => {
     const metrics = new Set<string>();
     experiments.forEach(exp => {
-      exp.annotationSummaries.forEach(ann => metrics.add(ann.name));
+      exp.annotationSummaries.forEach(ann => metrics.add(ann.annotationName));
     });
     return Array.from(metrics).sort();
   }, [experiments]);
 
   const filteredAndSortedExperiments = useMemo(() => {
     let sortableItems = [...experiments];
-    if (expSearchTerm) {
+    if (searchTerm) {
       sortableItems = sortableItems.filter(item =>
-        item.name.toLowerCase().includes(expSearchTerm.toLowerCase())
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     if (expSortConfig.key) {
@@ -78,15 +78,15 @@ export default function DatasetExperimentsClient({
       });
     }
     return sortableItems;
-  }, [experiments, expSearchTerm, expSortConfig]);
+  }, [experiments, searchTerm, expSortConfig]);
 
   const filteredExamples = useMemo(() => {
-    if (!exSearchTerm) return examples;
+    if (!searchTerm) return examples;
     return examples.filter(ex => {
       const content = JSON.stringify(ex.latestRevision.input) + JSON.stringify(ex.latestRevision.output);
-      return content.toLowerCase().includes(exSearchTerm.toLowerCase());
+      return content.toLowerCase().includes(searchTerm.toLowerCase());
     });
-  }, [examples]);
+  }, [examples, searchTerm]);
 
   const requestExpSort = (key: SortKey, metricName?: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -150,8 +150,8 @@ export default function DatasetExperimentsClient({
                     <Input
                       type="text"
                       placeholder="Filtrar por nome..."
-                      value={expSearchTerm}
-                      onChange={(e) => setExpSearchTerm(e.target.value)}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
                     />
                 </div>
