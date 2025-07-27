@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider } from '@/app/contexts/SidebarContext';
-import { Sidebar } from '@/app/components/layout/sidebar';
+import { Sidebar } from '@/app/components/sidebar';
 
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

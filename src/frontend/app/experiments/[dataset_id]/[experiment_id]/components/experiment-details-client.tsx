@@ -4,9 +4,10 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Run, ExperimentData } from '@/app/components/types';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import JsonViewerModal from '@/app/components/JsonViewerModal';
+import DownloadLlmJsonModal, { LlmJsonFilters } from './DownloadLlmJsonModal';
 import { downloadFile } from '@/app/utils/csv';
 import { Badge } from "@/components/ui/badge";
-import {FileCode, Download} from 'lucide-react';
+import {FileCode, Download, Bot} from 'lucide-react';
 import Filters from './Filters';
 import RunDetails from './RunDetails';
 import DetailsPlaceholder from './DetailsPlaceholder';
@@ -20,14 +21,34 @@ interface ClientProps {
   initialData: ExperimentData;
   datasetId: string;
   experimentId: string;
+  handleDownloadCleanJson: (numExperiments: number | null, filters: LlmJsonFilters) => Promise<void>;
 }
 
-export default function ExperimentDetailsClient({ initialData }: ClientProps) {
+export default function ExperimentDetailsClient({ initialData, datasetId, experimentId, handleDownloadCleanJson }: ClientProps) {
   const { experiment: runs, experiment_metadata, dataset_name, experiment_name } = initialData;
   const { setTitle, setSubtitle, setPageActions } = useHeader();
   const [isJsonModalOpen, setJsonModalOpen] = useState(false);
+  const [isLlmModalOpen, setLlmModalOpen] = useState(false);
   const [filteredRuns, setFilteredRuns] = useState(runs);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+
+  const allTools = useMemo(() => {
+    const tools = new Set<string>();
+    runs.forEach(run => {
+        run.output.agent_output?.ordered?.forEach(step => {
+            if (step.type === 'tool_call_message') {
+                tools.add(step.message.tool_call.name);
+            }
+        });
+    });
+    return Array.from(tools).sort();
+  }, [runs]);
+
+  const allMetrics = useMemo(() => {
+    const metrics = new Set<string>();
+    runs.forEach(run => run.annotations.forEach(ann => metrics.add(ann.name)));
+    return Array.from(metrics).sort();
+  }, [runs]);
 
   const handleDownloadJson = useCallback(() => {
     const jsonString = JSON.stringify(initialData, null, 2);
@@ -45,6 +66,7 @@ export default function ExperimentDetailsClient({ initialData }: ClientProps) {
 
     setPageActions([
         { id: 'download-json', label: 'Baixar JSON', icon: Download, onClick: handleDownloadJson },
+        { id: 'download-llm-json', label: 'Exportar LLM', icon: Bot, onClick: () => setLlmModalOpen(true) },
         { id: 'view-json', label: 'Ver JSON', icon: FileCode, onClick: () => setJsonModalOpen(true) }
     ]);
 
@@ -71,10 +93,17 @@ export default function ExperimentDetailsClient({ initialData }: ClientProps) {
 return (
     <>
       <JsonViewerModal 
-    data={initialData} 
-    open={isJsonModalOpen} 
-    onOpenChange={setJsonModalOpen} 
-/>
+        data={initialData} 
+        open={isJsonModalOpen} 
+        onOpenChange={setJsonModalOpen} 
+      />
+      <DownloadLlmJsonModal
+        open={isLlmModalOpen}
+        onOpenChange={setLlmModalOpen}
+        onConfirm={handleDownloadCleanJson}
+        allTools={allTools}
+        allMetrics={allMetrics}
+      />
       <div className="grid md:grid-cols-[330px_1fr] gap-4 h-full pb-4">
           <aside className="flex flex-col bg-card border rounded-lg overflow-hidden">
               <Filters runs={runs} onFilterChange={handleFilterChange} />

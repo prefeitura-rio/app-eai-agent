@@ -5,7 +5,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "@/app/components/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HeaderProvider } from "./contexts/HeaderContext";
-import ConditionalLayout from "./components/layout/ConditionalLayout";
+import ConditionalLayout from "./components/ConditionalLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
