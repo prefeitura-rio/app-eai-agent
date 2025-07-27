@@ -66,7 +66,6 @@ export default function SummaryMetrics({ runs }: SummaryMetricsProps) {
                                 <CardDescription className="text-2xl font-bold">{average.toFixed(2)} avg.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-xs font-semibold text-muted-foreground mb-2">DISTRIBUIÇÃO</div>
                                 <hr className="mb-2" />
                                 <div className="space-y-2">
                                     {Object.entries(metric.counts).sort(([a], [b]) => Number(b) - Number(a)).map(([score, count]) => (
