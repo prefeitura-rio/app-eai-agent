@@ -69,11 +69,11 @@ export default function ExperimentDetailsClient({ initialData }: ClientProps) {
 
 return (
     <>
-      {isJsonModalOpen && (
-          <JsonViewerModal data={data}>
-              {/* Trigger is in header */}
-          </JsonViewerModal>
-      )}
+      <JsonViewerModal 
+    data={initialData} 
+    open={isJsonModalOpen} 
+    onOpenChange={setJsonModalOpen} 
+/>
       <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-full">
           <aside className="flex flex-col bg-card border rounded-lg overflow-hidden">
               <Filters runs={runs} onFilterChange={handleFilterChange} />

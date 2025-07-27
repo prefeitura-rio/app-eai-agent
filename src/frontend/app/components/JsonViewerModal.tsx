@@ -8,18 +8,17 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 
 interface JsonViewerModalProps {
   data: unknown;
-  children: React.ReactNode; // The trigger element
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function JsonViewerModal({ data, children }: JsonViewerModalProps) {
+export default function JsonViewerModal({ data, open, onOpenChange }: JsonViewerModalProps) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[60vw]">
         <DialogHeader>
           <DialogTitle>JSON Completo</DialogTitle>
