@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { exportToCsv } from '@/app/utils/csv';
 import { Experiment, Example } from '@/app/components/types';
 import {
   Table,
@@ -31,6 +32,7 @@ export default function DatasetExperimentsClient({
   experiments: initialExperiments, 
   examples: initialExamples, 
   datasetId,
+  datasetName
 }: DatasetExperimentsClientProps) {
   const router = useRouter();
   
@@ -101,6 +103,22 @@ export default function DatasetExperimentsClient({
     router.push(`/experiments/${datasetId}/${experimentId}`);
   };
 
+  const handleDownload = () => {
+    const dataToExport = filteredAndSortedExperiments.map(exp => ({
+        id: exp.id,
+        name: exp.name,
+        description: exp.description,
+        createdAt: new Date(exp.createdAt).toLocaleString('pt-BR'),
+        runCount: exp.runCount,
+        errorRate: exp.errorRate,
+        ...exp.annotationSummaries.reduce((acc, ann) => {
+            acc[ann.annotationName] = ann.meanScore;
+            return acc;
+        }, {} as Record<string, number>)
+    }));
+    exportToCsv(`experiments-${datasetName}.csv`, dataToExport);
+  };
+
   const formatObjectForDisplay = (obj: Record<string, unknown>) => {
     if (!obj) return '';
     return JSON.stringify(obj, null, 2);
@@ -138,7 +156,7 @@ export default function DatasetExperimentsClient({
                       className="pl-9"
                     />
                 </div>
-              <Button variant="outline" size="icon" title="Download CSV" className="text-success hover:text-success hover:bg-muted">
+              <Button variant="outline" size="icon" title="Download CSV" className="text-success hover:text-success hover:bg-muted" onClick={handleDownload}>
                 <Download className="h-4 w-4" />
               </Button>
           </div>
