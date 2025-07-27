@@ -51,7 +51,33 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                         break;
                     case "tool_return_message":
                         title = `${currentStepPrefix}Retorno da Ferramenta: ${step.message.name}`;
-                        content = <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked(step.message.tool_return.text || '') }} />;
+                        content = (
+                            <div className="space-y-4">
+                                {step.message.tool_return.text && (
+                                    <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked(step.message.tool_return.text) }} />
+                                )}
+                                {step.message.tool_return.web_search_queries && (
+                                    <div>
+                                        <hr className="my-2 border-dashed" />
+                                        <h4 className="font-semibold text-xs">Web Search Queries:</h4>
+                                        <pre className="p-2 bg-muted rounded-md text-xs whitespace-pre-wrap font-mono text-foreground">{JSON.stringify(step.message.tool_return.web_search_queries, null, 2)}</pre>
+                                    </div>
+                                )}
+                                {step.message.tool_return.sources && (
+                                    <div>
+                                        <hr className="my-2 border-dashed" />
+                                        <Accordion type="single" collapsible>
+                                            <AccordionItem value="sources">
+                                                <AccordionTrigger className="text-xs font-semibold">Sources</AccordionTrigger>
+                                                <AccordionContent>
+                                                    <pre className="p-2 bg-muted rounded-md text-xs whitespace-pre-wrap font-mono text-foreground">{JSON.stringify(step.message.tool_return.sources, null, 2)}</pre>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    </div>
+                                )}
+                            </div>
+                        );
                         break;
                     case "assistant_message":
                         sequenceCounter++;

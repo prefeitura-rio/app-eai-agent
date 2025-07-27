@@ -5,6 +5,8 @@ import { Run } from '@/app/components/types';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 
 interface FiltersProps {
   runs: Run[];
@@ -68,33 +70,45 @@ export default function Filters({ runs, onFilterChange }: FiltersProps) {
       return a.localeCompare(b);
   });
 
+  const activeFilterCount = Object.values(selectedFilters).filter(value => value !== 'all' && value !== '').length;
+
   return (
-      <div className="p-4 border-b">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 items-center">
-              {sortedFilterNames.map(name => (
-                  <React.Fragment key={name}>
-                      <Label htmlFor={`filter-${name}`} className="text-left">{name}</Label>
-                      <Select
-                          value={selectedFilters[name] || 'all'}
-                          onValueChange={(value) => handleFilterChange(name, value)}
-                      >
-                          <SelectTrigger id={`filter-${name}`} className="w-full">
-                              <SelectValue placeholder="Todos" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">Todos</SelectItem>
-                              {Array.from(filterOptions[name]).map(score => (
-                                  <SelectItem key={score} value={String(score)}>{score.toFixed(1)}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                  </React.Fragment>
-              ))}
-          </div>
-          <div className="col-span-2 flex justify-end gap-2 mt-4">
-              <Button onClick={applyFilters} size="sm" className="w-2/3">Aplicar</Button>
-              <Button onClick={clearFilters} size="sm" variant="outline" className="w-1/3">Limpar</Button>
-          </div>
-      </div>
+    <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="item-1" className="border-b-0">
+            <AccordionTrigger className="p-4 text-base font-semibold hover:no-underline">
+                <div className="flex items-center gap-2">
+                    Filtros
+                    {activeFilterCount > 0 && <Badge>{activeFilterCount}</Badge>}
+                </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-4 pt-0">
+                <div className="grid grid-cols-3 gap-x-4 gap-y-2 items-center">
+                    {sortedFilterNames.map(name => (
+                        <React.Fragment key={name}>
+                            <Label htmlFor={`filter-${name}`} className="text-left col-span-2">{name}</Label>
+                            <Select
+                                value={selectedFilters[name] || 'all'}
+                                onValueChange={(value) => handleFilterChange(name, value)}
+                            >
+                                <SelectTrigger id={`filter-${name}`} className="w-full">
+                                    <SelectValue placeholder="Todos" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos</SelectItem>
+                                    {Array.from(filterOptions[name]).map(score => (
+                                        <SelectItem key={score} value={String(score)}>{score.toFixed(1)}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </React.Fragment>
+                    ))}
+                    <div className="col-span-3 flex justify-end gap-2 mt-4">
+                        <Button onClick={applyFilters} size="sm" className="w-2/3">Aplicar</Button>
+                        <Button onClick={clearFilters} size="sm" variant="outline" className="w-1/3">Limpar</Button>
+                    </div>
+                </div>
+            </AccordionContent>
+        </AccordionItem>
+    </Accordion>
   );
 }

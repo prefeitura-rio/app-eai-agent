@@ -75,7 +75,7 @@ return (
     open={isJsonModalOpen} 
     onOpenChange={setJsonModalOpen} 
 />
-      <div className="grid md:grid-cols-[350px_1fr] gap-4 h-full pb-4">
+      <div className="grid md:grid-cols-[330px_1fr] gap-4 h-full pb-4">
           <aside className="flex flex-col bg-card border rounded-lg overflow-hidden">
               <Filters runs={runs} onFilterChange={handleFilterChange} />
               <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
