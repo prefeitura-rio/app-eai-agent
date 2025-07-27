@@ -1,27 +1,24 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
-import styles from '../page.module.css';
-import { ExperimentData, Run, Annotation, OrderedStep, ExperimentMetadata } from '@/app/components/types';
+import { Run, Annotation, OrderedStep, ExperimentMetadata } from '@/app/components/types';
 import { useHeader } from '@/app/contexts/HeaderContext';
-import JsonViewerModal from '@/app/components/JsonViewerModal'; // Import the modal
-import { downloadFile } from '@/app/utils/csv'; // Import the download utility
+import JsonViewerModal from '@/app/components/JsonViewerModal';
+import { downloadFile } from '@/app/utils/csv';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-// Props for the component
-interface ExperimentDetailsClientProps {
-  initialData: ExperimentData;
-  datasetId: string;
-  experimentId: string;
-}
-
-// Helper to get a unique ID for a run
 const getRunId = (run: Run, index: number) => run.example_id_clean || `run-${index}`;
 
 const getScoreClass = (score: number) => {
-    if (score === 1.0) return styles.scoreHigh;
-    if (score === 0.0) return styles.scoreLow;
-    return styles.scoreMid;
+    if (score === 1.0) return "bg-green-500";
+    if (score === 0.0) return "bg-red-500";
+    return "bg-yellow-500";
 };
 
 const Filters = ({ runs, onFilterChange }: { runs: Run[], onFilterChange: (filteredRuns: Run[]) => void }) => {
@@ -46,7 +43,7 @@ const Filters = ({ runs, onFilterChange }: { runs: Run[], onFilterChange: (filte
     };
 
     const applyFilters = () => {
-        const activeFilters = Object.entries(selectedFilters).filter(([, value]) => value !== '');
+        const activeFilters = Object.entries(selectedFilters).filter(([, value]) => value !== 'all' && value !== '');
         
         if (activeFilters.length === 0) {
             onFilterChange(runs);
@@ -82,78 +79,63 @@ const Filters = ({ runs, onFilterChange }: { runs: Run[], onFilterChange: (filte
     });
 
     return (
-        <div className={styles.filterContainer}>
-            <div className={styles.filterGrid}>
+        <div className="p-4 border-b">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sortedFilterNames.map(name => (
-                    <div key={name} className={styles.filterItem}>
-                        <label htmlFor={`filter-${name}`}>{name}</label>
-                        <select
-                            id={`filter-${name}`}
-                            className="form-select form-select-sm"
-                            value={selectedFilters[name] || ''}
-                            onChange={(e) => handleFilterChange(name, e.target.value)}
+                    <div key={name} className="grid gap-2">
+                        <Label htmlFor={`filter-${name}`}>{name}</Label>
+                        <Select
+                            value={selectedFilters[name] || 'all'}
+                            onValueChange={(value) => handleFilterChange(name, value)}
                         >
-                            <option value="">Todos</option>
-                            {Array.from(filterOptions[name]).map(score => (
-                                <option key={score} value={score}>{score.toFixed(1)}</option>
-                            ))}
-                        </select>
+                            <SelectTrigger id={`filter-${name}`}>
+                                <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos</SelectItem>
+                                {Array.from(filterOptions[name]).map(score => (
+                                    <SelectItem key={score} value={String(score)}>{score.toFixed(1)}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 ))}
             </div>
-            <div className={styles.filterButtons}>
-                <button onClick={applyFilters} className={`btn btn-sm ${styles.applyButton}`}>Aplicar</button>
-                <button onClick={clearFilters} className={`btn btn-sm btn-outline-secondary ${styles.clearButton}`}>Limpar</button>
+            <div className="flex justify-end gap-2 mt-4">
+                <Button onClick={applyFilters} size="sm">Aplicar</Button>
+                <Button onClick={clearFilters} size="sm" variant="outline">Limpar</Button>
             </div>
         </div>
     );
 };
 
-const Metadata = ({ metadata }: { metadata: ExperimentMetadata }) => {
+const Metadata = ({ metadata }: { metadata: ExperimentMetadata | null }) => {
     if (!metadata) return null;
 
-    const PromptSection = ({ title, content, collapseId }: { title: string, content: string | undefined, collapseId: string }) => {
-        if (!content) return null;
-        return (
-            <div className={styles.metadataItemFullWidth}>
-                <div className="d-flex align-items-center gap-2 mb-2">
-                    <strong>{title}</strong>
-                    <label className={`btn btn-sm btn-outline-secondary ${styles.collapseButton}`} htmlFor={collapseId}>
-                        <i className="bi bi-arrows-expand me-1"></i> Ver/Ocultar
-                    </label>
-                </div>
-                <input type="checkbox" className={styles.collapseInput} id={collapseId} />
-                <div className={styles.collapseContent}>
-                    <pre><code>{content}</code></pre>
-                </div>
-            </div>
-        );
-    };
-
     return (
-        <div className={styles.card}>
-            <h4 className="mb-3">Parâmetros do Experimento</h4>
-            <div className={styles.metadataGrid}>
-                <div className={styles.metadataItem}>
-                    <strong>Modelo de Avaliação:</strong><br />
-                    <span className="text-muted">{metadata.eval_model || "N/A"}</span>
+        <Card>
+            <CardHeader>
+                <CardTitle>Parâmetros do Experimento</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <p className="font-semibold">Modelo de Avaliação:</p>
+                    <p className="text-muted-foreground">{metadata.eval_model || "N/A"}</p>
                 </div>
-                <div className={styles.metadataItem}>
-                    <strong>Modelo de Resposta:</strong><br />
-                    <span className="text-muted">{metadata.final_repose_model || "N/A"}</span>
+                <div>
+                    <p className="font-semibold">Modelo de Resposta:</p>
+                    <p className="text-muted-foreground">{metadata.final_repose_model || "N/A"}</p>
                 </div>
-                <div className={styles.metadataItem}>
-                    <strong>Temperatura:</strong><br />
-                    <span className="text-muted">{metadata.temperature ?? "N/A"}</span>
+                <div>
+                    <p className="font-semibold">Temperatura:</p>
+                    <p className="text-muted-foreground">{metadata.temperature ?? "N/A"}</p>
                 </div>
-                <div className={styles.metadataItem}>
-                    <strong>Ferramentas:</strong><br />
-                    <span className="text-muted">{metadata.tools?.join(", ") || "N/A"}</span>
+                <div>
+                    <p className="font-semibold">Ferramentas:</p>
+                    <p className="text-muted-foreground">{metadata.tools?.join(", ") || "N/A"}</p>
                 </div>
-                <PromptSection title="System Prompt Principal" content={metadata.system_prompt} collapseId="systemPromptCollapse" />
-                <PromptSection title="System Prompt (Similaridade)" content={metadata.system_prompt_answer_similatiry} collapseId="systemPromptSimilarityCollapse" />
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 };
 
@@ -194,46 +176,35 @@ const SummaryMetrics = ({ runs }: { runs: Run[] }) => {
     });
 
     return (
-        <div className={styles.card}>
-            <h4 className="mb-3">Métricas Gerais ({summary.totalRuns} runs)</h4>
-            <div className={styles.summaryGrid}>
+        <Card>
+            <CardHeader>
+                <CardTitle>Métricas Gerais ({summary.totalRuns} runs)</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedMetricNames.map(name => {
                     const metric = summary.metrics[name];
                     if (!metric || metric.scores.length === 0) return null;
                     const average = metric.scores.reduce((a, b) => a + b, 0) / metric.scores.length;
-                    const sortedDistribution = Object.entries(metric.counts).sort(([scoreA], [scoreB]) => parseFloat(scoreB) - parseFloat(scoreA));
-
                     return (
-                        <div className={styles.summaryMetricCard} key={name}>
-                            <h6>{name}</h6>
-                            <div className={styles.metricMainValue}>
-                                {average.toFixed(2)} <small className="text-muted h6 fw-normal">avg</small>
-                            </div>
-                            <div className={styles.metricDistributionHeader}>Dist.</div>
-                            {sortedDistribution.map(([score, count]) => {
-                                const percentage = (count / metric.scores.length) * 100;
-                                return (
-                                    <div className={styles.distributionItem} key={score}>
-                                        <span className="fw-bold">{score}</span>
-                                        <div className={styles.distributionBarBg}>
-                                            <div className={styles.distributionBar} style={{ width: `${percentage.toFixed(2)}%` }}></div>
-                                        </div>
-                                        <span className="text-muted small">{count} ({percentage.toFixed(0)}%)</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        <Card key={name} className="flex flex-col">
+                            <CardHeader className="pb-2">
+                                <CardDescription>{name}</CardDescription>
+                                <CardTitle className="text-2xl">{average.toFixed(2)}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {/* Distribution can be added here */}
+                            </CardContent>
+                        </Card>
                     );
                 })}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 };
 
-
-const Evaluations = ({ annotations, runId }: { annotations: Annotation[], runId: string }) => {
+const Evaluations = ({ annotations }: { annotations: Annotation[] }) => {
     if (!annotations || annotations.length === 0) {
-        return <p>Nenhuma avaliação disponível.</p>;
+        return <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>;
     }
 
     const preferredOrder = [
@@ -250,46 +221,36 @@ const Evaluations = ({ annotations, runId }: { annotations: Annotation[], runId:
         return a.name.localeCompare(b.name);
     });
 
-    return sortedAnnotations.map((ann, index) => {
-        const explanationContentHtml = ann.explanation
-            ? typeof ann.explanation === 'object'
-                ? `<pre><code>${JSON.stringify(ann.explanation, null, 2)}</code></pre>`
-                : marked(ann.explanation)
-            : '';
-        const isJsonExplanation = typeof ann.explanation === 'object';
-        const collapseId = `collapse-explanation-${runId}-${index}`;
-
-        return (
-            <div className={styles.evaluationCard} key={index}>
-                <div className={styles.evaluationHeader}>
-                    <div className={`${styles.score} ${getScoreClass(ann.score)}`}>{ann.score.toFixed(1)}</div>
-                    <p className="fw-bold mb-0">{ann.name}</p>
-                </div>
-                {explanationContentHtml && (
-                    <div className={styles.explanation}>
-                        {isJsonExplanation ? (
-                            <>
-                                <input type="checkbox" className={styles.collapseInput} id={collapseId} />
-                                <label className={`btn btn-sm btn-outline-secondary mb-2 ${styles.collapseButton}`} htmlFor={collapseId}>
-                                    <i className="bi bi-arrows-expand me-1"></i> Ver Detalhes
-                                </label>
-                                <div className={styles.collapseContent}>
-                                    <div dangerouslySetInnerHTML={{ __html: explanationContentHtml }} />
-                                </div>
-                            </>
-                        ) : (
-                            <div dangerouslySetInnerHTML={{ __html: explanationContentHtml }} />
-                        )}
+    return (
+        <div className="space-y-2">
+            {sortedAnnotations.map((ann, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                        <span className={`text-white text-xs font-bold px-2 py-1 rounded-full ${getScoreClass(ann.score)}`}>
+                            {ann.score.toFixed(1)}
+                        </span>
+                        <p className="font-semibold">{ann.name}</p>
                     </div>
-                )}
-            </div>
-        );
-    });
+                    {ann.explanation && (
+                        <div className="prose prose-sm dark:prose-invert max-w-none mt-2 pt-2 border-t">
+                            {typeof ann.explanation === 'string' ? (
+                                <div dangerouslySetInnerHTML={{ __html: marked(ann.explanation) }} />
+                            ) : (
+                                <pre className="p-4 bg-muted text-muted-foreground rounded-md text-xs">
+                                    {JSON.stringify(ann.explanation, null, 2)}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
 };
 
 const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) => {
     if (!orderedSteps || orderedSteps.length === 0) {
-        return <p className="text-muted">Nenhum passo de raciocínio disponível.</p>;
+        return <p className="text-sm text-muted-foreground">Nenhum passo de raciocínio disponível.</p>;
     }
 
     let sequenceCounter = 0;
@@ -297,97 +258,50 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
 
     const getIcon = (stepType: string) => {
         switch (stepType) {
-            case "reasoning_message": return { class: styles.timelineIconReasoning, icon: "bi-lightbulb" };
-            case "tool_call_message": return { class: styles.timelineIconToolcall, icon: "bi-tools" };
-            case "tool_return_message": return { class: styles.timelineIconReturn, icon: "bi-box-arrow-in-left" };
-            case "assistant_message": return { class: styles.timelineIconAssistant, icon: "bi-chat-text" };
-            case "letta_usage_statistics": return { class: styles.timelineIconStats, icon: "bi-bar-chart-fill" };
-            default: return { class: '', icon: '' };
+            case "reasoning_message": return { icon: "bi-lightbulb" };
+            case "tool_call_message": return { icon: "bi-tools" };
+            case "tool_return_message": return { icon: "bi-box-arrow-in-left" };
+            case "assistant_message": return { icon: "bi-chat-text" };
+            case "letta_usage_statistics": return { icon: "bi-bar-chart-fill" };
+            default: return { icon: '' };
         }
     };
 
     return (
-        <div className={styles.timeline}>
+        <Accordion type="multiple" className="w-full">
             {orderedSteps.map((step, index) => {
                 let title: string = "";
                 let content: React.ReactNode = null;
-                const { class: iconClass, icon: iconName } = getIcon(step.type);
+                const { icon: iconName } = getIcon(step.type);
 
                 switch (step.type) {
                     case "reasoning_message":
                         sequenceCounter++;
                         currentStepPrefix = `${sequenceCounter}. `;
                         title = `${currentStepPrefix}Raciocínio`;
-                        content = <p className="mb-0 fst-italic" dangerouslySetInnerHTML={{ __html: `"${step.message.reasoning}"` }} />;
+                        content = <p className="mb-0 italic" dangerouslySetInnerHTML={{ __html: `"${step.message.reasoning}"` }} />;
                         break;
                     case "tool_call_message":
                         title = `${currentStepPrefix}Chamada de Ferramenta: ${step.message.tool_call.name}`;
-                        content = <pre>{JSON.stringify(step.message.tool_call.arguments, null, 2)}</pre>;
+                        content = <pre className="p-4 bg-muted text-muted-foreground rounded-md text-xs">{JSON.stringify(step.message.tool_call.arguments, null, 2)}</pre>;
                         break;
                     case "tool_return_message":
                         title = `${currentStepPrefix}Retorno da Ferramenta: ${step.message.name}`;
-                        const toolReturn = step.message.tool_return;
-                        const collapseId = `collapse-sources-${index}`;
-                        
-                        const sections = [];
-                        if (toolReturn.text) {
-                            sections.push(
-                                <div key="text" className={styles.toolReturnSection}>
-                                    <hr className={styles.dashedSeparator} />
-                                    <strong>Content:</strong>
-                                    <div dangerouslySetInnerHTML={{ __html: marked(toolReturn.text) }} />
-                                </div>
-                            );
-                        }
-                        if (toolReturn.sources && toolReturn.sources.length > 0) {
-                            sections.push(
-                                <div key="sources" className={styles.toolReturnSection}>
-                                    <div className={styles.toolReturnHeader}>
-                                        <strong>Sources:</strong>
-                                        <label className={`btn btn-sm btn-outline-secondary ${styles.collapseButton}`} htmlFor={collapseId}>
-                                            <i className="bi bi-arrows-expand me-1"></i> Ver/Ocultar
-                                        </label>
-                                    </div>
-                                    <input type="checkbox" className={styles.collapseInput} id={collapseId} />
-                                    <div className={styles.collapseContent}>
-                                        <pre>{JSON.stringify(toolReturn.sources, null, 2)}</pre>
-                                    </div>
-                                </div>
-                            );
-                        }
-                        if (toolReturn.web_search_queries && toolReturn.web_search_queries.length > 0) {
-                            sections.push(
-                                <div key="queries" className={styles.toolReturnSection}>
-                                    <strong>Web Search Queries:</strong>
-                                    <pre>{JSON.stringify(toolReturn.web_search_queries, null, 2)}</pre>
-                                </div>
-                            );
-                        }
-
-                        content = (
-                            <div>
-                                {sections.map((section, i) => (
-                                    <React.Fragment key={i}>
-                                        {i > 0 && <hr className={styles.dashedSeparator} />}
-                                        {section}
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        );
+                        content = <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked(step.message.tool_return.text || '') }} />;
                         break;
                     case "assistant_message":
                         sequenceCounter++;
                         currentStepPrefix = `${sequenceCounter}. `;
                         title = `Mensagem do Assistente`;
-                        content = <div dangerouslySetInnerHTML={{ __html: marked(step.message.content) }} />;
+                        content = <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked(step.message.content) }} />;
                         break;
                     case "letta_usage_statistics":
                         title = "Estatísticas de Uso";
                         content = (
-                            <div>
-                                <p className="mb-0"><strong>Tokens Totais:</strong> {step.message.total_tokens}</p>
-                                <p className="mb-0"><strong>Tokens de Prompt:</strong> {step.message.prompt_tokens}</p>
-                                <p className="mb-0"><strong>Tokens de Conclusão:</strong> {step.message.completion_tokens}</p>
+                            <div className="text-sm">
+                                <p><strong>Tokens Totais:</strong> {step.message.total_tokens}</p>
+                                <p><strong>Tokens de Prompt:</strong> {step.message.prompt_tokens}</p>
+                                <p><strong>Tokens de Conclusão:</strong> {step.message.completion_tokens}</p>
                             </div>
                         );
                         break;
@@ -396,76 +310,76 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
                 }
 
                 return (
-                    <div className={styles.timelineItem} key={index}>
-                        <div className={`${styles.timelineIcon} ${iconClass}`}>
-                            <i className={`bi ${iconName}`}></i>
-                        </div>
-                        <div className={styles.timelineContent}>
-                            <h4>{title}</h4>
+                    <AccordionItem value={`item-${index}`} key={index}>
+                        <AccordionTrigger>
+                            <div className="flex items-center gap-2">
+                                <i className={`bi ${iconName}`}></i>
+                                <span className="font-semibold text-left">{title}</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
                             {content}
-                        </div>
-                    </div>
+                        </AccordionContent>
+                    </AccordionItem>
                 );
             })}
-        </div>
+        </Accordion>
     );
 };
 
 const Comparison = ({ run }: { run: Run }) => {
-    const agentMessage = run.output.agent_output?.ordered?.find((m: any) => m.type === "assistant_message");
+    const agentMessage = run.output.agent_output?.ordered?.find((m: OrderedStep) => m.type === "assistant_message");
     const agentAnswerHtml = agentMessage?.message?.content ? marked(agentMessage.message.content) : "<p>N/A</p>";
     const goldenAnswerHtml = run.reference_output.golden_answer ? marked(run.reference_output.golden_answer) : "<p>N/A</p>";
 
     return (
-        <div className={styles.comparisonGrid}>
-            <div className={styles.comparisonBox}>
-                <h5>🤖 Resposta do Agente</h5>
-                <div className="agent-answer-content" dangerouslySetInnerHTML={{ __html: agentAnswerHtml }} />
-            </div>
-            <div className={styles.comparisonBox}>
-                <h5>🏆 Resposta de Referência (Golden)</h5>
-                <div className="golden-answer-content" dangerouslySetInnerHTML={{ __html: goldenAnswerHtml }} />
-            </div>
+        <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader><CardTitle>🤖 Resposta do Agente</CardTitle></CardHeader>
+                <CardContent className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: agentAnswerHtml }} />
+            </Card>
+            <Card>
+                <CardHeader><CardTitle>🏆 Resposta de Referência (Golden)</CardTitle></CardHeader>
+                <CardContent className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: goldenAnswerHtml }} />
+            </Card>
         </div>
     );
 };
 
 const RunDetails = ({ run }: { run: Run }) => (
-    <>
-        <div className={styles.card}>
-            <h4 className="section-title">Mensagem do Usuário</h4>
-            <div className={styles.comparisonBox}>
+    <div className="space-y-6">
+        <Card>
+            <CardHeader><CardTitle>Mensagem do Usuário</CardTitle></CardHeader>
+            <CardContent>
                 {run.input.mensagem_whatsapp_simulada || "Mensagem não disponível"}
-            </div>
-
-            <h4 className="section-title mb-3 mt-4">Comparação de Respostas</h4>
-            <Comparison run={run} />
-        </div>
-
-        <div className={styles.card}>
-            <h4 className="section-title">Avaliações</h4>
-            <Evaluations annotations={run.annotations} runId={getRunId(run, -1)} />
-        </div>
-
-        <div className={styles.card}>
-            <div className="section-header">
-                <h4 className="section-title">Cadeia de Pensamento (Reasoning)</h4>
-            </div>
-            <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered} />
-        </div>
-    </>
+            </CardContent>
+        </Card>
+        <Comparison run={run} />
+        <Card>
+            <CardHeader><CardTitle>Avaliações</CardTitle></CardHeader>
+            <CardContent>
+                <Evaluations annotations={run.annotations} />
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader><CardTitle>Cadeia de Pensamento (Reasoning)</CardTitle></CardHeader>
+            <CardContent>
+                <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered} />
+            </CardContent>
+        </Card>
+    </div>
 );
 
 const DetailsPlaceholder = () => (
-    <div className="d-flex h-100 align-items-center justify-content-center text-center text-muted p-4">
+    <div className="flex h-full items-center justify-center text-center text-muted-foreground">
         <div>
-            <i className="bi bi-card-list" style={{ fontSize: '3rem' }}></i>
-            <p className="mt-2">Selecione um run na lista à esquerda para ver os detalhes.</p>
+            <i className="bi bi-card-list text-6xl"></i>
+            <p className="mt-4">Selecione um run na lista à esquerda para ver os detalhes.</p>
         </div>
     </div>
 );
 
-export default function ExperimentDetailsClient({ initialData }: ExperimentDetailsClientProps) {
+export default function ExperimentDetailsClient({ initialData }: { initialData: { experiment: Run[], experiment_metadata: ExperimentMetadata | null, dataset_name: string, experiment_name: string } }) {
     const { experiment: runs, experiment_metadata, dataset_name, experiment_name } = initialData;
     const { setTitle, setSubtitle, setPageActions } = useHeader();
     const [isJsonModalOpen, setJsonModalOpen] = useState(false);
@@ -473,41 +387,27 @@ export default function ExperimentDetailsClient({ initialData }: ExperimentDetai
     const [filteredRuns, setFilteredRuns] = useState(runs);
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
-    const handleDownloadJson = () => {
+    const handleDownloadJson = useCallback(() => {
         const jsonString = JSON.stringify(initialData, null, 2);
         downloadFile(
             `experiment_${initialData.experiment_name}.json`,
             jsonString,
             'application/json'
         );
-    };
+    }, [initialData]);
 
     useEffect(() => {
         setTitle('Detalhes do Experimento');
         const newSubtitle = `${dataset_name || 'Dataset'} <br /> ${experiment_name || 'Experimento'}`;
         setSubtitle(newSubtitle);
 
-        // Add page-specific actions
         setPageActions([
-            {
-                id: 'download-json',
-                label: 'Baixar JSON',
-                icon: 'bi-download',
-                onClick: handleDownloadJson,
-            },
-            {
-                id: 'view-json',
-                label: 'Ver JSON',
-                icon: 'bi-file-earmark-code',
-                onClick: () => setJsonModalOpen(true),
-            }
+            { id: 'download-json', label: 'Baixar JSON', icon: 'bi-download', onClick: handleDownloadJson },
+            { id: 'view-json', label: 'Ver JSON', icon: 'bi-file-earmark-code', onClick: () => setJsonModalOpen(true) }
         ]);
 
-        // Clear actions on component unmount
-        return () => {
-            setPageActions([]);
-        };
-    }, [dataset_name, experiment_name, setTitle, setSubtitle, setPageActions]);
+        return () => setPageActions([]);
+    }, [dataset_name, experiment_name, setTitle, setSubtitle, setPageActions, handleDownloadJson]);
     
     useEffect(() => {
         setFilteredRuns(runs);
@@ -529,35 +429,34 @@ export default function ExperimentDetailsClient({ initialData }: ExperimentDetai
     return (
         <>
             {isJsonModalOpen && (
-                <JsonViewerModal 
-                    data={initialData} 
-                    onClose={() => setJsonModalOpen(false)} 
-                />
+                <JsonViewerModal data={initialData}>
+                    {/* The trigger is now part of the page actions, so we don't need a visible trigger here */}
+                </JsonViewerModal>
             )}
-            <div className={styles.twoColumnLayout}>
-                <aside className={styles.runListColumn}>
+            <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-[calc(100vh-135px)]">
+                <aside className="flex flex-col bg-card border rounded-lg">
                     <Filters runs={runs} onFilterChange={handleFilterChange} />
-                    <div className={styles.runListHeader}>
-                        <h5 className="mb-0">Execuções (Runs)</h5>
-                        <span className={`badge bg-secondary-subtle text-secondary-emphasis rounded-pill ${styles.runCountBadge}`}>{filteredRuns.length}</span>
+                    <div className="flex justify-between items-center p-4 border-b">
+                        <h3 className="text-lg font-semibold">Execuções (Runs)</h3>
+                        <Badge variant="secondary">{filteredRuns.length}</Badge>
                     </div>
-                    <div className={`${styles.runList} list-group list-group-flush`}>
+                    <div className="overflow-y-auto">
                         {filteredRuns.map((run, index) => {
                             const runId = getRunId(run, index);
                             return (
                                 <div
                                     key={runId}
-                                    className={`${styles.runListItem} ${selectedRunId === runId ? styles.active : ''}`}
+                                    className={`p-3 cursor-pointer border-b ${selectedRunId === runId ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'}`}
                                     onClick={() => setSelectedRunId(runId)}
                                 >
-                                    <span className={styles.runListItemId}>ID: {run.output?.metadata?.id || runId}</span>
+                                    <span className="font-medium truncate">ID: {run.output?.metadata?.id || runId}</span>
                                 </div>
                             );
                         })}
                     </div>
                 </aside>
 
-                <main className={styles.detailsColumn}>
+                <main className="overflow-y-auto bg-card border rounded-lg p-6">
                     <Metadata metadata={experiment_metadata} />
                     <SummaryMetrics runs={runs} />
                     {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}

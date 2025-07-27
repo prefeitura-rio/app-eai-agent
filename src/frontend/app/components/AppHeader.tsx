@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import styles from './AppHeader.module.css';
+import { useTheme } from 'next-themes';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export interface ActionButton {
   id: string;
@@ -10,7 +12,7 @@ export interface ActionButton {
   icon: string;
   href?: string;
   onClick?: () => void;
-  variant?: 'default' | 'logout';
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
 }
 
 interface AppHeaderProps {
@@ -21,50 +23,63 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ title, subtitle, actions, centerTitle = false }: AppHeaderProps) {
-  const getButtonClass = (action: ActionButton) => {
-    switch (action.id) {
-      case 'home':
-        return styles.home_btn;
-      case 'back':
-        return styles.back_btn;
-      case 'refresh':
-        return styles.refresh_btn;
-      case 'theme':
-        return styles.theme_btn;
-      case 'logout':
-        return styles.logout_btn;
-      case 'download-json':
-        return styles.download_btn;
-      default:
-        return styles.action_btn;
-    }
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
-  const titleSectionClass = `${styles.title_section} ${centerTitle ? styles.title_section_center : ''}`;
+  const allActions = [...actions];
+
+  // Add the theme toggle button dynamically
+  if (mounted) {
+    allActions.unshift({
+      id: 'theme',
+      label: `Mudar para tema ${resolvedTheme === 'light' ? 'escuro' : 'claro'}`,
+      icon: `bi ${resolvedTheme === 'dark' ? 'bi-sun-fill' : 'bi-moon-fill'}`,
+      onClick: toggleTheme,
+    });
+  }
 
   return (
-    <header className={styles.header}>
-      <div className={styles.header_content}>
-        <div className={titleSectionClass}>
-          <h1 className={styles.title}>{title}</h1>
-          {subtitle && <small className={styles.dataset_name} dangerouslySetInnerHTML={{ __html: subtitle }} />}
+    <header className="w-full border-b bg-background py-6 mb-8">
+      <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-2 sm:px-4">
+        <div
+          className={cn(
+            'flex min-w-0 flex-grow items-center gap-4',
+            centerTitle && 'justify-center'
+          )}
+        >
+          <h1 className="truncate text-2xl font-semibold sm:text-3xl">{title}</h1>
+          {subtitle && (
+            <small
+              className="hidden min-w-0 truncate border-l-2 pl-4 text-base text-muted-foreground sm:block"
+              dangerouslySetInnerHTML={{ __html: subtitle }}
+            />
+          )}
         </div>
-        <div className={styles.actions_section}>
-          {actions.map(action => {
-            const buttonClass = getButtonClass(action);
-            
+        <div className="flex flex-shrink-0 items-center justify-center gap-3">
+          {allActions.map(action => {
+            const buttonContent = <i className={`bi ${action.icon}`}></i>;
+            const buttonVariant = action.variant || 'outline';
+
             if (action.href) {
               return (
-                <Link key={action.id} href={action.href} className={buttonClass} data-tooltip={action.label}>
-                  <i className={`bi ${action.icon}`}></i>
-                </Link>
+                <Button key={action.id} variant={buttonVariant} size="icon" asChild>
+                  <Link href={action.href} title={action.label}>
+                    {buttonContent}
+                  </Link>
+                </Button>
               );
             }
             
             return (
-              <button key={action.id} onClick={action.onClick} className={buttonClass} data-tooltip={action.label}>
-                <i className={`bi ${action.icon}`}></i>
-              </button>
+              <Button key={action.id} variant={buttonVariant} size="icon" onClick={action.onClick} title={action.label}>
+                {buttonContent}
+              </Button>
             );
           })}
         </div>
@@ -72,7 +87,3 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
     </header>
   );
 }
-
-
-
-

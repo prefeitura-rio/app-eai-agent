@@ -4,7 +4,30 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dataset } from '@/app/components/types';
 import { exportToCsv } from '@/app/utils/csv';
-import styles from '../page.module.css';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface DatasetsClientProps {
   datasets: Dataset[];
@@ -49,11 +72,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     return sortableItems;
   }, [datasets, searchTerm, sortConfig]);
 
-  const requestSort = (key: keyof Dataset) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
+  const setSort = (key: keyof Dataset, direction: 'ascending' | 'descending') => {
     setSortConfig({ key, direction });
   };
 
@@ -63,77 +82,94 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
 
   const getSortIndicator = (key: keyof Dataset) => {
     if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    return sortConfig.direction === 'ascending' ? '▲' : '▼';
   };
 
   const handleDownload = () => {
     exportToCsv('datasets.csv', filteredAndSortedDatasets);
   };
 
+  const tableHeaders: { key: keyof Dataset; label: string; className?: string }[] = [
+    { key: 'name', label: 'Nome' },
+    { key: 'description', label: 'Descrição' },
+    { key: 'exampleCount', label: 'Exemplos', className: 'text-center' },
+    { key: 'experimentCount', label: 'Experimentos', className: 'text-center' },
+    { key: 'createdAt', label: 'Criado em', className: 'text-center' },
+  ];
+
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <div className={styles.headerLeft}>
-            <h5 className={styles.cardTitle}>Datasets Disponíveis ({filteredAndSortedDatasets.length})</h5>
-            <div className={styles.search_container}>
-              <i className="bi bi-search"></i>
-              <input
+    <div className="container mx-auto py-4">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle>Datasets Disponíveis</CardTitle>
+            <CardDescription>
+              Encontrados {filteredAndSortedDatasets.length} datasets.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <Input
                 type="text"
-                className="form-control"
-                placeholder="Filtrar por nome do dataset..."
+                placeholder="Filtrar por nome..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
               />
             </div>
+            <Button variant="outline" size="icon" title="Download CSV" onClick={handleDownload}>
+              <i className="bi bi-download"></i>
+            </Button>
           </div>
-          <button className={styles.actionButton} title="Download CSV" onClick={handleDownload}>
-            <i className="bi bi-download"></i>
-          </button>
-        </div>
-        <div className={`card-body p-0 ${styles.table_responsive}`}>
-          <table className={`table table-hover ${styles.table}`}>
-            <thead className="table-light">
-              <tr>
-                <th onClick={() => requestSort('name')} className={`${styles.sortable_header} ${styles.textAlignLeft}`}>
-                  Nome {getSortIndicator('name')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignLeft}`} onClick={() => requestSort('description')}>
-                  Descrição {getSortIndicator('description')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('exampleCount')}>
-                  Exemplos {getSortIndicator('exampleCount')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('experimentCount')}>
-                  Experimentos {getSortIndicator('experimentCount')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('createdAt')}>
-                  Criado em {getSortIndicator('createdAt')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {tableHeaders.map(({ key, label, className }) => (
+                  <TableHead key={key} className={className}>
+                    <div className="flex items-center gap-1">
+                      {label}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <i className="bi bi-chevron-expand text-xs"></i>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => setSort(key, 'ascending')}>
+                            <i className="bi bi-arrow-up mr-2"></i> Ascendente
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setSort(key, 'descending')}>
+                            <i className="bi bi-arrow-down mr-2"></i> Descendente
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <span className="text-xs">{getSortIndicator(key)}</span>
+                    </div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredAndSortedDatasets.map((dataset) => (
-                <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)}>
-                  <td className={styles.textAlignLeft}>{dataset.name}</td>
-                  <td className={styles.textAlignLeft}>{dataset.description || 'Sem descrição'}</td>
-                  <td className={styles.textAlignCenter}>
-                    <span className="badge bg-primary rounded-pill">
-                      {dataset.exampleCount}
-                    </span>
-                  </td>
-                  <td className={styles.textAlignCenter}>
-                    <span className="badge bg-success rounded-pill">
-                      {dataset.experimentCount}
-                    </span>
-                  </td>
-                  <td className={styles.textAlignCenter}>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
-                </tr>
+                <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
+                  <TableCell className="font-medium">{dataset.name}</TableCell>
+                  <TableCell>{dataset.description || 'Sem descrição'}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary">{dataset.exampleCount}</Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="default">{dataset.experimentCount}</Badge>
+                  </TableCell>
+                  <TableCell className="text-center">{new Date(dataset.createdAt).toLocaleString('pt-BR')}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

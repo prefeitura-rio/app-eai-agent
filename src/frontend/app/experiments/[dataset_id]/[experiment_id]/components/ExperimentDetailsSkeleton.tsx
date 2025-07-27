@@ -1,56 +1,57 @@
-// src/frontend/app/components/skeletons/ExperimentDetailsSkeleton.tsx
+// src/frontend/app/experiments/[dataset_id]/[experiment_id]/components/ExperimentDetailsSkeleton.tsx
 import React from 'react';
-import styles from './Skeleton.module.css';
-
-const SkeletonBlock = ({ height, width, className }: { height?: string, width?: string, className?: string }) => (
-    <div className={`${styles.skeleton} ${className || ''}`} style={{ height, width }}></div>
-);
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 export default function ExperimentDetailsSkeleton() {
     return (
-        <div className={styles.twoColumnLayout}>
+        <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-[calc(100vh-135px)]">
             {/* Sidebar Skeleton */}
-            <aside className={styles.runListColumn}>
-                <SkeletonBlock height="150px" className="mb-4" />
-                <SkeletonBlock height="40px" className="mb-3" />
-                <div className="list-group list-group-flush">
+            <aside className="flex flex-col bg-card border rounded-lg p-4 space-y-4">
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[40px] w-1/2" />
+                <div className="space-y-2">
                     {[...Array(10)].map((_, i) => (
-                        <SkeletonBlock key={i} height="50px" className="mb-2" />
+                        <Skeleton key={i} className="h-[50px] w-full" />
                     ))}
                 </div>
             </aside>
 
             {/* Main Content Skeleton */}
-            <main className={styles.detailsColumn}>
+            <main className="overflow-y-auto bg-card border rounded-lg p-6 space-y-6">
                 {/* Metadata Card Skeleton */}
-                <div className={`${styles.skeletonCard} ${styles.skeleton}`}>
-                    <SkeletonBlock height="2em" width="40%" className="mb-4" />
-                    <div className="row">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-4 gap-4">
                         {[...Array(4)].map((_, i) => (
-                            <div key={i} className="col-md-3 mb-3">
-                                <SkeletonBlock height="1.5em" width="60%" className="mb-2" />
-                                <SkeletonBlock height="1em" width="80%" />
+                            <div key={i} className="space-y-2">
+                                <Skeleton className="h-4 w-2/3" />
+                                <Skeleton className="h-4 w-full" />
                             </div>
                         ))}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
                 {/* Summary Metrics Card Skeleton */}
-                <div className={`${styles.skeletonCard} ${styles.skeleton}`}>
-                    <SkeletonBlock height="2em" width="50%" className="mb-4" />
-                    <div className="row">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-3 gap-4">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="col-md-4 mb-3">
-                                <SkeletonBlock height="120px" />
-                            </div>
+                            <Skeleton key={i} className="h-[120px] w-full" />
                         ))}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
                 {/* Run Details Placeholder Skeleton */}
-                <div className={`${styles.skeletonCard} ${styles.skeleton}`}>
-                    <SkeletonBlock height="200px" />
-                </div>
+                <Card>
+                    <CardContent className="pt-6">
+                        <Skeleton className="h-[200px] w-full" />
+                    </CardContent>
+                </Card>
             </main>
         </div>
     );
