@@ -15,10 +15,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import ProgressBar from './ProgressBar';
 import { Download, Search, ArrowUp, ArrowDown } from 'lucide-react';
-import { cn } from '@/app/utils/utils';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -33,7 +31,6 @@ export default function DatasetExperimentsClient({
   experiments: initialExperiments, 
   examples: initialExamples, 
   datasetId,
-  datasetName
 }: DatasetExperimentsClientProps) {
   const router = useRouter();
   
@@ -129,99 +126,102 @@ export default function DatasetExperimentsClient({
             <TabsList>
                 <TabsTrigger value="experiments">Experimentos ({filteredAndSortedExperiments.length})</TabsTrigger>
                 <TabsTrigger value="examples">Exemplos ({filteredExamples.length})</TabsTrigger>
-            </TabsList>
-            <div className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  placeholder="Filtrar..."
-                  value={expSearchTerm}
-                  onChange={(e) => setExpSearchTerm(e.target.value)}
-                  className="w-64"
-                />
-                <Button variant="outline" size="icon" title="Download CSV">
-                  <Download className="h-4 w-4" />
-                </Button>
-            </div>
+        </TabsList>
+        <div className="flex items-center justify-between gap-4">
+              <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Filtrar por nome..."
+                      value={expSearchTerm}
+                      onChange={(e) => setExpSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                </div>
+              <Button variant="outline" size="icon" title="Download CSV" className="text-success hover:text-success hover:bg-muted">
+                <Download className="h-4 w-4" />
+              </Button>
+          </div>
         </div>
       <TabsContent value="experiments">
-        <div className="overflow-y-auto h-[calc(100vh-16rem)] border rounded-lg">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background">
-                <TableRow>
-                  <SortableHeader sortKey="name" className="w-[250px]">Nome</SortableHeader>
-                  <SortableHeader sortKey="description">Descrição</SortableHeader>
-                  <SortableHeader sortKey="createdAt" className="text-center w-[150px]">Criado em</SortableHeader>
-                  {allMetrics.map(metric => (
-                    <SortableHeader key={metric} sortKey="metric" metricName={metric} className="text-center w-[150px]">
-                      {metric}
-                    </SortableHeader>
-                  ))}
-                  <SortableHeader sortKey="runCount" className="text-center w-[120px]">Execuções</SortableHeader>
-                  <SortableHeader sortKey="errorRate" className="text-center w-[120px]">Erro</SortableHeader>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedExperiments.map((exp) => (
-                  <TableRow key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="cursor-pointer">
-                    <TableCell>
-                      <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
-                        #{exp.sequenceNumber} {exp.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>
-                    <TableCell className="text-center text-muted-foreground">{new Date(exp.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-                    {allMetrics.map(metric => {
-                      const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
-                      return (
-                        <TableCell key={metric} className="text-center">
-                          <ProgressBar score={ann ? ann.meanScore : 0} metricName={metric} />
+        <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <SortableHeader sortKey="name" className="w-[250px]">Nome</SortableHeader>
+                      <SortableHeader sortKey="description">Descrição</SortableHeader>
+                      <SortableHeader sortKey="createdAt" className="text-center w-[150px]">Criado em</SortableHeader>
+                      {allMetrics.map(metric => (
+                        <SortableHeader key={metric} sortKey="metric" metricName={metric} className="text-center w-[150px]">
+                          {metric}
+                        </SortableHeader>
+                      ))}
+                      <SortableHeader sortKey="runCount" className="text-center w-[120px]">Execuções</SortableHeader>
+                      <SortableHeader sortKey="errorRate" className="text-center w-[120px]">Erro</SortableHeader>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAndSortedExperiments.map((exp) => (
+                      <TableRow key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="cursor-pointer">
+                        <TableCell>
+                          <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
+                            #{exp.sequenceNumber} {exp.name}
+                          </Link>
                         </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-center text-muted-foreground">{exp.runCount}</TableCell>
-                    <TableCell className="text-center text-muted-foreground">{(exp.errorRate * 100).toFixed(2)}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-        </div>
-      </TabsContent>
+                        <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{new Date(exp.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                        {allMetrics.map(metric => {
+                          const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
+                          return (
+                            <TableCell key={metric} className="text-center">
+                              <ProgressBar score={ann ? ann.meanScore : 0} metricName={metric} />
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-center text-muted-foreground">{exp.runCount}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{(exp.errorRate * 100).toFixed(2)}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+            </div>
+        </TabsContent>
       <TabsContent value="examples">
-        <div className="overflow-y-auto h-[calc(100vh-16rem)] border rounded-lg">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background">
-                <TableRow>
-                  <TableHead className="w-[200px]">ID</TableHead>
-                  <TableHead>Input</TableHead>
-                  <TableHead>Output</TableHead>
-                  <TableHead>Metadata</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExamples.map((ex) => (
-                  <TableRow key={ex.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{ex.id}</TableCell>
-                    <TableCell>
-                      <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
-                        {formatObjectForDisplay(ex.latestRevision.input)}
-                      </pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
-                        {formatObjectForDisplay(ex.latestRevision.output)}
-                      </pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
-                        {formatObjectForDisplay(ex.latestRevision.metadata)}
-                      </pre>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-        </div>
-      </TabsContent>
+        <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead className="w-[200px]">ID</TableHead>
+                      <TableHead>Input</TableHead>
+                      <TableHead>Output</TableHead>
+                      <TableHead>Metadata</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredExamples.map((ex) => (
+                      <TableRow key={ex.id}>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{ex.id}</TableCell>
+                        <TableCell>
+                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                            {formatObjectForDisplay(ex.latestRevision.input)}
+                          </pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                            {formatObjectForDisplay(ex.latestRevision.output)}
+                          </pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                            {formatObjectForDisplay(ex.latestRevision.metadata)}
+                          </pre>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+            </div>
+        </TabsContent>
     </Tabs>
   );
 }

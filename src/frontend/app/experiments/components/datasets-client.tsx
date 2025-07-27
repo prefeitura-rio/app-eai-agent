@@ -7,9 +7,6 @@ import { exportToCsv } from '@/app/utils/csv';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -92,8 +89,8 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-            <div className="relative w-full max-w-xs">
+        <div className="flex items-center justify-end gap-4">
+            <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -103,58 +100,55 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" onClick={handleDownload} className="bg-success text-success-foreground hover:bg-success/90">
-              <Download className="mr-2 h-4 w-4" />
-              Download CSV
+            <Button variant="outline" onClick={handleDownload} size="icon" title="Download CSV" className="text-success hover:text-success hover:bg-muted">
+                  <Download className="h-4 w-4" />
             </Button>
         </div>
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-y-auto h-[calc(100vh-16rem)]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background">
-                <TableRow>
-                  {tableHeaders.map(({ key, label, className }) => (
-                    <TableHead key={key} className={cn("p-4", className)}>
-                      <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
-                        {label}
-                        {sortConfig.key === key && (
-                          sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
-                        )}
-                      </Button>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedDatasets.length > 0 ? (
-                  filteredAndSortedDatasets.map((dataset) => (
-                    <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
-                      <TableCell className="p-4 font-medium">
-                        <Link href={`/experiments/${dataset.id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
-                          {dataset.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
-                      <TableCell className="p-4 text-center">
-                        <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
-                      </TableCell>
-                      <TableCell className="p-4 text-center">
-                        <Badge className="text-sm">{dataset.experimentCount}</Badge>
-                      </TableCell>
-                      <TableCell className="p-4 text-center text-muted-foreground">{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+              <Table>
+                <TableHeader className="sticky top-0 bg-background">
                   <TableRow>
-                      <TableCell colSpan={tableHeaders.length} className="h-24 text-center">
-                          Nenhum dataset encontrado.
-                      </TableCell>
+                    {tableHeaders.map(({ key, label, className }) => (
+                      <TableHead key={key} className={cn("p-4", className)}>
+                        <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
+                          {label}
+                          {sortConfig.key === key && (
+                            sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                          )}
+                        </Button>
+                      </TableHead>
+                    ))}
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedDatasets.length > 0 ? (
+                    filteredAndSortedDatasets.map((dataset) => (
+                      <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
+                        <TableCell className="p-4 font-medium">
+                          <Link href={`/experiments/${dataset.id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
+                            {dataset.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
+                        <TableCell className="p-4 text-center">
+                          <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
+                        </TableCell>
+                        <TableCell className="p-4 text-center">
+                          <Badge className="text-sm">{dataset.experimentCount}</Badge>
+                        </TableCell>
+                        <TableCell className="p-4 text-center text-muted-foreground">{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                        <TableCell colSpan={tableHeaders.length} className="h-24 text-center">
+                            Nenhum dataset encontrado.
+                        </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
         </CardContent>
       </Card>
     </div>

@@ -86,4 +86,5 @@ body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-size: 12px;
 }
