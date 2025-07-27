@@ -2,7 +2,8 @@
 
 import React, { useMemo } from 'react';
 import { Run } from '@/app/components/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { BarChart2 } from 'lucide-react';
 
 interface SummaryMetricsProps {
@@ -61,11 +62,21 @@ export default function SummaryMetrics({ runs }: SummaryMetricsProps) {
                     return (
                         <Card key={name} className="flex flex-col">
                             <CardHeader className="pb-2">
-                                <CardDescription>{name}</CardDescription>
-                                <CardTitle className="text-2xl">{average.toFixed(2)}</CardTitle>
+                                <CardTitle>{name}</CardTitle>
+                                <CardDescription className="text-2xl font-bold">{average.toFixed(2)} avg.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {/* Distribution can be added here */}
+                                <div className="text-xs font-semibold text-muted-foreground mb-2">DISTRIBUIÇÃO</div>
+                                <hr className="mb-2" />
+                                <div className="space-y-2">
+                                    {Object.entries(metric.counts).sort(([a], [b]) => Number(b) - Number(a)).map(([score, count]) => (
+                                        <div key={score} className="grid grid-cols-[2rem_1fr_4rem] items-center gap-2 text-xs">
+                                            <div className="text-right font-bold">{score}</div>
+                                            <Progress value={(count / metric.scores.length) * 100} className="h-2" />
+                                            <div className="text-left text-muted-foreground">({count}) {(count / metric.scores.length * 100).toFixed(0)}%</div>
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                     );
