@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProgressBar from './ProgressBar';
+import { Download } from 'lucide-react';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -142,7 +143,7 @@ export default function DatasetExperimentsClient({
                   className="w-64"
                 />
                 <Button variant="outline" size="icon" title="Download CSV">
-                  <i className="bi bi-download"></i>
+                  <Download className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -207,7 +208,7 @@ export default function DatasetExperimentsClient({
                   className="w-64"
                 />
                 <Button variant="outline" size="icon" title="Download CSV">
-                  <i className="bi bi-download"></i>
+                  <Download className="h-4 w-4" />
                 </Button>
               </div>
             </div>

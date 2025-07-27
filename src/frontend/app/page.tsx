@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import AppHeader, { ActionButton } from '@/app/components/AppHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, FlaskConical } from 'lucide-react';
+import { Bot, FlaskConical, LogOut } from 'lucide-react';
 
 export default function HomePage() {
   const { token, logout } = useAuth();
@@ -20,7 +20,7 @@ export default function HomePage() {
   const headerActions: ActionButton[] = [];
 
   if (token) {
-    headerActions.push({ id: 'logout', label: 'Sair', icon: 'bi-box-arrow-right', onClick: handleLogout, variant: 'destructive' });
+    headerActions.push({ id: 'logout', label: 'Sair', icon: LogOut, onClick: handleLogout, variant: 'destructive' });
   }
 
   return (

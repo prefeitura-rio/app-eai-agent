@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
-import { Run, Annotation, OrderedStep, ExperimentMetadata } from '@/app/components/types';
+import { Run, Annotation, OrderedStep, ExperimentMetadata, ExperimentData } from '@/app/components/types';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import JsonViewerModal from '@/app/components/JsonViewerModal';
 import { downloadFile } from '@/app/utils/csv';
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Lightbulb, Wrench, LogIn, MessageSquare, BarChart, List, FileCode, Download, Bot, Trophy, User, ChevronsRightLeft, Expand } from 'lucide-react';
 
 const getRunId = (run: Run, index: number) => run.example_id_clean || `run-${index}`;
 
@@ -112,6 +113,22 @@ const Filters = ({ runs, onFilterChange }: { runs: Run[], onFilterChange: (filte
 const Metadata = ({ metadata }: { metadata: ExperimentMetadata | null }) => {
     if (!metadata) return null;
 
+    const PromptSection = ({ title, content, collapseId }: { title: string, content: string | undefined, collapseId: string }) => {
+        if (!content) return null;
+        return (
+            <div className="col-span-full mt-2">
+                <Accordion type="single" collapsible>
+                    <AccordionItem value={collapseId}>
+                        <AccordionTrigger className="text-sm font-semibold">{title}</AccordionTrigger>
+                        <AccordionContent>
+                            <pre className="p-4 bg-muted text-muted-foreground rounded-md text-xs whitespace-pre-wrap">{content}</pre>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            </div>
+        );
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -134,6 +151,8 @@ const Metadata = ({ metadata }: { metadata: ExperimentMetadata | null }) => {
                     <p className="font-semibold">Ferramentas:</p>
                     <p className="text-muted-foreground">{metadata.tools?.join(", ") || "N/A"}</p>
                 </div>
+                <PromptSection title="System Prompt Principal" content={metadata.system_prompt} collapseId="systemPromptCollapse" />
+                <PromptSection title="System Prompt (Similaridade)" content={metadata.system_prompt_answer_similatiry} collapseId="systemPromptSimilarityCollapse" />
             </CardContent>
         </Card>
     );
@@ -213,8 +232,8 @@ const Evaluations = ({ annotations }: { annotations: Annotation[] }) => {
     ];
 
     const sortedAnnotations = [...annotations].sort((a, b) => {
-        const indexA = preferredOrder.indexOf(a.name);
-        const indexB = preferredOrder.indexOf(b.name);
+        const indexA = preferredOrder.indexOf(a);
+        const indexB = preferredOrder.indexOf(b);
         if (indexA !== -1 && indexB !== -1) return indexA - indexB;
         if (indexA !== -1) return -1;
         if (indexB !== -1) return 1;
@@ -226,9 +245,9 @@ const Evaluations = ({ annotations }: { annotations: Annotation[] }) => {
             {sortedAnnotations.map((ann, index) => (
                 <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center gap-3">
-                        <span className={`text-white text-xs font-bold px-2 py-1 rounded-full ${getScoreClass(ann.score)}`}>
+                        <Badge variant={ann.score === 1.0 ? 'default' : ann.score === 0.0 ? 'destructive' : 'secondary'}>
                             {ann.score.toFixed(1)}
-                        </span>
+                        </Badge>
                         <p className="font-semibold">{ann.name}</p>
                     </div>
                     {ann.explanation && (
@@ -258,12 +277,12 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
 
     const getIcon = (stepType: string) => {
         switch (stepType) {
-            case "reasoning_message": return { icon: "bi-lightbulb" };
-            case "tool_call_message": return { icon: "bi-tools" };
-            case "tool_return_message": return { icon: "bi-box-arrow-in-left" };
-            case "assistant_message": return { icon: "bi-chat-text" };
-            case "letta_usage_statistics": return { icon: "bi-bar-chart-fill" };
-            default: return { icon: '' };
+            case "reasoning_message": return Lightbulb;
+            case "tool_call_message": return Wrench;
+            case "tool_return_message": return LogIn;
+            case "assistant_message": return MessageSquare;
+            case "letta_usage_statistics": return BarChart;
+            default: return Lightbulb;
         }
     };
 
@@ -272,7 +291,7 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
             {orderedSteps.map((step, index) => {
                 let title: string = "";
                 let content: React.ReactNode = null;
-                const { icon: iconName } = getIcon(step.type);
+                const Icon = getIcon(step.type);
 
                 switch (step.type) {
                     case "reasoning_message":
@@ -313,7 +332,7 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
                     <AccordionItem value={`item-${index}`} key={index}>
                         <AccordionTrigger>
                             <div className="flex items-center gap-2">
-                                <i className={`bi ${iconName}`}></i>
+                                <Icon className="h-4 w-4" />
                                 <span className="font-semibold text-left">{title}</span>
                             </div>
                         </AccordionTrigger>
@@ -335,11 +354,11 @@ const Comparison = ({ run }: { run: Run }) => {
     return (
         <div className="grid md:grid-cols-2 gap-6">
             <Card>
-                <CardHeader><CardTitle>🤖 Resposta do Agente</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> Resposta do Agente</CardTitle></CardHeader>
                 <CardContent className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: agentAnswerHtml }} />
             </Card>
             <Card>
-                <CardHeader><CardTitle>🏆 Resposta de Referência (Golden)</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5" /> Resposta de Referência (Golden)</CardTitle></CardHeader>
                 <CardContent className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: goldenAnswerHtml }} />
             </Card>
         </div>
@@ -349,7 +368,7 @@ const Comparison = ({ run }: { run: Run }) => {
 const RunDetails = ({ run }: { run: Run }) => (
     <div className="space-y-6">
         <Card>
-            <CardHeader><CardTitle>Mensagem do Usuário</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" /> Mensagem do Usuário</CardTitle></CardHeader>
             <CardContent>
                 {run.input.mensagem_whatsapp_simulada || "Mensagem não disponível"}
             </CardContent>
@@ -373,95 +392,100 @@ const RunDetails = ({ run }: { run: Run }) => (
 const DetailsPlaceholder = () => (
     <div className="flex h-full items-center justify-center text-center text-muted-foreground">
         <div>
-            <i className="bi bi-card-list text-6xl"></i>
+            <List className="h-16 w-16 mx-auto" />
             <p className="mt-4">Selecione um run na lista à esquerda para ver os detalhes.</p>
         </div>
     </div>
 );
 
-export default function ExperimentDetailsClient({ initialData }: { initialData: { experiment: Run[], experiment_metadata: ExperimentMetadata | null, dataset_name: string, experiment_name: string } }) {
-    const { experiment: runs, experiment_metadata, dataset_name, experiment_name } = initialData;
-    const { setTitle, setSubtitle, setPageActions } = useHeader();
-    const [isJsonModalOpen, setJsonModalOpen] = useState(false);
+interface ClientProps {
+  initialData: ExperimentData;
+  datasetId: string;
+  experimentId: string;
+}
 
-    const [filteredRuns, setFilteredRuns] = useState(runs);
-    const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+export default function ExperimentDetailsClient({ initialData, datasetId, experimentId }: ClientProps) {
+  const { experiment: runs, experiment_metadata, dataset_name, experiment_name } = initialData;
+  const { setTitle, setSubtitle, setPageActions } = useHeader();
+  const [isJsonModalOpen, setJsonModalOpen] = useState(false);
+  const [filteredRuns, setFilteredRuns] = useState(runs);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
-    const handleDownloadJson = useCallback(() => {
-        const jsonString = JSON.stringify(initialData, null, 2);
-        downloadFile(
-            `experiment_${initialData.experiment_name}.json`,
-            jsonString,
-            'application/json'
-        );
-    }, [initialData]);
-
-    useEffect(() => {
-        setTitle('Detalhes do Experimento');
-        const newSubtitle = `${dataset_name || 'Dataset'} <br /> ${experiment_name || 'Experimento'}`;
-        setSubtitle(newSubtitle);
-
-        setPageActions([
-            { id: 'download-json', label: 'Baixar JSON', icon: 'bi-download', onClick: handleDownloadJson },
-            { id: 'view-json', label: 'Ver JSON', icon: 'bi-file-earmark-code', onClick: () => setJsonModalOpen(true) }
-        ]);
-
-        return () => setPageActions([]);
-    }, [dataset_name, experiment_name, setTitle, setSubtitle, setPageActions, handleDownloadJson]);
-    
-    useEffect(() => {
-        setFilteredRuns(runs);
-    }, [runs]);
-
-    const selectedRun = useMemo(() => {
-        if (!selectedRunId) return null;
-        return runs.find((run, index) => getRunId(run, index) === selectedRunId);
-    }, [runs, selectedRunId]);
-
-    const handleFilterChange = (newFilteredRuns: Run[]) => {
-        setFilteredRuns(newFilteredRuns);
-        const isSelectedRunVisible = newFilteredRuns.some((run, index) => getRunId(run, index) === selectedRunId);
-        if (!isSelectedRunVisible) {
-            setSelectedRunId(null);
-        }
-    };
-
-    return (
-        <>
-            {isJsonModalOpen && (
-                <JsonViewerModal data={initialData}>
-                    {/* The trigger is now part of the page actions, so we don't need a visible trigger here */}
-                </JsonViewerModal>
-            )}
-            <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-[calc(100vh-135px)]">
-                <aside className="flex flex-col bg-card border rounded-lg">
-                    <Filters runs={runs} onFilterChange={handleFilterChange} />
-                    <div className="flex justify-between items-center p-4 border-b">
-                        <h3 className="text-lg font-semibold">Execuções (Runs)</h3>
-                        <Badge variant="secondary">{filteredRuns.length}</Badge>
-                    </div>
-                    <div className="overflow-y-auto">
-                        {filteredRuns.map((run, index) => {
-                            const runId = getRunId(run, index);
-                            return (
-                                <div
-                                    key={runId}
-                                    className={`p-3 cursor-pointer border-b ${selectedRunId === runId ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'}`}
-                                    onClick={() => setSelectedRunId(runId)}
-                                >
-                                    <span className="font-medium truncate">ID: {run.output?.metadata?.id || runId}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </aside>
-
-                <main className="overflow-y-auto bg-card border rounded-lg p-6">
-                    <Metadata metadata={experiment_metadata} />
-                    <SummaryMetrics runs={runs} />
-                    {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
-                </main>
-            </div>
-        </>
+  const handleDownloadJson = useCallback(() => {
+    const jsonString = JSON.stringify(initialData, null, 2);
+    downloadFile(
+      `experiment_${initialData.experiment_name}.json`,
+      jsonString,
+      'application/json'
     );
+  }, [initialData]);
+
+  useEffect(() => {
+    setTitle('Detalhes do Experimento');
+    const newSubtitle = `${dataset_name || 'Dataset'} <br /> ${experiment_name || 'Experimento'}`;
+    setSubtitle(newSubtitle);
+
+    setPageActions([
+        { id: 'download-json', label: 'Baixar JSON', icon: Download, onClick: handleDownloadJson },
+        { id: 'view-json', label: 'Ver JSON', icon: FileCode, onClick: () => setJsonModalOpen(true) }
+    ]);
+
+    return () => setPageActions([]);
+  }, [dataset_name, experiment_name, setTitle, setSubtitle, setPageActions, handleDownloadJson]);
+  
+  useEffect(() => {
+    setFilteredRuns(runs);
+  }, [runs]);
+
+  const selectedRun = useMemo(() => {
+    if (!selectedRunId) return null;
+    return runs.find((run, index) => getRunId(run, index) === selectedRunId);
+  }, [runs, selectedRunId]);
+
+  const handleFilterChange = (newFilteredRuns: Run[]) => {
+    setFilteredRuns(newFilteredRuns);
+    const isSelectedRunVisible = newFilteredRuns.some((run, index) => getRunId(run, index) === selectedRunId);
+    if (!isSelectedRunVisible) {
+      setSelectedRunId(null);
+    }
+  };
+
+  return (
+    <>
+      {isJsonModalOpen && (
+          <JsonViewerModal data={initialData}>
+              {/* Trigger is in header */}
+          </JsonViewerModal>
+      )}
+      <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-full">
+          <aside className="flex flex-col bg-card border rounded-lg">
+              <Filters runs={runs} onFilterChange={handleFilterChange} />
+              <div className="flex justify-between items-center p-4 border-b">
+                  <h3 className="text-lg font-semibold">Execuções (Runs)</h3>
+                  <Badge variant="secondary">{filteredRuns.length}</Badge>
+              </div>
+              <div className="overflow-y-auto">
+                  {filteredRuns.map((run, index) => {
+                      const runId = getRunId(run, index);
+                      return (
+                          <div
+                              key={runId}
+                              className={`p-3 cursor-pointer border-b ${selectedRunId === runId ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'}`}
+                              onClick={() => setSelectedRunId(runId)}
+                          >
+                              <span className="font-medium truncate">ID: {run.output?.metadata?.id || runId}</span>
+                          </div>
+                      );
+                  })}
+              </div>
+          </aside>
+
+          <main className="overflow-y-auto rounded-lg p-6 space-y-6">
+              <Metadata metadata={experiment_metadata} />
+              <SummaryMetrics runs={runs} />
+              {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
+          </main>
+      </div>
+    </>
+  );
 }

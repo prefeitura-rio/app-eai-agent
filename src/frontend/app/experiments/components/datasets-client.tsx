@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Search, Download, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
 
 interface DatasetsClientProps {
   datasets: Dataset[];
@@ -82,7 +83,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
 
   const getSortIndicator = (key: keyof Dataset) => {
     if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? '▲' : '▼';
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
   const handleDownload = () => {
@@ -109,7 +110,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Filtrar por nome..."
@@ -119,7 +120,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
               />
             </div>
             <Button variant="outline" size="icon" title="Download CSV" onClick={handleDownload}>
-              <i className="bi bi-download"></i>
+              <Download className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
@@ -134,15 +135,15 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <i className="bi bi-chevron-expand text-xs"></i>
+                            <ChevronsUpDown className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                           <DropdownMenuItem onClick={() => setSort(key, 'ascending')}>
-                            <i className="bi bi-arrow-up mr-2"></i> Ascendente
+                            <ArrowUp className="mr-2 h-3 w-3" /> Ascendente
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setSort(key, 'descending')}>
-                            <i className="bi bi-arrow-down mr-2"></i> Descendente
+                            <ArrowDown className="mr-2 h-3 w-3" /> Descendente
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

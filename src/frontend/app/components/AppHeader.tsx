@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Moon, Sun, LogOut, RefreshCw, Home, ArrowLeft } from 'lucide-react';
 
 export interface ActionButton {
   id: string;
   label: string;
-  icon: string;
+  icon: React.ElementType; // Changed to accept a component
   href?: string;
   onClick?: () => void;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
@@ -39,7 +40,7 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
     allActions.unshift({
       id: 'theme',
       label: `Mudar para tema ${resolvedTheme === 'light' ? 'escuro' : 'claro'}`,
-      icon: `bi ${resolvedTheme === 'dark' ? 'bi-sun-fill' : 'bi-moon-fill'}`,
+      icon: resolvedTheme === 'dark' ? Sun : Moon,
       onClick: toggleTheme,
     });
   }
@@ -63,14 +64,14 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
         </div>
         <div className="flex flex-shrink-0 items-center justify-center gap-3">
           {allActions.map(action => {
-            const buttonContent = <i className={`bi ${action.icon}`}></i>;
+            const Icon = action.icon;
             const buttonVariant = action.variant || 'outline';
 
             if (action.href) {
               return (
                 <Button key={action.id} variant={buttonVariant} size="icon" asChild>
                   <Link href={action.href} title={action.label}>
-                    {buttonContent}
+                    <Icon className="h-4 w-4" />
                   </Link>
                 </Button>
               );
@@ -78,7 +79,7 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
             
             return (
               <Button key={action.id} variant={buttonVariant} size="icon" onClick={action.onClick} title={action.label}>
-                {buttonContent}
+                <Icon className="h-4 w-4" />
               </Button>
             );
           })}

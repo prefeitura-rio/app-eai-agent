@@ -19,8 +19,6 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/marked": "^6.0.0",
-    "bootstrap": "^5.3.7",
-    "bootstrap-icons": "^1.13.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "js-cookie": "^3.0.5",

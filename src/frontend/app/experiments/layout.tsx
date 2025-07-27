@@ -5,6 +5,7 @@ import { useEffect, ReactNode } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { HeaderProvider, useHeader } from '@/app/contexts/HeaderContext';
 import AppHeader, { ActionButton } from '@/app/components/AppHeader';
+import { RefreshCw, LogOut, Home, ArrowLeft } from 'lucide-react';
 
 function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -32,16 +33,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   const getHeaderActions = (): ActionButton[] => {
     const baseActions: ActionButton[] = [
-      { id: 'refresh', label: 'Atualizar', icon: 'bi-arrow-clockwise', onClick: () => window.location.reload() },
-      { id: 'logout', label: 'Sair', icon: 'bi-box-arrow-right', onClick: handleLogout, variant: 'destructive' },
+      { id: 'refresh', label: 'Atualizar', icon: RefreshCw, onClick: () => window.location.reload() },
+      { id: 'logout', label: 'Sair', icon: LogOut, onClick: handleLogout, variant: 'destructive' },
     ];
 
     if (isRootExperimentsPage) {
-      return [{ id: 'home', label: 'Voltar para Home', icon: 'bi-house-door', href: '/' }, ...pageActions, ...baseActions];
+      return [{ id: 'home', label: 'Voltar para Home', icon: Home, href: '/' }, ...pageActions, ...baseActions];
     }
     
     const backLink = pathParts.length === 3 ? `/experiments/${pathParts[1]}` : '/experiments';
-    return [...pageActions, { id: 'back', label: 'Voltar', icon: 'bi-arrow-left', href: backLink }, ...baseActions];
+    return [...pageActions, { id: 'back', label: 'Voltar', icon: ArrowLeft, href: backLink }, ...baseActions];
   };
   
   return (
@@ -61,7 +62,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function ExperimentsLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.Node;
 }) {
   return (
     <HeaderProvider>
