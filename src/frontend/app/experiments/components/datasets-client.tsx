@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Download, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { cn } from '@/app/utils/utils';
 import Link from 'next/link';
 
@@ -96,8 +96,11 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" onClick={handleDownload} size="icon" title="Download CSV" className="text-success hover:text-success hover:bg-muted">
-                  <Download className="h-4 w-4" />
+            <Button variant="outline" onClick={handleDownload} size="icon" title="Download CSV">
+                  <Download className="h-4 w-4 text-success" />
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()} size="icon" title="Atualizar">
+                  <RefreshCw className="h-4 w-4 text-primary" />
             </Button>
         </div>
       <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">

@@ -36,7 +36,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
+          <TooltipProvider delayDuration={200}>
             <AuthProvider>
               <HeaderProvider>
                 <ConditionalLayout>{children}</ConditionalLayout>

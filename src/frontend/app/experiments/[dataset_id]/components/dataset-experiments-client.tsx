@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProgressBar from './ProgressBar';
-import { Download, Search, ArrowUp, ArrowDown } from 'lucide-react';
+import { Download, Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -155,8 +155,11 @@ export default function DatasetExperimentsClient({
                       className="pl-9"
                     />
                 </div>
-              <Button variant="outline" size="icon" title="Download CSV" className="text-success hover:text-success hover:bg-muted" onClick={handleDownload}>
-                <Download className="h-4 w-4" />
+              <Button variant="outline" size="icon" title="Download CSV" onClick={handleDownload}>
+                <Download className="h-4 w-4 text-success" />
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()} size="icon" title="Atualizar">
+                <RefreshCw className="h-4 w-4 text-primary" />
               </Button>
           </div>
         </div>

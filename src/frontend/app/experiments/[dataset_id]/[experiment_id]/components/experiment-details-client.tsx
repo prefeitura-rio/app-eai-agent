@@ -65,9 +65,9 @@ export default function ExperimentDetailsClient({ initialData, handleDownloadCle
     setSubtitle(newSubtitle);
 
     setPageActions([
-        { id: 'download-json', label: 'Baixar JSON', icon: Download, onClick: handleDownloadJson },
-        { id: 'download-llm-json', label: 'Exportar LLM', icon: Bot, onClick: () => setLlmModalOpen(true) },
-        { id: 'view-json', label: 'Ver JSON', icon: FileCode, onClick: () => setJsonModalOpen(true) }
+        { id: 'download-json', label: 'Baixar JSON', icon: Download, onClick: handleDownloadJson, iconClassName: 'text-success' },
+        { id: 'download-llm-json', label: 'Exportar LLM', icon: Bot, onClick: () => setLlmModalOpen(true), iconClassName: 'text-warning' },
+        { id: 'view-json', label: 'Ver JSON', icon: FileCode, onClick: () => setJsonModalOpen(true), iconClassName: 'text-primary' }
     ]);
 
     return () => setPageActions([]);

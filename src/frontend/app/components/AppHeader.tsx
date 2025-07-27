@@ -12,6 +12,7 @@ export interface ActionButton {
   href?: string;
   onClick?: () => void;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  iconClassName?: string;
 }
 
 interface AppHeaderProps {
@@ -48,7 +49,7 @@ export default function AppHeader({ title, subtitle, actions = [], centerTitle =
               return (
                 <Button key={action.id} variant={buttonVariant} size="icon" asChild>
                   <Link href={action.href} title={action.label}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className={cn("h-4 w-4", action.iconClassName)} />
                   </Link>
                 </Button>
               );
@@ -56,7 +57,7 @@ export default function AppHeader({ title, subtitle, actions = [], centerTitle =
             
             return (
               <Button key={action.id} variant={buttonVariant} size="icon" onClick={action.onClick} title={action.label}>
-                <Icon className="h-4 w-4" />
+                <Icon className={cn("h-4 w-4", action.iconClassName)} />
               </Button>
             );
           })}

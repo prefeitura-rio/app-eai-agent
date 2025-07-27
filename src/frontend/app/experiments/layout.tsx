@@ -28,19 +28,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   const getHeaderActions = (): ActionButton[] => {
     const actions: ActionButton[] = [...pageActions];
-    
-    const refreshButton: ActionButton = { id: 'refresh', label: 'Atualizar', icon: RefreshCw, onClick: () => window.location.reload() };
-
-    if (isRootExperimentsPage) {
-      // Painel de Datasets: Only has Refresh
-      actions.push(refreshButton);
-    } else if (isDatasetPage) {
-      // Experimentos do Dataset: Only has Refresh
-      actions.push(refreshButton);
-    } else if (isExperimentDetailsPage) {
-      // Detalhes do Experimento: No default buttons
-    }
-    
+    // Refresh button has been moved to the client components
     return actions;
   };
   
