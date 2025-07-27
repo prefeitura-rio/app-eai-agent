@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/app/utils/utils';
-import { Moon, Sun} from 'lucide-react';
 
 export interface ActionButton {
   id: string;
   label: string;
-  icon: React.ElementType; // Changed to accept a component
+  icon: React.ElementType;
   href?: string;
   onClick?: () => void;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
@@ -19,35 +17,14 @@ export interface ActionButton {
 interface AppHeaderProps {
   title: string;
   subtitle?: string | null;
-  actions: ActionButton[];
+  actions?: ActionButton[];
   centerTitle?: boolean;
 }
 
-export default function AppHeader({ title, subtitle, actions, centerTitle = false }: AppHeaderProps) {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
-
-  const allActions = [...actions];
-
-  // Add the theme toggle button dynamically
-  if (mounted) {
-    allActions.unshift({
-      id: 'theme',
-      label: `Mudar para tema ${resolvedTheme === 'light' ? 'escuro' : 'claro'}`,
-      icon: resolvedTheme === 'dark' ? Sun : Moon,
-      onClick: toggleTheme,
-    });
-  }
-
+export default function AppHeader({ title, subtitle, actions = [], centerTitle = false }: AppHeaderProps) {
   return (
     <header className="w-full border-b bg-background py-6 mb-8">
-      <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-2 sm:px-4">
+      <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div
           className={cn(
             'flex min-w-0 flex-grow items-center gap-4',
@@ -62,8 +39,8 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
             />
           )}
         </div>
-        <div className="flex flex-shrink-0 items-center justify-center gap-3">
-          {allActions.map(action => {
+        <div className="flex flex-shrink-0 items-center justify-center gap-3 mr-4">
+          {actions.map(action => {
             const Icon = action.icon;
             const buttonVariant = action.variant || 'outline';
 

@@ -3,7 +3,6 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { useTheme } from 'next-themes';
 import { API_BASE_URL } from '@/app/components/config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -18,16 +17,13 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const { login } = useAuth();
-  const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,18 +58,6 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md relative border shadow-2xl">
-        <div className="absolute top-4 right-4">
-          {mounted && (
-            <Button onClick={toggleTheme} variant="ghost" size="icon" className="border" title={`Mudar para tema ${resolvedTheme === 'light' ? 'escuro' : 'claro'}`}>
-              {resolvedTheme === 'dark' ? (
-                <Sun className="h-[1.2rem] w-[1.2rem]" />
-              ) : (
-                <Moon className="h-[1.2rem] w-[1.2rem]" />
-              )}
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          )}
-        </div>
         <CardHeader className="text-center p-8">
           <CardTitle className="text-3xl font-bold tracking-tight">Autenticação</CardTitle>
           <CardDescription className="text-muted-foreground pt-2">

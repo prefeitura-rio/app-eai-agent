@@ -87,11 +87,3 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
 }
-
-a {
-  color: var(--color-primary);
-}
-a:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}

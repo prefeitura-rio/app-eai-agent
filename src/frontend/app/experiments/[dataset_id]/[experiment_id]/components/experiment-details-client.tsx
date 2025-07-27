@@ -74,7 +74,7 @@ return (
     open={isJsonModalOpen} 
     onOpenChange={setJsonModalOpen} 
 />
-      <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-full">
+      <div className="grid md:grid-cols-[350px_1fr] gap-4 h-[calc(100vh-theme(spacing.32))]">
           <aside className="flex flex-col bg-card border rounded-lg overflow-hidden">
               <Filters runs={runs} onFilterChange={handleFilterChange} />
               <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
@@ -97,10 +97,12 @@ return (
               </div>
           </aside>
 
-          <main className="overflow-y-auto rounded-lg p-6 space-y-6">
-              <Metadata metadata={experiment_metadata} />
-              <SummaryMetrics runs={runs} />
-              {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
+          <main className="overflow-y-auto rounded-lg space-y-6">
+              <div className="p-6">
+                <Metadata metadata={experiment_metadata} />
+                <SummaryMetrics runs={runs} />
+                {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
+              </div>
           </main>
       </div>
     </>

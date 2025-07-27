@@ -3,6 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "@/app/components/ThemeProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { HeaderProvider } from "./contexts/HeaderContext";
+import { SidebarProvider } from "./contexts/SidebarContext";
+import { Sidebar } from "./components/layout/sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +37,20 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>{children}</AuthProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              <HeaderProvider>
+                <SidebarProvider>
+                  <div className="flex h-screen w-full bg-background">
+                    <Sidebar />
+                    <div className="flex flex-1 flex-col overflow-y-auto">
+                      {children}
+                    </div>
+                  </div>
+                </SidebarProvider>
+              </HeaderProvider>
+            </AuthProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>
