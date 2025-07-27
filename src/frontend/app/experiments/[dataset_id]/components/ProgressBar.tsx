@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Progress } from "@/components/ui/progress";
-import { cn } from '@/lib/utils';
+import { getScoreProgressClass } from '@/app/utils/utils';
 
 interface ProgressBarProps {
   score: number;
@@ -10,13 +10,10 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ score, metricName }) => {
-  const percentage = score * 100;
+  // The score is now 0-10, so we multiply by 10 for the progress bar percentage
+  const percentage = score * 100; 
 
-  const indicatorClass = cn({
-    "bg-green-400": score >= 0.8,
-    "bg-yellow-400": score >= 0.5 && score < 0.8,
-    "bg-red-400": score < 0.5,
-  });
+  const indicatorClass = getScoreProgressClass(score);
 
   return (
     <div className="flex flex-col items-center gap-1">

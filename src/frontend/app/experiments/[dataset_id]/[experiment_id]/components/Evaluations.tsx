@@ -4,20 +4,11 @@ import React from 'react';
 import { marked } from 'marked';
 import { Annotation } from '@/app/components/types';
 import { Badge } from "@/components/ui/badge";
+import { getScoreBadgeClass } from '@/app/utils/utils';
 
 interface EvaluationsProps {
   annotations: Annotation[];
 }
-
-const getScoreBadgeClass = (score: number) => {
-    if (score >= 0.8) {
-      return 'bg-green-400 hover:bg-green-600 text-primary-foreground';
-    } else if (score >= 0.5) {
-      return 'bg-yellow-400 hover:bg-yellow-600 text-primary-foreground';
-    } else {
-      return 'bg-red-400 hover:bg-red-600 text-primary-foreground';
-    }
-  };
 
 export default function Evaluations({ annotations }: EvaluationsProps) {
     if (!annotations || annotations.length === 0) {

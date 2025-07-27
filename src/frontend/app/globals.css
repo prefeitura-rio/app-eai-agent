@@ -18,6 +18,10 @@
   --accent-foreground: hsl(222.2 47.4% 11.2%);
   --destructive: hsl(0 84.2% 60.2%);
   --destructive-foreground: hsl(210 40% 98%);
+  --success: hsl(142.1 76.2% 41.2%); /* Green */
+  --success-foreground: hsl(210 40% 98%);
+  --warning: hsl(47.9 95.8% 53.1%); /* Yellow */
+  --warning-foreground: hsl(222.2 84% 4.9%);
   --border: hsl(214.3 31.8% 91.4%);
   --input: hsl(214.3 31.8% 91.4%);
   --ring: hsl(222.2 84% 4.9%);
@@ -42,6 +46,10 @@
   --accent-foreground: hsl(220, 14%, 85%);
   --destructive: hsl(355, 65%, 65%); /* Light Red #e06c75 - Less vibrant */
   --destructive-foreground: hsl(220, 13%, 18%);
+  --success: hsl(158, 56%, 51%); /* #50c878 */
+  --success-foreground: hsl(220, 13%, 18%);
+  --warning: hsl(45, 93%, 54%); /* #e5c07b */
+  --warning-foreground: hsl(220, 13%, 18%);
   --border: hsl(220, 10%, 23%);
   --input: hsl(220, 10%, 23%);
   --ring: hsl(207, 82%, 66%);
@@ -64,6 +72,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
