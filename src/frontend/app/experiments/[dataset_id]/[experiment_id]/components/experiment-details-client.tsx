@@ -272,6 +272,8 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
         return <p className="text-sm text-muted-foreground">Nenhum passo de raciocínio disponível.</p>;
     }
 
+    const defaultValues = orderedSteps.map((_, index) => `item-${index}`);
+
     let sequenceCounter = 0;
     let currentStepPrefix = "";
 
@@ -287,7 +289,7 @@ const ReasoningTimeline = ({ orderedSteps }: { orderedSteps: OrderedStep[] }) =>
     };
 
     return (
-        <Accordion type="multiple" className="w-full">
+        <Accordion type="multiple" className="w-full" defaultValue={defaultValues}>
             {orderedSteps.map((step, index) => {
                 let title: string = "";
                 let content: React.ReactNode = null;
