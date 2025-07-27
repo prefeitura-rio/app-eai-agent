@@ -458,9 +458,9 @@ export default function ExperimentDetailsClient({ initialData, datasetId, experi
           </JsonViewerModal>
       )}
       <div className="grid md:grid-cols-[350px_1fr] gap-4 p-4 h-full">
-          <aside className="flex flex-col bg-card border rounded-lg">
+          <aside className="flex flex-col bg-card border rounded-lg overflow-hidden">
               <Filters runs={runs} onFilterChange={handleFilterChange} />
-              <div className="flex justify-between items-center p-4 border-b">
+              <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
                   <h3 className="text-lg font-semibold">Execuções (Runs)</h3>
                   <Badge variant="secondary">{filteredRuns.length}</Badge>
               </div>
@@ -480,7 +480,7 @@ export default function ExperimentDetailsClient({ initialData, datasetId, experi
               </div>
           </aside>
 
-          <main className="overflow-y-auto rounded-lg p-6 space-y-6">
+          <main className="overflow-y-auto rounded-lg border bg-card p-6 space-y-6">
               <Metadata metadata={experiment_metadata} />
               <SummaryMetrics runs={runs} />
               {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
