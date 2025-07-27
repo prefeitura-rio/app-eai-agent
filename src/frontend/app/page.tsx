@@ -35,33 +35,25 @@ export default function HomePage() {
             </Card>
           </Link>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="h-full cursor-not-allowed">
-                  <Card className="h-full opacity-50">
-                    <CardHeader>
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                        <Bot className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <CardTitle className="text-muted-foreground">Configurações EAI</CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Gerencie system prompts, tools, etc.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center text-sm font-medium text-muted-foreground">
-                          Em breve
-                      </div>
-                    </CardContent>
-                  </Card>
+          <Link href="/eai_settings" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Bot className="h-6 w-6" />
                 </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Esta funcionalidade está em desenvolvimento.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                <CardTitle>Configurações EAI</CardTitle>
+                <CardDescription>
+                  Gerencie system prompts, tools, etc.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para Configurações
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
     </>

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/app/components/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HeaderProvider } from "./contexts/HeaderContext";
 import ConditionalLayout from "./components/ConditionalLayout";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
             <AuthProvider>
               <HeaderProvider>
                 <ConditionalLayout>{children}</ConditionalLayout>
+                <Toaster />
               </HeaderProvider>
             </AuthProvider>
           </TooltipProvider>

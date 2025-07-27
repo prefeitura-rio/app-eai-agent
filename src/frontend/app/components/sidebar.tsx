@@ -17,10 +17,10 @@ import { useSidebar } from '@/app/contexts/SidebarContext';
 const mainNavigation = [
   { name: 'Início', href: '/', icon: Home },
   { name: 'Experimentos', href: '/experiments', icon: FlaskConical },
+  { name: 'Configurações EAI', href: '/eai_settings', icon: Bot },
 ];
 
 const disabledNavigation = [
-    { name: 'Configurações EAI', icon: Bot, reason: 'Em breve' },
 ];
 
 export function Sidebar() {
