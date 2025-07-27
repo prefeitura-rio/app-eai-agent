@@ -63,14 +63,14 @@ export default function SummaryMetrics({ runs }: SummaryMetricsProps) {
                         <Card key={name} className="flex flex-col">
                             <CardHeader className="pb-2">
                                 <CardTitle>{name}</CardTitle>
-                                <CardDescription className="text-2xl font-bold">{average.toFixed(2)} avg.</CardDescription>
+                                <CardDescription className="text-2xl font-bold text-primary">{average.toFixed(2)} avg.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <hr className="mb-2" />
                                 <div className="space-y-2">
                                     {Object.entries(metric.counts).sort(([a], [b]) => Number(b) - Number(a)).map(([score, count]) => (
                                         <div key={score} className="grid grid-cols-[2rem_1fr_4rem] items-center gap-2 text-xs">
-                                            <div className="text-right font-bold">{score}</div>
+                                            <div className="text-right">{score}</div>
                                             <Progress value={(count / metric.scores.length) * 100} className="h-2" />
                                             <div className="text-left text-muted-foreground">({count}) {(count / metric.scores.length * 100).toFixed(0)}%</div>
                                         </div>
