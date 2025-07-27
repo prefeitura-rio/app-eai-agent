@@ -164,7 +164,7 @@ export default function DatasetExperimentsClient({
                 {filteredAndSortedExperiments.map((exp) => (
                   <TableRow key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="cursor-pointer">
                     <TableCell>
-                      <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">
+                      <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
                         #{exp.sequenceNumber} {exp.name}
                       </Link>
                     </TableCell>
