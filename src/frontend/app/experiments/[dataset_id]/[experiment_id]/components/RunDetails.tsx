@@ -3,7 +3,7 @@
 import React from 'react';
 import { Run } from '@/app/components/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from 'lucide-react';
+import { User, MessageSquare, CheckSquare, Network } from 'lucide-react';
 import Comparison from './Comparison';
 import Evaluations from './Evaluations';
 import ReasoningTimeline from './ReasoningTimeline';
@@ -16,21 +16,39 @@ export default function RunDetails({ run }: RunDetailsProps) {
     return (
         <div className="space-y-6">
             <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><User className="h-5 w-5" /> Mensagem do Usuário</CardTitle></CardHeader>
-                <CardContent>
-                    {run.input.mensagem_whatsapp_simulada || "Mensagem não disponível"}
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-lg ">
+                        <User className="h-5 w-5 text-primary" />
+                        <span>Mensagem do Usuário</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pl-12">
+                    <p className="text-foreground text-sm">{run.input.mensagem_whatsapp_simulada || "Mensagem não disponível"}</p>
                 </CardContent>
             </Card>
+            
             <Comparison run={run} />
+            
             <Card>
-                <CardHeader><CardTitle>Avaliações</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-lg">
+                        <CheckSquare className="h-5 w-5 text-primary" />
+                        <span>Avaliações</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pl-12">
                     <Evaluations annotations={run.annotations} />
                 </CardContent>
             </Card>
+            
             <Card>
-                <CardHeader><CardTitle>Cadeia de Pensamento (Reasoning)</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-lg">
+                        <Network className="h-5 w-5 text-primary" />
+                        <span>Cadeia de Pensamento (Reasoning)</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pl-12">
                     <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered} />
                 </CardContent>
             </Card>

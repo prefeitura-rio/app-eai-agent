@@ -41,7 +41,7 @@
   --secondary: hsl(220, 10%, 23%);   /* Gutter Grey #4b5263 */
   --secondary-foreground: hsl(220, 14%, 85%);
   --muted: hsl(220, 10%, 23%);
-  --muted-foreground: hsl(220, 10%, 60%);
+  --muted-foreground: hsl(216, 3%, 68%);
   --accent: hsl(220, 10%, 23%);
   --accent-foreground: hsl(220, 14%, 85%);
   --destructive: hsl(355, 65%, 65%); /* Light Red #e06c75 - Less vibrant */

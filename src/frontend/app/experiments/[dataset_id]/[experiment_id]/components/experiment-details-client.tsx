@@ -12,6 +12,7 @@ import RunDetails from './RunDetails';
 import DetailsPlaceholder from './DetailsPlaceholder';
 import Metadata from './Metadata';
 import SummaryMetrics from './SummaryMetrics';
+import { cn } from "@/app/utils/utils"
 
 const getRunId = (run: Run, index: number) => run.example_id_clean || `run-${index}`;
 
@@ -84,13 +85,26 @@ return (
               <div className="overflow-y-auto">
                   {filteredRuns.map((run, index) => {
                       const runId = getRunId(run, index);
+                      const isActive = selectedRunId === runId;
                       return (
                           <div
                               key={runId}
-                              className={`p-3 cursor-pointer border-b ${selectedRunId === runId ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'}`}
+                              className={cn(
+                                'p-4 cursor-pointer border-b transition-colors',
+                                isActive 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'hover:bg-muted/50'
+                              )}
                               onClick={() => setSelectedRunId(runId)}
                           >
-                              <span className="font-medium truncate">ID: {run.output?.metadata?.id || runId}</span>
+                              <span className="font-medium truncate block">ID: {run.output?.metadata?.id || runId}</span>
+                              {run.tags && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {run.tags.map(tag => (
+                                        <Badge key={tag} variant={isActive ? 'secondary' : 'outline'}>{tag}</Badge>
+                                    ))}
+                                </div>
+                              )}
                           </div>
                       );
                   })}

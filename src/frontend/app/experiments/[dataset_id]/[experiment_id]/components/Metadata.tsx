@@ -4,6 +4,7 @@ import React from 'react';
 import { ExperimentMetadata } from '@/app/components/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Settings } from 'lucide-react';
 
 interface MetadataProps {
   metadata: ExperimentMetadata | null;
@@ -17,7 +18,7 @@ const PromptSection = ({ title, content, collapseId }: { title: string, content:
                 <AccordionItem value={collapseId}>
                     <AccordionTrigger className="text-sm font-semibold">{title}</AccordionTrigger>
                     <AccordionContent>
-                        <pre className="p-4 bg-muted text-muted-foreground rounded-md text-xs whitespace-pre-wrap">{content}</pre>
+                        <pre className="p-4 bg-muted text-foreground rounded-md text-xs whitespace-pre-wrap">{content}</pre>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -31,7 +32,10 @@ export default function Metadata({ metadata }: MetadataProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Parâmetros do Experimento</CardTitle>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                    <Settings className="h-5 w-5 text-primary" />
+                    <span>Parâmetros do Experimento</span>
+                </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                 <div>

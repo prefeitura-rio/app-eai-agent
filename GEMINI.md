@@ -11,21 +11,21 @@ O objetivo desta fase é revisar cada página individualmente para corrigir prob
     - [x] Garantir que o botão de "Entrar" e a mensagem de erro estejam bem estilizados.
     - [x] Verificar a aparência do botão de troca de tema.
 
-- [ ] **Página Inicial (`/`):**
-    - [ ] Ajustar o `AppHeader` para garantir que o título e as ações estejam bem alinhados.
-    - [ ] Estilizar os cards de navegação (`Painel de Experimentos`, etc.) para que tenham uma aparência moderna e um efeito de hover claro.
-    - [ ] Verificar a tipografia e o espaçamento da seção de descrição.
+- [x]  **Página Inicial (`/`):**
+    - [x] Ajustar o `AppHeader` para garantir que o título e as ações estejam bem alinhados.
+    - [x] Estilizar os cards de navegação (`Painel de Experimentos`, etc.) para que tenham uma aparência moderna e um efeito de hover claro.
+    - [x] Verificar a tipografia e o espaçamento da seção de descrição.
 
-- [ ] **Página de Datasets (`/experiments`):**
-    - [ ] Garantir que a tabela de datasets esteja bem formatada, com espaçamento adequado nas células e cabeçalhos.
-    - [ ] Verificar o alinhamento da barra de pesquisa e do botão de download.
-    - [ ] Ajustar o estilo dos `Badges` para que tenham um bom contraste e legibilidade.
-    - [ ] Polir o `DropdownMenu` de ordenação.
+- [x] **Página de Datasets (`/experiments`):**
+    - [x] Garantir que a tabela de datasets esteja bem formatada, com espaçamento adequado nas células e cabeçalhos.
+    - [x] Verificar o alinhamento da barra de pesquisa e do botão de download.
+    - [x] Ajustar o estilo dos `Badges` para que tenham um bom contraste e legibilidade.
+    - [x] Polir o `DropdownMenu` de ordenação.
 
-- [ ] **Página de Detalhes do Dataset (`/experiments/[dataset_id]`):**
-    - [ ] Estilizar as abas (`Tabs`) para que a aba ativa seja claramente destacada.
-    - [ ] Garantir que as tabelas dentro de cada aba estejam bem formatadas.
-    - [ ] Revisar o estilo dos blocos de código (`<pre>`) na aba "Exemplos" para garantir a legibilidade.
+- [x] **Página de Detalhes do Dataset (`/experiments/[dataset_id]`):**
+    - [x] Estilizar as abas (`Tabs`) para que a aba ativa seja claramente destacada.
+    - [x] Garantir que as tabelas dentro de cada aba estejam bem formatadas.
+    - [x] Revisar o estilo dos blocos de código (`<pre>`) na aba "Exemplos" para garantir a legibilidade.
 
 - [ ] **Página de Detalhes do Experimento (`/experiments/[dataset_id]/[experiment_id]`):**
     - [ ] Ajustar o layout de duas colunas para que seja responsivo e bem espaçado.

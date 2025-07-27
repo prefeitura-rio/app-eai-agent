@@ -5,10 +5,20 @@ import { marked } from 'marked';
 import { Annotation } from '@/app/components/types';
 import { Badge } from "@/components/ui/badge";
 import { getScoreBadgeClass } from '@/app/utils/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface EvaluationsProps {
   annotations: Annotation[];
 }
+
+const isJsonString = (str: string) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+};
 
 export default function Evaluations({ annotations }: EvaluationsProps) {
     if (!annotations || annotations.length === 0) {
@@ -29,29 +39,41 @@ export default function Evaluations({ annotations }: EvaluationsProps) {
         return a.name.localeCompare(b.name);
     });
 
+    const defaultOpen = sortedAnnotations
+        .map((ann, index) => `item-${index}`)
+        .filter((_, index) => !["Golden Link in Answer", "Golden Link in Tool Calling"].includes(sortedAnnotations[index].name));
+
     return (
-        <div className="space-y-2">
+        <Accordion type="multiple" defaultValue={defaultOpen}>
             {sortedAnnotations.map((ann, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                        <Badge className={getScoreBadgeClass(ann.score)}>
-                            {ann.score.toFixed(1)}
-                        </Badge>
-                        <p className="font-semibold">{ann.name}</p>
-                    </div>
-                    {ann.explanation && (
-                        <div className="prose prose-sm dark:prose-invert max-w-none mt-2 pt-2 border-t">
-                            {typeof ann.explanation === 'string' ? (
-                                <div dangerouslySetInnerHTML={{ __html: marked(ann.explanation) }} />
-                            ) : (
-                                <pre className="p-4 bg-muted text-muted-foreground rounded-md text-xs">
-                                    {JSON.stringify(ann.explanation, null, 2)}
-                                </pre>
-                            )}
+                <AccordionItem value={`item-${index}`} key={index}>
+                    <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-3">
+                            <Badge className={getScoreBadgeClass(ann.score)}>
+                                {ann.score.toFixed(1)}
+                            </Badge>
+                            <span className="font-semibold text-left">{ann.name}</span>
                         </div>
-                    )}
-                </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pl-12">
+                        {ann.explanation && (
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                                {typeof ann.explanation === 'string' && isJsonString(ann.explanation) ? (
+                                    <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap break-all text-foreground">
+                                        {JSON.stringify(JSON.parse(ann.explanation), null, 2)}
+                                    </pre>
+                                ) : typeof ann.explanation === 'string' ? (
+                                    <div dangerouslySetInnerHTML={{ __html: marked(ann.explanation) }} />
+                                ) : (
+                                    <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap break-all text-foreground">
+                                        {JSON.stringify(ann.explanation, null, 2)}
+                                    </pre>
+                                )}
+                            </div>
+                        )}
+                    </AccordionContent>
+                </AccordionItem>
             ))}
-        </div>
+        </Accordion>
     );
 }

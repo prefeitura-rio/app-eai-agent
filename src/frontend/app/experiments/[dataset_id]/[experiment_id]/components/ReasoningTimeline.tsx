@@ -43,11 +43,11 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                         sequenceCounter++;
                         currentStepPrefix = `${sequenceCounter}. `;
                         title = `${currentStepPrefix}Raciocínio`;
-                        content = <p className="mb-0 italic" dangerouslySetInnerHTML={{ __html: `"${step.message.reasoning}"` }} />;
+                        content = <p className="mb-0 italic text-muted-foreground" dangerouslySetInnerHTML={{ __html: `"${step.message.reasoning}"` }} />;
                         break;
                     case "tool_call_message":
                         title = `${currentStepPrefix}Chamada de Ferramenta: ${step.message.tool_call.name}`;
-                        content = <pre className="p-4 bg-muted text-muted-foreground rounded-md text-xs">{JSON.stringify(step.message.tool_call.arguments, null, 2)}</pre>;
+                        content = <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap font-mono text-foreground">{JSON.stringify(step.message.tool_call.arguments, null, 2)}</pre>;
                         break;
                     case "tool_return_message":
                         title = `${currentStepPrefix}Retorno da Ferramenta: ${step.message.name}`;
@@ -62,7 +62,7 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                     case "letta_usage_statistics":
                         title = "Estatísticas de Uso";
                         content = (
-                            <div className="text-sm">
+                            <div className="text-sm grid grid-cols-3 gap-2">
                                 <p><strong>Tokens Totais:</strong> {step.message.total_tokens}</p>
                                 <p><strong>Tokens de Prompt:</strong> {step.message.prompt_tokens}</p>
                                 <p><strong>Tokens de Conclusão:</strong> {step.message.completion_tokens}</p>
@@ -75,13 +75,13 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
 
                 return (
                     <AccordionItem value={`item-${index}`} key={index}>
-                        <AccordionTrigger>
-                            <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4" />
+                        <AccordionTrigger className="hover:no-underline">
+                            <div className="flex items-center gap-3">
+                                <Icon className="h-5 w-5 text-primary" />
                                 <span className="font-semibold text-left">{title}</span>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent>
+                        <AccordionContent className="pl-12">
                             {content}
                         </AccordionContent>
                     </AccordionItem>

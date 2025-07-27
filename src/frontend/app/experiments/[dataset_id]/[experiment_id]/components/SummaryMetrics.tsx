@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { Run } from '@/app/components/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BarChart2 } from 'lucide-react';
 
 interface SummaryMetricsProps {
   runs: Run[];
@@ -47,7 +48,10 @@ export default function SummaryMetrics({ runs }: SummaryMetricsProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Métricas Gerais ({summary.totalRuns} runs)</CardTitle>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                    <BarChart2 className="h-5 w-5 text-primary" />
+                    <span>Métricas Gerais</span>
+                </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedMetricNames.map(name => {
