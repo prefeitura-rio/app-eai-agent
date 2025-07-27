@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Moon, Sun, Terminal } from 'lucide-react';
+import { Eye, EyeOff, Moon, Sun, Terminal, Loader2 } from 'lucide-react';
 
 function LoginForm() {
   const [token, setToken] = useState('');
@@ -18,7 +18,7 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const { login } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
@@ -26,7 +26,7 @@ function LoginForm() {
   useEffect(() => setMounted(true), []);
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,20 +60,25 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-background dark:bg-neutral-950 dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]">
-      <Card className="w-full max-w-md relative shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md relative border shadow-2xl">
         <div className="absolute top-4 right-4">
           {mounted && (
-            <Button onClick={toggleTheme} variant="ghost" size="icon">
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <Button onClick={toggleTheme} variant="ghost" size="icon" className="border" title={`Mudar para tema ${resolvedTheme === 'light' ? 'escuro' : 'claro'}`}>
+              {resolvedTheme === 'dark' ? (
+                <Sun className="h-[1.2rem] w-[1.2rem]" />
+              ) : (
+                <Moon className="h-[1.2rem] w-[1.2rem]" />
+              )}
               <span className="sr-only">Toggle theme</span>
             </Button>
           )}
         </div>
         <CardHeader className="text-center p-8">
-          <CardTitle className="text-2xl font-bold">Autenticação</CardTitle>
-          <CardDescription>Por favor, insira seu Bearer Token para continuar.</CardDescription>
+          <CardTitle className="text-3xl font-bold tracking-tight">Autenticação</CardTitle>
+          <CardDescription className="text-muted-foreground pt-2">
+            Por favor, insira seu Bearer Token para continuar.
+          </CardDescription>
         </CardHeader>
         <CardContent className="px-8 pb-8">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -87,7 +92,7 @@ function LoginForm() {
                   onChange={(e) => setToken(e.target.value)}
                   required
                   placeholder="Cole seu token aqui..."
-                  className="pr-10"
+                  className="pr-10 transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 />
                 <Button
                   type="button"
@@ -103,16 +108,21 @@ function LoginForm() {
             </div>
             
             {error && (
-              <Alert variant="destructive">
-                <Terminal className="h-4 w-4" />
-                <AlertDescription>
+              <Alert className="border-destructive text-destructive">
+                <Terminal className="h-4 w-4"/>
+                <AlertDescription className="text-destructive">
                   {error}
                 </AlertDescription>
               </Alert>
             )}
             
-            <Button type="submit" disabled={isLoading} className="w-full font-bold" size="lg">
-              {isLoading && <i className="bi bi-arrow-repeat animate-spin mr-2"></i>}
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="w-full font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-4" 
+              size="lg"
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? 'Validando...' : 'Entrar'}
             </Button>
           </form>

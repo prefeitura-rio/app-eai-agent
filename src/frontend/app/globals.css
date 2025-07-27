@@ -1,50 +1,85 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-@theme {
-  --background: 220 13% 95%;
-  --foreground: 215 28% 17%;
-  --card: 220 14% 98%;
-  --card-foreground: 215 28% 17%;
-  --popover: 220 14% 98%;
-  --popover-foreground: 215 28% 17%;
-  --primary: 211 90% 45%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 216 12% 92%;
-  --secondary-foreground: 215 28% 17%;
-  --muted: 216 12% 92%;
-  --muted-foreground: 215 15% 51%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 215 28% 17%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 215 20% 90%;
-  --input: 215 20% 90%;
-  --ring: 211 90% 45%;
+:root {
+  --background: hsl(210 40% 98%);
+  --foreground: hsl(222.2 84% 4.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222.2 84% 4.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222.2 84% 4.9%);
+  --primary: hsl(221.2 83.2% 53.3%);
+  --primary-foreground: hsl(210 40% 98%);
+  --secondary: hsl(210 40% 96.1%);
+  --secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --muted: hsl(210 40% 96.1%);
+  --muted-foreground: hsl(215.4 16.3% 46.9%);
+  --accent: hsl(210 40% 96.1%);
+  --accent-foreground: hsl(222.2 47.4% 11.2%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(214.3 31.8% 91.4%);
+  --input: hsl(214.3 31.8% 91.4%);
+  --ring: hsl(222.2 84% 4.9%);
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 216 22% 13%;
-  --foreground: 215 25% 90%;
-  --card: 217 24% 17%;
-  --card-foreground: 215 25% 90%;
-  --popover: 217 24% 17%;
-  --popover-foreground: 215 25% 90%;
-  --primary: 207 100% 75%;
-  --primary-foreground: 217 24% 17%;
-  --secondary: 216 22% 13%;
-  --secondary-foreground: 215 25% 90%;
-  --muted: 216 22% 13%;
-  --muted-foreground: 215 17% 65%;
-  --accent: 217 24% 17%;
-  --accent-foreground: 215 25% 90%;
-  --destructive: 0 100% 74%;
-  --destructive-foreground: 217 24% 17%;
-  --border: 215 18% 28%;
-  --input: 215 18% 28%;
-  --ring: 207 100% 75%;
+  /* VS Code One Dark Pro Palette */
+  --background: hsl(220, 13%, 18%);  /* #282c34 */
+  --foreground: hsl(220, 14%, 85%);  /* Brighter White - Adjusted from #abb2bf */
+  --card: hsl(220, 13%, 18%);       /* Same as background for a seamless look */
+  --card-foreground: hsl(220, 14%, 85%); /* Brighter White */
+  --popover: hsl(220, 13%, 18%);
+  --popover-foreground: hsl(220, 14%, 85%);
+  --primary: hsl(207, 82%, 66%);    /* #61afef */
+  --primary-foreground: hsl(220, 13%, 18%);
+  --secondary: hsl(220, 10%, 23%);   /* Gutter Grey #4b5263 */
+  --secondary-foreground: hsl(220, 14%, 85%);
+  --muted: hsl(220, 10%, 23%);
+  --muted-foreground: hsl(220, 10%, 60%);
+  --accent: hsl(220, 10%, 23%);
+  --accent-foreground: hsl(220, 14%, 85%);
+  --destructive: hsl(355, 65%, 65%); /* Light Red #e06c75 - Less vibrant */
+  --destructive-foreground: hsl(220, 13%, 18%);
+  --border: hsl(220, 10%, 23%);
+  --input: hsl(220, 10%, 23%);
+  --ring: hsl(207, 82%, 66%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
 }
 
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+a {
+  color: var(--color-primary);
+}
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }

@@ -16,6 +16,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ score, metricName }) => {
     "bg-green-500": score >= 0.8,
     "bg-yellow-500": score >= 0.5 && score < 0.8,
     "bg-red-500": score < 0.5,
+    "bg-primary": score >= 0.8, // Default to primary if no other color matches
   });
 
   return (
