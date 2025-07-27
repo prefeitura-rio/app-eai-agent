@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Search, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { cn } from '@/app/utils/utils';
 import Link from 'next/link';
@@ -96,12 +97,22 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" onClick={handleDownload} size="icon" title="Download CSV">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={handleDownload} size="icon">
                   <Download className="h-4 w-4 text-success" />
-            </Button>
-            <Button variant="outline" onClick={() => window.location.reload()} size="icon" title="Atualizar">
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Download CSV</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={() => window.location.reload()} size="icon">
                   <RefreshCw className="h-4 w-4 text-primary" />
-            </Button>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Atualizar</p></TooltipContent>
+            </Tooltip>
         </div>
       <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
           <Table>

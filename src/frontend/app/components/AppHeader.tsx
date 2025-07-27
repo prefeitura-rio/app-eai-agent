@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/app/utils/utils';
 
 export interface ActionButton {
@@ -44,21 +45,25 @@ export default function AppHeader({ title, subtitle, actions = [], centerTitle =
           {actions.map(action => {
             const Icon = action.icon;
             const buttonVariant = action.variant || 'outline';
+            const buttonContent = <Icon className={cn("h-4 w-4", action.iconClassName)} />;
 
-            if (action.href) {
-              return (
-                <Button key={action.id} variant={buttonVariant} size="icon" asChild>
-                  <Link href={action.href} title={action.label}>
-                    <Icon className={cn("h-4 w-4", action.iconClassName)} />
-                  </Link>
-                </Button>
-              );
-            }
-            
-            return (
-              <Button key={action.id} variant={buttonVariant} size="icon" onClick={action.onClick} title={action.label}>
-                <Icon className={cn("h-4 w-4", action.iconClassName)} />
+            const button = action.href ? (
+              <Button variant={buttonVariant} size="icon" asChild>
+                <Link href={action.href}>{buttonContent}</Link>
               </Button>
+            ) : (
+              <Button variant={buttonVariant} size="icon" onClick={action.onClick}>
+                {buttonContent}
+              </Button>
+            );
+
+            return (
+              <Tooltip key={action.id}>
+                <TooltipTrigger asChild>{button}</TooltipTrigger>
+                <TooltipContent>
+                  <p>{action.label}</p>
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>

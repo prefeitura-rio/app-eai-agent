@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProgressBar from './ProgressBar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Download, Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 
 interface DatasetExperimentsClientProps {
@@ -149,18 +150,28 @@ export default function DatasetExperimentsClient({
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="Filtrar por nome..."
+                      placeholder="Filtrar..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
                     />
                 </div>
-              <Button variant="outline" size="icon" title="Download CSV" onClick={handleDownload}>
-                <Download className="h-4 w-4 text-success" />
-              </Button>
-              <Button variant="outline" onClick={() => window.location.reload()} size="icon" title="Atualizar">
-                <RefreshCw className="h-4 w-4 text-primary" />
-              </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={handleDownload}>
+                      <Download className="h-4 w-4 text-success" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Download CSV</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
+                      <RefreshCw className="h-4 w-4 text-primary" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Atualizar</p></TooltipContent>
+                </Tooltip>
           </div>
         </div>
       <TabsContent value="experiments">
