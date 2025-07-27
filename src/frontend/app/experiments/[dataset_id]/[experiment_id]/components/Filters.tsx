@@ -70,15 +70,15 @@ export default function Filters({ runs, onFilterChange }: FiltersProps) {
 
   return (
       <div className="p-4 border-b">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 items-center">
               {sortedFilterNames.map(name => (
-                  <div key={name} className="grid gap-2">
-                      <Label htmlFor={`filter-${name}`}>{name}</Label>
+                  <React.Fragment key={name}>
+                      <Label htmlFor={`filter-${name}`} className="text-left">{name}</Label>
                       <Select
                           value={selectedFilters[name] || 'all'}
                           onValueChange={(value) => handleFilterChange(name, value)}
                       >
-                          <SelectTrigger id={`filter-${name}`}>
+                          <SelectTrigger id={`filter-${name}`} className="w-full">
                               <SelectValue placeholder="Todos" />
                           </SelectTrigger>
                           <SelectContent>
@@ -88,12 +88,12 @@ export default function Filters({ runs, onFilterChange }: FiltersProps) {
                               ))}
                           </SelectContent>
                       </Select>
-                  </div>
+                  </React.Fragment>
               ))}
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-              <Button onClick={applyFilters} size="sm">Aplicar</Button>
-              <Button onClick={clearFilters} size="sm" variant="outline">Limpar</Button>
+          <div className="col-span-2 flex justify-end gap-2 mt-4">
+              <Button onClick={applyFilters} size="sm" className="w-2/3">Aplicar</Button>
+              <Button onClick={clearFilters} size="sm" variant="outline" className="w-1/3">Limpar</Button>
           </div>
       </div>
   );
