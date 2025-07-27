@@ -19,16 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Download, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
+import { Search, Download, ArrowUp, ArrowDown } from 'lucide-react';
+import { cn } from '@/app/utils/utils';
 
 interface DatasetsClientProps {
   datasets: Dataset[];
@@ -44,6 +39,14 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     setDatasets(initialDatasets);
   }, [initialDatasets]);
 
+  const handleSort = (key: keyof Dataset) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const filteredAndSortedDatasets = useMemo(() => {
     let sortableItems = [...datasets];
 
@@ -58,14 +61,11 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
         const aValue = a[sortConfig.key!];
         const bValue = b[sortConfig.key!];
 
-        if (aValue === null) return 1;
-        if (bValue === null) return -1;
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
+        
+        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
       });
     }
@@ -73,17 +73,8 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     return sortableItems;
   }, [datasets, searchTerm, sortConfig]);
 
-  const setSort = (key: keyof Dataset, direction: 'ascending' | 'descending') => {
-    setSortConfig({ key, direction });
-  };
-
   const handleRowClick = (datasetId: string) => {
     router.push(`/experiments/${datasetId}`);
-  };
-
-  const getSortIndicator = (key: keyof Dataset) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
   const handleDownload = () => {
@@ -91,25 +82,17 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   };
 
   const tableHeaders: { key: keyof Dataset; label: string; className?: string }[] = [
-    { key: 'name', label: 'Nome' },
+    { key: 'name', label: 'Nome', className: 'w-[30%]' },
     { key: 'description', label: 'Descrição' },
-    { key: 'exampleCount', label: 'Exemplos', className: 'text-center' },
-    { key: 'experimentCount', label: 'Experimentos', className: 'text-center' },
-    { key: 'createdAt', label: 'Criado em', className: 'text-center' },
+    { key: 'exampleCount', label: 'Exemplos', className: 'text-center w-[120px]' },
+    { key: 'experimentCount', label: 'Experimentos', className: 'text-center w-[120px]' },
+    { key: 'createdAt', label: 'Criado em', className: 'text-center w-[180px]' },
   ];
 
   return (
-    <div className="container mx-auto py-4">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Datasets Disponíveis</CardTitle>
-            <CardDescription>
-              Encontrados {filteredAndSortedDatasets.length} datasets.
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+    <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+            <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
@@ -119,54 +102,50 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                 className="pl-9"
               />
             </div>
-            <Button variant="outline" size="icon" title="Download CSV" onClick={handleDownload}>
-              <Download className="h-4 w-4" />
+            <Button variant="outline" onClick={handleDownload}>
+              <Download className="mr-2 h-4 w-4" />
+              Download CSV
             </Button>
-          </div>
-        </CardHeader>
+        </div>
+      <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 {tableHeaders.map(({ key, label, className }) => (
-                  <TableHead key={key} className={className}>
-                    <div className="flex items-center gap-1">
+                  <TableHead key={key} className={cn("p-4", className)}>
+                    <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
                       {label}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <ChevronsUpDown className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => setSort(key, 'ascending')}>
-                            <ArrowUp className="mr-2 h-3 w-3" /> Ascendente
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setSort(key, 'descending')}>
-                            <ArrowDown className="mr-2 h-3 w-3" /> Descendente
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <span className="text-xs">{getSortIndicator(key)}</span>
-                    </div>
+                      {sortConfig.key === key && (
+                        sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                      )}
+                    </Button>
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedDatasets.map((dataset) => (
-                <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
-                  <TableCell className="font-medium">{dataset.name}</TableCell>
-                  <TableCell>{dataset.description || 'Sem descrição'}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="secondary">{dataset.exampleCount}</Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="default">{dataset.experimentCount}</Badge>
-                  </TableCell>
-                  <TableCell className="text-center">{new Date(dataset.createdAt).toLocaleString('pt-BR')}</TableCell>
+              {filteredAndSortedDatasets.length > 0 ? (
+                filteredAndSortedDatasets.map((dataset) => (
+                  <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
+                    <TableCell className="p-4 font-medium">{dataset.name}</TableCell>
+                    <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
+                    <TableCell className="p-4 text-center">
+                      <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
+                    </TableCell>
+                    <TableCell className="p-4 text-center">
+                      <Badge className="text-sm">{dataset.experimentCount}</Badge>
+                    </TableCell>
+                    <TableCell className="p-4 text-center text-muted-foreground">{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={tableHeaders.length} className="h-24 text-center">
+                        Nenhum dataset encontrado.
+                    </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

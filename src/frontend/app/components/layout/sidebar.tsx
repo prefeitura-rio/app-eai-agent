@@ -62,11 +62,7 @@ export function Sidebar() {
                 </Tooltip>
                 <DropdownMenuContent side="right" align="start" sideOffset={5}>
                     <DropdownMenuItem onClick={toggleTheme}>
-                        {resolvedTheme === 'dark' ? (
-                            <Sun className="mr-2 h-4 w-4" />
-                        ) : (
-                            <Moon className="mr-2 h-4 w-4" />
-                        )}
+                        {resolvedTheme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                         <span>Mudar Tema</span>
                     </DropdownMenuItem>
                     {token && (
@@ -86,22 +82,18 @@ export function Sidebar() {
     return (
         <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="settings" className="border-none">
-                <AccordionTrigger className="flex w-full justify-start gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:no-underline">
+                <AccordionTrigger className="flex h-10 w-full items-center justify-start gap-3 rounded-lg px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:no-underline">
                     <Settings className="h-5 w-5" />
                     <span>Configurações</span>
                 </AccordionTrigger>
                 <AccordionContent className="pt-1">
                     <div className="flex flex-col gap-1 pl-6">
-                        <Button variant="ghost" className="w-full justify-start gap-3" onClick={toggleTheme}>
-                            {resolvedTheme === 'dark' ? (
-                                <Sun className="h-4 w-4" />
-                            ) : (
-                                <Moon className="h-4 w-4" />
-                            )}
+                        <Button variant="ghost" className="w-full justify-start gap-3 text-xs" onClick={toggleTheme}>
+                            {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                             <span>Mudar Tema</span>
                         </Button>
                         {token && (
-                            <Button variant="ghost" className="w-full justify-start gap-3 text-destructive hover:text-destructive" onClick={handleLogout}>
+                            <Button variant="ghost" className="w-full justify-start gap-3 text-xs text-destructive hover:text-destructive" onClick={handleLogout}>
                                 <LogOut className="h-4 w-4" />
                                 <span>Sair</span>
                             </Button>
@@ -116,51 +108,62 @@ export function Sidebar() {
   return (
     <aside className={cn(
         "hidden flex-col border-r bg-background transition-all duration-300 ease-in-out sm:flex",
-        isCollapsed ? "w-16 items-center p-2" : "w-64 p-4"
+        isCollapsed ? "w-16 p-2 items-center" : "w-48 p-2 items-center"
     )}>
         <TooltipProvider delayDuration={100}>
-            <nav className="flex flex-col gap-1">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size={isCollapsed ? "icon" : "default"} className={cn(!isCollapsed && "w-full justify-start gap-3")} onClick={toggle}>
-                            {isCollapsed ? <PanelRightClose className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-                            {!isCollapsed && <span>Recolher</span>}
-                            <span className="sr-only">{isCollapsed ? 'Expandir' : 'Recolher'}</span>
-                        </Button>
-                    </TooltipTrigger>
-                    {isCollapsed && <TooltipContent side="right" sideOffset={5}>{isCollapsed ? 'Expandir' : 'Recolher'}</TooltipContent>}
-                </Tooltip>
-
-                {renderSettings()}
+            <nav className="flex h-full flex-col gap-1">
+                {/* Top Section */}
+                <div className="flex flex-col gap-0">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size={isCollapsed ? "icon" : "default"} className={cn("h-10 text-xs", !isCollapsed && "w-full justify-start gap-3 px-3")} onClick={toggle}>
+                                {isCollapsed ? <PanelRightClose className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+                                {!isCollapsed && <span>Recolher</span>}
+                                <span className="sr-only">{isCollapsed ? 'Expandir' : 'Recolher'}</span>
+                            </Button>
+                        </TooltipTrigger>
+                        {isCollapsed && <TooltipContent side="right" sideOffset={5}>{isCollapsed ? 'Expandir' : 'Recolher'}</TooltipContent>}
+                    </Tooltip>
+                    {renderSettings()}
+                </div>
 
                 <div className="my-2 h-px w-full bg-border" />
 
-                {mainNavigation.map(item => (
-                    <Tooltip key={item.name}>
-                        <TooltipTrigger asChild>
-                            <Link href={item.href} className={cn('flex items-center gap-3 rounded-lg px-3 py-2 transition-colors', isCollapsed ? 'h-10 w-10 justify-center' : 'justify-start', pathname === item.href ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
-                                <item.icon className="h-5 w-5" />
-                                {!isCollapsed && <span>{item.name}</span>}
-                                <span className="sr-only">{item.name}</span>
-                            </Link>
-                        </TooltipTrigger>
-                        {isCollapsed && <TooltipContent side="right" sideOffset={5}>{item.name}</TooltipContent>}
-                    </Tooltip>
-                ))}
+                {/* Main Navigation */}
+                <div className="flex flex-col gap-1">
+                    {mainNavigation.map(item => {
+                        const isActive = item.href === '/' ? pathname === item.href : pathname.startsWith(item.href);
+                        return (
+                            <Tooltip key={item.name}>
+                                <TooltipTrigger asChild>
+                                    <Link href={item.href} className={cn('flex h-10 items-center gap-3 rounded-lg px-3 text-xs font-medium transition-colors', isCollapsed ? 'w-10 justify-center' : 'justify-start', isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
+                                        <item.icon className="h-5 w-5" />
+                                        {!isCollapsed && <span>{item.name}</span>}
+                                        <span className="sr-only">{item.name}</span>
+                                    </Link>
+                                </TooltipTrigger>
+                                {isCollapsed && <TooltipContent side="right" sideOffset={5}>{item.name}</TooltipContent>}
+                            </Tooltip>
+                        );
+                    })}
+                </div>
                 
                 <div className="my-2 h-px w-full bg-border" />
 
-                {disabledNavigation.map(item => (
-                    <Tooltip key={item.name}>
-                        <TooltipTrigger asChild>
-                            <div className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground/50 cursor-not-allowed', isCollapsed ? 'h-10 w-10 justify-center' : 'justify-start')}>
-                                <item.icon className="h-5 w-5" />
-                                {!isCollapsed && <span>{item.name}</span>}
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" sideOffset={5}>{item.reason}</TooltipContent>
-                    </Tooltip>
-                ))}
+                {/* Disabled Navigation */}
+                <div className="flex flex-col gap-1">
+                    {disabledNavigation.map(item => (
+                        <Tooltip key={item.name}>
+                            <TooltipTrigger asChild>
+                                <div className={cn('flex h-10 items-center gap-3 rounded-lg px-3 text-xs font-medium text-muted-foreground/50 cursor-not-allowed', isCollapsed ? 'w-10 justify-center' : 'justify-start')}>
+                                    <item.icon className="h-5 w-5" />
+                                    {!isCollapsed && <span>{item.name}</span>}
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" sideOffset={5}>{item.reason}</TooltipContent>
+                        </Tooltip>
+                    ))}
+                </div>
             </nav>
         </TooltipProvider>
     </aside>
