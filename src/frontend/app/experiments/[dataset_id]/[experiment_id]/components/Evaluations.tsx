@@ -9,6 +9,16 @@ interface EvaluationsProps {
   annotations: Annotation[];
 }
 
+const getScoreBadgeClass = (score: number) => {
+    if (score >= 0.8) {
+      return 'bg-green-400 hover:bg-green-600 text-primary-foreground';
+    } else if (score >= 0.5) {
+      return 'bg-yellow-400 hover:bg-yellow-600 text-primary-foreground';
+    } else {
+      return 'bg-red-400 hover:bg-red-600 text-primary-foreground';
+    }
+  };
+
 export default function Evaluations({ annotations }: EvaluationsProps) {
     if (!annotations || annotations.length === 0) {
         return <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>;
@@ -33,7 +43,7 @@ export default function Evaluations({ annotations }: EvaluationsProps) {
             {sortedAnnotations.map((ann, index) => (
                 <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center gap-3">
-                        <Badge variant={ann.score === 1.0 ? 'default' : ann.score === 0.0 ? 'destructive' : 'secondary'}>
+                        <Badge className={getScoreBadgeClass(ann.score)}>
                             {ann.score.toFixed(1)}
                         </Badge>
                         <p className="font-semibold">{ann.name}</p>

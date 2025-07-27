@@ -10,6 +10,8 @@ import {FileCode, Download} from 'lucide-react';
 import Filters from './Filters';
 import RunDetails from './RunDetails';
 import DetailsPlaceholder from './DetailsPlaceholder';
+import Metadata from './Metadata';
+import SummaryMetrics from './SummaryMetrics';
 
 const getRunId = (run: Run, index: number) => run.example_id_clean || `run-${index}`;
 
@@ -95,7 +97,9 @@ return (
               </div>
           </aside>
 
-          <main className="overflow-y-auto rounded-lg border bg-card p-6 space-y-6">
+          <main className="overflow-y-auto rounded-lg p-6 space-y-6">
+              <Metadata metadata={experiment_metadata} />
+              <SummaryMetrics runs={runs} />
               {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
           </main>
       </div>
