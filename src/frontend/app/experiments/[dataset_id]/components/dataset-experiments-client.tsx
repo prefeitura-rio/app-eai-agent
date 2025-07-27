@@ -63,7 +63,7 @@ export default function DatasetExperimentsClient({
     }
     if (expSortConfig.key) {
       sortableItems.sort((a: Experiment, b: Experiment) => {
-        let aValue: any, bValue: any;
+        let aValue: string | number, bValue: string | number;
         if (expSortConfig.key === 'metric') {
           const metricName = expSortConfig.metricName!;
           aValue = a.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
@@ -86,7 +86,7 @@ export default function DatasetExperimentsClient({
       const content = JSON.stringify(ex.latestRevision.input) + JSON.stringify(ex.latestRevision.output);
       return content.toLowerCase().includes(exSearchTerm.toLowerCase());
     });
-  }, [examples, exSearchTerm]);
+  }, [examples]);
 
   const requestExpSort = (key: SortKey, metricName?: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
