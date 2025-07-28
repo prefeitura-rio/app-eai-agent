@@ -9,7 +9,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     <div className="flex flex-col h-screen">
       <AppHeader
         title="Chat EAI"
-        subtitle="Converse diretamente com o modelo e ajuste os parâmetros em tempo real."
+        subtitle="Converse diretamente com o modelo do letta"
       />
       <main className="flex-1 overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full py-6">

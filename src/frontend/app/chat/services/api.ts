@@ -4,26 +4,57 @@ import { API_BASE_URL } from '@/app/components/config';
 
 // --- Interfaces ---
 
-interface ChatRequestPayload {
+export interface ChatRequestPayload {
   user_number: string;
   message: string;
-  // Add other optional agent parameters here if needed
+  name?: string;
+  system?: string;
+  model?: string;
+  tools?: string[];
 }
 
-interface ChatResponse {
+export interface ToolCall {
+  name: string;
+  arguments: string;
+  tool_call_id: string;
+}
+
+export interface ToolReturn {
+  [key: string]: any;
+}
+
+export interface UsageStatistics {
+  completion_tokens: number;
+  prompt_tokens: number;
+  total_tokens: number;
+  step_count: number;
+}
+
+export interface AgentMessage {
+  id: string;
+  date: string;
+  name: string | null;
+  message_type: 'reasoning_message' | 'tool_call_message' | 'tool_return_message' | 'assistant_message';
+  reasoning?: string;
+  tool_call?: ToolCall;
+  tool_return?: ToolReturn;
+  content?: string;
+}
+
+export interface ChatResponseData {
+  messages: AgentMessage[];
+  usage: UsageStatistics;
+}
+
+interface ChatApiResponse {
   response: {
-    data?: {
-      messages: {
-        content?: string;
-        message_type: string;
-      }[];
-    };
+    data?: ChatResponseData;
   };
 }
 
 // --- API Function ---
 
-export async function sendChatMessage(payload: ChatRequestPayload, token: string): Promise<string> {
+export async function sendChatMessage(payload: ChatRequestPayload, token: string): Promise<ChatResponseData> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/chat`, {
       method: 'POST',
@@ -39,18 +70,50 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
       throw new Error(errorData.detail || `Request failed with status ${res.status}`);
     }
 
-    const data: ChatResponse = await res.json();
+    const data: ChatApiResponse = await res.json();
 
-    // Extract the assistant's final message from the response
-    const assistantMessage = data.response?.data?.messages?.find(
-      (msg) => msg.message_type === 'assistant_message' && msg.content
-    );
+    if (!data.response?.data) {
+      throw new Error("Resposta da API inválida: campo 'data' ausente.");
+    }
 
-    return assistantMessage?.content || "Não foi possível obter uma resposta do assistente.";
+    return data.response.data;
 
   } catch (error) {
     console.error("Error sending chat message:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    return `Erro: ${errorMessage}`;
+    // Retornar um objeto de erro que corresponda à estrutura esperada
+    return {
+      messages: [{
+        id: 'error',
+        date: new Date().toISOString(),
+        name: null,
+        message_type: 'assistant_message',
+        content: `Erro: ${errorMessage}`
+      }],
+      usage: { completion_tokens: 0, prompt_tokens: 0, total_tokens: 0, step_count: 0 }
+    };
+  }
+}
+
+export async function deleteAgentAssociation(userNumber: string, token: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/agent/${userNumber}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (res.status === 204) {
+      return { success: true };
+    }
+
+    const errorData = await res.json().catch(() => ({ detail: 'Failed to parse error response.' }));
+    return { success: false, message: errorData.detail || `Request failed with status ${res.status}` };
+
+  } catch (error) {
+    console.error("Error deleting agent association:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    return { success: false, message: errorMessage };
   }
 }
