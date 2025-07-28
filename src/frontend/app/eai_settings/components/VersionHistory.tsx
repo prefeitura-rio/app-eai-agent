@@ -80,7 +80,7 @@ export default function VersionHistory({ history, onSelectVersion, selectedVersi
                   {item.reason && <p><strong>Motivo:</strong> {item.reason}</p>}
                 </div>
                 {item.preview && (
-                  <p className="text-xs mt-2 p-2 bg-background/50 rounded-md truncate italic">
+                  <p className="text-xs mt-2 p-2 bg-background/50 rounded-md whitespace-pre-wrap break-words italic">
                     "{item.preview}"
                   </p>
                 )}
