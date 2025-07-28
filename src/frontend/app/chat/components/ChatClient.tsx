@@ -28,11 +28,10 @@ const JsonViewer = ({ data }: { data: object }) => (
   </pre>
 );
 
-const ToolReturnViewer = ({ toolReturn }: { toolReturn: any }) => {
+const ToolReturnViewer = ({ toolReturn }: { toolReturn: unknown }) => {
   try {
     const data = typeof toolReturn === 'string' ? JSON.parse(toolReturn) : toolReturn;
     
-    // Se não for um objeto, renderiza como string simples
     if (typeof data !== 'object' || data === null) {
       return <p className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
     }
@@ -54,8 +53,7 @@ const ToolReturnViewer = ({ toolReturn }: { toolReturn: any }) => {
         ))}
       </div>
     );
-  } catch (error) {
-    // Se o parsing falhar, renderiza como texto simples
+  } catch {
     return (
       <p className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">
         {String(toolReturn)}
@@ -135,7 +133,7 @@ export default function ChatClient() {
       toast.error("User Number é obrigatório para deletar um agente.");
       return;
     }
-    if (confirm(`Tem certeza que deseja deletar o agente para o usuário "${userNumber}"? A conversa será reiniciada.`)) {
+        if (confirm(`Tem certeza que deseja deletar o agente para o usuário '${userNumber}'? A conversa será reiniciada.`)) {
       const result = await deleteAgentAssociation(userNumber, token);
       if (result.success) {
         toast.success("Agente deletado com sucesso. A próxima mensagem criará um novo agente.");
@@ -175,7 +173,7 @@ export default function ChatClient() {
                                   <h4 className="font-semibold">{step.message_type.replace(/_/g, ' ')}</h4>
                                   {step.name && <Badge variant="secondary">{step.name}</Badge>}
                                 </div>
-                                {step.reasoning && <p className="italic text-muted-foreground text-xs pl-6">"{step.reasoning}"</p>}
+                                {step.reasoning && <p className="italic text-muted-foreground text-xs pl-6">{step.reasoning}</p>}
                                 {step.tool_call && <JsonViewer data={JSON.parse(step.tool_call.arguments)} />}
                                 {step.tool_return && <ToolReturnViewer toolReturn={step.tool_return} />}
                               </div>

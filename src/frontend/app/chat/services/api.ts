@@ -20,7 +20,7 @@ export interface ToolCall {
 }
 
 export interface ToolReturn {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface UsageStatistics {
