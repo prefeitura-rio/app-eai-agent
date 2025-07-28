@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import AgentSelector from './AgentSelector';

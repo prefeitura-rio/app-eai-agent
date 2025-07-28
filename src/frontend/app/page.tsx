@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FlaskConical, Bot, ArrowRight, MessageSquare } from 'lucide-react';
 import AppHeader from '@/app/components/AppHeader';
 

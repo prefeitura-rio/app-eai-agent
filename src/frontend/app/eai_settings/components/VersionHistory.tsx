@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/app/utils/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { GitCommit, Cpu, Tag } from 'lucide-react';
+import { Cpu, Tag } from 'lucide-react';
 
 export interface HistoryItem {
   version_id: string;

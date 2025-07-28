@@ -1,9 +1,8 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
 import { HeaderProvider, useHeader } from '@/app/contexts/HeaderContext';
-import AppHeader, { ActionButton } from '@/app/components/AppHeader';
+import AppHeader from '@/app/components/AppHeader';
 
 function LayoutContent({ children }: { children: ReactNode }) {
   const { title, subtitle, pageActions, setTitle, setSubtitle } = useHeader();
