@@ -14,15 +14,24 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSidebar } from '@/app/contexts/SidebarContext';
 
-const mainNavigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+}
+
+interface DisabledNavItem extends NavItem {
+  reason: string;
+}
+
+const mainNavigation: NavItem[] = [
   { name: 'Início', href: '/', icon: Home },
   { name: 'Experimentos', href: '/experiments', icon: FlaskConical },
   { name: 'Chat EAI', href: '/chat', icon: MessageSquare },
   { name: 'Configurações EAI', href: '/eai_settings', icon: Bot },
 ];
 
-const disabledNavigation = [
-];
+const disabledNavigation: DisabledNavItem[] = [];
 
 export function Sidebar() {
   const pathname = usePathname();
