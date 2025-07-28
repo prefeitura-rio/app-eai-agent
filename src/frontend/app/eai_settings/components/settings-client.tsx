@@ -223,7 +223,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         confirmText="Sim, resetar agente"
       />
 
-      <div className="grid md:grid-cols-[1fr_420px] gap-6 h-full py-6">
+      <div className="grid md:grid-cols-[1fr_420px] gap-6 h-full pb-6">
         <Card className="flex flex-col overflow-hidden">
           <CardHeader>
               <div className="flex items-center justify-between">

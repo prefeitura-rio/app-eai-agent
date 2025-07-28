@@ -29,17 +29,7 @@ export default function AgentConfiguration({
 }: AgentConfigurationProps) {
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="memory-blocks">Memory Blocks (JSON)</Label>
-        <Textarea
-          id="memory-blocks"
-          value={memoryBlocks}
-          onChange={(e) => onMemoryBlocksChange(e.target.value)}
-          disabled={disabled}
-          className="min-h-[120px] font-mono text-xs"
-          placeholder='[{"type": "buffer_window", "config": {"k": 5}}]'
-        />
-      </div>
+
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="tools">Tools (separado por vírgula)</Label>
@@ -71,6 +61,17 @@ export default function AgentConfiguration({
             placeholder="text-embedding-004"
           />
         </div>
+      </div>
+            <div className="space-y-2">
+        <Label htmlFor="memory-blocks">Memory Blocks (JSON)</Label>
+        <Textarea
+          id="memory-blocks"
+          value={memoryBlocks}
+          onChange={(e) => onMemoryBlocksChange(e.target.value)}
+          disabled={disabled}
+          className="h-[240px] resize-y font-mono text-xs"
+          placeholder='[{"type": "buffer_window", "config": {"k": 5}}]'
+        />
       </div>
     </div>
   );
