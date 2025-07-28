@@ -2,39 +2,7 @@
 
 Este documento descreve o plano passo a passo para migrar a base de código do frontend existente para usar `shadcn/ui`. O objetivo é melhorar a consistência da UI, a acessibilidade, a experiência do desenvolvedor e a velocidade de implementação de novos recursos.
 
-O objetivo desta fase é revisar cada página individualmente para corrigir problemas de layout, espaçamento, tipografia e garantir que a UI esteja coesa e profissional.
-
-### Checklist da Fase 0:
-
-- [x] **Página de Login (`/login`):**
-    - [x] Revisar o layout do formulário, espaçamento dos campos e alinhamento.
-    - [x] Garantir que o botão de "Entrar" e a mensagem de erro estejam bem estilizados.
-    - [x] Verificar a aparência do botão de troca de tema.
-
-- [x]  **Página Inicial (`/`):**
-    - [x] Ajustar o `AppHeader` para garantir que o título e as ações estejam bem alinhados.
-    - [x] Estilizar os cards de navegação (`Painel de Experimentos`, etc.) para que tenham uma aparência moderna e um efeito de hover claro.
-    - [x] Verificar a tipografia e o espaçamento da seção de descrição.
-
-- [x] **Página de Datasets (`/experiments`):**
-    - [x] Garantir que a tabela de datasets esteja bem formatada, com espaçamento adequado nas células e cabeçalhos.
-    - [x] Verificar o alinhamento da barra de pesquisa e do botão de download.
-    - [x] Ajustar o estilo dos `Badges` para que tenham um bom contraste e legibilidade.
-    - [x] Polir o `DropdownMenu` de ordenação.
-
-- [x] **Página de Detalhes do Dataset (`/experiments/[dataset_id]`):**
-    - [x] Estilizar as abas (`Tabs`) para que a aba ativa seja claramente destacada.
-    - [x] Garantir que as tabelas dentro de cada aba estejam bem formatadas.
-    - [x] Revisar o estilo dos blocos de código (`<pre>`) na aba "Exemplos" para garantir a legibilidade.
-
-- [ ] **Página de Detalhes do Experimento (`/experiments/[dataset_id]/[experiment_id]`):**
-    - [ ] Ajustar o layout de duas colunas para que seja responsivo e bem espaçado.
-    - [ ] Revisar o estilo da lista de "Runs" na barra lateral, incluindo o estado ativo/selecionado.
-    - [ ] Polir a aparência dos `Cards` de "Parâmetros", "Métricas" e "Avaliações".
-    - [ ] Garantir que o `Accordion` da "Cadeia de Pensamento" esteja visualmente agradável e fácil de usar.
-    - [ ] Estilizar a seção de "Comparação de Respostas".
-
-
+**É de EXTREMA IMPORTANCIA que as modificacoes em uma determinada pagina NAO AFETE as demais paginas!!!!!**
 
 # Frontend Development Knowledge Base & Best Practices
 
@@ -199,4 +167,86 @@ a:hover {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+---
+## 2. Estrutura do Repositório Frontend
+
+Esta seção detalha a estrutura de pastas e arquivos do frontend, construído com Next.js (App Router), e descreve a responsabilidade de cada página e componente principal.
+
+### 2.1. Visão Geral da Estrutura de Arquivos
+
 ```
+src/frontend/app/
+├─── page.tsx                 # Página inicial (/)
+├─── layout.tsx               # Layout principal da aplicação
+├─── globals.css              # Estilos globais e variáveis de tema Tailwind
+├─── components/              # Componentes React reutilizáveis
+│    ├─── AppHeader.tsx        # Cabeçalho da página (título, subtítulo, ações)
+│    ├─── ConditionalLayout.tsx# Renderiza o layout principal (com sidebar) condicionalmente
+│    ├─── sidebar.tsx          # Barra de navegação lateral
+│    └─── ui/                  # Componentes base do shadcn/ui
+├─── contexts/                # Contextos React para gerenciamento de estado global
+│    ├─── AuthContext.tsx      # Gerencia o estado de autenticação (token)
+│    ├─── HeaderContext.tsx    # Gerencia o conteúdo do AppHeader
+│    └─── SidebarContext.tsx   # Gerencia o estado da sidebar (expandido/recolhido)
+├─── login/
+│    └─── page.tsx             # Página de login (/login)
+├─── experiments/             # Seção de visualização de experimentos
+│    ├─── page.tsx             # Página principal de datasets (/experiments)
+│    ├─── layout.tsx           # Layout da seção de experimentos
+│    └─── [dataset_id]/
+│         ├─── page.tsx         # Página de um dataset específico (/experiments/[dataset_id])
+│         └─── [experiment_id]/
+│              ├─── page.tsx     # Página de detalhes de um experimento
+│              └─── components/  # Componentes específicos da página de detalhes
+│                   ├─── experiment-details-client.tsx
+│                   ├─── RunDetails.tsx
+│                   ├─── Comparison.tsx
+│                   ├─── Evaluations.tsx
+│                   └─── ReasoningTimeline.tsx
+└─── eai_settings/            # Seção para configuração dos agentes EAI
+     ├─── page.tsx             # Página principal de configurações (/eai_settings)
+     ├─── layout.tsx           # Layout da seção de configurações
+     └─── components/          # Componentes específicos da página de configurações
+          ├─── settings-client.tsx
+          ├─── AgentSelector.tsx
+          ├─── PromptEditor.tsx
+          ├─── AgentConfiguration.tsx
+          └─── VersionHistory.tsx
+```
+
+### 2.2. Descrição das Páginas e Componentes
+
+#### Estrutura Principal
+
+*   **`app/layout.tsx`**: O layout raiz que envolve toda a aplicação. É responsável por configurar os providers essenciais: `ThemeProvider` (para temas claro/escuro), `AuthProvider` (para autenticação), `HeaderProvider` (para o cabeçalho dinâmico), e `TooltipProvider`. Inclui o `ConditionalLayout` para aplicar a estrutura de navegação principal.
+*   **`app/page.tsx`**: A página inicial (`/`). Apresenta uma visão geral e cartões de navegação que direcionam o usuário para as seções principais, como "Painel de Experimentos" e "Configurações EAI".
+*   **`app/login/page.tsx`**: A página de login (`/login`). Contém um formulário simples para que o usuário insira seu Bearer Token de autenticação. É a única página que não utiliza o `ConditionalLayout` com a `Sidebar`.
+*   **`app/components/AppHeader.tsx`**: Um componente de cabeçalho reutilizável. Seu conteúdo (título, subtítulo e botões de ação) é controlado dinamicamente através do `HeaderContext`, permitindo que cada página defina seu próprio cabeçalho.
+*   **`app/components/sidebar.tsx`**: A barra de navegação lateral persistente. Oferece links para as seções principais, um botão para alternar o tema e a funcionalidade de logout. Seu estado (expandido ou recolhido) é gerenciado pelo `SidebarContext`.
+
+#### Seção de Experimentos (`/experiments`)
+
+*   **`experiments/layout.tsx`**: O layout específico para a seção de experimentos. Ele utiliza o `HeaderProvider` para garantir que o `AppHeader` reflita o contexto de navegação (seja na lista de datasets, na lista de experimentos ou nos detalhes de um experimento).
+*   **`experiments/page.tsx`**: A página de listagem de datasets (`/experiments`). Busca e exibe todos os datasets disponíveis em uma tabela que pode ser ordenada e filtrada. Clicar em um dataset navega para a página de detalhes do mesmo.
+*   **`experiments/[dataset_id]/page.tsx`**: Esta página (`/experiments/[dataset_id]`) exibe os detalhes de um dataset específico. Ela contém duas abas: uma para listar todos os experimentos associados àquele dataset e outra para listar todos os exemplos de dados.
+*   **`experiments/[dataset_id]/[experiment_id]/page.tsx`**: O coração da análise de dados. Esta página exibe todos os detalhes de uma única execução de experimento.
+    *   **`components/experiment-details-client.tsx`**: O componente cliente que organiza a UI. Possui um layout de duas colunas:
+        1.  **Barra Lateral**: Lista todas as "runs" (execuções individuais) do experimento. Clicar em uma run atualiza a área de conteúdo principal.
+        2.  **Conteúdo Principal**: Exibe os detalhes da run selecionada.
+    *   **`components/RunDetails.tsx`**: Agrega vários sub-componentes para mostrar uma visão completa da run, incluindo a mensagem do usuário, comparação de respostas, avaliações e a cadeia de pensamento.
+    *   **`components/Comparison.tsx`**: Mostra uma comparação lado a lado entre a resposta gerada pelo agente e a resposta de referência ("golden answer").
+    *   **`components/Evaluations.tsx`**: Apresenta as métricas de avaliação (anotações) para a run, como "Answer Completeness" e "Answer Similarity", dentro de um acordeão.
+    *   **`components/ReasoningTimeline.tsx`**: Visualiza a "cadeia de pensamento" do agente, mostrando cada passo lógico, chamada de ferramenta e retorno que levou à resposta final.
+
+#### Seção de Configurações EAI (`/eai_settings`)
+
+*   **`eai_settings/layout.tsx`**: O layout para a seção de configurações, que fornece o `AppHeader` para esta área.
+*   **`eai_settings/page.tsx`**: A página principal para gerenciar as configurações dos agentes (`/eai_settings`). Ela busca os tipos de agentes disponíveis e os dados de configuração do agente atualmente selecionado.
+    *   **`components/settings-client.tsx`**: O componente cliente central que gerencia toda a interatividade da página. Ele possui um layout de duas colunas:
+        1.  **Configuração Principal (Esquerda)**: Contém os controles para selecionar o tipo de agente, editar o system prompt e ajustar as configurações do agente.
+        2.  **Histórico de Versões (Direita)**: Lista todas as versões salvas para o agente selecionado.
+    *   **`components/AgentSelector.tsx`**: Um seletor que permite ao usuário escolher qual tipo de agente deseja configurar.
+    *   **`components/PromptEditor.tsx`**: Uma área de texto para visualizar e editar o system prompt do agente.
+    *   **`components/AgentConfiguration.tsx`**: Campos de formulário para definir parâmetros do agente, como `memory_blocks`, `tools`, `model_name`, etc.
+    *   **`components/VersionHistory.tsx`**: Exibe o histórico de versões. Clicar em uma versão carrega seu respectivo prompt e configuração nos campos de edição, permitindo a visualização ou reutilização de configurações passadas.
