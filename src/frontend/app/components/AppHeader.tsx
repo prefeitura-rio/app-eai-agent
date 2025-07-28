@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/app/utils/utils';
 
 export interface ActionButton {
@@ -25,7 +24,7 @@ interface AppHeaderProps {
 
 export default function AppHeader({ title, subtitle, actions = [], centerTitle = false }: AppHeaderProps) {
   return (
-    <header className="w-full border-b bg-background py-4 mb-6">
+    <header className="w-full border-b bg-background py-6 mb-8">
       <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div
           className={cn(
@@ -33,39 +32,32 @@ export default function AppHeader({ title, subtitle, actions = [], centerTitle =
             centerTitle && 'justify-center'
           )}
         >
-          <div>
-            <h1 className="truncate text-2xl font-semibold sm:text-3xl">{title}</h1>
-            {subtitle && (
-              <small
-                className="hidden min-w-0 truncate text-sm text-muted-foreground sm:block"
-                dangerouslySetInnerHTML={{ __html: subtitle }}
-              />
-            )}
-          </div>
+          <h1 className="truncate text-2xl font-semibold sm:text-3xl">{title}</h1>
+          {subtitle && (
+            <small
+              className="hidden min-w-0 truncate border-l-2 pl-4 text-base text-muted-foreground sm:block"
+              dangerouslySetInnerHTML={{ __html: subtitle }}
+            />
+          )}
         </div>
-        <div className="flex flex-shrink-0 items-center justify-center gap-4">
+        <div className="flex flex-shrink-0 items-center justify-center gap-3 mr-4">
           {actions.map(action => {
             const Icon = action.icon;
             const buttonVariant = action.variant || 'outline';
-            
-            const buttonContent = (
-              <>
-                {Icon && <Icon className={cn("h-4 w-4", action.iconClassName)} />}
-                <span>{action.label}</span>
-              </>
-            );
 
             if (action.href) {
               return (
-                <Button key={action.id} variant={buttonVariant} asChild>
-                  <Link href={action.href}>{buttonContent}</Link>
+                <Button key={action.id} variant={buttonVariant} size="icon" asChild>
+                  <Link href={action.href} title={action.label}>
+                    <Icon className={cn("h-4 w-4", action.iconClassName)} />
+                  </Link>
                 </Button>
               );
             }
             
             return (
-              <Button key={action.id} variant={buttonVariant} onClick={action.onClick}>
-                {buttonContent}
+              <Button key={action.id} variant={buttonVariant} size="icon" onClick={action.onClick} title={action.label}>
+                <Icon className={cn("h-4 w-4", action.iconClassName)} />
               </Button>
             );
           })}
