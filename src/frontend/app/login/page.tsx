@@ -41,8 +41,9 @@ function LoginForm() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth?token=${token}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth`, {
         method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
