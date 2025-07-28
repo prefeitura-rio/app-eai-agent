@@ -3,11 +3,17 @@
 import { API_BASE_URL } from '@/app/components/config';
 import { HistoryItem } from '../components/VersionHistory';
 
+interface MemoryBlock {
+  label: string;
+  value: string;
+  limit?: number;
+}
+
 // Interface para o payload de salvamento
 interface SavePayload {
   agent_type: string;
   prompt_content: string;
-  memory_blocks: any[];
+  memory_blocks: MemoryBlock[];
   tools: string[];
   model_name: string | null;
   embedding_name: string | null;
@@ -16,20 +22,38 @@ interface SavePayload {
   reason: string;
 }
 
+interface VersionDetails {
+  prompt: { content: string };
+  config: {
+    memory_blocks: MemoryBlock[];
+    tools: string[];
+    model_name: string;
+    embedding_name: string;
+  };
+}
+
+interface SaveResponse {
+  version_display: string;
+}
+
+interface ResetResponse {
+  message: string;
+}
+
 // Função genérica para requisições API
-async function apiRequest(url: string, options: RequestInit) {
+async function apiRequest<T>(url: string, options: RequestInit): Promise<T> {
   const res = await fetch(url, options);
-  const result = await res.json();
   if (!res.ok) {
-    throw new Error(result.detail || `HTTP error! status: ${res.status}`);
+    const errorResult = await res.json().catch(() => ({ detail: `HTTP error! status: ${res.status}` }));
+    throw new Error(errorResult.detail || `HTTP error! status: ${res.status}`);
   }
-  return result;
+  return res.json() as Promise<T>;
 }
 
 // Busca os detalhes de uma versão específica do histórico
 export const fetchVersionDetails = async (version: HistoryItem, agentType: string, token: string) => {
   const url = `${API_BASE_URL}/api/v1/unified-history/version/${version.version_number}?agent_type=${agentType}`;
-  return await apiRequest(url, {
+  return await apiRequest<VersionDetails>(url, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
 };
@@ -37,7 +61,7 @@ export const fetchVersionDetails = async (version: HistoryItem, agentType: strin
 // Salva as alterações do prompt e da configuração
 export const saveChanges = async (payload: SavePayload, token: string) => {
   const url = `${API_BASE_URL}/api/v1/unified-save`;
-  return await apiRequest(url, {
+  return await apiRequest<SaveResponse>(url, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -47,7 +71,7 @@ export const saveChanges = async (payload: SavePayload, token: string) => {
 // Reseta o agente para a configuração padrão
 export const resetAgent = async (agentType: string, updateAgents: boolean, token: string) => {
   const url = `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}&update_agents=${updateAgents}`;
-  return await apiRequest(url, {
+  return await apiRequest<ResetResponse>(url, {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` }
   });

@@ -56,7 +56,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [isFetchingVersion, setIsFetchingVersion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
   // Estados dos Modais
   const [isSaveModalOpen, setSaveModalOpen] = useState(false);
@@ -76,6 +75,28 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     return () => setPageActions([]);
   }, [setTitle, setSubtitle, setPageActions]);
 
+  const handleSelectVersion = useCallback(async (version: HistoryItem) => {
+    if (!token) return;
+    setIsFetchingVersion(true);
+    setSelectedVersionId(version.version_id);
+    try {
+      const versionDetails = await fetchVersionDetails(version, selectedAgent, token);
+      if (versionDetails.prompt) setPromptContent(versionDetails.prompt.content || '');
+      if (versionDetails.config) {
+        const config = versionDetails.config;
+        setMemoryBlocks(JSON.stringify(config.memory_blocks || [], null, 2));
+        setTools((config.tools || []).join(', '));
+        setModelName(config.model_name || '');
+        setEmbeddingName(config.embedding_name || '');
+      }
+      setIsDirty(false); // Reseta o estado 'dirty' após carregar uma versão
+    } catch  {
+      toast.error("Erro ao buscar versão", { description: "Não foi possível carregar os dados da versão selecionada." });
+    } finally {
+      setIsFetchingVersion(false);
+    }
+  }, [token, selectedAgent]);
+
   // Sincroniza o estado do cliente com as props, reseta o estado 'dirty' e seleciona a versão ativa
   useEffect(() => {
     setInitialData(agentData);
@@ -94,7 +115,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     if (activeVersion) {
       handleSelectVersion(activeVersion);
     }
-  }, [agentData, selectedAgentType]);
+  }, [agentData, selectedAgentType, handleSelectVersion]);
 
   // Verifica se há alterações não salvas
   useEffect(() => {
@@ -109,40 +130,8 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
 
 
   const handleAgentChange = (newAgentType: string) => {
-    if (isDirty) {
-      if (!confirm('Você tem alterações não salvas. Deseja continuar e descartá-las?')) {
-        return;
-      }
-    }
     startTransition(() => router.push(`/eai_settings?agent_type=${newAgentType}`));
   };
-
-  const handleSelectVersion = useCallback(async (version: HistoryItem) => {
-    if (isDirty) {
-      if (!confirm('Você tem alterações não salvas. Deseja continuar e descartá-las?')) {
-        return;
-      }
-    }
-    if (!token) return;
-    setIsFetchingVersion(true);
-    setSelectedVersionId(version.version_id);
-    try {
-      const versionDetails = await fetchVersionDetails(version, selectedAgent, token);
-      if (versionDetails.prompt) setPromptContent(versionDetails.prompt.content || '');
-      if (versionDetails.config) {
-        const config = versionDetails.config;
-        setMemoryBlocks(JSON.stringify(config.memory_blocks || [], null, 2));
-        setTools((config.tools || []).join(', '));
-        setModelName(config.model_name || '');
-        setEmbeddingName(config.embedding_name || '');
-      }
-      setIsDirty(false); // Reseta o estado 'dirty' após carregar uma versão
-    } catch (error) {
-      toast.error("Erro ao buscar versão", { description: "Não foi possível carregar os dados da versão selecionada." });
-    } finally {
-      setIsFetchingVersion(false);
-    }
-  }, [token, selectedAgent, isDirty]);
 
   const handleOpenSaveModal = () => {
     setAuthor('');
@@ -174,10 +163,10 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       const result = await saveChanges(payload, token);
       toast.success("Sucesso!", { description: `Nova versão ${result.version_display} salva.` });
       setSaveModalOpen(false);
-      router.refresh();
       window.location.reload();
-    } catch (error: any) {
-      toast.error("Erro ao Salvar", { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      toast.error("Erro ao Salvar", { description: errorMessage });
     } finally {
       setIsSaving(false);
     }
@@ -191,8 +180,9 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       toast.success("Sucesso!", { description: result.message || "Agente resetado com sucesso." });
       setResetModalOpen(false);
       router.refresh();
-    } catch (error: any) {
-      toast.error("Erro ao Resetar", { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      toast.error("Erro ao Resetar", { description: errorMessage });
     } finally {
       setIsSaving(false);
     }
