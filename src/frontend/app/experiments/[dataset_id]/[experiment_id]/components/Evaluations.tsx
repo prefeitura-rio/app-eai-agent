@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { marked } from 'marked';
 import { Annotation } from '@/app/components/types';
@@ -20,7 +18,7 @@ const isJsonString = (str: string) => {
     return true;
 };
 
-export default function Evaluations({ annotations }: EvaluationsProps) {
+export default async function Evaluations({ annotations }: EvaluationsProps) {
     if (!annotations || annotations.length === 0) {
         return <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>;
     }
@@ -43,6 +41,13 @@ export default function Evaluations({ annotations }: EvaluationsProps) {
         .map((ann, index) => `item-${index}`)
         .filter((_, index) => !["Golden Link in Answer", "Golden Link in Tool Calling"].includes(sortedAnnotations[index].name));
 
+    const renderedExplanations = await Promise.all(sortedAnnotations.map(async (ann) => {
+        if (typeof ann.explanation === 'string' && !isJsonString(ann.explanation)) {
+            return await marked(ann.explanation);
+        }
+        return ann.explanation;
+    }));
+
     return (
         <Accordion type="multiple" defaultValue={defaultOpen}>
             {sortedAnnotations.map((ann, index) => (
@@ -63,7 +68,7 @@ export default function Evaluations({ annotations }: EvaluationsProps) {
                                         {JSON.stringify(JSON.parse(ann.explanation), null, 2)}
                                     </pre>
                                 ) : typeof ann.explanation === 'string' ? (
-                                    <div dangerouslySetInnerHTML={{ __html: marked(ann.explanation) }} />
+                                    <div dangerouslySetInnerHTML={{ __html: renderedExplanations[index] as string }} />
                                 ) : (
                                     <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap break-all text-foreground">
                                         {JSON.stringify(ann.explanation, null, 2)}

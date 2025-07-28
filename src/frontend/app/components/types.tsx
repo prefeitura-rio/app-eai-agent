@@ -33,6 +33,33 @@ export interface Example {
   };
 }
 
+export interface Annotation {
+  name: string;
+  score: number;
+  explanation: string | Record<string, unknown>;
+}
+
+export interface OrderedStep {
+  type: 'reasoning_message' | 'tool_call_message' | 'tool_return_message' | 'assistant_message' | 'letta_usage_statistics';
+  message: {
+    reasoning?: string;
+    tool_call?: {
+      name: string;
+      arguments: Record<string, unknown>;
+    };
+    name?: string;
+    tool_return?: {
+      text?: string;
+      web_search_queries?: string[];
+      sources?: unknown[];
+    };
+    content?: string;
+    total_tokens?: number;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+  };
+}
+
 export interface Run {
   example_id_clean: string;
   input: {
@@ -43,21 +70,28 @@ export interface Run {
   };
   output: {
     agent_output?: {
-      ordered?: Array<Record<string, unknown>>;
+      ordered?: OrderedStep[];
+    };
+    metadata?: {
+      id?: string;
     };
   };
-  annotations: {
-    name: string;
-    score: number;
-    explanation: string | Record<string, unknown>;
-  }[];
+  annotations: Annotation[];
+  tags?: string[];
 }
 
+export interface ExperimentMetadata {
+  eval_model?: string;
+  final_repose_model?: string;
+  temperature?: number;
+  tools?: string[];
+  system_prompt?: string;
+  system_prompt_answer_similatiry?: string;
+}
 
 export interface ExperimentData {
-  experiment_metadata: Record<string, unknown>;
+  experiment_metadata: ExperimentMetadata | null;
   experiment: Run[];
   dataset_name: string;
   experiment_name: string;
-
 }

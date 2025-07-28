@@ -16,7 +16,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col h-screen">
       <AppHeader
-        title={title}
+        title={title || 'Carregando...'}
         subtitle={subtitle}
         actions={pageActions}
       />

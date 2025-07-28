@@ -250,6 +250,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
               tools={tools} onToolsChange={setTools}
               modelName={modelName} onModelNameChange={setModelName}
               embeddingName={embeddingName} onEmbeddingNameChange={setEmbeddingName}
+              updateAgents={updateAgents} onUpdateAgentsChange={setUpdateAgents}
               disabled={isLoading}
             />
           </CardContent>
