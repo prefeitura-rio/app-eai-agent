@@ -1,34 +1,29 @@
 'use client';
 
 import React from 'react';
-import styles from './ProgressBar.module.css';
+import { Progress } from "@/components/ui/progress";
+import { getScoreProgressClass } from '@/app/utils/utils';
 
 interface ProgressBarProps {
-  score: number;
+  score: number | null | undefined;
   metricName: string;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ score, metricName }) => {
-  const percentage = (score * 100).toFixed(0);
-  let barClass = styles.metric_default;
-  if (score >= 0.8) {
-    barClass = styles.metric_high;
-  } else if (score >= 0.5) {
-    barClass = styles.metric_mid;
-  } else {
-    barClass = styles.metric_low;
-  }
+  const isValidScore = typeof score === 'number' && !isNaN(score);
+  const displayScore = isValidScore ? score.toFixed(2) : '—';
+  const percentage = isValidScore ? score * 100 : 0;
+  const indicatorClass = isValidScore ? getScoreProgressClass(score) : 'bg-muted';
 
   return (
-    <div>
-      <div className="fw-bold mb-1">{score.toFixed(2)}</div>
-      <div className={styles.progress_container}>
-        <div
-          className={`${styles.progress_bar} ${barClass}`}
-          style={{ width: `${percentage}%` }}
-          title={`${metricName}: ${score.toFixed(3)}`}
-        ></div>
-      </div>
+    <div className="flex flex-col items-center gap-1">
+      <span className="font-bold text-sm">{displayScore}</span>
+      <Progress 
+        value={percentage} 
+        className="w-24 h-2" 
+        indicatorClassName={indicatorClass}
+        title={isValidScore ? `${metricName}: ${score.toFixed(3)}` : `${metricName}: N/A`}
+      />
     </div>
   );
 };

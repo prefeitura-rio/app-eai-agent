@@ -1,6 +1,6 @@
 from typing import Optional
-
-from fastapi import APIRouter, Depends
+import logging
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 
 from src.services.phoenix.dependencies import (
@@ -12,7 +12,7 @@ from src.core.security.dependencies import validar_token
 
 # Configurações e constantes
 router = APIRouter(dependencies=[Depends(validar_token)], tags=["Phoenix Experiments"])
-
+logger = logging.getLogger(__name__)
 
 # ==================== ROTAS ====================
 
@@ -50,27 +50,31 @@ async def get_experiment_data(
     data_processor: DataProcessorDep,
 ):
     """Dados de um experimento específico."""
-    # Buscar dados do experimento
-    raw_data = await phoenix_service.get_experiment_json_data(
-        experiment_id=experiment_id
-    )
+    try:
+        # Buscar dados do experimento
+        raw_data = await phoenix_service.get_experiment_json_data(
+            experiment_id=experiment_id
+        )
 
-    # Processar dados
-    processed_data = data_processor.process_experiment_output(output=raw_data)
+        # Processar dados
+        processed_data = data_processor.process_experiment_output(output=raw_data)
 
-    # Enriquecer com informações adicionais
-    result = ExperimentData(
-        dataset_id=dataset_id,
-        experiment_id=experiment_id,
-        dataset_name=await phoenix_service.get_dataset_name(dataset_id=dataset_id),
-        experiment_name=await phoenix_service.get_experiment_name(
-            dataset_id=dataset_id, experiment_id=experiment_id
-        ),
-        experiment_metadata=processed_data.get("experiment_metadata", {}),
-        experiment=processed_data.get("experiment", []),
-    )
+        # Enriquecer com informações adicionais
+        result = ExperimentData(
+            dataset_id=dataset_id,
+            experiment_id=experiment_id,
+            dataset_name=await phoenix_service.get_dataset_name(dataset_id=dataset_id),
+            experiment_name=await phoenix_service.get_experiment_name(
+                dataset_id=dataset_id, experiment_id=experiment_id
+            ),
+            experiment_metadata=processed_data.get("experiment_metadata", {}),
+            experiment=processed_data.get("experiment", []),
+        )
 
-    return result
+        return result
+    except Exception as e:
+        logger.error(f"Failed to get experiment data for experiment_id={experiment_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred while fetching data for experiment {experiment_id}.")
 
 
 @router.get("/experiment_data_clean", response_model=ExperimentData)

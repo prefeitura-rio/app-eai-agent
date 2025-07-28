@@ -3,10 +3,22 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { exportToCsv } from '@/app/utils/csv';
 import { Experiment, Example } from '@/app/components/types';
-import sharedStyles from '@/app/experiments/page.module.css';
-import pageStyles from '../page.module.css';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import ProgressBar from './ProgressBar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Download, Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 
 interface DatasetExperimentsClientProps {
   experiments: Experiment[];
@@ -20,13 +32,13 @@ type SortKey = keyof Experiment | 'metric';
 export default function DatasetExperimentsClient({ 
   experiments: initialExperiments, 
   examples: initialExamples, 
-  datasetId 
+  datasetId,
+  datasetName
 }: DatasetExperimentsClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'experiments' | 'examples'>('experiments');
   
   const [experiments] = useState<Experiment[]>(initialExperiments);
-  const [expSearchTerm, setExpSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [expSortConfig, setExpSortConfig] = useState<{ 
     key: SortKey | null; 
     direction: 'ascending' | 'descending'; 
@@ -34,7 +46,6 @@ export default function DatasetExperimentsClient({
   }>({ key: 'createdAt', direction: 'descending' });
 
   const [examples] = useState<Example[]>(initialExamples);
-  const [exSearchTerm, setExSearchTerm] = useState('');
 
   const allMetrics = useMemo(() => {
     const metrics = new Set<string>();
@@ -46,14 +57,14 @@ export default function DatasetExperimentsClient({
 
   const filteredAndSortedExperiments = useMemo(() => {
     let sortableItems = [...experiments];
-    if (expSearchTerm) {
+    if (searchTerm) {
       sortableItems = sortableItems.filter(item =>
-        item.name.toLowerCase().includes(expSearchTerm.toLowerCase())
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     if (expSortConfig.key) {
-      sortableItems.sort((a, b) => {
-        let aValue: any, bValue: any;
+      sortableItems.sort((a: Experiment, b: Experiment) => {
+        let aValue: string | number, bValue: string | number;
         if (expSortConfig.key === 'metric') {
           const metricName = expSortConfig.metricName!;
           aValue = a.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
@@ -68,15 +79,15 @@ export default function DatasetExperimentsClient({
       });
     }
     return sortableItems;
-  }, [experiments, expSearchTerm, expSortConfig]);
+  }, [experiments, searchTerm, expSortConfig]);
 
   const filteredExamples = useMemo(() => {
-    if (!exSearchTerm) return examples;
+    if (!searchTerm) return examples;
     return examples.filter(ex => {
       const content = JSON.stringify(ex.latestRevision.input) + JSON.stringify(ex.latestRevision.output);
-      return content.toLowerCase().includes(exSearchTerm.toLowerCase());
+      return content.toLowerCase().includes(searchTerm.toLowerCase());
     });
-  }, [examples, exSearchTerm]);
+  }, [examples, searchTerm]);
 
   const requestExpSort = (key: SortKey, metricName?: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -87,16 +98,25 @@ export default function DatasetExperimentsClient({
     }
     setExpSortConfig({ key, direction, metricName });
   };
-
-  const getSortIndicator = (key: SortKey, metricName?: string) => {
-    const currentSortKey = metricName ? `metric-${metricName}` : key;
-    const prevSortKey = expSortConfig.metricName ? `metric-${expSortConfig.metricName}` : expSortConfig.key;
-    if (currentSortKey !== prevSortKey) return null;
-    return expSortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
-  };
   
   const handleExpRowClick = (experimentId: string) => {
     router.push(`/experiments/${datasetId}/${experimentId}`);
+  };
+
+  const handleDownload = () => {
+    const dataToExport = filteredAndSortedExperiments.map(exp => ({
+        id: exp.id,
+        name: exp.name,
+        description: exp.description,
+        createdAt: new Date(exp.createdAt).toLocaleString('pt-BR'),
+        runCount: exp.runCount,
+        errorRate: exp.errorRate,
+        ...exp.annotationSummaries.reduce((acc, ann) => {
+            acc[ann.annotationName] = ann.meanScore;
+            return acc;
+        }, {} as Record<string, number>)
+    }));
+    exportToCsv(`experiments-${datasetName}.csv`, dataToExport);
   };
 
   const formatObjectForDisplay = (obj: Record<string, unknown>) => {
@@ -104,169 +124,138 @@ export default function DatasetExperimentsClient({
     return JSON.stringify(obj, null, 2);
   };
 
+  const SortableHeader = ({ sortKey, metricName, children, className }: { sortKey: SortKey, metricName?: string, children: React.ReactNode, className?: string }) => {
+    const isSorted = expSortConfig.metricName ? expSortConfig.metricName === metricName : expSortConfig.key === sortKey;
+    return (
+        <TableHead className={className}>
+            <Button variant="ghost" onClick={() => requestExpSort(sortKey, metricName)} className="w-full justify-start px-2 text-xs uppercase">
+                {children}
+                {isSorted && (
+                    expSortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                )}
+            </Button>
+        </TableHead>
+    );
+  };
+
   return (
-    <div className={sharedStyles.container}>
-      <div className={pageStyles.tabsContainer}>
-        <button
-          className={`${pageStyles.tabButton} ${activeTab === 'experiments' ? pageStyles.activeTab : ''}`}
-          onClick={() => setActiveTab('experiments')}
-        >
-          Experimentos ({filteredAndSortedExperiments.length})
-        </button>
-        <button
-          className={`${pageStyles.tabButton} ${activeTab === 'examples' ? pageStyles.activeTab : ''}`}
-          onClick={() => setActiveTab('examples')}
-        >
-          Exemplos ({filteredExamples.length})
-        </button>
-      </div>
-
-      <div className={pageStyles.tabContent}>
-        {activeTab === 'experiments' && (
-          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
-            <div className={sharedStyles.cardHeader}>
-              <div className={sharedStyles.headerLeft}>
-                <h5 className={sharedStyles.cardTitle}>Experimentos</h5>
-                <div className={sharedStyles.search_container}>
-                  <i className="bi bi-search"></i>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Filtrar por nome..."
-                    value={expSearchTerm}
-                    onChange={(e) => setExpSearchTerm(e.target.value)}
-                  />
+    <Tabs defaultValue="experiments" className="w-full space-y-4">
+        <div className="flex items-center justify-between">
+            <TabsList>
+                <TabsTrigger value="experiments">Experimentos ({filteredAndSortedExperiments.length})</TabsTrigger>
+                <TabsTrigger value="examples">Exemplos ({filteredExamples.length})</TabsTrigger>
+        </TabsList>
+        <div className="flex items-center justify-between gap-4">
+              <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Filtrar..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
                 </div>
-              </div>
-              <button className={sharedStyles.actionButton} title="Download CSV">
-                <i className="bi bi-download"></i>
-              </button>
-            </div>
-            <div className={`${sharedStyles.table_responsive} ${pageStyles.table_responsive}`}>
-              <table className={`table table-hover ${sharedStyles.table}`}>
-                <thead>
-                  <tr>
-                    <th onClick={() => requestExpSort('name')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>
-                      Nome{getSortIndicator('name')}
-                    </th>
-                    <th onClick={() => requestExpSort('description')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignLeft}`}>
-                      Descrição{getSortIndicator('description')}
-                    </th>
-                    <th onClick={() => requestExpSort('createdAt')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
-                      Criado em{getSortIndicator('createdAt')}
-                    </th>
-                    {allMetrics.map(metric => (
-                      <th key={metric} onClick={() => requestExpSort('metric', metric)} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
-                        {metric}{getSortIndicator('metric', metric)}
-                      </th>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={handleDownload}>
+                      <Download className="h-4 w-4 text-success" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Download CSV</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
+                      <RefreshCw className="h-4 w-4 text-primary" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Atualizar</p></TooltipContent>
+                </Tooltip>
+          </div>
+        </div>
+      <TabsContent value="experiments">
+        <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <SortableHeader sortKey="name" className="w-[250px]">Nome</SortableHeader>
+                      <SortableHeader sortKey="description">Descrição</SortableHeader>
+                      <SortableHeader sortKey="createdAt" className="text-center w-[150px]">Criado em</SortableHeader>
+                      {allMetrics.map(metric => (
+                        <SortableHeader key={metric} sortKey="metric" metricName={metric} className="text-center w-[150px]">
+                          {metric}
+                        </SortableHeader>
+                      ))}
+                      <SortableHeader sortKey="runCount" className="text-center w-[120px]">Execuções</SortableHeader>
+                      <SortableHeader sortKey="errorRate" className="text-center w-[120px]">Erro</SortableHeader>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAndSortedExperiments.map((exp) => (
+                      <TableRow key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="cursor-pointer">
+                        <TableCell>
+                          <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
+                            #{exp.sequenceNumber} {exp.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>
+                        <TableCell className="text-center text-muted-foreground text-xs">
+                        <div>{new Date(exp.createdAt).toLocaleDateString('pt-BR')}</div>
+                        <div>{new Date(exp.createdAt).toLocaleTimeString('pt-BR')}</div>
+                    </TableCell>
+                        {allMetrics.map(metric => {
+                          const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
+                          return (
+                            <TableCell key={metric} className="text-center">
+                              <ProgressBar score={ann ? ann.meanScore : 0} metricName={metric} />
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-center text-muted-foreground">{exp.runCount}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{(exp.errorRate * 100).toFixed(2)}%</TableCell>
+                      </TableRow>
                     ))}
-                    <th onClick={() => requestExpSort('runCount')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
-                      Execuções{getSortIndicator('runCount')}
-                    </th>
-                    {/* <th onClick={() => requestExpSort('averageRunLatencyMs')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
-                      Latência{getSortIndicator('averageRunLatencyMs')}
-                    </th> */}
-                    <th onClick={() => requestExpSort('errorRate')} className={`${sharedStyles.sortable_header} ${sharedStyles.textAlignCenter}`}>
-                      Erro{getSortIndicator('errorRate')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedExperiments.map((exp) => (
-                    <tr key={exp.id} onClick={() => handleExpRowClick(exp.id)}>
-                      <td className={sharedStyles.textAlignLeft}>
-                        <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className={sharedStyles.link}>
-                          #{exp.sequenceNumber} {exp.name}
-                        </Link>
-                      </td>
-                      <td className={sharedStyles.textAlignLeft}>
-                        {exp.description || 'Sem descrição'}
-                      </td>
-                      <td className={sharedStyles.textAlignCenter}>
-                        {new Date(exp.createdAt).toLocaleString('pt-BR')}
-                      </td>
-                      {allMetrics.map(metric => {
-                        const ann = exp.annotationSummaries.find(a => a.annotationName === metric);
-                        return (
-                          <td key={metric} className={sharedStyles.textAlignCenter}>
-                            <ProgressBar score={ann ? ann.meanScore : 0} metricName={metric} />
-                          </td>
-                        );
-                      })}
-                      <td className={sharedStyles.textAlignCenter}>{exp.runCount}</td>
-                      {/* <td className={sharedStyles.textAlignCenter}>
-                        {exp.averageRunLatencyMs ? `${exp.averageRunLatencyMs.toFixed(2)}ms` : 'N/A'}
-                      </td> */}
-                      <td className={sharedStyles.textAlignCenter}>
-                        {(exp.errorRate * 100).toFixed(2)}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </TableBody>
+                </Table>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'examples' && (
-          <div className={`${sharedStyles.card} ${pageStyles.tabCard}`}>
-            <div className={sharedStyles.cardHeader}>
-              <div className={sharedStyles.headerLeft}>
-                <h5 className={sharedStyles.cardTitle}>Exemplos</h5>
-                <div className={sharedStyles.search_container}>
-                  <i className="bi bi-search"></i>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Filtrar por conteúdo..."
-                    value={exSearchTerm}
-                    onChange={(e) => setExSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-              <button className={sharedStyles.actionButton} title="Download CSV">
-                <i className="bi bi-download"></i>
-              </button>
+        </TabsContent>
+      <TabsContent value="examples">
+        <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <TableHead className="w-[200px]">ID</TableHead>
+                      <TableHead>Input</TableHead>
+                      <TableHead>Output</TableHead>
+                      <TableHead>Metadata</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredExamples.map((ex) => (
+                      <TableRow key={ex.id}>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{ex.id}</TableCell>
+                        <TableCell>
+                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                            {formatObjectForDisplay(ex.latestRevision.input)}
+                          </pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                            {formatObjectForDisplay(ex.latestRevision.output)}
+                          </pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                            {formatObjectForDisplay(ex.latestRevision.metadata)}
+                          </pre>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
             </div>
-            <div className={`${sharedStyles.table_responsive} ${pageStyles.table_responsive}`}>
-              <table className={`table table-hover ${sharedStyles.table}`} style={{ tableLayout: 'fixed' }}>
-                <thead>
-                  <tr>
-                    <th className={sharedStyles.textAlignLeft} style={{ width: '200px' }}>ID</th>
-                    <th className={sharedStyles.textAlignLeft} style={{ width: '300px' }}>Input</th>
-                    <th className={sharedStyles.textAlignLeft} style={{ width: '300px' }}>Output</th>
-                    <th className={sharedStyles.textAlignLeft}>Metadata</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExamples.map((ex) => (
-                    <tr key={ex.id}>
-                      <td className={sharedStyles.textAlignLeft} style={{ wordBreak: 'break-all' }}>
-                        {ex.id}
-                      </td>
-                      <td className={sharedStyles.textAlignLeft}>
-                        <pre className={pageStyles.preformatted}>
-                          {formatObjectForDisplay(ex.latestRevision.input)}
-                        </pre>
-                      </td>
-                      <td className={sharedStyles.textAlignLeft}>
-                        <pre className={pageStyles.preformatted}>
-                          {formatObjectForDisplay(ex.latestRevision.output)}
-                        </pre>
-                      </td>
-                      <td className={sharedStyles.textAlignLeft}>
-                        <pre className={pageStyles.preformatted}>
-                          {formatObjectForDisplay(ex.latestRevision.metadata)}
-                        </pre>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        </TabsContent>
+    </Tabs>
   );
 }

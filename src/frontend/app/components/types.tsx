@@ -53,7 +53,11 @@ export interface Run {
   }[];
 }
 
+
 export interface ExperimentData {
   experiment_metadata: Record<string, unknown>;
   experiment: Run[];
+  dataset_name: string;
+  experiment_name: string;
+
 }

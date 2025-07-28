@@ -2,29 +2,36 @@
 'use client';
 
 import React from 'react';
-import styles from './JsonViewerModal.module.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface JsonViewerModalProps {
-  data: any;
-  onClose: () => void;
+  data: unknown;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function JsonViewerModal({ data, onClose }: JsonViewerModalProps) {
+export default function JsonViewerModal({ data, open, onOpenChange }: JsonViewerModalProps) {
   return (
-    <div className={styles.modal_backdrop} onClick={onClose}>
-      <div className={styles.modal_content} onClick={e => e.stopPropagation()}>
-        <div className={styles.modal_header}>
-          <h4 className={styles.modal_title}>JSON Completo</h4>
-          <button onClick={onClose} className={styles.close_button}>
-            <i className="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div className={styles.modal_body}>
-          <pre>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[60vw]">
+        <DialogHeader>
+          <DialogTitle>JSON Completo</DialogTitle>
+          <DialogDescription>
+            Visualização completa do objeto JSON.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto rounded-md bg-gray-950 p-4">
+          <pre className="text-sm text-gray-300">
             <code>{JSON.stringify(data, null, 2)}</code>
           </pre>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

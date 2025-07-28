@@ -2,69 +2,73 @@
 
 import React from 'react';
 import Link from 'next/link';
-import styles from './AppHeader.module.css';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/app/utils/utils';
 
 export interface ActionButton {
   id: string;
   label: string;
-  icon: string;
+  icon: React.ElementType;
   href?: string;
   onClick?: () => void;
-  variant?: 'default' | 'logout';
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'success';
+  iconClassName?: string;
+  className?: string;
+  showLabel?: boolean;
 }
 
 interface AppHeaderProps {
   title: string;
   subtitle?: string | null;
-  actions: ActionButton[];
+  actions?: ActionButton[];
   centerTitle?: boolean;
 }
 
-export default function AppHeader({ title, subtitle, actions, centerTitle = false }: AppHeaderProps) {
-  const getButtonClass = (action: ActionButton) => {
-    switch (action.id) {
-      case 'home':
-        return styles.home_btn;
-      case 'back':
-        return styles.back_btn;
-      case 'refresh':
-        return styles.refresh_btn;
-      case 'theme':
-        return styles.theme_btn;
-      case 'logout':
-        return styles.logout_btn;
-      case 'download-json':
-        return styles.download_btn;
-      default:
-        return styles.action_btn;
-    }
-  };
-
-  const titleSectionClass = `${styles.title_section} ${centerTitle ? styles.title_section_center : ''}`;
-
+export default function AppHeader({ title, subtitle, actions = [], centerTitle = false }: AppHeaderProps) {
   return (
-    <header className={styles.header}>
-      <div className={styles.header_content}>
-        <div className={titleSectionClass}>
-          <h1 className={styles.title}>{title}</h1>
-          {subtitle && <small className={styles.dataset_name} dangerouslySetInnerHTML={{ __html: subtitle }} />}
+    <header className="w-full border-b bg-background py-6 mb-8">
+      <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div
+          className={cn(
+            'flex min-w-0 flex-grow items-center gap-4',
+            centerTitle && 'justify-center'
+          )}
+        >
+          <h1 className="truncate text-2xl font-semibold sm:text-3xl">{title}</h1>
+          {subtitle && (
+            <small
+              className="hidden min-w-0 truncate border-l-2 pl-4 text-base text-muted-foreground sm:block"
+              dangerouslySetInnerHTML={{ __html: subtitle }}
+            />
+          )}
         </div>
-        <div className={styles.actions_section}>
+        <div className="flex flex-shrink-0 items-center justify-center gap-3 mr-4">
           {actions.map(action => {
-            const buttonClass = getButtonClass(action);
-            
+            const Icon = action.icon;
+            const buttonVariant = action.variant || 'outline';
+            const buttonSize = action.showLabel ? 'default' : 'icon';
+
+            const buttonContent = (
+              <>
+                <Icon className={cn("h-4 w-4", action.iconClassName)} />
+                {action.showLabel && <span>{action.label}</span>}
+              </>
+            );
+
             if (action.href) {
               return (
-                <Link key={action.id} href={action.href} className={buttonClass} data-tooltip={action.label}>
-                  <i className={`bi ${action.icon}`}></i>
-                </Link>
+                <Button key={action.id} variant={buttonVariant} size={buttonSize} className={action.className} asChild>
+                  <Link href={action.href} title={action.label}>
+                    {buttonContent}
+                  </Link>
+                </Button>
               );
             }
             
             return (
-              <button key={action.id} onClick={action.onClick} className={buttonClass} data-tooltip={action.label}>
-                <i className={`bi ${action.icon}`}></i>
-              </button>
+              <Button key={action.id} variant={buttonVariant} size={buttonSize} onClick={action.onClick} title={action.label} className={action.className}>
+                {buttonContent}
+              </Button>
             );
           })}
         </div>
@@ -72,7 +76,3 @@ export default function AppHeader({ title, subtitle, actions, centerTitle = fals
     </header>
   );
 }
-
-
-
-

@@ -4,7 +4,21 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dataset } from '@/app/components/types';
 import { exportToCsv } from '@/app/utils/csv';
-import styles from '../page.module.css';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Search, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
+import { cn } from '@/app/utils/utils';
+import Link from 'next/link';
 
 interface DatasetsClientProps {
   datasets: Dataset[];
@@ -20,6 +34,14 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     setDatasets(initialDatasets);
   }, [initialDatasets]);
 
+  const handleSort = (key: keyof Dataset) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const filteredAndSortedDatasets = useMemo(() => {
     let sortableItems = [...datasets];
 
@@ -34,14 +56,11 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
         const aValue = a[sortConfig.key!];
         const bValue = b[sortConfig.key!];
 
-        if (aValue === null) return 1;
-        if (bValue === null) return -1;
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
+        
+        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
       });
     }
@@ -49,90 +68,99 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     return sortableItems;
   }, [datasets, searchTerm, sortConfig]);
 
-  const requestSort = (key: keyof Dataset) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
-
   const handleRowClick = (datasetId: string) => {
     router.push(`/experiments/${datasetId}`);
-  };
-
-  const getSortIndicator = (key: keyof Dataset) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
   };
 
   const handleDownload = () => {
     exportToCsv('datasets.csv', filteredAndSortedDatasets);
   };
 
+  const tableHeaders: { key: keyof Dataset; label: string; className?: string }[] = [
+    { key: 'name', label: 'Nome', className: 'w-[30%]' },
+    { key: 'description', label: 'Descrição' },
+    { key: 'exampleCount', label: 'Exemplos', className: 'text-center w-[120px]' },
+    { key: 'experimentCount', label: 'Experimentos', className: 'text-center w-[120px]' },
+    { key: 'createdAt', label: 'Criado em', className: 'text-center w-[180px]' },
+  ];
+
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <div className={styles.headerLeft}>
-            <h5 className={styles.cardTitle}>Datasets Disponíveis ({filteredAndSortedDatasets.length})</h5>
-            <div className={styles.search_container}>
-              <i className="bi bi-search"></i>
-              <input
+    <div className="space-y-4">
+        <div className="flex items-center justify-end gap-4">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
                 type="text"
-                className="form-control"
-                placeholder="Filtrar por nome do dataset..."
+                placeholder="Filtrar por nome..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
               />
             </div>
-          </div>
-          <button className={styles.actionButton} title="Download CSV" onClick={handleDownload}>
-            <i className="bi bi-download"></i>
-          </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={handleDownload} size="icon">
+                  <Download className="h-4 w-4 text-success" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Download CSV</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={() => window.location.reload()} size="icon">
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Atualizar</p></TooltipContent>
+            </Tooltip>
         </div>
-        <div className={`card-body p-0 ${styles.table_responsive}`}>
-          <table className={`table table-hover ${styles.table}`}>
-            <thead className="table-light">
-              <tr>
-                <th onClick={() => requestSort('name')} className={`${styles.sortable_header} ${styles.textAlignLeft}`}>
-                  Nome {getSortIndicator('name')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignLeft}`} onClick={() => requestSort('description')}>
-                  Descrição {getSortIndicator('description')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('exampleCount')}>
-                  Exemplos {getSortIndicator('exampleCount')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('experimentCount')}>
-                  Experimentos {getSortIndicator('experimentCount')}
-                </th>
-                <th scope="col" className={`${styles.sortable_header} ${styles.textAlignCenter}`} onClick={() => requestSort('createdAt')}>
-                  Criado em {getSortIndicator('createdAt')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAndSortedDatasets.map((dataset) => (
-                <tr key={dataset.id} onClick={() => handleRowClick(dataset.id)}>
-                  <td className={styles.textAlignLeft}>{dataset.name}</td>
-                  <td className={styles.textAlignLeft}>{dataset.description || 'Sem descrição'}</td>
-                  <td className={styles.textAlignCenter}>
-                    <span className="badge bg-primary rounded-pill">
-                      {dataset.exampleCount}
-                    </span>
-                  </td>
-                  <td className={styles.textAlignCenter}>
-                    <span className="badge bg-success rounded-pill">
-                      {dataset.experimentCount}
-                    </span>
-                  </td>
-                  <td className={styles.textAlignCenter}>{new Date(dataset.createdAt).toLocaleString('pt-BR')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
+              <TableRow>
+                {tableHeaders.map(({ key, label, className }) => (
+                  <TableHead key={key} className={cn("p-4", className)}>
+                    <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
+                      {label}
+                      {sortConfig.key === key && (
+                        sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAndSortedDatasets.length > 0 ? (
+                filteredAndSortedDatasets.map((dataset) => (
+                  <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
+                    <TableCell className="p-4 font-medium">
+                      <Link href={`/experiments/${dataset.id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
+                        {dataset.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
+                    <TableCell className="p-4 text-center">
+                      <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
+                    </TableCell>
+                    <TableCell className="p-4 text-center">
+                      <Badge className="text-sm">{dataset.experimentCount}</Badge>
+                    </TableCell>
+                    <TableCell className="p-4 text-center text-muted-foreground text-xs">
+                          <div>{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                          <div>{new Date(dataset.createdAt).toLocaleTimeString('pt-BR')}</div>
+                        </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={tableHeaders.length} className="h-24 text-center">
+                        Nenhum dataset encontrado.
+                    </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
       </div>
     </div>
   );

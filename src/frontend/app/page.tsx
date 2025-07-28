@@ -1,74 +1,80 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/app/contexts/AuthContext';
-import AppHeader, { ActionButton } from '@/app/components/AppHeader';
-import styles from './page.module.css';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FlaskConical, Bot, ArrowRight, MessageSquare } from 'lucide-react';
+import AppHeader from '@/app/components/AppHeader';
 
 export default function HomePage() {
-  const { token, logout } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [theme, setTheme] = useState('light');
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-bs-theme', savedTheme);
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-bs-theme', newTheme);
-  };
-
-  const handleLogout = () => {
-    logout();
-    router.push(`/login?redirect_url=${pathname}`);
-  };
-
-  const headerActions: ActionButton[] = [
-    { id: 'theme', label: 'Mudar tema', icon: theme === 'light' ? 'bi-moon-fill' : 'bi-sun-fill', onClick: toggleTheme },
-  ];
-
-  if (token) {
-    headerActions.push({ id: 'logout', label: 'Sair', icon: 'bi-box-arrow-right', onClick: handleLogout, variant: 'logout' as const });
-  }
-
   return (
-    <div className={styles.page_container}>
-      <AppHeader title="Painel Administrativo EAI" actions={headerActions} centerTitle={true} />
-
-      <main className={styles.main_content}>
-        <p className={styles.description}>
-          Navegue pelas seções para gerenciar datasets, analisar experimentos e visualizar resultados.
-        </p>
-        
-        <nav className={styles.nav_grid}>
-          <div className={`${styles.nav_card} text-muted`} style={{ cursor: 'not-allowed', filter: 'grayscale(80%)' }}>
-             <div className={styles.nav_icon} style={{ backgroundColor: 'var(--color-border)'}}>
-              <i className="bi bi-robot" style={{ color: 'var(--color-text-muted)'}}></i>
-            </div>
-            <div>
-              <h3>Configurações EAI</h3>
-              <p>Em breve: gerencie system prompts, tools, etc.</p>
-            </div>
-          </div>
-          <Link href="/experiments" className={styles.nav_card}>
-            <div className={styles.nav_icon}>
-              <i className="bi bi-flask"></i>
-            </div>
-            <div>
-              <h3>Painel de Experimentos</h3>
-              <p>Analise e compare os resultados dos experimentos.</p>
-            </div>
+    <>
+      <AppHeader 
+        title="Painel Administrativo EAI" 
+        subtitle="Navegue pelas seções para gerenciar datasets, analisar experimentos e visualizar resultados."
+      />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Link href="/experiments" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <FlaskConical className="h-6 w-6" />
+                </div>
+                <CardTitle>Painel de Experimentos</CardTitle>
+                <CardDescription>
+                  Analise e compare os resultados dos experimentos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para Experimentos
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
           </Link>
-        </nav>
-      </main>
-    </div>
+          
+          <Link href="/eai_settings" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Bot className="h-6 w-6" />
+                </div>
+                <CardTitle>Configurações EAI</CardTitle>
+                <CardDescription>
+                  Gerencie system prompts, tools, etc.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para Configurações
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/chat" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <MessageSquare className="h-6 w-6" />
+                </div>
+                <CardTitle>Chat EAI</CardTitle>
+                <CardDescription>
+                  Converse diretamente com o modelo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para o Chat
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,100 +1,63 @@
-# Plano de Migração para shadcn/ui
+# Plano de Migração: Página de Configurações EAI
 
-Este documento descreve o plano passo a passo para migrar a base de código do frontend existente para usar `shadcn/ui`. O objetivo é melhorar a consistência da UI, a acessibilidade, a experiência do desenvolvedor e a velocidade de implementação de novos recursos.
+Este documento descreve o plano para migrar a página de administração de "Configurações EAI" de uma implementação estática (HTML, CSS, JS) para uma aplicação moderna usando Next.js, Tailwind CSS 4 e shadcn/ui, seguindo as diretrizes do `GEMINI.md`.
 
-## Estratégia Geral
+## Fase 1: Estrutura da Página e Rota
 
-A migração será realizada em fases, seguindo uma abordagem "bottom-up" (de baixo para cima):
+- [ ] Criar a nova rota da página em `app/settings/page.tsx`.
+- [ ] Desenvolver o layout principal da página, dividindo-a em duas colunas: a coluna da esquerda para o editor e configurações, e a da direita para o histórico.
+- [ ] Garantir que o layout seja responsivo e se adapte a diferentes tamanhos de tela.
 
-1.  **Fundação:** Configurar o tema base e os componentes mais atômicos.
-2.  **Componentes Comuns:** Substituir componentes personalizados que são usados em todo o aplicativo.
-3.  **Página por Página:** Migrar páginas inteiras, uma de cada vez, compondo os novos componentes `shadcn/ui`.
-4.  **Limpeza:** Remover estilos e componentes legados que não são mais necessários.
+## Fase 2: Lógica de Dados e Estado Principal
 
----
+- [ ] No componente `page.tsx`, criar os estados (`useState`) para gerenciar:
+    - A lista de tipos de agente.
+    - O tipo de agente selecionado.
+    - O conteúdo do prompt do sistema.
+    - Os valores dos campos de configuração (memory blocks, tools, etc.).
+    - A lista do histórico de versões.
+    - O estado de carregamento (`loading`).
+- [ ] Implementar os `useEffect` hooks para buscar os dados iniciais da API quando o componente for montado ou quando o tipo de agente mudar:
+    - Buscar tipos de agente de `/api/v1/system-prompt/agent-types`.
+    - Buscar os dados do agente selecionado (prompt, config, histórico) de `/api/v1/unified-history` e `/api/v1/system-prompt`.
 
-## Fase 1: Fundação e Configuração
+## Fase 3: Componentes da Coluna Esquerda (Editor e Configurações)
 
-O objetivo desta fase é garantir que o ambiente esteja corretamente configurado para `shadcn/ui` e estabelecer as bases do nosso sistema de design.
+- [ ] **Componente `AgentSelector`:**
+    - [ ] Criar um componente para buscar e exibir os tipos de agente em um `Select` do shadcn/ui.
+    - [ ] Ao selecionar um novo agente, o estado principal da página deve ser atualizado.
 
-### Checklist da Fase 1:
+- [ ] **Componente `PromptEditor`:**
+    - [ ] Criar um componente que contenha uma `Textarea` para o prompt do sistema.
+    - [ ] Adicionar um botão de "Copiar" (`Clipboard`) com feedback visual.
 
-- [ ] **Verificar Configuração:** Confirmar que o `tailwind.config.js` e o `globals.css` estão configurados conforme a documentação do `shadcn/ui`.
-- [ ] **Definir Tema:** Customizar as variáveis CSS no `globals.css` para alinhar com a identidade visual do projeto (cores primárias, secundárias, fontes, bordas, etc.).
-- [ ] **Criar Diretório de UI:** Garantir que todos os novos componentes `shadcn/ui` sejam adicionados ao diretório `src/frontend/app/components/ui`.
-- [ ] **Adicionar Componentes Atômicos:** Adicionar os primeiros componentes que servirão de base para todos os outros.
-    - `npx shadcn-ui@latest add button`
-    - `npx shadcn-ui@latest add card`
-    - `npx shadcn-ui@latest add input`
-    - `npx shadcn-ui@latest add label`
+- [ ] **Componente `AgentConfiguration`:**
+    - [ ] Criar um componente para os campos de configuração:
+        - `Textarea` para os `memory_blocks` (com validação de JSON).
+        - `Input` para `tools`.
+        - `Input` para `model_name`.
+        - `Input` para `embedding_name`.
+    - [ ] Adicionar um `Switch` para a opção "Atualizar agentes existentes".
 
----
+- [ ] **Componente `ActionButtons`:**
+    - [ ] Criar um componente para os botões de ação principais:
+        - Botão "Salvar Alterações" que abre um modal de confirmação.
+        - Botão "Resetar Tudo" que abre um modal de confirmação.
+    - [ ] Implementar a lógica de salvamento (`/api/v1/unified-save`) e reset (`/api/v1/unified-reset`) que é disparada a partir dos modais.
 
-## Fase 2: Migração de Componentes Comuns
+## Fase 4: Componente da Coluna Direita (Histórico)
 
-Agora, vamos substituir os componentes personalizados mais usados por suas contrapartes do `shadcn/ui`.
+- [ ] **Componente `VersionHistory`:**
+    - [ ] Criar um componente para exibir a lista de versões do histórico.
+    - [ ] Cada item da lista deve mostrar a versão, data, autor, motivo e um preview do conteúdo.
+    - [ ] Adicionar badges para indicar o tipo de alteração (Prompt, Config, Ambos) e o status "Ativo".
+    - [ ] Implementar a funcionalidade de clique em um item do histórico para carregar os dados daquela versão nos campos de edição.
+    - [ ] O item selecionado/ativo deve ter um destaque visual.
 
-### Checklist da Fase 2:
+## Fase 5: Estilização e Polimento Final
 
-- [ ] **Substituir Botões:**
-    - [ ] Identificar todos os elementos `<button>` e `<a>` estilizados como botões no projeto.
-    - [ ] Substituí-los pelo componente `<Button>` do `shadcn/ui`.
-    - [ ] Aplicar as variantes corretas (`default`, `destructive`, `outline`, `ghost`, `link`).
-
-- [ ] **Substituir Cards:**
-    - [ ] Encontrar todos os contêineres que funcionam como "cards" ou painéis.
-    - [ ] Refatorá-los para usar a composição de `<Card>`, `<CardHeader>`, `<CardTitle>`, `<CardDescription>` e `<CardContent>`.
-    - [ ] Aplicar isso primeiro em componentes de baixo nível e, em seguida, nas visualizações de página.
-
-- [ ] **Substituir `JsonViewerModal.tsx`:**
-    - [ ] Adicionar o componente `Dialog` do `shadcn/ui`: `npx shadcn-ui@latest add dialog`.
-    - [ ] Refatorar `JsonViewerModal.tsx` para usar `<Dialog>`, `<DialogTrigger>`, `<DialogContent>`, `<DialogHeader>`, `<DialogTitle>` e `<DialogDescription>`.
-    - [ ] Garantir que o conteúdo JSON ainda seja renderizado corretamente dentro do novo modal.
-
----
-
-## Fase 3: Migração Página por Página
-
-Com os blocos de construção no lugar, podemos começar a migrar páginas inteiras.
-
-### Checklist da Fase 3:
-
-- [ ] **Página de Datasets (`/experiments`):**
-    - [ ] Adicionar o componente `Table`: `npx shadcn-ui@latest add table`.
-    - [ ] Substituir a tabela HTML existente pela composição de `<Table>`, `<TableHeader>`, `<TableBody>`, etc.
-    - [ ] Adicionar o componente `Dropdown Menu`: `npx shadcn-ui@latest add dropdown-menu`.
-    - [ ] Usar o `DropdownMenu` para as opções de ordenação e filtro da tabela.
-    - [ ] Substituir a barra de pesquisa pelo componente `<Input>` do `shadcn/ui`.
-
-- [ ] **Página de Detalhes do Dataset (`/experiments/[dataset_id]`):**
-    - [ ] Adicionar o componente `Tabs`: `npx shadcn-ui@latest add tabs`.
-    - [ ] Substituir a navegação por abas ("Experimentos", "Exemplos") pelo componente `<Tabs>`.
-    - [ ] Garantir que as tabelas dentro de cada aba também sejam migradas para o componente `Table`.
-
-- [ ] **Página de Detalhes do Experimento (`/experiments/[dataset_id]/[experiment_id]`):**
-    - [ ] Usar componentes `<Card>` para exibir os metadados e parâmetros do experimento.
-    - [ ] Adicionar e usar o componente `Accordion`: `npx shadcn-ui@latest add accordion`.
-    - [ ] Refatorar a "Cadeia de Pensamento" (timeline) para usar o `Accordion` para cada passo (Raciocínio, Chamada de Ferramenta), permitindo que o usuário expanda e recolha os detalhes.
-    - [ ] Garantir que qualquer botão ou link nesta página use o componente `<Button>`.
-
----
-
-## Fase 4: Limpeza e Revisão Final
-
-A etapa final para garantir que o projeto permaneça limpo e consistente.
-
-### Checklist da Fase 4:
-
-- [ ] **Remover CSS Legado:**
-    - [ ] Procurar por arquivos `.module.css` que se tornaram redundantes após a migração dos componentes.
-    - [ ] Excluir os arquivos de estilo antigos e remover suas importações.
-
-- [ ] **Remover Componentes Legados:**
-    - [ ] Excluir os arquivos de componentes personalizados que foram totalmente substituídos (ex: o antigo `JsonViewerModal.tsx` se o novo for criado em um local diferente).
-
-- [ ] **Revisão da UI:**
-    - [ ] Navegar por todo o aplicativo para garantir a consistência visual (espaçamento, cores, tipografia).
-    - [ ] Testar a responsividade em diferentes tamanhos de tela.
-
-- [ ] **Executar Linter:**
-    - [ ] Rodar `npm run lint` (ou comando equivalente) para garantir que todo o novo código siga as diretrizes de estilo do projeto.
+- [ ] Substituir todo o CSS customizado de `style.css` por classes de utilitário do Tailwind CSS.
+- [ ] Usar componentes `Card` do shadcn/ui para agrupar as seções de forma visualmente coesa.
+- [ ] Garantir que todos os elementos interativos (botões, inputs, selects) sigam a identidade visual do `shadcn/ui`.
+- [ ] Adicionar feedback de carregamento (skeletons ou spinners) enquanto os dados da API são buscados.
+- [ ] Implementar notificações (`Toast`) para dar feedback sobre o sucesso ou falha das operações de salvar e resetar.
