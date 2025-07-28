@@ -69,7 +69,7 @@ export default function AgentConfiguration({
           value={memoryBlocks}
           onChange={(e) => onMemoryBlocksChange(e.target.value)}
           disabled={disabled}
-          className="h-[240px] resize-y font-mono text-xs"
+          className="h-[230px] resize-y font-mono text-xs"
           placeholder='[{"type": "buffer_window", "config": {"k": 5}}]'
         />
       </div>

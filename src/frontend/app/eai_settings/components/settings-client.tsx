@@ -13,7 +13,7 @@ import ConfirmationModal from './ConfirmationModal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, Save, RotateCcw } from 'lucide-react';
+import { Loader2, Save, RotateCcw, Settings, History } from 'lucide-react';
 import { fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
 
 interface AgentData {
@@ -253,7 +253,13 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       <div className="grid md:grid-cols-[1fr_420px] gap-6 h-full pb-6">
         <Card className="flex flex-col overflow-hidden">
           <CardHeader>
-              <CardDescription>Selecione um tipo de agente para ver e editar o prompt, configurações e histórico de versões.</CardDescription>
+              <div className="flex items-center justify-between text-lg">
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    <span>Configurações do Agente</span>
+                  </CardTitle>
+                  {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+              </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-8 pt-4">
             <AgentSelector 
@@ -278,7 +284,10 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         <Card className="flex flex-col overflow-hidden">
           <CardHeader>
               <div className="flex items-center justify-between">
-                  <CardTitle>Histórico de Versões</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <History className="h-5 w-5" />
+                    <span>Histórico de Versões</span>
+                  </CardTitle>
                   {isFetchingVersion && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
               </div>
           </CardHeader>
