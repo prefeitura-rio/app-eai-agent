@@ -34,7 +34,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col h-full">
       <AppHeader
-        title={title}
+        title={title || 'Carregando...'}
         subtitle={subtitle}
         actions={getHeaderActions()}
       />
@@ -50,7 +50,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function ExperimentsLayout({
   children,
 }: {
-  children: React.Node;
+  children: React.ReactNode;
 }) {
   return (
     <HeaderProvider>

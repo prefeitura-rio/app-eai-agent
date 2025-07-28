@@ -36,7 +36,7 @@ export default function ExperimentDetailsClient({ initialData, handleDownloadCle
     const tools = new Set<string>();
     runs.forEach(run => {
         run.output.agent_output?.ordered?.forEach(step => {
-            if (step.type === 'tool_call_message') {
+            if (step.type === 'tool_call_message' && step.message.tool_call) {
                 tools.add(step.message.tool_call.name);
             }
         });

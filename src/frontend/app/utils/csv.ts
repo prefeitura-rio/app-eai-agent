@@ -27,7 +27,8 @@ export function exportToCsv(filename: string, rows: object[]) {
         rows.map(row => {
             return keys.map(k => {
                 let cell = row[k as keyof typeof row] === null || row[k as keyof typeof row] === undefined ? '' : row[k as keyof typeof row];
-                cell = cell instanceof Date
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                cell = (cell as any) instanceof Date
                     ? cell.toLocaleString()
                     : typeof cell === 'object' ? JSON.stringify(cell).replace(/"/g, '""') : String(cell).replace(/"/g, '""');
                 return `"${cell}"`;

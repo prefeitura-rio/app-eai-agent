@@ -64,17 +64,23 @@ export default function DatasetExperimentsClient({
     }
     if (expSortConfig.key) {
       sortableItems.sort((a: Experiment, b: Experiment) => {
-        let aValue: string | number, bValue: string | number;
+        let aValue, bValue;
         if (expSortConfig.key === 'metric') {
           const metricName = expSortConfig.metricName!;
           aValue = a.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
           bValue = b.annotationSummaries.find(ann => ann.annotationName === metricName)?.meanScore ?? -1;
         } else {
-          aValue = a[expSortConfig.key as keyof Experiment];
-          bValue = b[expSortConfig.key as keyof Experiment];
+          const key = expSortConfig.key as keyof Experiment;
+          aValue = a[key];
+          bValue = b[key];
         }
-        if (aValue < bValue) return expSortConfig.direction === 'ascending' ? -1 : 1;
-        if (aValue > bValue) return expSortConfig.direction === 'ascending' ? 1 : -1;
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return aValue.localeCompare(bValue) * (expSortConfig.direction === 'ascending' ? 1 : -1);
+        }
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return (aValue - bValue) * (expSortConfig.direction === 'ascending' ? 1 : -1);
+        }
         return 0;
       });
     }

@@ -1,5 +1,8 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { Annotation } from '@/app/components/types';
 import { Badge } from "@/components/ui/badge";
 import { getScoreBadgeClass } from '@/app/utils/utils';
@@ -18,7 +21,22 @@ const isJsonString = (str: string) => {
     return true;
 };
 
-export default async function Evaluations({ annotations }: EvaluationsProps) {
+export default function Evaluations({ annotations }: EvaluationsProps) {
+    const [renderedExplanations, setRenderedExplanations] = useState<(string | Record<string, unknown>)[]>([]);
+
+    useEffect(() => {
+        const processExplanations = () => {
+            const processed = annotations.map((ann) => {
+                if (typeof ann.explanation === 'string' && !isJsonString(ann.explanation)) {
+                    return DOMPurify.sanitize(marked.parse(ann.explanation) as string);
+                }
+                return ann.explanation;
+            });
+            setRenderedExplanations(processed);
+        };
+        processExplanations();
+    }, [annotations]);
+
     if (!annotations || annotations.length === 0) {
         return <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>;
     }
@@ -40,13 +58,6 @@ export default async function Evaluations({ annotations }: EvaluationsProps) {
     const defaultOpen = sortedAnnotations
         .map((ann, index) => `item-${index}`)
         .filter((_, index) => !["Golden Link in Answer", "Golden Link in Tool Calling"].includes(sortedAnnotations[index].name));
-
-    const renderedExplanations = await Promise.all(sortedAnnotations.map(async (ann) => {
-        if (typeof ann.explanation === 'string' && !isJsonString(ann.explanation)) {
-            return await marked(ann.explanation);
-        }
-        return ann.explanation;
-    }));
 
     return (
         <Accordion type="multiple" defaultValue={defaultOpen}>

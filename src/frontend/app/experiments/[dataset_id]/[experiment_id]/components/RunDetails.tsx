@@ -49,7 +49,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pl-12">
-                    <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered} />
+                    <ReasoningTimeline orderedSteps={run.output.agent_output?.ordered || []} />
                 </CardContent>
             </Card>
         </div>
