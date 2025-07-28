@@ -21,6 +21,7 @@ interface ConfirmationModalProps {
   description: string;
   confirmText?: string;
   confirmButtonVariant?: VariantProps<typeof buttonVariants>['variant'];
+  confirmButtonDisabled?: boolean;
   children?: React.ReactNode;
 }
 
@@ -32,6 +33,7 @@ export default function ConfirmationModal({
   description,
   confirmText = "Confirmar",
   confirmButtonVariant,
+  confirmButtonDisabled,
   children,
 }: ConfirmationModalProps) {
   return (
@@ -46,7 +48,7 @@ export default function ConfirmationModal({
           <DialogClose asChild>
             <Button variant="outline">Cancelar</Button>
           </DialogClose>
-          <Button onClick={onConfirm} variant={confirmButtonVariant}>{confirmText}</Button>
+          <Button onClick={onConfirm} variant={confirmButtonVariant} disabled={confirmButtonDisabled}>{confirmText}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

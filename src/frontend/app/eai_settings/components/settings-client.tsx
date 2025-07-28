@@ -63,6 +63,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   const [author, setAuthor] = useState('');
   const [reason, setReason] = useState('');
   const [isResetModalOpen, setResetModalOpen] = useState(false);
+  const [resetConfirmationText, setResetConfirmationText] = useState('');
 
   // Configura o Header da página
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     setSubtitle('Gerencie os prompts e configurações dos agentes');
     setPageActions([
       { id: 'save', label: 'Salvar Alterações', icon: Save, onClick: () => handleOpenSaveModal(), variant: 'success', showLabel: true, className: 'w-48' },
-      { id: 'reset', label: 'Resetar Tudo', icon: RotateCcw, onClick: () => setResetModalOpen(true), variant: 'destructive', showLabel: true },
+      { id: 'reset', label: 'Resetar Tudo', icon: RotateCcw, onClick: () => { setResetConfirmationText(''); setResetModalOpen(true); }, variant: 'destructive', showLabel: true },
     ]);
     return () => setPageActions([]);
   }, [setTitle, setSubtitle, setPageActions]);
@@ -233,15 +234,25 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         title="Confirmar Reset"
         description={`Tem certeza que deseja resetar COMPLETAMENTE o agente '${selectedAgent}'? Esta ação removerá TODO o histórico e recriará as versões padrão. Esta ação NÃO pode ser desfeita.`}
         confirmText="Sim, resetar agente"
-      />
+        confirmButtonVariant="destructive"
+        confirmButtonDisabled={resetConfirmationText !== 'delete'}
+      >
+        <div className="space-y-4">
+          <Label htmlFor="reset-confirmation">
+            Para confirmar, digite <strong>delete</strong> abaixo:
+          </Label>
+          <Input 
+            id="reset-confirmation" 
+            value={resetConfirmationText} 
+            onChange={(e) => setResetConfirmationText(e.target.value)}
+            autoComplete="off"
+          />
+        </div>
+      </ConfirmationModal>
 
       <div className="grid md:grid-cols-[1fr_420px] gap-6 h-full pb-6">
         <Card className="flex flex-col overflow-hidden">
           <CardHeader>
-              <div className="flex items-center justify-between">
-                  <CardTitle>Configurações do Agente</CardTitle>
-                  {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
-              </div>
               <CardDescription>Selecione um tipo de agente para ver e editar o prompt, configurações e histórico de versões.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-8 pt-4">
