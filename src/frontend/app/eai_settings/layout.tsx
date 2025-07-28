@@ -15,7 +15,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   }, [setTitle, setSubtitle]);
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-screen">
       <AppHeader
         title={title}
         subtitle={subtitle}

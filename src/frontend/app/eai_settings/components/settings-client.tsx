@@ -223,50 +223,46 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         confirmText="Sim, resetar agente"
       />
 
-      <div className="grid md:grid-cols-[1fr_420px] gap-6 h-full pb-6">
-        <div className="flex flex-col gap-6">
-          <Card className="flex-1">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle>Configurações do Agente</CardTitle>
-                    {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
-                </div>
-                <CardDescription>Selecione um tipo de agente para ver e editar o prompt, configurações e histórico de versões.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8 pt-4">
-              <AgentSelector 
-                agentTypes={agentTypes} 
-                selectedAgent={selectedAgent} 
-                onAgentChange={handleAgentChange} 
-                updateAgents={updateAgents}
-                onUpdateAgentsChange={setUpdateAgents}
-                disabled={isLoading} 
-              />
-              <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
-              <AgentConfiguration
-                memoryBlocks={memoryBlocks} onMemoryBlocksChange={setMemoryBlocks}
-                tools={tools} onToolsChange={setTools}
-                modelName={modelName} onModelNameChange={setModelName}
-                embeddingName={embeddingName} onEmbeddingNameChange={setEmbeddingName}
-                disabled={isLoading}
-              />
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid md:grid-cols-[1fr_420px] gap-6 h-full py-6">
+        <Card className="flex flex-col overflow-hidden">
+          <CardHeader>
+              <div className="flex items-center justify-between">
+                  <CardTitle>Configurações do Agente</CardTitle>
+                  {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+              </div>
+              <CardDescription>Selecione um tipo de agente para ver e editar o prompt, configurações e histórico de versões.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto space-y-8 pt-4">
+            <AgentSelector 
+              agentTypes={agentTypes} 
+              selectedAgent={selectedAgent} 
+              onAgentChange={handleAgentChange} 
+              updateAgents={updateAgents}
+              onUpdateAgentsChange={setUpdateAgents}
+              disabled={isLoading} 
+            />
+            <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
+            <AgentConfiguration
+              memoryBlocks={memoryBlocks} onMemoryBlocksChange={setMemoryBlocks}
+              tools={tools} onToolsChange={setTools}
+              modelName={modelName} onModelNameChange={setModelName}
+              embeddingName={embeddingName} onEmbeddingNameChange={setEmbeddingName}
+              disabled={isLoading}
+            />
+          </CardContent>
+        </Card>
 
-        <div className="h-full">
-          <Card className="sticky top-4">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle>Histórico de Versões</CardTitle>
-                    {isFetchingVersion && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
-                </div>
-            </CardHeader>
-            <CardContent>
-              <VersionHistory history={history} onSelectVersion={handleSelectVersion} selectedVersionId={selectedVersionId} disabled={isLoading} />
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="flex flex-col overflow-hidden">
+          <CardHeader>
+              <div className="flex items-center justify-between">
+                  <CardTitle>Histórico de Versões</CardTitle>
+                  {isFetchingVersion && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+              </div>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto">
+            <VersionHistory history={history} onSelectVersion={handleSelectVersion} selectedVersionId={selectedVersionId} disabled={isLoading} />
+          </CardContent>
+        </Card>
       </div>
     </>
   );

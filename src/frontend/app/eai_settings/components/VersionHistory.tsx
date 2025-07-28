@@ -52,8 +52,8 @@ export default function VersionHistory({ history, onSelectVersion, selectedVersi
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)] -mx-6 px-6">
-      <div className="space-y-4">
+    <ScrollArea className="h-full">
+      <div className="space-y-4 pr-6">
         {history.length > 0 ? (
           history.map(item => (
             <Card
