@@ -39,8 +39,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   const { setTitle, setSubtitle, setPageActions } = useHeader();
   const [isPending, startTransition] = useTransition();
   
-  // Estado dos dados carregados para comparação
-  const [initialData, setInitialData] = useState(agentData);
 
   // Estado dos campos do formulário
   const [selectedAgent, setSelectedAgent] = useState(selectedAgentType);
@@ -89,7 +87,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         setModelName(config.model_name || '');
         setEmbeddingName(config.embedding_name || '');
       }
-      setIsDirty(false); // Reseta o estado 'dirty' após carregar uma versão
     } catch  {
       toast.error("Erro ao buscar versão", { description: "Não foi possível carregar os dados da versão selecionada." });
     } finally {
@@ -99,7 +96,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
 
   // Sincroniza o estado do cliente com as props, reseta o estado 'dirty' e seleciona a versão ativa
   useEffect(() => {
-    setInitialData(agentData);
     setSelectedAgent(selectedAgentType);
     setPromptContent(agentData.prompt);
     setMemoryBlocks(agentData.config.memory_blocks);
@@ -108,7 +104,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     setEmbeddingName(agentData.config.embedding_name);
     setHistory(agentData.history);
     setSelectedVersionId(null);
-    setIsDirty(false);
 
     // Encontra e seleciona a versão ativa ao carregar
     const activeVersion = agentData.history.find(h => h.is_active);
@@ -116,17 +111,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       handleSelectVersion(activeVersion);
     }
   }, [agentData, selectedAgentType, handleSelectVersion]);
-
-  // Verifica se há alterações não salvas
-  useEffect(() => {
-    const isModified = 
-      promptContent !== initialData.prompt ||
-      memoryBlocks !== initialData.config.memory_blocks ||
-      tools !== initialData.config.tools ||
-      modelName !== initialData.config.model_name ||
-      embeddingName !== initialData.config.embedding_name;
-    setIsDirty(isModified);
-  }, [promptContent, memoryBlocks, tools, modelName, embeddingName, initialData]);
 
 
   const handleAgentChange = (newAgentType: string) => {
