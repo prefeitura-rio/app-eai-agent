@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/app/utils/utils';
-import { Home, FlaskConical, Settings, PanelLeftClose, PanelRightClose, Moon, Sun, LogOut, Bot } from 'lucide-react';
+import { Home, FlaskConical, Settings, PanelLeftClose, PanelRightClose, Moon, Sun, LogOut, Bot, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,7 @@ import { useSidebar } from '@/app/contexts/SidebarContext';
 const mainNavigation = [
   { name: 'Início', href: '/', icon: Home },
   { name: 'Experimentos', href: '/experiments', icon: FlaskConical },
+  { name: 'Chat EAI', href: '/chat', icon: MessageSquare },
   { name: 'Configurações EAI', href: '/eai_settings', icon: Bot },
 ];
 

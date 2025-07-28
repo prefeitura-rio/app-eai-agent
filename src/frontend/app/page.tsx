@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FlaskConical, Bot, ArrowRight } from 'lucide-react';
+import { FlaskConical, Bot, ArrowRight, MessageSquare } from 'lucide-react';
 import AppHeader from '@/app/components/AppHeader';
 
 export default function HomePage() {
@@ -49,6 +49,26 @@ export default function HomePage() {
               <CardContent>
                   <div className="flex items-center text-sm font-medium text-primary">
                       Ir para Configurações
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/chat" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <MessageSquare className="h-6 w-6" />
+                </div>
+                <CardTitle>Chat EAI</CardTitle>
+                <CardDescription>
+                  Converse diretamente com o modelo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para o Chat
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </div>
               </CardContent>
