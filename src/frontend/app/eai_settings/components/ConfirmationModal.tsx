@@ -10,7 +10,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { VariantProps } from 'class-variance-authority';
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface ConfirmationModalProps {
   title: string;
   description: string;
   confirmText?: string;
+  confirmButtonVariant?: VariantProps<typeof buttonVariants>['variant'];
   children?: React.ReactNode;
 }
 
@@ -29,6 +31,7 @@ export default function ConfirmationModal({
   title,
   description,
   confirmText = "Confirmar",
+  confirmButtonVariant,
   children,
 }: ConfirmationModalProps) {
   return (
@@ -43,7 +46,7 @@ export default function ConfirmationModal({
           <DialogClose asChild>
             <Button variant="outline">Cancelar</Button>
           </DialogClose>
-          <Button onClick={onConfirm}>{confirmText}</Button>
+          <Button onClick={onConfirm} variant={confirmButtonVariant}>{confirmText}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

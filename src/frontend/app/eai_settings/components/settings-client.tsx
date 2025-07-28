@@ -69,13 +69,13 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     setTitle('Configurações EAI');
     setSubtitle('Gerencie os prompts e configurações dos agentes');
     setPageActions([
-      { id: 'save', label: 'Salvar Alterações', icon: Save, type: 'button', onClick: () => handleOpenSaveModal(), variant: 'default' },
-      { id: 'reset', label: 'Resetar Tudo', icon: RotateCcw, type: 'button', onClick: () => setResetModalOpen(true), variant: 'destructive' },
+      { id: 'save', label: 'Salvar Alterações', icon: Save, onClick: () => handleOpenSaveModal(), variant: 'success', showLabel: true, className: 'w-48' },
+      { id: 'reset', label: 'Resetar Tudo', icon: RotateCcw, onClick: () => setResetModalOpen(true), variant: 'destructive', showLabel: true },
     ]);
     return () => setPageActions([]);
   }, [setTitle, setSubtitle, setPageActions]);
 
-  // Sincroniza o estado do cliente com as props e reseta o estado 'dirty'
+  // Sincroniza o estado do cliente com as props, reseta o estado 'dirty' e seleciona a versão ativa
   useEffect(() => {
     setInitialData(agentData);
     setSelectedAgent(selectedAgentType);
@@ -87,6 +87,12 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     setHistory(agentData.history);
     setSelectedVersionId(null);
     setIsDirty(false);
+
+    // Encontra e seleciona a versão ativa ao carregar
+    const activeVersion = agentData.history.find(h => h.is_active);
+    if (activeVersion) {
+      handleSelectVersion(activeVersion);
+    }
   }, [agentData, selectedAgentType]);
 
   // Verifica se há alterações não salvas
@@ -168,6 +174,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       toast.success("Sucesso!", { description: `Nova versão ${result.version_display} salva.` });
       setSaveModalOpen(false);
       router.refresh();
+      window.location.reload();
     } catch (error: any) {
       toast.error("Erro ao Salvar", { description: error.message });
     } finally {
@@ -201,14 +208,19 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         title="Confirmar Alterações"
         description="Por favor, forneça o autor e o motivo para salvar esta nova versão."
         confirmText={isSaving ? "Salvando..." : "Salvar Versão"}
+        confirmButtonVariant="success"
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="author">Autor</Label>
+            <Label htmlFor="author">
+              Autor<span className="text-destructive">*</span>
+            </Label>
             <Input id="author" value={author} onChange={(e) => setAuthor(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reason">Motivo da Atualização</Label>
+            <Label htmlFor="reason">
+              Motivo da Atualização<span className="text-destructive">*</span>
+            </Label>
             <Input id="reason" value={reason} onChange={(e) => setReason(e.target.value)} />
           </div>
         </div>

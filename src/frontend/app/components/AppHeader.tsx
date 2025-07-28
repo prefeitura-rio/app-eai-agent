@@ -11,8 +11,10 @@ export interface ActionButton {
   icon: React.ElementType;
   href?: string;
   onClick?: () => void;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' | 'success';
   iconClassName?: string;
+  className?: string;
+  showLabel?: boolean;
 }
 
 interface AppHeaderProps {
@@ -44,20 +46,28 @@ export default function AppHeader({ title, subtitle, actions = [], centerTitle =
           {actions.map(action => {
             const Icon = action.icon;
             const buttonVariant = action.variant || 'outline';
+            const buttonSize = action.showLabel ? 'default' : 'icon';
+
+            const buttonContent = (
+              <>
+                <Icon className={cn("h-4 w-4", action.iconClassName)} />
+                {action.showLabel && <span>{action.label}</span>}
+              </>
+            );
 
             if (action.href) {
               return (
-                <Button key={action.id} variant={buttonVariant} size="icon" asChild>
+                <Button key={action.id} variant={buttonVariant} size={buttonSize} className={action.className} asChild>
                   <Link href={action.href} title={action.label}>
-                    <Icon className={cn("h-4 w-4", action.iconClassName)} />
+                    {buttonContent}
                   </Link>
                 </Button>
               );
             }
             
             return (
-              <Button key={action.id} variant={buttonVariant} size="icon" onClick={action.onClick} title={action.label}>
-                <Icon className={cn("h-4 w-4", action.iconClassName)} />
+              <Button key={action.id} variant={buttonVariant} size={buttonSize} onClick={action.onClick} title={action.label} className={action.className}>
+                {buttonContent}
               </Button>
             );
           })}
