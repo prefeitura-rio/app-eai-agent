@@ -1,143 +1,118 @@
-import abc
 import asyncio
 import json
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Callable, Awaitable
 
 # Importa os clientes que serão usados como Juízes
-from .llm_clients import AzureOpenAIClient, GeminiAIClient
+from src.evaluations.core.llm_clients import AzureOpenAIClient, GeminiAIClient
+# Importa os templates de prompt centralizados
+from src.evaluations.core import prompt_judges
 
-# --- Classe Base para Avaliações ---
+# --- Dicionário de Registro para Métodos de Avaliação ---
+# Este dicionário será preenchido pelo decorador @eval_method
+_EVAL_METHODS_REGISTRY: Dict[str, Callable] = {}
 
-class Evaluation(abc.ABC):
-    """Classe base para qualquer tipo de avaliação."""
-    def __init__(self, name: str):
-        self.name = name
+def eval_method(name: str) -> Callable:
+    """
+    Decorador para registrar um método de avaliação no _EVAL_METHODS_REGISTRY.
+    """
+    def decorator(func: Callable[..., Awaitable[Dict[str, Any]]]) -> Callable:
+        _EVAL_METHODS_REGISTRY[name] = func
+        return func
+    return decorator
 
-    @abc.abstractmethod
-    async def run(self, evaluated_result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
+class Evals:
+    """
+    Uma classe unificada para executar uma suíte de avaliações,
+    reutilizando uma única instância de um cliente LLM (Juiz).
+    """
+    def __init__(self, judge_client: Union[AzureOpenAIClient, GeminiAIClient]):
         """
-        Executa a avaliação.
-
         Args:
-            evaluated_result (Dict[str, Any]): O objeto de resultado completo retornado
-                                               pelo EvaluatedLLMClient.
-            task (Dict[str, Any]): A tarefa original do DataLoader, contendo metadados
-                                   como a resposta de referência (golden_response).
-
-        Returns:
-            Dict[str, Any]: Um dicionário contendo o resultado da avaliação.
+            judge_client (Union[AzureOpenAIClient, GeminiAIClient]):
+                A instância do cliente LLM a ser usada para todas as avaliações de juiz.
         """
-        pass
-
-# --- Avaliações baseadas em LLM (Juízes) ---
-
-class LLMJudgeEvaluation(Evaluation):
-    """
-    Uma avaliação que usa um cliente LLM (Juiz) para avaliar uma resposta.
-    """
-    def __init__(
-        self,
-        name: str,
-        judge_client: Union[AzureOpenAIClient, GeminiAIClient],
-        prompt_template: str,
-    ):
-        super().__init__(name)
         self.judge_client = judge_client
-        self.prompt_template = prompt_template
 
-    async def run(self, evaluated_result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
-        """Formata o prompt e executa o julgamento."""
+    @eval_method(name="semantic_correctness")
+    async def evaluate_semantic_correctness(self, result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
+        """Avalia a correção semântica usando um Juiz LLM."""
+        prompt = prompt_judges.SEMANTIC_CORRECTNESS_PROMPT.format(
+            output=result.get("output", ""), task=task
+        )
+        judgement_response = await self.judge_client.execute(prompt)
         try:
-            # O template pode acessar a resposta final com {output} e a tarefa com {task[...]}
-            prompt = self.prompt_template.format(
-                output=evaluated_result.get("output", ""),
-                task=task
-            )
-            
-            judgement_response = await self.judge_client.execute(prompt)
-            
-            # Tenta parsear a resposta como JSON, se não, retorna como texto.
-            try:
-                result_data = json.loads(judgement_response)
-            except (json.JSONDecodeError, TypeError):
-                result_data = {"raw_response": judgement_response}
+            return json.loads(judgement_response)
+        except (json.JSONDecodeError, TypeError):
+            return {"raw_response": judgement_response}
 
-            return {"eval_name": self.name, "result": result_data}
-        except KeyError as e:
-            return {"eval_name": self.name, "error": f"Chave não encontrada no template: {e}"}
-        except Exception as e:
-            return {"eval_name": self.name, "error": f"Erro durante a execução do juiz: {e}"}
-
-# --- Avaliações Não-LLM (Baseadas em Regras) ---
-
-class ContentMatchEvaluation(Evaluation):
-    """Avalia se a resposta final contém uma ou mais palavras-chave."""
-    def __init__(self, name: str, keywords: List[str], case_sensitive: bool = False):
-        super().__init__(name)
-        self.keywords = keywords
-        self.case_sensitive = case_sensitive
-
-    async def run(self, evaluated_result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
-        final_answer = evaluated_result.get("output", "")
-        answer_to_check = final_answer if self.case_sensitive else final_answer.lower()
-        
-        found = [kw for kw in self.keywords if (kw if self.case_sensitive else kw.lower()) in answer_to_check]
-        
-        return {"eval_name": self.name, "score": 1.0 if found else 0.0, "found_keywords": found}
-
-class ToolUsageEvaluation(Evaluation):
-    """Verifica se uma ferramenta específica foi usada na cadeia de pensamento."""
-    def __init__(self, name: str, tool_name: str):
-        super().__init__(name)
-        self.tool_name = tool_name
-
-    async def run(self, evaluated_result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
-        tool_used = False
+    @eval_method(name="persona_adherence")
+    async def evaluate_persona_adherence(self, result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
+        """Avalia a aderência à persona usando um Juiz LLM."""
+        prompt = prompt_judges.PERSONA_ADHERENCE_PROMPT.format(
+            output=result.get("output", ""), task=task
+        )
+        judgement_response = await self.judge_client.execute(prompt)
         try:
-            messages = evaluated_result.get("data", {}).get("messages", [])
-            for msg in messages:
-                # A lógica exata aqui dependerá de como o uso de ferramentas é logado.
-                # Este é um exemplo baseado em um possível formato de 'reasoning'.
-                if msg.get("message_type") == "reasoning_message":
-                    reasoning = msg.get("reasoning", "")
-                    if f"using tool {self.tool_name}" in reasoning.lower():
-                        tool_used = True
-                        break
-            return {"eval_name": self.name, "score": 1.0 if tool_used else 0.0, "tool_checked": self.tool_name}
-        except Exception as e:
-            return {"eval_name": self.name, "error": f"Erro ao analisar o uso de ferramentas: {e}"}
+            return json.loads(judgement_response)
+        except (json.JSONDecodeError, TypeError):
+            return {"raw_response": judgement_response}
 
+    @eval_method(name="keyword_match")
+    async def check_keyword_match(self, result: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
+        """Avalia se a resposta final contém uma palavra-chave da tarefa."""
+        keywords = task.get("keywords", [])
+        final_answer = result.get("output", "").lower()
+        found = [kw for kw in keywords if kw.lower() in final_answer]
+        return {"score": 1.0 if found else 0.0, "found_keywords": found}
+
+    async def run(self, metrics_to_run: List[str], evaluated_result: Dict[str, Any], task: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Executa uma lista de avaliações especificadas por nome, em paralelo.
+        """
+        coroutines: List[Awaitable] = []
+        for metric_name in metrics_to_run:
+            eval_func = _EVAL_METHODS_REGISTRY.get(metric_name)
+            if eval_func:
+                # self é passado para vincular o método à instância
+                coroutines.append(eval_func(self, evaluated_result, task))
+        
+        if not coroutines:
+            return []
+
+        results = await asyncio.gather(*coroutines, return_exceptions=True)
+        
+        final_results = []
+        # Mapeia os resultados de volta para os nomes das métricas
+        for i, metric_name in enumerate(metrics_to_run):
+            if i < len(results):
+                res = results[i]
+                if isinstance(res, Exception):
+                    final_results.append({"eval_name": metric_name, "error": str(res)})
+                else:
+                    final_results.append({"eval_name": metric_name, "result": res})
+        return final_results
 
 # --- Bloco de Exemplo ---
-
 async def main():
-    """Função de exemplo para demonstrar o uso das classes de avaliação."""
+    """Função de exemplo para demonstrar a nova arquitetura."""
     
-    # 1. Juiz LLM para a avaliação
-    judge = AzureOpenAIClient(model_name="gpt-4o")
+    azure_judge = AzureOpenAIClient(model_name="gpt-4o")
+    evaluation_suite = Evals(judge_client=azure_judge)
 
-    # 2. Template de prompt para o juiz
-    judge_prompt = """
-    Avalie a qualidade da resposta da IA. A resposta esperada era '{task[golden_response]}'.
-    A resposta gerada foi: '{output}'.
-    A resposta está correta e completa? Responda com um JSON contendo 'score' (0.0 a 1.0) e 'reasoning'.
-    """
+    metrics = ["semantic_correctness", "keyword_match", "non_existent_eval"]
 
-    # 3. Instanciar as avaliações
-    llm_eval = LLMJudgeEvaluation(name="correcao_openai", judge_client=judge, prompt_template=judge_prompt)
-    content_eval = ContentMatchEvaluation(name="contem_batman", keywords=["Batman"])
-
-    # 4. Dados de exemplo (como viriam do Runner)
-    sample_task = {"id": 1, "golden_response": "Eu sou o Batman."}
-    sample_result_from_evaluated_client = {
-      "status": "completed",
-      "output": "Eu sou o Batman."
+    sample_task = {
+        "id": 1,
+        "prompt": "Quem é você?",
+        "golden_response": "Eu sou o Batman.",
+        "keywords": ["Batman"]
     }
+    sample_result = {"output": "Eu sou o Batman."}
 
-    # 5. Executar avaliações em paralelo
-    results = await asyncio.gather(
-        llm_eval.run(sample_result_from_evaluated_client, sample_task),
-        content_eval.run(sample_result_from_evaluated_client, sample_task)
+    results = await evaluation_suite.run(
+        metrics_to_run=metrics,
+        evaluated_result=sample_result,
+        task=sample_task
     )
 
     print(json.dumps(results, indent=2, ensure_ascii=False))

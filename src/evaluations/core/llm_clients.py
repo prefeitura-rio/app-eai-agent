@@ -14,6 +14,10 @@ from src.services.eai_gateway.api import (
     EAIClientError,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class EvaluatedLLMClient:
     """
@@ -45,13 +49,18 @@ class EvaluatedLLMClient:
             response_dict = response.model_dump()
 
             if "data" in response_dict:
+                fond = False
                 for message in response_dict["data"]["messages"]:
                     if message.get("message_type") == "assistant_message":
                         response_dict["output"] = message.get("content")
-                    else:
-                        raise BaseException(
-                            "Expected assistant message type in response, but found another type."
-                        )
+                        fond = True
+                if not fond:
+                    logger.warning(
+                        json.dumps(response_dict, ensure_ascii=False, indent=2)
+                    )
+                    raise BaseException(
+                        "Expected assistant message type in response, but found another type."
+                    )
 
             return response_dict
 

@@ -1,104 +1,90 @@
 import asyncio
 import json
 import os
-from dotenv import load_dotenv
+import pandas as pd
 
-# Carrega as variáveis de ambiente do arquivo .env
-# Certifique-se de ter um .env na raiz do projeto com OPENAI_API_KEY e GEMINI_API_KEY
-load_dotenv()
+# Utilizando imports absolutos a partir da raiz do projeto (src)
+from src.evaluations.core.dataloader import DataLoader
+from src.evaluations.core.llm_clients import EvaluatedLLMClient, AzureOpenAIClient
+from src.evaluations.core.evals import Evals
+from src.evaluations.core.runner import AsyncExperimentRunner
+from src.services.eai_gateway.api import CreateAgentRequest
 
-from .dataloader import DataLoader
-from .llm_clients import OpenAIClient, GeminiClient
-from .evals import LLMJudgeEvaluation, KeywordMatchEvaluation, RegexMatchEvaluation
-from .runner import AsyncExperimentRunner
 
-async def run_evaluation_experiment():
+async def run_experiment():
     """
-    Configura e executa um experimento de avaliação de ponta a ponta.
+    Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-    print("--- Configurando o Experimento de Avaliação ---")
+    print("--- 1. Configurando o Experimento ---")
 
-    # --- 1. Configuração do DataLoader ---
-    # Usaremos a planilha do Google Sheets como nossa fonte de dados.
-    # As tarefas devem ter as colunas 'id', 'prompt', e 'golden_response'.
-    gsheet_url = "https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785"
-    try:
-        loader = DataLoader(
-            source=gsheet_url,
-            id_col="id",
-            # 'prompt' será usado pelo gerador, 'golden_response' pelos avaliadores.
-            metadata_cols=["prompt", "golden_response"]
-        )
-        print(f"✅ DataLoader configurado com a fonte: {gsheet_url}")
-    except Exception as e:
-        print(f"❌ Erro ao configurar o DataLoader: {e}")
-        return
-
-    # --- 2. Configuração do Modelo a ser Testado (Gerador) ---
-    # Vamos testar o 'gpt-4o' da OpenAI como nosso modelo principal.
-    generator = OpenAIClient(model_name="gpt-4o")
-    print(f"✅ Modelo a ser avaliado (Gerador): {generator.model_name}")
-
-    # --- 3. Configuração das Avaliações ---
-    # Definimos uma lista de avaliações que serão executadas em paralelo para cada resposta gerada.
-    
-    # Avaliação 1: Juiz LLM (Gemini) para verificar a similaridade semântica.
-    semantic_judge_prompt = """
-    Avalie a similaridade semântica entre a Resposta Gerada e a Resposta de Referência (Golden).
-    Retorne um JSON com as chaves 'score' (um float de 0.0 a 1.0) e 'reasoning' (uma breve explicação).
-
-    Golden Response: "{task[golden_response]}"
-    Generated Answer: "{generated_answer}"
-
-    JSON de avaliação:
-    """
-    gemini_judge = GeminiClient(model_name="gemini-1.5-flash-latest")
-    semantic_evaluation = LLMJudgeEvaluation(
-        name="similaridade_semantica_gemini",
-        judge_client=gemini_judge,
-        prompt_template=semantic_judge_prompt
+    # --- Configuração do DataLoader ---
+    test_data = {
+        "id": [1, 2, 3],
+        "prompt": ["Quem é você?", "Qual a sua missão?", "Onde você atua?"],
+        "golden_response": [
+            "Eu sou o Batman.",
+            "Minha missão é proteger os inocentes e combater o crime.",
+            "Eu atuo nas sombras de Gotham City.",
+        ],
+        "persona": "Batman",
+        "keywords": [["Batman"], ["proteger", "crime"], ["Gotham"]],
+    }
+    dataframe = pd.DataFrame(test_data)
+    loader = DataLoader(
+        source=dataframe,
+        id_col="id",
+        metadata_cols=["prompt", "golden_response", "persona", "keywords"],
     )
+    print("✅ DataLoader configurado com um DataFrame local.")
 
-    # Avaliação 2: Verificação de palavra-chave.
-    # Vamos verificar se a resposta contém o CEP esperado para uma das perguntas.
-    keyword_evaluation = KeywordMatchEvaluation(name="contem_cep_correto", keywords=["01310-100"])
+    # --- Configuração do Agente a ser Avaliado ---
+    agent_config = CreateAgentRequest(
+        model="google_ai/gemini-2.5-flash-lite-preview-06-17",
+        system="Você é o Batman, um herói sombrio e direto.",
+        tools=["google_search"],
+        user_number="evaluation_user",
+        name="BatmanEvaluationAgent",
+    )
+    evaluated_client = EvaluatedLLMClient(agent_config=agent_config)
+    print(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
 
-    # Avaliação 3: Verificação de formato com Regex.
-    # Verifica se a resposta contém um número no formato de CEP.
-    regex_evaluation = RegexMatchEvaluation(name="formato_cep_valido", regex_pattern=r"\d{5}-\d{3}")
+    # --- Configuração do Juiz (instanciado uma única vez) ---
+    judge_client = AzureOpenAIClient(model_name="gpt-4o")
+    print(f"✅ Juiz LLM configurado: {judge_client.model_name}")
 
-    evaluations = [
-        semantic_evaluation,
-        keyword_evaluation,
-        regex_evaluation
-    ]
-    print(f"✅ {len(evaluations)} avaliações configuradas: {[e.name for e in evaluations]}")
+    # --- Configuração da Suíte de Avaliações ---
+    evaluation_suite = Evals(judge_client=judge_client)
 
-    # --- 4. Configuração e Execução do Runner ---
-    runner = AsyncExperimentRunner(generator=generator, evaluations=evaluations)
-    print("\n--- Iniciando a Execução do Experimento ---")
-    
+    # Define a lista de nomes das métricas que queremos rodar.
+    metrics_to_run = ["semantic_correctness", "persona_adherence", "keyword_match"]
+    print(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
+
+    # --- Configuração do Runner ---
+    runner = AsyncExperimentRunner(
+        evaluated_client=evaluated_client,
+        evaluation_suite=evaluation_suite,
+        metrics_to_run=metrics_to_run,
+    )
+    print("✅ Runner pronto para execução.")
+
+    # --- 2. Execução do Experimento ---
+    print("\n--- 2. Iniciando a Execução do Experimento ---")
     results = await runner.run(loader)
 
-    # --- 5. Salvando e Exibindo os Resultados ---
+    # --- 3. Salvando os Resultados ---
+    print("\n--- 3. Salvando os Resultados ---")
     output_dir = "evaluation_results"
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f"results_{generator.model_name}.json")
+    output_path = os.path.join(output_dir, f"results_{agent_config.name}.json")
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=4, ensure_ascii=False)
+        json.dump(results, f, indent=2, ensure_ascii=False)
 
-    print(f"\n--- Experimento Concluído ---")
-    print(f"✅ Resultados salvos em: {output_path}")
-
-    # Imprime o resultado da primeira tarefa como exemplo
-    if results:
-        print("\nExemplo de resultado para a primeira tarefa:")
-        print(json.dumps(results[0], indent=4, ensure_ascii=False))
+    print(f"✅ Experimento concluído! Resultados salvos em: {output_path}")
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(run_evaluation_experiment())
+        asyncio.run(run_experiment())
     except Exception as e:
         print(f"Ocorreu um erro fatal durante a execução do experimento: {e}")
