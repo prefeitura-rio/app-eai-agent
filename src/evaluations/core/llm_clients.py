@@ -6,7 +6,7 @@ from src.config import env
 from google import genai
 from google.genai import types
 
-from openai import AzureOpenAI
+from openai import AsyncAzureOpenAI
 
 from src.services.eai_gateway.api import (
     EAIClient,
@@ -70,7 +70,7 @@ class AzureOpenAIClient:
 
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.client = AzureOpenAI(
+        self.client = AsyncAzureOpenAI(
             azure_endpoint=env.OPENAI_AZURE_URL,
             api_key=env.OPENAI_AZURE_API_KEY,
             api_version=env.OPENAI_AZURE_API_VERSION,
@@ -80,7 +80,7 @@ class AzureOpenAIClient:
         self,
         prompt: str,
     ) -> str:
-        completion = self.client.chat.completions.create(
+        completion = await self.client.chat.completions.create(
             model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "text"},
