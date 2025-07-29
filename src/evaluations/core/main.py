@@ -9,6 +9,7 @@ from src.evaluations.core.llm_clients import EvaluatedLLMClient, AzureOpenAIClie
 from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
 from src.services.eai_gateway.api import CreateAgentRequest
+from src.evaluations.core.test_data import TEST_DATA
 
 
 async def run_experiment():
@@ -18,24 +19,16 @@ async def run_experiment():
     print("--- 1. Configurando o Experimento ---")
 
     # --- Configuração do DataLoader ---
-    test_data = {
-        "id": [1, 2, 3],
-        "prompt": ["Quem é você?", "Qual a sua missão?", "Onde você atua?"],
-        "golden_response": [
-            "Eu sou o Batman.",
-            "Minha missão é proteger os inocentes e combater o crime.",
-            "Eu atuo nas sombras de Gotham City.",
-        ],
-        "persona": "Batman",
-        "keywords": [["Batman"], ["proteger", "crime"], ["Gotham"]],
-    }
-    dataframe = pd.DataFrame(test_data)
+    # Cria um DataFrame de teste local para o experimento, agora com 50 exemplos.
+
+    dataframe = pd.DataFrame(TEST_DATA)
+
     loader = DataLoader(
         source=dataframe,
         id_col="id",
         metadata_cols=["prompt", "golden_response", "persona", "keywords"],
     )
-    print("✅ DataLoader configurado com um DataFrame local.")
+    print("✅ DataLoader configurado com um DataFrame local de 50 exemplos.")
 
     # --- Configuração do Agente a ser Avaliado ---
     agent_config = CreateAgentRequest(
@@ -81,6 +74,10 @@ async def run_experiment():
         json.dump(results, f, indent=2, ensure_ascii=False)
 
     print(f"✅ Experimento concluído! Resultados salvos em: {output_path}")
+
+    if results:
+        print("\nExemplo de resultado da primeira tarefa:")
+        print(json.dumps(results[0], indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
