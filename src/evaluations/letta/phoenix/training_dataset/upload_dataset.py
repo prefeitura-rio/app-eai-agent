@@ -36,61 +36,61 @@ def main():
         encoding="utf-8",
     )
 
-    input_keys = ["mensagem_whatsapp_simulada"]
-    output_keys = ["golden_answer"]
-    metadata_keys = [
-        "id",
-        "tema",
-        "subtema",
-        "golden_links_list",
-    ]
+    # input_keys = ["mensagem_whatsapp_simulada"]
+    # output_keys = ["golden_answer"]
+    # metadata_keys = [
+    #     "id",
+    #     "tema",
+    #     "subtema",
+    #     "golden_links_list",
+    # ]
 
-    datasets_to_upload = [
-        # {
-        #     "dataset_name": "golden_dataset_v5",
-        #     "dataframe": dataframe,
-        #     "input_keys": input_keys,
-        #     "output_keys": output_keys,
-        #     "metadata_keys": metadata_keys,
-        #     "dataset_description": "Golden Dataset - 241 samples",
-        # },
-        # {
-        #     "dataset_name": "golden_dataset_v5_small_sample",
-        #     "dataframe": dataframe.head(10),
-        #     "input_keys": input_keys,
-        #     "output_keys": output_keys,
-        #     "metadata_keys": metadata_keys,
-        #     "dataset_description": "Golden Dataset - 10 samples",
-        # },
-        {
-            "dataset_name": "golden_dataset_v5_30_samples",
-            "dataframe": dataframe.head(30),
-            "input_keys": input_keys,
-            "output_keys": output_keys,
-            "metadata_keys": metadata_keys,
-            "dataset_description": "Golden Dataset - 10 samples",
-        },
-        # {
-        #     "dataset_name": "golden_dataset_v4_very_small_sample",
-        #     "dataframe": dataframe.head(1),
-        #     "input_keys": input_keys,
-        #     "output_keys": output_keys,
-        #     "metadata_keys": metadata_keys,
-        #     "dataset_description": "Golden Dataset - 1 sample",
-        # },
-    ]
+    # datasets_to_upload = [
+    #     # {
+    #     #     "dataset_name": "golden_dataset_v5",
+    #     #     "dataframe": dataframe,
+    #     #     "input_keys": input_keys,
+    #     #     "output_keys": output_keys,
+    #     #     "metadata_keys": metadata_keys,
+    #     #     "dataset_description": "Golden Dataset - 241 samples",
+    #     # },
+    #     # {
+    #     #     "dataset_name": "golden_dataset_v5_small_sample",
+    #     #     "dataframe": dataframe.head(10),
+    #     #     "input_keys": input_keys,
+    #     #     "output_keys": output_keys,
+    #     #     "metadata_keys": metadata_keys,
+    #     #     "dataset_description": "Golden Dataset - 10 samples",
+    #     # },
+    #     {
+    #         "dataset_name": "golden_dataset_v5_30_samples",
+    #         "dataframe": dataframe.head(30),
+    #         "input_keys": input_keys,
+    #         "output_keys": output_keys,
+    #         "metadata_keys": metadata_keys,
+    #         "dataset_description": "Golden Dataset - 10 samples",
+    #     },
+    #     # {
+    #     #     "dataset_name": "golden_dataset_v4_very_small_sample",
+    #     #     "dataframe": dataframe.head(1),
+    #     #     "input_keys": input_keys,
+    #     #     "output_keys": output_keys,
+    #     #     "metadata_keys": metadata_keys,
+    #     #     "dataset_description": "Golden Dataset - 1 sample",
+    #     # },
+    # ]
 
-    print(dataframe)
+    # print(dataframe)
 
-    for dataset in datasets_to_upload:
-        upload_dataset(
-            dataset_name=dataset["dataset_name"],
-            dataframe=dataset["dataframe"],
-            input_keys=dataset["input_keys"],
-            output_keys=dataset["output_keys"],
-            metadata_keys=dataset["metadata_keys"],
-            dataset_description=dataset["dataset_description"],
-        )
+    # for dataset in datasets_to_upload:
+    #     upload_dataset(
+    #         dataset_name=dataset["dataset_name"],
+    #         dataframe=dataset["dataframe"],
+    #         input_keys=dataset["input_keys"],
+    #         output_keys=dataset["output_keys"],
+    #         metadata_keys=dataset["metadata_keys"],
+    #         dataset_description=dataset["dataset_description"],
+    #     )
 
 
 if __name__ == "__main__":

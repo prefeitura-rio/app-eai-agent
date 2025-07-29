@@ -53,8 +53,12 @@ GOOGLE_MAPS_API_KEY = getenv_or_action("GOOGLE_MAPS_API_KEY")
 
 # OPENAI
 OPENAI_AZURE_API_KEY = getenv_or_action("OPENAI_AZURE_API_KEY")
+OPENAI_AZURE_URL = getenv_or_action("OPENAI_AZURE_URL")
+OPENAI_AZURE_API_VERSION = getenv_or_action("OPENAI_AZURE_API_VERSION")
+
 OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY")
-OPENAI_URL = getenv_or_action("OPENAI_URL")
+
+
 GPT_SEARCH_MODEL = getenv_or_action("GPT_SEARCH_MODEL")
 
 EVAL_MODEL_TYPE = getenv_or_action("EVAL_MODEL_TYPE", default="gpt")
