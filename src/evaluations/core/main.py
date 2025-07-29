@@ -24,7 +24,7 @@ async def run_experiment():
     dataframe = pd.DataFrame(TEST_DATA)
 
     loader = DataLoader(
-        source=dataframe,
+        source=dataframe.head(5),
         id_col="id",
         metadata_cols=["prompt", "golden_response", "persona", "keywords"],
     )
@@ -37,6 +37,7 @@ async def run_experiment():
         tools=["google_search"],
         user_number="evaluation_user",
         name="BatmanEvaluationAgent",
+        tags=["batman"],
     )
     evaluated_client = EvaluatedLLMClient(agent_config=agent_config)
     print(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
@@ -74,10 +75,6 @@ async def run_experiment():
         json.dump(results, f, indent=2, ensure_ascii=False)
 
     print(f"✅ Experimento concluído! Resultados salvos em: {output_path}")
-
-    if results:
-        print("\nExemplo de resultado da primeira tarefa:")
-        print(json.dumps(results[0], indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

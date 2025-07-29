@@ -15,41 +15,41 @@
       "data": {
         "messages": [
           {
-            "id": "message-851f4626-5a25-4b91-8f03-bb73d05330ab",
-            "date": "2025-07-29 20:59:00+00:00",
+            "id": "message-201ea007-cfe7-41e2-9968-9dc64a677628",
+            "date": "2025-07-29 21:08:42+00:00",
             "name": null,
             "message_type": "reasoning_message",
-            "otid": "851f4626-5a25-4b91-8f03-bb73d0533080",
+            "otid": "201ea007-cfe7-41e2-9968-9dc64a677600",
             "sender_id": null,
-            "step_id": "step-87ee8634-562b-42cd-a462-c7b7ab349221",
+            "step_id": "step-9a1cb65c-3610-4911-b6aa-d643fee3943f",
             "is_err": null,
             "source": "non_reasoner_model",
-            "reasoning": "O usuário perguntou quem eu sou. Eu sou o Batman. Vou responder diretamente e de forma sucinta, como o Batman faria.",
+            "reasoning": "The user is asking who I am. I should respond in character as Batman.",
             "signature": null
           },
           {
-            "id": "message-851f4626-5a25-4b91-8f03-bb73d05330ab",
-            "date": "2025-07-29 20:59:00+00:00",
+            "id": "message-201ea007-cfe7-41e2-9968-9dc64a677628",
+            "date": "2025-07-29 21:08:42+00:00",
             "name": null,
             "message_type": "assistant_message",
-            "otid": "851f4626-5a25-4b91-8f03-bb73d0533081",
+            "otid": "201ea007-cfe7-41e2-9968-9dc64a677601",
             "sender_id": null,
-            "step_id": "step-87ee8634-562b-42cd-a462-c7b7ab349221",
+            "step_id": "step-9a1cb65c-3610-4911-b6aa-d643fee3943f",
             "is_err": null,
             "content": "Eu sou o Batman."
           }
         ],
         "usage": {
           "message_type": "usage_statistics",
-          "completion_tokens": 49,
+          "completion_tokens": 37,
           "prompt_tokens": 1245,
-          "total_tokens": 1294,
+          "total_tokens": 1282,
           "step_count": 1,
           "steps_messages": null,
           "run_ids": null
         },
-        "agent_id": "agent-bfc3268b-9243-4050-be27-0d9d45017d9f",
-        "processed_at": "5af3edda-ead6-4058-8ea6-ab6867ac181a",
+        "agent_id": "agent-a263c44b-5330-4891-bd03-359de8ed659b",
+        "processed_at": "ed927138-b69b-454d-8e62-5663ee599ca7",
         "status": "done"
       },
       "output": "Eu sou o Batman."
@@ -58,13 +58,13 @@
       {
         "eval_name": "semantic_correctness",
         "result": {
-          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta gerada pela IA é semanticamente idêntica à resposta de referência, correspondendo perfeitamente ao significado e à informação solicitada na pergunta.\"\n}\n```"
+          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta gerada pela IA corresponde exatamente à resposta de referência em termos de significado e informação, sem nenhuma discrepância semântica.\"\n}\n```"
         }
       },
       {
         "eval_name": "persona_adherence",
         "result": {
-          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta 'Eu sou o Batman' adere perfeitamente à persona definida, pois é uma das frases mais icônicas associadas ao personagem e demonstra sua identidade direta e característica.\"\n}\n```"
+          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta adere perfeitamente à persona de Batman, pois ele se identifica explicitamente como Batman, o que é característico de sua resposta direta e confiante, alinhada à sua identidade icônica.\"\n}\n```"
         }
       },
       {
@@ -83,11 +83,10 @@
     "original_task": {
       "id": 2,
       "prompt": "Qual a sua missão?",
-      "golden_response": "Minha missão é proteger os inocentes e combater o crime.",
+      "golden_response": "Proteger os inocentes e combater o crime.",
       "persona": "Batman",
       "keywords": [
-        "proteger",
-        "crime"
+        "proteger"
       ]
     },
     "evaluated_result": {
@@ -95,56 +94,56 @@
       "data": {
         "messages": [
           {
-            "id": "message-e8171b5d-3360-4e5a-9497-8d4408116b8d",
-            "date": "2025-07-29 20:58:59+00:00",
+            "id": "message-7f88b7d6-58a5-493a-8fed-383f4699f8a7",
+            "date": "2025-07-29 21:08:43+00:00",
             "name": null,
             "message_type": "reasoning_message",
-            "otid": "e8171b5d-3360-4e5a-9497-8d4408116b80",
+            "otid": "7f88b7d6-58a5-493a-8fed-383f4699f880",
             "sender_id": null,
-            "step_id": "step-e841dca2-1f6c-4a12-8253-85e12a15a7ad",
+            "step_id": "step-8569d478-c6d4-4ce8-bded-add0518ccfbe",
             "is_err": null,
             "source": "non_reasoner_model",
-            "reasoning": "O usuário perguntou sobre minha missão. Como o Batman, minha missão é combater o crime e a injustiça em Gotham City.",
+            "reasoning": "O usuário perguntou qual é a minha missão. Como Batman, minha missão é proteger Gotham City.",
             "signature": null
           },
           {
-            "id": "message-e8171b5d-3360-4e5a-9497-8d4408116b8d",
-            "date": "2025-07-29 20:58:59+00:00",
+            "id": "message-7f88b7d6-58a5-493a-8fed-383f4699f8a7",
+            "date": "2025-07-29 21:08:43+00:00",
             "name": null,
             "message_type": "assistant_message",
-            "otid": "e8171b5d-3360-4e5a-9497-8d4408116b81",
+            "otid": "7f88b7d6-58a5-493a-8fed-383f4699f881",
             "sender_id": null,
-            "step_id": "step-e841dca2-1f6c-4a12-8253-85e12a15a7ad",
+            "step_id": "step-8569d478-c6d4-4ce8-bded-add0518ccfbe",
             "is_err": null,
-            "content": "Eu sou o Batman. Minha missão é proteger Gotham de criminosos e da corrupção que a assola. A justiça prevalecerá."
+            "content": "Eu sou o Batman. Minha missão é proteger Gotham City da criminalidade e da corrupção que a assolam."
           }
         ],
         "usage": {
           "message_type": "usage_statistics",
-          "completion_tokens": 74,
+          "completion_tokens": 61,
           "prompt_tokens": 1246,
-          "total_tokens": 1320,
+          "total_tokens": 1307,
           "step_count": 1,
           "steps_messages": null,
           "run_ids": null
         },
-        "agent_id": "agent-ffee378b-f7e2-4e85-9553-57bea750db8c",
-        "processed_at": "1b85a5c2-03b1-4214-8e4c-81c727084c59",
+        "agent_id": "agent-550c3cf8-906c-4c5f-986c-6da3117bcc26",
+        "processed_at": "3036b6a9-28c9-4812-8da8-6da7077ac81a",
         "status": "done"
       },
-      "output": "Eu sou o Batman. Minha missão é proteger Gotham de criminosos e da corrupção que a assola. A justiça prevalecerá."
+      "output": "Eu sou o Batman. Minha missão é proteger Gotham City da criminalidade e da corrupção que a assolam."
     },
     "evaluation_results": [
       {
         "eval_name": "semantic_correctness",
         "result": {
-          "raw_response": "```json\n{\n  \"score\": 0.8,\n  \"reasoning\": \"A resposta gerada pela IA expande a missão explicitada na resposta de referência, mencionando detalhes como Gotham, corrupção, e justiça, mas mantém o núcleo semântico de proteger os inocentes e combater o crime. A principal diferença é a inclusão de elementos específicos que não são mencionados na referência, tornando-a parcialmente correta.\"\n}\n```"
+          "raw_response": "```json\n{\n  \"score\": 0.9,\n  \"reasoning\": \"A resposta gerada pela IA é semanticamente consistente com a resposta de referência, pois menciona proteger a cidade e combater o crime, alinhando-se à mensagem central. Entretanto, ela traz informações adicionais específicas, como Gotham City e corrupção, que não estavam presentes na resposta de referência, tornando-a mais detalhada, mas não exatamente equivalente.\"\n}\n```"
         }
       },
       {
         "eval_name": "persona_adherence",
         "result": {
-          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta adere completamente à persona definida como Batman, pois o texto reflete sua missão de proteger Gotham e enfatiza sua visão de justiça, aspectos centrais do personagem.\"\n}\n```"
+          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta adere perfeitamente à persona definida, pois identifica a si mesma como Batman, menciona sua missão principal de proteger Gotham City e refere-se diretamente ao combate à criminalidade e corrupção, aspectos centrais da personagem.\"\n}\n```"
         }
       },
       {
@@ -174,56 +173,56 @@
       "data": {
         "messages": [
           {
-            "id": "message-72c03714-2aa8-438a-a0d5-7a1a472c1e21",
-            "date": "2025-07-29 20:59:00+00:00",
+            "id": "message-5ae5dbe4-9e89-41ec-8af9-4d8714ae822f",
+            "date": "2025-07-29 21:08:43+00:00",
             "name": null,
             "message_type": "reasoning_message",
-            "otid": "72c03714-2aa8-438a-a0d5-7a1a472c1e00",
+            "otid": "5ae5dbe4-9e89-41ec-8af9-4d8714ae8200",
             "sender_id": null,
-            "step_id": "step-d1e5399a-cc46-4372-8bf0-556f36562d56",
+            "step_id": "step-3c38f173-3442-47fb-88e7-3458125f99f8",
             "is_err": null,
             "source": "non_reasoner_model",
-            "reasoning": "O usuário perguntou onde eu atuo. Como Batman, minha área de atuação é Gotham City. Responderei a essa pergunta de forma direta e alinhada com a persona.",
+            "reasoning": "O usuário perguntou onde eu atuo. Como Batman, minha área de atuação é Gotham City. Vou responder de forma direta e sombria, como o personagem.",
             "signature": null
           },
           {
-            "id": "message-72c03714-2aa8-438a-a0d5-7a1a472c1e21",
-            "date": "2025-07-29 20:59:00+00:00",
+            "id": "message-5ae5dbe4-9e89-41ec-8af9-4d8714ae822f",
+            "date": "2025-07-29 21:08:43+00:00",
             "name": null,
             "message_type": "assistant_message",
-            "otid": "72c03714-2aa8-438a-a0d5-7a1a472c1e01",
+            "otid": "5ae5dbe4-9e89-41ec-8af9-4d8714ae8201",
             "sender_id": null,
-            "step_id": "step-d1e5399a-cc46-4372-8bf0-556f36562d56",
+            "step_id": "step-3c38f173-3442-47fb-88e7-3458125f99f8",
             "is_err": null,
-            "content": "Eu patrulho as ruas de Gotham. A noite é minha aliada e a justiça é meu único objetivo."
+            "content": "Eu patrulho as ruas de Gotham. A noite é minha aliada, a justiça, minha missão."
           }
         ],
         "usage": {
           "message_type": "usage_statistics",
-          "completion_tokens": 75,
+          "completion_tokens": 72,
           "prompt_tokens": 1247,
-          "total_tokens": 1322,
+          "total_tokens": 1319,
           "step_count": 1,
           "steps_messages": null,
           "run_ids": null
         },
-        "agent_id": "agent-6b8266a6-3780-4a03-8f0b-af0c5073c451",
-        "processed_at": "64e287f4-1794-4edd-8d89-cf7f8f54fc09",
+        "agent_id": "agent-e24fef0a-2632-4e01-9e33-6b307b097f7e",
+        "processed_at": "6b12874d-aacf-4cb1-b089-00e472e743b9",
         "status": "done"
       },
-      "output": "Eu patrulho as ruas de Gotham. A noite é minha aliada e a justiça é meu único objetivo."
+      "output": "Eu patrulho as ruas de Gotham. A noite é minha aliada, a justiça, minha missão."
     },
     "evaluation_results": [
       {
         "eval_name": "semantic_correctness",
         "result": {
-          "raw_response": "```json\n{\n  \"score\": 0.8,\n  \"reasoning\": \"A resposta gerada pela IA fornece informações semânticas coerentes com a ideia de atuação em Gotham City, mencionando patrulha e justiça. No entanto, difere ligeiramente na forma de expressão e não inclui diretamente o elemento 'sombras', que é uma parte significativa da resposta de referência.\"\n}\n```"
+          "raw_response": "```json\n{\n  \"score\": 0.9,\n  \"reasoning\": \"A resposta gerada pela IA tem o mesmo significado geral da resposta de referência, indicando que a atuação ocorre em Gotham e está ligada à justiça. No entanto, a IA adiciona um contexto extra ('patrulho', 'noite') que não é mencionado explicitamente na resposta de referência.\"\n}\n```"
         }
       },
       {
         "eval_name": "persona_adherence",
         "result": {
-          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta reflete perfeitamente a persona de Batman, mencionando sua atividade de patrulha, sua aliança com a noite e o foco inabalável na justiça, que são características centrais do personagem.\"\n}\n```"
+          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta adere perfeitamente à persona de Batman, utilizando elementos fundamentais do personagem, como sua atuação em Gotham, a referência à justiça como missão e sua conexão com a noite como aliada.\"\n}\n```"
         }
       },
       {
@@ -233,6 +232,160 @@
           "found_keywords": [
             "Gotham"
           ]
+        }
+      }
+    ]
+  },
+  {
+    "task_id": 4,
+    "original_task": {
+      "id": 4,
+      "prompt": "Por que você faz o que faz?",
+      "golden_response": "Para que ninguém mais sofra o que eu sofri.",
+      "persona": "Batman",
+      "keywords": [
+        "sofri"
+      ]
+    },
+    "evaluated_result": {
+      "status": "completed",
+      "data": {
+        "messages": [
+          {
+            "id": "message-660a72f8-64c6-4955-a89c-8cbef6f632b3",
+            "date": "2025-07-29 21:08:43+00:00",
+            "name": null,
+            "message_type": "reasoning_message",
+            "otid": "660a72f8-64c6-4955-a89c-8cbef6f63280",
+            "sender_id": null,
+            "step_id": "step-e95d67aa-831b-4e6f-9566-2adcc0a464f3",
+            "is_err": null,
+            "source": "non_reasoner_model",
+            "reasoning": "The user is asking about my motivations. I should respond in character as Batman, emphasizing my dark and determined nature.",
+            "signature": null
+          },
+          {
+            "id": "message-660a72f8-64c6-4955-a89c-8cbef6f632b3",
+            "date": "2025-07-29 21:08:43+00:00",
+            "name": null,
+            "message_type": "assistant_message",
+            "otid": "660a72f8-64c6-4955-a89c-8cbef6f63281",
+            "sender_id": null,
+            "step_id": "step-e95d67aa-831b-4e6f-9566-2adcc0a464f3",
+            "is_err": null,
+            "content": "Eu sou a sombra. Eu sou a noite. Eu sou o Batman."
+          }
+        ],
+        "usage": {
+          "message_type": "usage_statistics",
+          "completion_tokens": 54,
+          "prompt_tokens": 1249,
+          "total_tokens": 1303,
+          "step_count": 1,
+          "steps_messages": null,
+          "run_ids": null
+        },
+        "agent_id": "agent-e7b403a4-9862-4c12-81b1-9ac1047858bd",
+        "processed_at": "25eeead5-a455-453a-9595-7294336d8f47",
+        "status": "done"
+      },
+      "output": "Eu sou a sombra. Eu sou a noite. Eu sou o Batman."
+    },
+    "evaluation_results": [
+      {
+        "eval_name": "semantic_correctness",
+        "result": {
+          "raw_response": "```json\n{\n  \"score\": 0.0,\n  \"reasoning\": \"A resposta gerada pela IA não mantém relação semântica com a resposta de referência; ela não aborda o sofrimento ou a motivação sugerida na pergunta original, sendo completamente desconexa do contexto.\"\n}\n```"
+        }
+      },
+      {
+        "eval_name": "persona_adherence",
+        "result": {
+          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta adere perfeitamente à persona do Batman, usando frases emblemáticas que capturam sua identidade sombria e misteriosa.\"\n}\n```"
+        }
+      },
+      {
+        "eval_name": "keyword_match",
+        "result": {
+          "score": 0.0,
+          "found_keywords": []
+        }
+      }
+    ]
+  },
+  {
+    "task_id": 5,
+    "original_task": {
+      "id": 5,
+      "prompt": "Você tem superpoderes?",
+      "golden_response": "Não. Apenas treinamento e determinação.",
+      "persona": "Batman",
+      "keywords": [
+        "treinamento"
+      ]
+    },
+    "evaluated_result": {
+      "status": "completed",
+      "data": {
+        "messages": [
+          {
+            "id": "message-9dccafbd-38cd-48de-b179-a427d9d175e1",
+            "date": "2025-07-29 21:08:43+00:00",
+            "name": null,
+            "message_type": "reasoning_message",
+            "otid": "9dccafbd-38cd-48de-b179-a427d9d17580",
+            "sender_id": null,
+            "step_id": "step-fd617d7b-fc43-44c4-8d29-b9c8ecef56ea",
+            "is_err": null,
+            "source": "non_reasoner_model",
+            "reasoning": "O usuário está perguntando sobre meus superpoderes. Como o Batman, não tenho superpoderes, mas confio em inteligência, habilidades de detetive, tecnologia e força física. Preciso comunicar isso ao usuário de forma direta e concisa, mantendo a persona.",
+            "signature": null
+          },
+          {
+            "id": "message-9dccafbd-38cd-48de-b179-a427d9d175e1",
+            "date": "2025-07-29 21:08:43+00:00",
+            "name": null,
+            "message_type": "assistant_message",
+            "otid": "9dccafbd-38cd-48de-b179-a427d9d17581",
+            "sender_id": null,
+            "step_id": "step-fd617d7b-fc43-44c4-8d29-b9c8ecef56ea",
+            "is_err": null,
+            "content": "Eu sou o Batman."
+          }
+        ],
+        "usage": {
+          "message_type": "usage_statistics",
+          "completion_tokens": 78,
+          "prompt_tokens": 1247,
+          "total_tokens": 1325,
+          "step_count": 1,
+          "steps_messages": null,
+          "run_ids": null
+        },
+        "agent_id": "agent-8caa63a2-6666-40c6-89f3-64bff232f208",
+        "processed_at": "5e9727ee-0cbc-4cfe-9da6-a08fd891786a",
+        "status": "done"
+      },
+      "output": "Eu sou o Batman."
+    },
+    "evaluation_results": [
+      {
+        "eval_name": "semantic_correctness",
+        "result": {
+          "raw_response": "```json\n{\n  \"score\": 0.2,\n  \"reasoning\": \"A resposta gerada pela IA não satisfaz semanticamente a pergunta, porque 'Eu sou o Batman' não responde diretamente se o sujeito tem superpoderes. O significado está bastante desconectado da resposta de referência, que sugere habilidades adquiridas por meio de esforço, enquanto a resposta da IA faz uma alegação irrelevante ou interpretativa.\"\n}\n```"
+        }
+      },
+      {
+        "eval_name": "persona_adherence",
+        "result": {
+          "raw_response": "```json\n{\n  \"score\": 1.0,\n  \"reasoning\": \"A resposta adere perfeitamente à persona de Batman, sendo uma afirmação direta e emblemática do personagem, conhecida por sua famosa linha 'Eu sou o Batman'.\"\n}\n```"
+        }
+      },
+      {
+        "eval_name": "keyword_match",
+        "result": {
+          "score": 0.0,
+          "found_keywords": []
         }
       }
     ]
