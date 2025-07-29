@@ -23,20 +23,20 @@ class EvaluatedLLMClient:
 
     def __init__(self, agent_config: CreateAgentRequest):
         self.agent_config = agent_config
+        self.client = EAIClient()
 
     async def execute(
         self, message: str, timeout: int = 180, polling_interval: int = 2
     ) -> Dict[str, Any]:
 
-        eai_client = EAIClient()
         try:
-            create_resp = await eai_client.create_agent(self.agent_config)
+            create_resp = await self.client.create_agent(self.agent_config)
             agent_id = create_resp.get("agent_id")
 
             if not agent_id:
                 raise BaseException("Failed to create agent or retrieve agent ID.")
 
-            response = await eai_client.send_message_and_get_response(
+            response = await self.client.send_message_and_get_response(
                 agent_id=agent_id,
                 message=message,
                 timeout=timeout,
@@ -70,23 +70,21 @@ class AzureOpenAIClient:
 
     def __init__(self, model_name: str):
         self.model_name = model_name
-
-    async def execute(
-        self,
-        prompt: str,
-    ) -> str:
-        client = AzureOpenAI(
+        self.client = AzureOpenAI(
             azure_endpoint=env.OPENAI_AZURE_URL,
             api_key=env.OPENAI_AZURE_API_KEY,
             api_version=env.OPENAI_AZURE_API_VERSION,
         )
 
-        completion = client.chat.completions.create(
+    async def execute(
+        self,
+        prompt: str,
+    ) -> str:
+        completion = self.client.chat.completions.create(
             model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "text"},
         )
-
         if completion.choices[0].message.content:
             return completion.choices[0].message.content
         else:
@@ -100,21 +98,20 @@ class GeminiAIClient:
 
     def __init__(self, model_name: str):
         self.model_name = model_name
+        self.client = genai.Client(
+            api_key=env.GEMINI_API_KEY,
+        )
 
     async def execute(
         self,
         prompt: str,
     ) -> str:
-        client = genai.Client(
-            api_key=env.GEMINI_API_KEY,
-        )
         generate_content_config = types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(
                 thinking_budget=-1,
             ),
         )
-
-        response = await client.aio.models.generate_content(
+        response = await self.client.aio.models.generate_content(
             model=self.model_name,
             contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
             config=generate_content_config,
