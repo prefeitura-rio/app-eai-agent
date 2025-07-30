@@ -34,11 +34,11 @@ class Evals:
 
     @eval_method(name="conversational_reasoning", turns="multiple")
     async def conversational_reasoning(
-        self, transcript: str, task: Dict[str, Any]
+        self, agent_response: str, task: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Avalia o raciocínio com base em uma transcrição completa."""
         prompt = prompt_judges.FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT.format(
-            golden_summary=task.get("golden_summary", ""), transcript=transcript
+            golden_summary=task.get("golden_summary", ""), transcript=agent_response
         )
         judgement_response = await self.judge_client.execute(prompt)
         score = _extract_evaluation(judgement_response)
@@ -49,11 +49,11 @@ class Evals:
 
     @eval_method(name="conversational_memory", turns="multiple")
     async def conversational_memory(
-        self, transcript: str, task: Dict[str, Any]
+        self, agent_response: str, task: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Avalia a memória com base em uma transcrição completa."""
         prompt = prompt_judges.FINAL_MEMORY_JUDGEMENT_PROMPT.format(
-            golden_summary=task.get("golden_summary", ""), transcript=transcript
+            golden_summary=task.get("golden_summary", ""), transcript=agent_response
         )
         judgement_response = await self.judge_client.execute(prompt)
         score = _extract_evaluation(judgement_response)

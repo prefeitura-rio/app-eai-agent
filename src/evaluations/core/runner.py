@@ -34,32 +34,65 @@ class AsyncExperimentRunner:
         self.evaluation_suite = evaluation_suite
         self.metrics_to_run = metrics_to_run
 
+    async def _conduct_conversation(self, task, conv_manager):
+        transcript, history = [], []
+        current_message = task.get("prompt")
+        last_response = {}
+        for turn in range(10):
+            agent_res = await conv_manager.send_message(current_message)
+            last_response = agent_res
+            transcript.append(
+                {
+                    "turn": turn + 1,
+                    "judge_message": current_message,
+                    "agent_response": agent_res.get("output"),
+                    "agent_response_raw": agent_res.get("messages"),
+                }
+            )
+            history.append(
+                f"Turno {turn+1} - Juiz: {current_message}\nTurno {turn+1} - Agente: {agent_res.get('output')}"
+            )
+
+            prompt_for_judge = prompt_judges.CONVERSATIONAL_JUDGE_PROMPT.format(
+                judge_context=task["judge_context"],
+                conversation_history="\n".join(history),
+                stop_signal=JUDGE_STOP_SIGNAL,
+            )
+            judge_res = await self.evaluation_suite.judge_client.execute(
+                prompt_for_judge
+            )
+            if JUDGE_STOP_SIGNAL in judge_res:
+                break
+            current_message = judge_res
+        return transcript, last_response
+
     async def _process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         task_id = task.get("id")
         logger.info(f"Iniciando processamento da tarefa: {task_id}")
 
         try:
             agent_config_obj = CreateAgentRequest(**self.metadata)
-            conv_manager = AgentConversationManager(agent_config_obj)
-            await conv_manager.initialize()
 
             metrics_by_turns = {"one": [], "multiple": []}
             for m in self.metrics_to_run:
-                turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
-                if turn_type:
-                    metrics_by_turns[turn_type].append(m)
+                metrics_by_turns[
+                    _EVAL_METHODS_REGISTRY.get(m, {}).get("turns", "one")
+                ].append(m)
 
-            transcript, last_agent_response = [], {}
+            transcript, conv_last_response = [], {}
+            one_turn_response = {}
 
             if metrics_by_turns["multiple"]:
-                transcript, last_agent_response = await self._conduct_conversation(
-                    task, conv_manager
+                agent_multiple = AgentConversationManager(agent_config_obj)
+                await agent_multiple.initialize()
+                transcript, conv_last_response = await self._conduct_conversation(
+                    task, agent_multiple
                 )
-            elif metrics_by_turns["one"]:
-                last_agent_response = await conv_manager.send_message(
-                    task.get("prompt")
-                )
-                transcript = [last_agent_response]
+
+            if metrics_by_turns["one"]:
+                agent_one = AgentConversationManager(agent_config_obj)
+                await agent_one.initialize()
+                one_turn_response = await agent_one.send_message(task.get("prompt"))
 
             coroutines = []
             transcript_str = json.dumps(transcript, indent=2, ensure_ascii=False)
@@ -68,10 +101,12 @@ class AsyncExperimentRunner:
                 eval_func = getattr(self.evaluation_suite, metric_name)
 
                 if eval_info["turns"] == "multiple":
-                    coroutines.append(eval_func(transcript=transcript_str, task=task))
-                elif eval_info["turns"] == "one":
                     coroutines.append(
-                        eval_func(agent_response=last_agent_response, task=task)
+                        eval_func(agent_response=transcript_str, task=task)
+                    )
+                else:  # turns == "one"
+                    coroutines.append(
+                        eval_func(agent_response=one_turn_response, task=task)
                     )
 
             results_from_evals = await asyncio.gather(
@@ -94,8 +129,26 @@ class AsyncExperimentRunner:
 
             return {
                 "task": task,
-                "agent_response": last_agent_response.get("output"),
-                "agent_response_raw": transcript,
+                "agent_response": {
+                    "one": (
+                        one_turn_response.get("output")
+                        if metrics_by_turns["one"]
+                        else None
+                    ),
+                    "multiple": (
+                        conv_last_response.get("output")
+                        if metrics_by_turns["multiple"]
+                        else None
+                    ),
+                },
+                "agent_response_raw": {
+                    "one": (
+                        one_turn_response.get("messages")
+                        if metrics_by_turns["one"]
+                        else None
+                    ),
+                    "multiple": transcript if metrics_by_turns["multiple"] else None,
+                },
                 "evaluation_results": evaluation_results,
             }
         except Exception as e:
@@ -107,38 +160,6 @@ class AsyncExperimentRunner:
         finally:
             if "conv_manager" in locals() and conv_manager.agent_id:
                 await conv_manager.close()
-
-    async def _conduct_conversation(self, task, conv_manager):
-        transcript, history = [], []
-        current_message = task.get("prompt")
-        last_response = {}
-        for turn in range(10):
-            agent_res = await conv_manager.send_message(current_message)
-            last_response = agent_res
-            transcript.append(
-                {
-                    "turn": turn + 1,
-                    "judge_message": current_message,
-                    "agent_response": agent_res.get("output"),
-                    # "agent_response_raw": agent_res,
-                }
-            )
-            history.append(
-                f"Turno {turn+1} - Juiz: {current_message}\nTurno {turn+1} - Agente: {agent_res.get('output')}"
-            )
-
-            prompt_for_judge = prompt_judges.CONVERSATIONAL_JUDGE_PROMPT.format(
-                judge_context=task["judge_context"],
-                conversation_history="\n".join(history),
-                stop_signal=JUDGE_STOP_SIGNAL,
-            )
-            judge_res = await self.evaluation_suite.judge_client.execute(
-                prompt_for_judge
-            )
-            if JUDGE_STOP_SIGNAL in judge_res:
-                break
-            current_message = judge_res
-        return transcript, last_response
 
     async def run(self, loader: DataLoader):
         tasks = list(loader.get_tasks())

@@ -7,6 +7,7 @@ Este arquivo centraliza todos os templates de prompt usados pelos Juízes LLM.
 # 1. PROMPT PARA CONDUZIR A CONVERSA
 CONVERSATIONAL_JUDGE_PROMPT = """
 Você é um Juiz de IA conduzindo uma avaliação conversacional. Sua tarefa é seguir um roteiro.
+Nesta conversa voce é o Usuario e deve assumir a persona especificada no roteiro!!
 
 **Seu Roteiro (Contexto Secreto):**
 {judge_context}
@@ -29,8 +30,7 @@ FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT = """
 Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.
 
 **Objetivo da Avaliação (Golden Summary):**
-O agente deve ser capaz de conectar o roubo na Ace Chemicals com a nova toxina, sugerindo o envolvimento de vilões conhecidos.
-
+{golden_summary}
 **Transcrição Completa da Conversa:**
 {transcript}
 
@@ -45,8 +45,7 @@ FINAL_MEMORY_JUDGEMENT_PROMPT = """
 Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre a **MEMÓRIA** de um agente com base em uma conversa.
 
 **Objetivo da Avaliação (Golden Summary):**
-O agente deve ser capaz de lembrar o nome 'Alfred' após várias perguntas de distração
-
+{golden_summary}
 
 **Transcrição Completa da Conversa:**
 {transcript}
