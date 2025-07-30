@@ -35,9 +35,12 @@ Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RAC
 {transcript}
 
 **Sua Tarefa:**
+Ruim: 0.0
+Bom: 0.5
+Exelente:1.0
 Analise a transcrição e compare o desempenho do agente com o objetivo.
 Responda em duas linhas separadas, formatadas EXATAMENTE assim:
-Score: <um valor float de 0.0 a 1.0 para a capacidade de RACIOCÍNIO>
+Score: <um valor float para a capacidade de RACIOCÍNIO>
 Reasoning: <uma explicação curta e objetiva para a sua nota de RACIOCÍNIO>
 """
 
@@ -51,9 +54,12 @@ Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre a **MEM
 {transcript}
 
 **Sua Tarefa:**
+Ruim: 0.0
+Bom: 0.5
+Exelente:1.0
 Analise a transcrição e compare o desempenho do agente com o objetivo.
 Responda em duas linhas separadas, formatadas EXATAMENTE assim:
-Score: <um valor float de 0.0 a 1.0 para a capacidade de MEMÓRIA>
+Score: <um valor float para a capacidade de MEMÓRIA>
 Reasoning: <uma explicação curta e objetiva para a sua nota de MEMÓRIA>
 """
 
@@ -66,9 +72,15 @@ Avalie similaridade semântica da resposta gerada por uma IA em relacao a Respos
 **Resposta Ideal:**
 {task[golden_response]}
 
+
+
 **Sua Tarefa:**
+Ruim: 0.0
+Bom: 0.5
+Exelente:1.0
+
 Responda em duas linhas separadas, formatadas EXATAMENTE assim:
-Score: <um valor float de 0.0 a 1.0>
+Score: <um valor float >
 Reasoning: <uma explicação curta e objetiva para a sua nota>
 """
 
@@ -77,7 +89,11 @@ Avalie se a resposta da IA adere à persona definida: **{task[persona]}**.
 **Resposta Gerada pela IA:**
 {output}
 **Sua Tarefa:**
+Ruim: 0.0
+Bom: 0.5
+Exelente:1.0
+
 Responda em duas linhas separadas, formatadas EXATAMENTE assim:
-Score: <um valor float de 0.0 a 1.0>
+Score: <um valor float>
 Reasoning: <uma explicação curta sobre como a resposta se alinha (ou não) à persona>
 """

@@ -10,6 +10,13 @@ from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
 from src.services.eai_gateway.api import CreateAgentRequest
 from src.evaluations.core.test_data import UNIFIED_TEST_DATA
+from src.evaluations.core.prompt_judges import (
+    CONVERSATIONAL_JUDGE_PROMPT,
+    FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
+    FINAL_MEMORY_JUDGEMENT_PROMPT,
+    SEMANTIC_CORRECTNESS_PROMPT,
+    PERSONA_ADHERENCE_PROMPT,
+)
 
 
 async def run_experiment():
@@ -27,7 +34,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe,
+        source=dataframe.head(3),
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -63,6 +70,17 @@ async def run_experiment():
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
+    metadata = {
+        "agent_config": agent_config.model_dump(exclude_none=True),
+        "judges_prompts": {
+            "conversational_agent": CONVERSATIONAL_JUDGE_PROMPT,
+            "conversational_reasoning": FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
+            "conversational_memory": FINAL_MEMORY_JUDGEMENT_PROMPT,
+            "persona_adherence": PERSONA_ADHERENCE_PROMPT,
+            "semantic_correctness": SEMANTIC_CORRECTNESS_PROMPT,
+        },
+    }
+
     # --- 4. Carregamento de Respostas Pré-computadas (Opcional) ---
     PRECOMPUTED_RESPONSES_PATH = "precomputed_responses.json"  # ou None
     precomputed_responses_dict: Optional[Dict[str, Dict[str, Any]]] = None
@@ -70,7 +88,6 @@ async def run_experiment():
         try:
             with open(PRECOMPUTED_RESPONSES_PATH, "r", encoding="utf-8") as f:
                 responses = json.load(f)
-                # A chave do dicionário é o 'id', e o valor é o objeto inteiro do item.
                 precomputed_responses_dict = {item["id"]: item for item in responses}
             logger.info(
                 f"✅ Respostas pré-computadas carregadas de {PRECOMPUTED_RESPONSES_PATH}"
@@ -86,11 +103,11 @@ async def run_experiment():
     runner = AsyncExperimentRunner(
         experiment_name="Batman_Unified_Eval_v1",
         experiment_description="Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
-        metadata=agent_config.model_dump(exclude_none=True),
+        metadata=metadata,
         agent_config=agent_config.model_dump(exclude_none=True),
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
-        precomputed_responses=precomputed_responses_dict,
+        # precomputed_responses=precomputed_responses_dict,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
 

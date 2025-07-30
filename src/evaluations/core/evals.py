@@ -42,7 +42,9 @@ class Evals:
     def __init__(self, judge_client: Union[AzureOpenAIClient, GeminiAIClient]):
         self.judge_client = judge_client
 
-    async def _get_llm_judgement(self, prompt_template: str, **kwargs) -> Dict[str, Any]:
+    async def _get_llm_judgement(
+        self, prompt_template: str, **kwargs
+    ) -> Dict[str, Any]:
         """
         Formata um prompt, executa-o contra o cliente juiz e extrai o resultado.
         """
@@ -124,7 +126,7 @@ class ConversationHandler:
                     "turn": turn + 1,
                     "judge_message": current_message,
                     "agent_response": agent_res.get("output"),
-                    "agent_response_raw": agent_res.get("messages"),
+                    "reasoning": agent_res.get("messages"),
                 }
             )
             history.append(
