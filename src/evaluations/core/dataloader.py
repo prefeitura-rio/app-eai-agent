@@ -54,18 +54,14 @@ class DataLoader:
             dataset_name, dataset_description
         )
 
-    def _create_dataset_config(
-        self, name: str, description: str
-    ) -> Dict[str, Any]:
+    def _create_dataset_config(self, name: str, description: str) -> Dict[str, Any]:
         """Cria a configuração e um ID determinístico para o dataset."""
-        # Gera um ID baseado no nome e no conteúdo do dataframe para consistência
-        df_hash = hashlib.sha256(
-            pd.util.hash_pandas_object(self.df, index=True).values
-        ).hexdigest()
+        # Converte o dataframe para uma string JSON estável para o hash
+        df_json = self.df.to_json(orient="records", lines=True)
+        df_hash = hashlib.sha256(df_json.encode()).hexdigest()
+
         seed = f"{name}-{df_hash}"
-        dataset_id = str(
-            uuid.uuid5(uuid.NAMESPACE_DNS, seed)
-        )
+        dataset_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, seed))
 
         return {
             "dataset_name": name,
@@ -128,5 +124,3 @@ class DataLoader:
                 if col != self.prompt_col:  # Evita duplicar o prompt
                     task[col] = row[col]
             yield task
-
-

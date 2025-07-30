@@ -9,16 +9,16 @@ from tqdm.asyncio import tqdm_asyncio
 
 from src.evaluations.core.dataloader import DataLoader
 from src.evaluations.core.llm_clients import AgentConversationManager
-from src.evaluations.core.evals import Evals
+from src.evaluations.core.evals import Evals, _EVAL_METHODS_REGISTRY
+from src.evaluations.core import prompt_judges
 from src.services.eai_gateway.api import CreateAgentRequest
 
 logger = logging.getLogger(__name__)
+JUDGE_STOP_SIGNAL = "EVALUATION_CONCLUDED"
 
 
 class AsyncExperimentRunner:
-    """
-    Orquestra a execução de um experimento, monta o resultado final e o salva.
-    """
+    """Orquestra a execução de um experimento, monta o resultado final e o salva."""
 
     def __init__(
         self,
@@ -28,107 +28,125 @@ class AsyncExperimentRunner:
         evaluation_suite: Evals,
         metrics_to_run: List[str],
     ):
-        """
-        Inicializa o Runner.
-
-        Args:
-            experiment_name (str): Nome do experimento.
-            experiment_description (str): Descrição do experimento.
-            metadata (Dict[str, Any]): Metadados da execução (config do agente).
-            evaluation_suite (Evals): A suíte de avaliações a ser executada.
-            metrics_to_run (List[str]): A lista de nomes das métricas a serem executadas.
-        """
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
         self.metadata = metadata
         self.evaluation_suite = evaluation_suite
         self.metrics_to_run = metrics_to_run
 
-    async def _process_task(
-        self, task: Dict[str, Any], conversation_manager: AgentConversationManager
-    ) -> Dict[str, Any]:
-        """Processa uma única tarefa."""
+    async def _process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         task_id = task.get("id")
         logger.info(f"Iniciando processamento da tarefa: {task_id}")
 
-        if not task.get("prompt"):
-            error_msg = "A tarefa não contém a chave 'prompt' padronizada."
-            logger.error(f"Erro na tarefa {task_id}: {error_msg}")
-            return {"task": task, "error": error_msg}
-
         try:
-            # Etapa 2: Executa a suíte de avaliações
-            logger.info(f"Executando suíte de avaliações para a tarefa: {task_id}")
-            evaluation_results_with_responses = await self.evaluation_suite.run(
-                metrics_to_run=self.metrics_to_run,
-                conversation_manager=conversation_manager,
-                task=task,
-            )
-            logger.info(f"Suíte de avaliações concluída para a tarefa: {task_id}")
+            agent_config_obj = CreateAgentRequest(**self.metadata)
+            conv_manager = AgentConversationManager(agent_config_obj)
+            await conv_manager.initialize()
 
-            # Extrai a última resposta do agente do primeiro resultado (é a mesma para todos)
-            last_agent_response = {}
-            if evaluation_results_with_responses:
-                last_agent_response = evaluation_results_with_responses[0].get(
-                    "last_agent_response", {}
+            metrics_by_turns = {"one": [], "multiple": []}
+            for m in self.metrics_to_run:
+                turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
+                if turn_type:
+                    metrics_by_turns[turn_type].append(m)
+
+            transcript, last_agent_response = [], {}
+
+            if metrics_by_turns["multiple"]:
+                transcript, last_agent_response = await self._conduct_conversation(
+                    task, conv_manager
                 )
+            elif metrics_by_turns["one"]:
+                last_agent_response = await conv_manager.send_message(
+                    task.get("prompt")
+                )
+                transcript = [last_agent_response]
 
-            # Limpa a chave 'last_agent_response' dos resultados para evitar duplicação
-            evaluation_results_cleaned = []
-            for res in evaluation_results_with_responses:
-                cleaned_res = {
-                    "eval_name": res.get("eval_name"),
-                    "score": res.get("score"),
-                    "annotations": res.get("annotations"),
-                }
-                evaluation_results_cleaned.append(cleaned_res)
+            coroutines = []
+            transcript_str = json.dumps(transcript, indent=2, ensure_ascii=False)
+            for metric_name in self.metrics_to_run:
+                eval_info = _EVAL_METHODS_REGISTRY[metric_name]
+                eval_func = getattr(self.evaluation_suite, metric_name)
+
+                if eval_info["turns"] == "multiple":
+                    coroutines.append(eval_func(transcript=transcript_str, task=task))
+                elif eval_info["turns"] == "one":
+                    coroutines.append(
+                        eval_func(agent_response=last_agent_response, task=task)
+                    )
+
+            results_from_evals = await asyncio.gather(
+                *coroutines, return_exceptions=True
+            )
+
+            evaluation_results = []
+            for i, res in enumerate(results_from_evals):
+                metric_name = self.metrics_to_run[i]
+                if isinstance(res, Exception):
+                    evaluation_results.append(
+                        {
+                            "eval_name": metric_name,
+                            "score": 0.0,
+                            "annotations": {"error": str(res)},
+                        }
+                    )
+                else:
+                    evaluation_results.append({"eval_name": metric_name, **res})
 
             return {
                 "task": task,
                 "agent_response": last_agent_response.get("output"),
-                "agent_response_raw": last_agent_response,
-                "evaluation_results": evaluation_results_cleaned,
+                "agent_response_raw": transcript,
+                "evaluation_results": evaluation_results,
             }
         except Exception as e:
             logger.error(
                 f"Erro irrecuperável ao processar a tarefa {task_id}: {e}",
                 exc_info=True,
             )
-            return {
-                "task": task,
-                "error": f"Erro irrecuperável ao processar a tarefa: {e}",
-            }
+            return {"task": task, "error": f"Erro irrecuperável: {e}"}
+        finally:
+            if "conv_manager" in locals() and conv_manager.agent_id:
+                await conv_manager.close()
+
+    async def _conduct_conversation(self, task, conv_manager):
+        transcript, history = [], []
+        current_message = task.get("prompt")
+        last_response = {}
+        for turn in range(10):
+            agent_res = await conv_manager.send_message(current_message)
+            last_response = agent_res
+            transcript.append(
+                {
+                    "turn": turn + 1,
+                    "judge_message": current_message,
+                    "agent_response": agent_res.get("output"),
+                    # "agent_response_raw": agent_res,
+                }
+            )
+            history.append(
+                f"Turno {turn+1} - Juiz: {current_message}\nTurno {turn+1} - Agente: {agent_res.get('output')}"
+            )
+
+            prompt_for_judge = prompt_judges.CONVERSATIONAL_JUDGE_PROMPT.format(
+                judge_context=task["judge_context"],
+                conversation_history="\n".join(history),
+                stop_signal=JUDGE_STOP_SIGNAL,
+            )
+            judge_res = await self.evaluation_suite.judge_client.execute(
+                prompt_for_judge
+            )
+            if JUDGE_STOP_SIGNAL in judge_res:
+                break
+            current_message = judge_res
+        return transcript, last_response
 
     async def run(self, loader: DataLoader):
-        """
-        Executa o experimento completo, monta o resultado e salva em arquivo.
-        """
         tasks = list(loader.get_tasks())
-        if not tasks:
-            logger.warning("Nenhuma tarefa para processar.")
-            return
+        runs = await tqdm_asyncio.gather(
+            *[self._process_task(task) for task in tasks],
+            desc=f"Executando: {self.experiment_name}",
+        )
 
-        logger.info(f"Iniciando execução do experimento para {len(tasks)} tarefa(s).")
-        
-        # Recria o objeto Pydantic a partir do dicionário de metadados
-        agent_config_obj = CreateAgentRequest(**self.metadata)
-        
-        # O ConversationManager é criado uma vez para o experimento
-        conversation_manager = AgentConversationManager(agent_config_obj)
-        await conversation_manager.initialize()
-
-        try:
-            task_coroutines = [
-                self._process_task(task, conversation_manager) for task in tasks
-            ]
-            runs = await tqdm_asyncio.gather(
-                *task_coroutines, desc=f"Executando Experimento: {self.experiment_name}"
-            )
-        finally:
-            await conversation_manager.close()
-            logger.info("Conversa com o agente para o experimento encerrada.")
-
-        logger.info("Montando o JSON de resultado final.")
         final_result = {
             **loader.get_dataset_config(),
             "experiment_id": f"exp_{uuid.uuid4()}",
@@ -142,9 +160,6 @@ class AsyncExperimentRunner:
         output_dir = "evaluation_results"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"results_{self.experiment_name}.json")
-
-        logger.info(f"Salvando resultados em: {output_path}")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(final_result, f, indent=2, ensure_ascii=False)
-
-        logger.info("Execução do experimento concluída com sucesso.")
+        logger.info(f"Resultados salvos em: {output_path}")

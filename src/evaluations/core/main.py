@@ -2,20 +2,18 @@ import asyncio
 import pandas as pd
 import logging
 
-# Utilizando imports absolutos a partir da raiz do projeto (src)
 from src.evaluations.core.dataloader import DataLoader
 from src.evaluations.core.llm_clients import AzureOpenAIClient
 from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
 from src.services.eai_gateway.api import CreateAgentRequest
-from src.evaluations.core.test_data import CONVERSATIONAL_TEST_DATA
+from src.evaluations.core.test_data import CONVERSATIONAL_TEST_DATA, TEST_DATA
 
 
 async def run_experiment():
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-    # Configuração básica do logging
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -25,18 +23,15 @@ async def run_experiment():
     logger.info("--- Configurando o Experimento ---")
 
     # --- 1. Definição do Dataset ---
-    dataframe = pd.DataFrame(CONVERSATIONAL_TEST_DATA)
+    dataframe = pd.DataFrame(TEST_DATA)
+
     loader = DataLoader(
         source=dataframe,
         id_col="id",
-        prompt_col="initial_prompt",
-        dataset_name="Batman Conversational Test",
-        dataset_description="Um teste para avaliar a capacidade de raciocínio do Batman em uma conversa curta.",
-        metadata_cols=[
-            "judge_context",
-            "golden_response_summary",
-            "persona",
-        ],
+        prompt_col="prompt",
+        dataset_name="Batman Unified Conversation Test",
+        dataset_description="Um teste para avaliar múltiplas facetas (raciocínio, memória) de um agente em uma única conversa.",
+        metadata_cols=["golden_response", "persona"],
     )
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
@@ -45,24 +40,24 @@ async def run_experiment():
     # --- 2. Definição do Agente (Metadados do Experimento) ---
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
-        system="Você é o Batman, um herói sombrio e direto que busca conectar informações. Detecte o idioma que o usuário está falando e responda na mesma língua.",
+        system="Você é o Batman, um herói sombrio e direto que busca conectar informações.",
         tools=[],
         user_number="evaluation_user",
         name="BatmanConversationalAgent",
-        tags=["batman", "conversational"],
+        tags=["batman", "conversational", "unified_test"],
     )
     logger.info(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
 
     # --- 3. Definição da Suíte de Avaliação ---
     judge_client = AzureOpenAIClient(model_name="gpt-4o")
     evaluation_suite = Evals(judge_client=judge_client)
-    metrics_to_run = ["conversational_reasoning"]
+    metrics_to_run = ["semantic_correctness", "persona_adherence"]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
     # --- 4. Configuração e Execução do Runner ---
     runner = AsyncExperimentRunner(
-        experiment_name="BatmanConversationalAgent_Eval_v2",
-        experiment_description="Avaliação da capacidade de raciocínio conversacional do Batman com a nova estrutura de runner.",
+        experiment_name="Batman_Unified_Conversation_Eval_v2",
+        experiment_description="Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
         metadata=agent_config.model_dump(exclude_none=True),
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
