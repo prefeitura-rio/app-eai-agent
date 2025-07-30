@@ -1,9 +1,11 @@
 import asyncio
 import pandas as pd
 import logging
+import json
+from typing import Dict, Any, Optional
 
 from src.evaluations.core.dataloader import DataLoader
-from src.evaluations.core.llm_clients import AzureOpenAIClient
+from src.evaluations.core.llm_clients import AzureOpenAIClient, GeminiAIClient
 from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
 from src.services.eai_gateway.api import CreateAgentRequest
@@ -32,9 +34,12 @@ async def run_experiment():
         dataset_description="Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
         metadata_cols=["persona", "judge_context", "golden_summary", "golden_response"],
     )
-    logger.info(f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'")
+    logger.info(
+        f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
+    )
 
     # --- 2. Definição do Agente (Metadados do Experimento) ---
+    # Se estiver usando respostas pré-computadas, estes metadados podem ser apenas para registro.
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém.",
@@ -47,24 +52,45 @@ async def run_experiment():
 
     # --- 3. Definição da Suíte de Avaliação ---
     judge_client = AzureOpenAIClient(model_name="gpt-4o")
+    # judge_client = GeminiAIClient(model_name="gemini-2.5-flash")
     evaluation_suite = Evals(judge_client=judge_client)
-    
-    # Define todas as métricas que serão executadas
+
     metrics_to_run = [
-        "conversational_reasoning", 
+        "conversational_reasoning",
         "conversational_memory",
         "persona_adherence",
-        "semantic_correctness"
+        "semantic_correctness",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
-    # --- 4. Configuração e Execução do Runner ---
+    # --- 4. Carregamento de Respostas Pré-computadas (Opcional) ---
+    PRECOMPUTED_RESPONSES_PATH = "precomputed_responses.json"  # ou None
+    precomputed_responses_dict: Optional[Dict[str, Dict[str, Any]]] = None
+    if PRECOMPUTED_RESPONSES_PATH:
+        try:
+            with open(PRECOMPUTED_RESPONSES_PATH, "r", encoding="utf-8") as f:
+                responses = json.load(f)
+                # A chave do dicionário é o 'id', e o valor é o objeto inteiro do item.
+                precomputed_responses_dict = {item["id"]: item for item in responses}
+            logger.info(
+                f"✅ Respostas pré-computadas carregadas de {PRECOMPUTED_RESPONSES_PATH}"
+            )
+        except FileNotFoundError:
+            logger.warning(
+                f"⚠️ Arquivo de respostas pré-computadas não encontrado: {PRECOMPUTED_RESPONSES_PATH}"
+            )
+        except Exception as e:
+            logger.error(f"❌ Erro ao carregar {PRECOMPUTED_RESPONSES_PATH}: {e}")
+
+    # --- 5. Configuração e Execução do Runner ---
     runner = AsyncExperimentRunner(
         experiment_name="Batman_Unified_Eval_v1",
         experiment_description="Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
         metadata=agent_config.model_dump(exclude_none=True),
+        agent_config=agent_config.model_dump(exclude_none=True),
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
+        precomputed_responses=precomputed_responses_dict,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
 
@@ -75,6 +101,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(run_experiment())
     except Exception as e:
+        # Usar logging.getLogger aqui garante que o logger exista mesmo se a configuração falhar.
         logging.getLogger(__name__).error(
             f"Ocorreu um erro fatal durante a execução do experimento: {e}",
             exc_info=True,

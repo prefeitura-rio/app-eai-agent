@@ -1,0 +1,32 @@
+[
+  {
+    "id": "unified_conv_1",
+    "one_turn_output": "Paris. Agora, fale sobre suas intenções, Dr. Crane.",
+    "multi_turn_transcript": [
+      {
+        "turn": 1,
+        "judge_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
+        "agent_response": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?"
+      },
+      {
+        "turn": 2,
+        "judge_message": "Houve um roubo na Ace Chemicals. Estou investigando.",
+        "agent_response": "Ace Chemicals... Isso me interessa. Continue."
+      }
+    ]
+  },
+  {
+    "id": "unified_conv_2",
+    "one_turn_output": "4. Não teste minha paciência, Selina."
+  },
+  {
+    "id": "unified_conv_3",
+    "multi_turn_transcript": [
+       {
+        "turn": 1,
+        "judge_message": "Meu nome é Oswald. Lembre-se disso. Agora, qual o maior oceano do mundo?",
+        "agent_response": "O Pacífico. E eu sei quem você é, Pinguim."
+      }
+    ]
+  }
+]
