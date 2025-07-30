@@ -19,57 +19,96 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class EvaluatedLLMClient:
+class AgentConversationManager:
     """
-    Classe base para clientes de LLM que serão avaliados.
-    Esta classe deve ser estendida por clientes específicos de LLM.
+    Gerencia o ciclo de vida de uma única conversa com um agente,
+    garantindo que o mesmo agent_id seja usado em todas as interações.
     """
 
     def __init__(self, agent_config: CreateAgentRequest):
         self.agent_config = agent_config
         self.client = EAIClient()
+        self.agent_id: str | None = None
 
-    async def execute(
-        self, message: str, timeout: int = 180, polling_interval: int = 2
-    ) -> Dict[str, Any]:
+    async def initialize(self):
+        """
+        Cria o agente UMA VEZ e armazena seu ID.
+        Deve ser chamado antes de enviar qualquer mensagem.
+        """
+        if self.agent_id:
+            return
 
         try:
+            logger.info("Inicializando agente via API...")
             create_resp = await self.client.create_agent(self.agent_config)
-            agent_id = create_resp.get("agent_id")
+            self.agent_id = create_resp.get("agent_id")
+            if not self.agent_id:
+                logger.error("Falha ao obter o agent_id na resposta da API.")
+                raise ConnectionError("Falha ao criar o agente ou obter o agent_id.")
+            logger.info(f"Agente inicializado com sucesso. ID: {self.agent_id}")
+        except EAIClientError as e:
+            logger.error(f"Erro de cliente EAI ao inicializar o agente: {e}")
+            raise ConnectionError(f"Erro ao inicializar o agente: {e}")
+        except Exception as e:
+            logger.error(f"Erro inesperado ao inicializar o agente: {e}", exc_info=True)
+            raise
 
-            if not agent_id:
-                raise BaseException("Failed to create agent or retrieve agent ID.")
+    async def send_message(
+        self, message: str, timeout: int = 180, polling_interval: int = 2
+    ) -> Dict[str, Any]:
+        """
+        Envia uma mensagem para o agente existente.
+        """
+        if not self.agent_id:
+            raise RuntimeError(
+                "O gerenciador de conversa não foi inicializado. Chame initialize() primeiro."
+            )
 
+        try:
+            logger.info(f"Enviando mensagem para o agente {self.agent_id}...")
             response = await self.client.send_message_and_get_response(
-                agent_id=agent_id,
+                agent_id=self.agent_id,
                 message=message,
                 timeout=timeout,
                 polling_interval=polling_interval,
             )
-            response_dict = response.model_dump()
+            logger.info(f"Resposta recebida do agente {self.agent_id}.")
+            response_dict = response.model_dump(exclude_none=True)
+            response_dict = response_dict["data"]
+            # Extrai o 'output' para conveniência, mantendo a resposta completa
+            for msg in response_dict["messages"]:
+                if msg.get("message_type") == "assistant_message":
+                    response_dict["output"] = msg.get("content")
+                    break
 
-            if "data" in response_dict:
-                fond = False
-                for message in response_dict["data"]["messages"]:
-                    if message.get("message_type") == "assistant_message":
-                        response_dict["output"] = message.get("content")
-                        fond = True
-                if not fond:
-                    logger.warning(
-                        json.dumps(response_dict, ensure_ascii=False, indent=2)
-                    )
-                    raise BaseException(
-                        "Expected assistant message type in response, but found another type."
-                    )
+            if "output" not in response_dict:
+                logger.warning(
+                    "A resposta do agente não continha uma 'assistant_message'."
+                )
 
             return response_dict
 
         except EAIClientError as e:
-            raise BaseException(f"Error communicating with EAI service: {e}")
+            logger.error(
+                f"Erro de cliente EAI ao comunicar com o agente {self.agent_id}: {e}"
+            )
+            raise ConnectionError(f"Error communicating with EAI service: {e}")
         except asyncio.TimeoutError:
-            raise BaseException("Timeout waiting for EAI response.")
+            logger.error(f"Timeout esperando pela resposta do agente {self.agent_id}.")
+            raise ConnectionError("Timeout waiting for EAI response.")
         except Exception as e:
-            raise BaseException(f"Internal server error: {e}")
+            logger.error(
+                f"Erro inesperado ao enviar mensagem para o agente: {e}", exc_info=True
+            )
+            raise
+
+    async def close(self):
+        """
+        Encerra o agente ou limpa os recursos.
+        """
+        logger.info(f"Encerrando conversa com o agente {self.agent_id}.")
+        self.agent_id = None
+        # No futuro, poderia chamar uma API para deletar o agente
 
 
 class AzureOpenAIClient:
@@ -89,15 +128,24 @@ class AzureOpenAIClient:
         self,
         prompt: str,
     ) -> str:
-        completion = await self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "text"},
-        )
-        if completion.choices[0].message.content:
-            return completion.choices[0].message.content
-        else:
-            raise BaseException("No text response received from Azure OpenAI.")
+        logger.info(f"Executando prompt do juiz com o modelo {self.model_name}...")
+        try:
+            completion = await self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "text"},
+            )
+            logger.info("Resposta do juiz recebida com sucesso.")
+            if completion.choices[0].message.content:
+                return completion.choices[0].message.content
+            else:
+                logger.error("Resposta do juiz (Azure OpenAI) está vazia.")
+                raise BaseException("No text response received from Azure OpenAI.")
+        except Exception as e:
+            logger.error(
+                f"Erro ao executar o prompt do juiz (Azure OpenAI): {e}", exc_info=True
+            )
+            raise
 
 
 class GeminiAIClient:
@@ -115,43 +163,67 @@ class GeminiAIClient:
         self,
         prompt: str,
     ) -> str:
-        generate_content_config = types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(
-                thinking_budget=-1,
-            ),
-        )
-        response = await self.client.aio.models.generate_content(
-            model=self.model_name,
-            contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
-            config=generate_content_config,
-        )
-        if response.text:
-            return response.text
-        else:
-            raise BaseException("No text response received from Gemini AI.")
+        logger.info(f"Executando prompt do juiz com o modelo {self.model_name}...")
+        try:
+            generate_content_config = types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(
+                    thinking_budget=-1,
+                ),
+            )
+            response = await self.client.aio.models.generate_content(
+                model=self.model_name,
+                contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
+                config=generate_content_config,
+            )
+            logger.info("Resposta do juiz recebida com sucesso.")
+            if response.text:
+                return response.text
+            else:
+                logger.error("Resposta do juiz (Gemini AI) está vazia.")
+                raise BaseException("No text response received from Gemini AI.")
+        except Exception as e:
+            logger.error(
+                f"Erro ao executar o prompt do juiz (Gemini AI): {e}", exc_info=True
+            )
+            raise
 
 
 async def main():
-    # Exemplo de uso do cliente Azure OpenAI
+    # Exemplo de uso do novo AgentConversationManager
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="voce é o batman",
-        tools=["google_search", "equipments_instructions", "equipments_by_address"],
+        tools=["google_search"],
         user_number="evaluation_user",
         name="Evaluation Agent",
+        tags=["batman"],
     )
-    client = EvaluatedLLMClient(agent_config=agent_config)
 
-    # client = GeminiAIClient(model_name="gemini-2.5-flash-lite-preview-06-17")
+    manager = AgentConversationManager(agent_config=agent_config)
 
-    # client = AzureOpenAIClient(model_name="gpt-4o")
+    try:
+        # Inicia a conversa (cria o agente)
+        await manager.initialize()
+        print(f"Agente criado com ID: {manager.agent_id}")
 
-    prompt = "Quem é voce?"
-    # Executa a chamada ao modelo
-    response = await client.execute(prompt)
+        # Envia a primeira mensagem
+        prompt1 = "Quem é voce?"
+        print(f"\nEnviando: {prompt1}")
+        response1 = await manager.send_message(prompt1)
+        print(json.dumps(response1, ensure_ascii=False, indent=2))
 
-    # Imprime a resposta
-    print(json.dumps(response, ensure_ascii=False, indent=2))  # Formata a saída JSON
+        # Envia a segunda mensagem na mesma conversa
+        prompt2 = "E qual a sua missão?"
+        print(f"\nEnviando: {prompt2}")
+        response2 = await manager.send_message(prompt2)
+        print(json.dumps(response2, ensure_ascii=False, indent=2))
+
+    except Exception as e:
+        print(f"Ocorreu um erro: {e}")
+    finally:
+        # Encerra a conversa
+        await manager.close()
+        print("\nConversa encerrada.")
 
 
 if __name__ == "__main__":

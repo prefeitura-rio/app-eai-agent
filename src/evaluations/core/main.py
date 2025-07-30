@@ -1,84 +1,82 @@
 import asyncio
-import json
-import os
 import pandas as pd
+import logging
 
 # Utilizando imports absolutos a partir da raiz do projeto (src)
 from src.evaluations.core.dataloader import DataLoader
-from src.evaluations.core.llm_clients import EvaluatedLLMClient, AzureOpenAIClient
+from src.evaluations.core.llm_clients import AzureOpenAIClient
 from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
 from src.services.eai_gateway.api import CreateAgentRequest
-from src.evaluations.core.test_data import TEST_DATA
+from src.evaluations.core.test_data import CONVERSATIONAL_TEST_DATA
 
 
 async def run_experiment():
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-    print("--- 1. Configurando o Experimento ---")
-
-    # --- Configuração do DataLoader ---
-    # Cria um DataFrame de teste local para o experimento, agora com 50 exemplos.
-
-    dataframe = pd.DataFrame(TEST_DATA)
-
-    loader = DataLoader(
-        source=dataframe.head(50),
-        id_col="id",
-        metadata_cols=["prompt", "golden_response", "persona", "keywords"],
+    # Configuração básica do logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    print("✅ DataLoader configurado com um DataFrame local de 50 exemplos.")
+    logger = logging.getLogger(__name__)
 
-    # --- Configuração do Agente a ser Avaliado ---
+    logger.info("--- Configurando o Experimento ---")
+
+    # --- 1. Definição do Dataset ---
+    dataframe = pd.DataFrame(CONVERSATIONAL_TEST_DATA)
+    loader = DataLoader(
+        source=dataframe,
+        id_col="id",
+        prompt_col="initial_prompt",
+        dataset_name="Batman Conversational Test",
+        dataset_description="Um teste para avaliar a capacidade de raciocínio do Batman em uma conversa curta.",
+        metadata_cols=[
+            "judge_context",
+            "golden_response_summary",
+            "persona",
+        ],
+    )
+    logger.info(
+        f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
+    )
+
+    # --- 2. Definição do Agente (Metadados do Experimento) ---
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
-        system="Você é o Batman, um herói sombrio e direto.",
-        tools=["google_search"],
+        system="Você é o Batman, um herói sombrio e direto que busca conectar informações. Detecte o idioma que o usuário está falando e responda na mesma língua.",
+        tools=[],
         user_number="evaluation_user",
-        name="BatmanEvaluationAgent",
-        tags=["batman"],
+        name="BatmanConversationalAgent",
+        tags=["batman", "conversational"],
     )
-    evaluated_client = EvaluatedLLMClient(agent_config=agent_config)
-    print(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
+    logger.info(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
 
-    # --- Configuração do Juiz (instanciado uma única vez) ---
+    # --- 3. Definição da Suíte de Avaliação ---
     judge_client = AzureOpenAIClient(model_name="gpt-4o")
-    print(f"✅ Juiz LLM configurado: {judge_client.model_name}")
-
-    # --- Configuração da Suíte de Avaliações ---
     evaluation_suite = Evals(judge_client=judge_client)
+    metrics_to_run = ["conversational_reasoning"]
+    logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
-    # Define a lista de nomes das métricas que queremos rodar.
-    metrics_to_run = ["semantic_correctness", "persona_adherence", "keyword_match"]
-    print(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
-
-    # --- Configuração do Runner ---
+    # --- 4. Configuração e Execução do Runner ---
     runner = AsyncExperimentRunner(
-        evaluated_client=evaluated_client,
+        experiment_name="BatmanConversationalAgent_Eval_v2",
+        experiment_description="Avaliação da capacidade de raciocínio conversacional do Batman com a nova estrutura de runner.",
+        metadata=agent_config.model_dump(exclude_none=True),
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
     )
-    print("✅ Runner pronto para execução.")
+    logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
 
-    # --- 2. Execução do Experimento ---
-    print("\n--- 2. Iniciando a Execução do Experimento ---")
-    results = await runner.run(loader)
-
-    # --- 3. Salvando os Resultados ---
-    print("\n--- 3. Salvando os Resultados ---")
-    output_dir = "evaluation_results"
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, f"results_{agent_config.name}.json")
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
-
-    print(f"✅ Experimento concluído! Resultados salvos em: {output_path}")
+    await runner.run(loader)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(run_experiment())
     except Exception as e:
-        print(f"Ocorreu um erro fatal durante a execução do experimento: {e}")
+        logging.getLogger(__name__).error(
+            f"Ocorreu um erro fatal durante a execução do experimento: {e}",
+            exc_info=True,
+        )

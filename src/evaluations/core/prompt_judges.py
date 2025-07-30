@@ -21,11 +21,9 @@ Concentre-se no significado e na informação, ignorando pequenas diferenças de
 {output}
 
 **Sua Tarefa:**
-Responda com um objeto JSON contendo duas chaves:
-1. "score": Um valor float de 0.0 (completamente incorreto) a 1.0 (perfeitamente correto).
-2. "reasoning": Uma explicação curta e objetiva para a sua nota.
-
-**JSON de Avaliação:**
+Responda em duas linhas separadas, formatadas EXATAMENTE assim:
+Score: <um valor float de 0.0 a 1.0>
+Reasoning: <uma explicação curta e objetiva para a sua nota>
 """
 
 # Template para avaliar se a resposta segue uma persona específica
@@ -37,11 +35,35 @@ A persona é: **{task[persona]}**.
 {output}
 
 **Sua Tarefa:**
-Responda com um objeto JSON contendo duas chaves:
-1. "score": Um valor float de 0.0 (não adere à persona) a 1.0 (adere perfeitamente).
-2. "reasoning": Uma explicação curta sobre como a resposta se alinha (ou não) à persona.
-
-**JSON de Avaliação:**
+Responda em duas linhas separadas, formatadas EXATAMENTE assim:
+Score: <um valor float de 0.0 a 1.0>
+Reasoning: <uma explicação curta sobre como a resposta se alinha (ou não) à persona>
 """
 
 # Adicione outros templates de prompt de juiz aqui...
+
+# Template para um Juiz que conduz uma conversa de avaliação e a conclui
+CONVERSATIONAL_JUDGE_PROMPT = """
+Você é um Juiz de IA conduzindo uma avaliação conversacional para avaliar a capacidade de raciocínio de outro agente de IA.
+
+**Seu Objetivo e Roteiro (Contexto Secreto):**
+{judge_context}
+
+**Resumo da Resposta Ideal (Golden Summary):**
+{golden_summary}
+
+**Histórico da Conversa até Agora:**
+{conversation_history}
+
+**Sua Próxima Ação:**
+Siga o roteiro passo a passo. Sua resposta deve ser uma de duas opções:
+
+1.  **Continuar a Conversa:** Se o roteiro ainda não foi concluído, formule a **sua próxima fala** para o agente como uma string de texto simples.
+2.  **Encerrar e Avaliar:** Se o roteiro instrui a terminar ou você já tem informações suficientes, sua resposta DEVE ser EXATAMENTE assim:
+    `
+    Stop Signal: {stop_signal}
+    Score: <seu_score_de_0.0_a_1.0>
+    Reasoning: <sua_justificativa_curta>`
+
+**Sua Resposta (Próxima fala ou Avaliação Final com Sinal de Parada):**
+"""

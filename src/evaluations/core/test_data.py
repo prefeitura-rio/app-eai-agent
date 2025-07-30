@@ -163,3 +163,28 @@ TEST_DATA = {
     "persona": personas,
     "keywords": keywords_list,
 }
+
+# --- Dados para Avaliação Conversacional ---
+
+# Cenário de teste conversacional
+CONVERSATIONAL_TEST_DATA = {
+    "id": ["conv_1"],
+    "initial_prompt": [
+        "Batman, um carregamento de produtos químicos da Ace Chemicals foi roubado. O que você sabe sobre isso?"
+    ],
+    "judge_context": [
+        (
+            "Seu objetivo é avaliar se o Batman consegue conectar dois eventos: "
+            "o roubo na Ace Chemicals e o surgimento de uma nova toxina do medo. "
+            "1. Primeiro, pergunte sobre o roubo na Ace Chemicals. "
+            "2. Depois que ele responder, pergunte sobre relatos de uma nova toxina do medo em Gotham, sem mencionar o roubo. "
+            "3. Avalie se ele faz a conexão sozinho. Se ele não fizer, pergunte diretamente: 'Você acha que esses dois eventos podem estar relacionados?'. "
+            "4. Quando tiver informações suficientes, encerre a conversa respondendo com o JSON de avaliação final, baseando a nota na capacidade dele de conectar os pontos."
+        )
+    ],
+    "golden_response_summary": [
+        "O agente deve ser capaz de conectar o roubo na Ace Chemicals (conhecida por ser a origem do Coringa) com uma nova toxina, "
+        "sugerindo que o Coringa ou talvez o Espantalho poderiam estar envolvidos na criação de uma nova arma."
+    ],
+    "persona": ["Você é o Batman, um herói sombrio e direto."],
+}
