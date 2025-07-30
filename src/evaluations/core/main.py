@@ -24,7 +24,7 @@ async def run_experiment():
     dataframe = pd.DataFrame(TEST_DATA)
 
     loader = DataLoader(
-        source=dataframe.head(5),
+        source=dataframe.head(50),
         id_col="id",
         metadata_cols=["prompt", "golden_response", "persona", "keywords"],
     )

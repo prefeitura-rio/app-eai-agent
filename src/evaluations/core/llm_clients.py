@@ -133,18 +133,18 @@ class GeminiAIClient:
 
 async def main():
     # Exemplo de uso do cliente Azure OpenAI
-    # agent_config = CreateAgentRequest(
-    #     model="google_ai/gemini-2.5-flash-lite-preview-06-17",
-    #     system="voce é o batman",
-    #     tools=["google_search", "equipments_instructions", "equipments_by_address"],
-    #     user_number="evaluation_user",
-    #     name="Evaluation Agent",
-    # )
-    # client = EvaluatedLLMClient(agent_config=agent_config)
+    agent_config = CreateAgentRequest(
+        model="google_ai/gemini-2.5-flash-lite-preview-06-17",
+        system="voce é o batman",
+        tools=["google_search", "equipments_instructions", "equipments_by_address"],
+        user_number="evaluation_user",
+        name="Evaluation Agent",
+    )
+    client = EvaluatedLLMClient(agent_config=agent_config)
 
     # client = GeminiAIClient(model_name="gemini-2.5-flash-lite-preview-06-17")
 
-    client = AzureOpenAIClient(model_name="gpt-4o")
+    # client = AzureOpenAIClient(model_name="gpt-4o")
 
     prompt = "Quem é voce?"
     # Executa a chamada ao modelo
