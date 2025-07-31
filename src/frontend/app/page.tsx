@@ -14,20 +14,20 @@ export default function HomePage() {
       />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Link href="/experiments" className="group">
+          <Link href="/experiments_v0" className="group">
             <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
               <CardHeader>
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <FlaskConical className="h-6 w-6" />
                 </div>
-                <CardTitle>Painel de Experimentos</CardTitle>
+                <CardTitle>Painel de Experimentos V0</CardTitle>
                 <CardDescription>
                   Analise e compare os resultados dos experimentos.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                   <div className="flex items-center text-sm font-medium text-primary">
-                      Ir para Experimentos
+                      Ir para Experimentos V0
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </div>
               </CardContent>
