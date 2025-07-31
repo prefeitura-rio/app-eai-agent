@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { ExperimentRun } from '../../../types';
 import { Badge } from "@/components/ui/badge";
 import { getScoreBadgeClass } from '@/app/utils/utils';
@@ -9,6 +11,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 interface EvaluationsProps {
   evaluations: ExperimentRun['evaluations'];
 }
+
+const MarkdownRenderer = ({ content }: { content: string | null }) => {
+    if (!content) return null;
+    marked.use({ breaks: true });
+    const html = DOMPurify.sanitize(marked.parse(content) as string);
+    return (
+        <div
+            className="prose prose-sm dark:prose-invert max-w-none p-4 bg-muted rounded-md"
+            dangerouslySetInnerHTML={{ __html: html }}
+        />
+    );
+};
 
 export default function Evaluations({ evaluations }: EvaluationsProps) {
     if (!evaluations || evaluations.length === 0) {
@@ -27,10 +41,8 @@ export default function Evaluations({ evaluations }: EvaluationsProps) {
                             <span className="font-semibold text-left">{ev.metric_name}</span>
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pl-12">
-                        <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap break-all text-foreground">
-                            {ev.judge_annotations}
-                        </pre>
+                    <AccordionContent>
+                        <MarkdownRenderer content={ev.judge_annotations} />
                     </AccordionContent>
                 </AccordionItem>
             ))}

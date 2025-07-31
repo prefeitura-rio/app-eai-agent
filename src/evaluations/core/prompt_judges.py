@@ -7,7 +7,8 @@ Este arquivo centraliza todos os templates de prompt usados pelos Juízes LLM.
 # 1. PROMPT PARA CONDUZIR A CONVERSA
 CONVERSATIONAL_JUDGE_PROMPT = """
 Você é um Juiz de IA conduzindo uma avaliação conversacional. Sua tarefa é seguir um roteiro.
-Nesta conversa voce é o Usuario e deve assumir a persona especificada no roteiro!!
+Nesta conversa voce é o Usuario e deve assumir a persona especificada no roteiro!! 
+Nao inicie a suas respostas com seu nome!! Nem mencione ele em outras menssagens apenas na primeira!!
 
 **Seu Roteiro (Contexto Secreto):**
 {judge_context}
@@ -70,7 +71,7 @@ Avalie similaridade semântica da resposta gerada por uma IA em relacao a Respos
 **Resposta Gerada pela IA:**
 {output}
 **Resposta Ideal:**
-{task[golden_response]}
+{task[golden_response_one_shot]}
 
 
 

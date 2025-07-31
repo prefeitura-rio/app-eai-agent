@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { ExperimentDetails } from '../../../types';
+import { ExperimentDetails, ExperimentRun } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { Settings, Bot, Scale } from 'lucide-react';
 
 interface MetadataProps {
   metadata: ExperimentDetails['experiment_metadata'];
+  selectedRun: ExperimentRun | null;
 }
 
 const MarkdownRenderer = ({ content }: { content: string }) => {
@@ -24,10 +25,45 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
     );
 };
 
-export default function Metadata({ metadata }: MetadataProps) {
-    if (!metadata) return null;
+const fillTemplate = (template: string, run: ExperimentRun): string => {
+    if (!template || !run) return template;
 
+    return template.replace(/\{([^}]+)\}/g, (match, key) => {
+        key = key.trim();
+        
+        const taskMatch = key.match(/^task\[['"]?(.+)['"]?\]$/);
+        if (taskMatch) {
+            const taskKey = taskMatch[1];
+            return run.task_data[taskKey] as string || match;
+        }
+
+        if (key === 'output') {
+            return run.agent_response.one_turn || match;
+        }
+        if (key === 'transcript') {
+            return JSON.stringify(run.reasoning_trace.multi_turn, null, 2);
+        }
+
+        return run.task_data[key] as string || match;
+    });
+};
+
+
+export default function Metadata({ metadata, selectedRun }: MetadataProps) {
     const { agent_config, judge_model, judges_prompts } = metadata;
+    const [processedPrompts, setProcessedPrompts] = useState(judges_prompts);
+
+    useEffect(() => {
+        if (selectedRun && judges_prompts) {
+            const newPrompts: Record<string, string> = {};
+            for (const key in judges_prompts) {
+                newPrompts[key] = fillTemplate(judges_prompts[key], selectedRun);
+            }
+            setProcessedPrompts(newPrompts);
+        } else {
+            setProcessedPrompts(judges_prompts);
+        }
+    }, [selectedRun, judges_prompts]);
 
     return (
         <Card>
@@ -62,17 +98,17 @@ export default function Metadata({ metadata }: MetadataProps) {
                             </AccordionContent>
                         </AccordionItem>
                     )}
-                    {judges_prompts && (
+                    {processedPrompts && (
                         <AccordionItem value="judge-prompts">
                             <AccordionTrigger>Prompts do Juiz</AccordionTrigger>
                             <AccordionContent className="overflow-visible">
-                                <Tabs defaultValue={Object.keys(judges_prompts)[0]} className="w-full">
+                                <Tabs defaultValue={Object.keys(processedPrompts)[0]} className="w-full">
                                     <TabsList>
-                                        {Object.keys(judges_prompts).map(key => (
+                                        {Object.keys(processedPrompts).map(key => (
                                             <TabsTrigger key={key} value={key} className="text-xs">{key.replace(/_/g, ' ')}</TabsTrigger>
                                         ))}
                                     </TabsList>
-                                    {Object.entries(judges_prompts).map(([key, value]) => (
+                                    {Object.entries(processedPrompts).map(([key, value]) => (
                                         <TabsContent key={key} value={key}>
                                             <MarkdownRenderer content={String(value)} />
                                         </TabsContent>

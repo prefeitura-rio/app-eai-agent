@@ -126,7 +126,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
 
         <div className="overflow-y-auto pr-4">
           <div className="space-y-6">
-              <Metadata metadata={experimentData.experiment_metadata} />
+              <Metadata metadata={experimentData.experiment_metadata} selectedRun={selectedRun} />
               <SummaryMetrics aggregateMetrics={experimentData.aggregate_metrics} />
               {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
           </div>

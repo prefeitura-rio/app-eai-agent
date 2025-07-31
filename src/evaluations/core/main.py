@@ -9,7 +9,7 @@ from src.evaluations.core.llm_clients import AzureOpenAIClient, GeminiAIClient
 from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
 from src.services.eai_gateway.api import CreateAgentRequest
-from src.evaluations.core.test_data import UNIFIED_TEST_DATA
+from src.evaluations.core.data.test_data import UNIFIED_TEST_DATA
 from src.evaluations.core.prompt_judges import (
     CONVERSATIONAL_JUDGE_PROMPT,
     FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
@@ -75,9 +75,9 @@ async def run_experiment():
 
     metrics_to_run = [
         "conversational_reasoning",
-        "conversational_memory",
-        "persona_adherence",
-        "semantic_correctness",
+        # "conversational_memory",
+        # "persona_adherence",
+        # "semantic_correctness",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
@@ -94,7 +94,9 @@ async def run_experiment():
     }
 
     # --- 4. Carregamento de Respostas Pré-computadas (Opcional) ---
-    PRECOMPUTED_RESPONSES_PATH = "precomputed_responses.json"  # ou None
+    PRECOMPUTED_RESPONSES_PATH = (
+        "./src/evaluations/core/data/precomputed_responses.json"  # ou None
+    )
     precomputed_responses_dict: Optional[Dict[str, Dict[str, Any]]] = None
     if PRECOMPUTED_RESPONSES_PATH:
         try:
@@ -123,9 +125,10 @@ async def run_experiment():
         metrics_to_run=metrics_to_run,
         max_concurrency=MAX_CONCURRENCY,
         # precomputed_responses=precomputed_responses_dict,
+        # upload_to_bq=False,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
-    for i in range(1):
+    for _ in range(10):
         await runner.run(loader)
 
 

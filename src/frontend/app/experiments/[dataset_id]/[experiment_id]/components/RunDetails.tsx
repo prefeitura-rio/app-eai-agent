@@ -118,8 +118,8 @@ export default function RunDetails({ run }: RunDetailsProps) {
                         <span>Avaliações</span>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="pl-12">
-                    <Evaluations evaluations={evaluations} />
+                <CardContent>
+                    <Evaluations key={viewMode} evaluations={evaluations} />
                 </CardContent>
             </Card>
             
