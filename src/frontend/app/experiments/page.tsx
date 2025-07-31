@@ -13,7 +13,7 @@ export default function DatasetsPage() {
   useEffect(() => {
     if (token) {
       const getDatasets = async () => {
-        const res = await fetch(`${API_BASE_URL}/api/v1/datasets`, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/datasets_data`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

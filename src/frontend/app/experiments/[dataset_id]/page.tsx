@@ -32,7 +32,7 @@ export default function DatasetExperimentsPage({ params }: PageProps) {
         setLoading(true);
         try {
           // Fetch experiments and dataset name together
-          const expRes = await fetch(`${API_BASE_URL}/api/v1/dataset_experiments?dataset_id=${datasetId}`, {
+          const expRes = await fetch(`${API_BASE_URL}/api/v1/dataset_experiments_data?dataset_id=${datasetId}`, {
             headers: { 'Authorization': `Bearer ${token}` },
             cache: 'no-store'
           });
@@ -49,7 +49,7 @@ export default function DatasetExperimentsPage({ params }: PageProps) {
           setSubtitle(`${dataset.name}`);
 
           // Fetch examples separately
-          const exRes = await fetch(`${API_BASE_URL}/api/v1/dataset_examples?dataset_id=${datasetId}`, {
+          const exRes = await fetch(`${API_BASE_URL}/api/v1/dataset_examples_data?dataset_id=${datasetId}`, {
             headers: { 'Authorization': `Bearer ${token}` },
             cache: 'no-store'
           });
