@@ -1,5 +1,6 @@
+import ast
 import re
-from typing import Dict, Any, Tuple, Union, Callable, Awaitable
+from typing import Dict, Any, Tuple, Union, Callable, Awaitable, List
 
 from src.evaluations.core.llm_clients import (
     AzureOpenAIClient,
@@ -7,8 +8,8 @@ from src.evaluations.core.llm_clients import (
     AgentConversationManager,
 )
 from src.evaluations.core import prompt_judges
-from typing import Dict, Any, Tuple, List
-
+from src.evaluations.core.utils import extract_answer_text, extract_links_from_text, parse_golden_links
+from src.evaluations.letta.phoenix.training_dataset.evaluators import get_answer_links, match_golden_link
 from src.utils.log import logger
 
 
@@ -95,6 +96,120 @@ class Evals:
             output=agent_response.get("output", ""),
             task=task,
         )
+    
+    @eval_method(name="answer_completeness", turns="one")
+    async def answer_completeness(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Avalia a completude da resposta de uma única resposta."""
+        return await self._get_llm_judgement(
+            prompt_judges.ANSWER_COMPLETENESS_PROMPT,
+            output=agent_response.get("output", ""),
+            task=task,
+        )
+    
+    @eval_method(name="answer_addressing", turns="one")
+    async def answer_addressing(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Avalia se a resposta aborda adequadamente a pergunta."""
+        return await self._get_llm_judgement(
+            prompt_judges.ANSWER_ADDRESSING_PROMPT,
+            output=agent_response.get("output", ""),
+            task=task,
+        )
+    
+    @eval_method(name="clarity", turns="one")
+    async def clarity(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Avalia a clareza da resposta de uma única resposta."""
+        return await self._get_llm_judgement(
+            prompt_judges.CLARITY_PROMPT,
+            output=agent_response.get("output", ""),
+            task=task,
+        )
+    
+    @eval_method(name="activate_search", turns="one")
+    async def activate_search(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Tuple[bool, str]:
+        """Avalia se a busca foi ativada corretamente."""
+        grouped = agent_response.get("output", "").get("grouped", {})
+        tool_msgs = grouped.get("tool_return_messages", [])
+
+        SEARCH_TOOL_NAMES = [
+        # "public_services_grounded_search",
+        "google_search",
+        "equipments_instructions",
+        "equipments_by_address",
+    ]
+
+        activated = {msg.get("name") for msg in tool_msgs if msg.get("name") in SEARCH_TOOL_NAMES}
+        explanation = f"Activated tools: {list(activated)}"
+
+        return len(activated) > 0, explanation
+    
+    @eval_method(name="golden_link_in_tool_calling", turns="one")
+    async def golden_link_in_tool_calling(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """Avalia se o link correto foi chamado na ferramenta."""
+        golden_field = agent_response.get("metadata", {}).get("golden_links_list", "")
+        golden_links = parse_golden_links(golden_field)
+
+        answer_links = agent_response.get("agent_output").get("fontes") or get_answer_links(output=agent_response)
+
+        if agent_response.get("agent_output", {}).get("resposta_gpt"):
+            answer_links = [
+                {"uri": link, "url": link} for link in ast.literal_eval(answer_links)
+            ]
+
+        if not answer_links or not golden_links:
+            return False, {"reason": "No links found in the answer or no golden links provided"}
+
+        answer_links, count = match_golden_link(answer_links=answer_links, golden_links=golden_links)
+
+        explanation = {
+            "golden_links": golden_links,
+            "answer_links": answer_links,
+            "number_of_matches": count,
+        }
+
+        return count > 0, explanation
+    
+    @eval_method(name="golden_link_in_answer", turns="one")
+    async def golden_link_in_answer(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """Avalia se o link correto foi incluído na resposta."""
+        golden_field = agent_response.get("metadata", {}).get("golden_links_list", "")
+        golden_links = parse_golden_links(golden_field)
+        resposta = extract_answer_text(agent_response)
+        raw_links = extract_links_from_text(resposta)
+
+        if not raw_links or not golden_links:
+            return False, {"reason": "No links found in the answer or no golden links provided"}
+
+        unique_links = list(
+            dict.fromkeys([link for link in raw_links if isinstance(link, str)])
+        )
+
+        link_dicts = [{"url": url} for url in unique_links]
+
+        tool_calling_links = get_answer_links(agent_response)
+        url_to_uri = {l.get("url"): l.get("uri") for l in tool_calling_links}
+
+        enriched_links = [{"url": l.get("url"), "uri": url_to_uri.get(l.get("url"))} for l in link_dicts if l.get("url") in url_to_uri]
+        enriched_links, count = match_golden_link(answer_links=enriched_links, golden_links=golden_links)
+
+        explanation = {
+            "golden_links": golden_links,
+            "answer_links": enriched_links,
+            "number_of_matches": count,
+        }
+
+        return count > 0, explanation
 
 
 class ConversationHandler:
