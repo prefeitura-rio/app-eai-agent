@@ -34,7 +34,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe.head(1),
+        source=dataframe.head(3),
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -65,7 +65,7 @@ async def run_experiment():
     metrics_to_run = [
         "conversational_reasoning",
         # "conversational_memory",
-        # "persona_adherence",
+        "persona_adherence",
         # "semantic_correctness",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")

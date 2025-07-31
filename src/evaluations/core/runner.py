@@ -116,7 +116,6 @@ class AsyncExperimentRunner:
             )
             transcript, last_response = await handler.conduct(task)
             end_time = time.monotonic()
-            # O fechamento do agente precisa ser tratado fora
             return transcript, last_response, end_time - start_time
 
         return [], {}, 0.0
@@ -150,14 +149,12 @@ class AsyncExperimentRunner:
 
             if eval_info["turns"] == "multiple":
                 if transcript:
-                    transcript_str = json.dumps(
-                        transcript, indent=2, ensure_ascii=False
-                    )
+                    transcript_str = json.dumps(transcript, indent=2, ensure_ascii=False)
                     coro = eval_func(agent_response=transcript_str, task=task)
                     coroutine_map.append((metric_name, _time_evaluation(coro)))
                 elif self.precomputed_responses:
                     error_msg = f"Chave 'multi_turn_transcript' não encontrada para a tarefa '{task_id}'"
-            else:  # turns == "one"
+            else:
                 if one_turn_response:
                     coro = eval_func(agent_response=one_turn_response, task=task)
                     coroutine_map.append((metric_name, _time_evaluation(coro)))
@@ -165,16 +162,10 @@ class AsyncExperimentRunner:
                     error_msg = f"Chave 'one_turn_output' não encontrada para a tarefa '{task_id}'"
 
             if error_msg:
-                evaluation_results.append(
-                    {
-                        "eval_name": metric_name,
-                        "score": None,
-                        "error": True,
-                        "error_msg": error_msg,
-                        "annotations": None,
-                        "execution_time_seconds": 0.0,
-                    }
-                )
+                evaluation_results.append({
+                    "metric_name": metric_name, "score": None, "has_error": True,
+                    "error_message": error_msg, "judge_annotations": None, "duration_seconds": 0.0
+                })
 
         if coroutine_map:
             gathered_results = await asyncio.gather(*[c for _, c in coroutine_map])
@@ -183,40 +174,25 @@ class AsyncExperimentRunner:
             for i, (res, judge_duration) in enumerate(gathered_results):
                 metric_name = valid_metrics[i]
                 eval_info = _EVAL_METHODS_REGISTRY[metric_name]
-
-                generation_duration = (
-                    multi_turn_duration
-                    if eval_info["turns"] == "multiple"
-                    else one_turn_duration
-                )
+                
+                generation_duration = multi_turn_duration if eval_info["turns"] == "multiple" else one_turn_duration
                 total_duration = round(generation_duration + judge_duration, 4)
 
-                result_dict = {
-                    "eval_name": metric_name,
-                    "execution_time_seconds": total_duration,
-                }
+                result_dict = {"metric_name": metric_name, "duration_seconds": total_duration}
                 if isinstance(res, Exception):
                     error_msg = f"Exceção durante a avaliação: {str(res)}"
-                    result_dict.update(
-                        {
-                            "score": None,
-                            "error": True,
-                            "error_msg": error_msg,
-                            "annotations": None,
-                        }
-                    )
+                    result_dict.update({
+                        "score": None, "has_error": True,
+                        "error_message": error_msg, "judge_annotations": None,
+                    })
                 else:
-                    result_dict.update(
-                        {
-                            "score": res.get("score", None),
-                            "error": False,
-                            "error_msg": None,
-                            "annotations": res.get("annotations"),
-                        }
-                    )
+                    result_dict.update({
+                        "score": res.get("score", None), "has_error": False,
+                        "error_message": None, "judge_annotations": res.get("annotations"),
+                    })
                 evaluation_results.append(result_dict)
 
-        return sorted(evaluation_results, key=lambda x: x["eval_name"])
+        return sorted(evaluation_results, key=lambda x: x["metric_name"])
 
     async def _process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         task_id = task.get("id")
@@ -226,7 +202,6 @@ class AsyncExperimentRunner:
         try:
             agent_config_obj = CreateAgentRequest(**self.agent_config)
 
-            # Determina quais tipos de dados são necessários ANTES de buscá-los.
             metrics_by_turns = {"one": False, "multiple": False}
             for m in self.metrics_to_run:
                 turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
@@ -235,60 +210,54 @@ class AsyncExperimentRunner:
 
             one_turn_response, one_turn_duration = {}, 0.0
             transcript, last_response, multi_turn_duration = [], {}, 0.0
-
+            
+            # Coleta as coroutines de aquisição de dados necessárias
+            data_coroutines = []
             if metrics_by_turns["one"]:
-                one_turn_response, one_turn_duration = (
-                    await self._get_one_turn_response(task, agent_config_obj)
-                )
-
+                data_coroutines.append(self._get_one_turn_response(task, agent_config_obj))
             if metrics_by_turns["multiple"]:
-                transcript, last_response, multi_turn_duration = (
-                    await self._get_multi_turn_transcript(task, agent_config_obj)
-                )
+                data_coroutines.append(self._get_multi_turn_transcript(task, agent_config_obj))
 
-            evaluation_results = await self._execute_evaluations(
-                task,
-                one_turn_response,
-                transcript,
-                one_turn_duration,
-                multi_turn_duration,
+            # Executa a aquisição de dados em paralelo
+            if data_coroutines:
+                results = await asyncio.gather(*data_coroutines)
+                # Desempacota os resultados na ordem correta
+                if metrics_by_turns["one"]:
+                    one_turn_response, one_turn_duration = results.pop(0)
+                if metrics_by_turns["multiple"]:
+                    transcript, last_response, multi_turn_duration = results.pop(0)
+
+            evaluations = await self._execute_evaluations(
+                task, one_turn_response, transcript, one_turn_duration, multi_turn_duration
             )
-
+            
             end_time = time.monotonic()
             total_duration = round(end_time - start_time, 4)
 
             return {
-                "execution_time_seconds": total_duration,
-                "task": task,
+                "duration_seconds": total_duration,
+                "task_data": task,
                 "agent_response": {
-                    "one": one_turn_response.get("output"),
-                    "multiple": last_response.get("output"),
+                    "one_turn": one_turn_response.get("output"),
+                    "multi_turn_final": last_response.get("output"),
                 },
-                "reasoning": {
-                    "one": one_turn_response.get("messages"),
-                    "multiple": transcript,
+                "reasoning_trace": {
+                    "one_turn": one_turn_response.get("messages"),
+                    "multi_turn": transcript,
                 },
-                "evaluation_results": evaluation_results,
+                "evaluations": evaluations,
             }
         except Exception as e:
-            logger.error(
-                f"Erro irrecuperável ao processar a tarefa {task_id}: {e}",
-                exc_info=True,
-            )
+            logger.error(f"Erro irrecuperável ao processar a tarefa {task_id}: {e}", exc_info=True)
             end_time = time.monotonic()
             total_duration = round(end_time - start_time, 4)
             return {
-                "execution_time_seconds": total_duration,
-                "task": task,
-                "error": f"Erro irrecuperável: {e}",
+                "duration_seconds": total_duration,
+                "task_data": task, 
+                "error": f"Erro irrecuperável: {e}"
             }
 
-    def _calculate_metrics_summary(
-        self, runs: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """
-        Calcula um sumário estatístico detalhado para cada métrica, incluindo scores e tempos de execução.
-        """
+    def _calculate_metrics_summary(self, runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         from collections import defaultdict, Counter
         import statistics
 
@@ -297,147 +266,122 @@ class AsyncExperimentRunner:
         for run in runs:
             if "error" in run:
                 continue
-            for result in run.get("evaluation_results", []):
-                metric_name = result["eval_name"]
-                stats_by_metric[metric_name]["times"].append(
-                    result.get("execution_time_seconds", 0.0)
-                )
-                if result.get("error") or result.get("score") is None:
+            for result in run.get("evaluations", []):
+                metric_name = result["metric_name"]
+                stats_by_metric[metric_name]["times"].append(result.get("duration_seconds", 0.0))
+                if result.get("has_error") or result.get("score") is None:
                     stats_by_metric[metric_name]["errors"] += 1
                 else:
                     stats_by_metric[metric_name]["scores"].append(result["score"])
 
         metrics_summary = []
         for metric_name, stats in stats_by_metric.items():
-            scores = stats["scores"]
-            times = stats["times"]
-            error_runs = stats["errors"]
+            scores, times, error_runs = stats["scores"], stats["times"], stats["errors"]
             successful_runs = len(scores)
             total_runs = successful_runs + error_runs
 
-            if total_runs == 0:
-                continue
+            if total_runs == 0: continue
 
             score_stats, time_stats, score_dist = {}, {}, []
             if successful_runs > 0:
-                score_stats["average"] = round(statistics.mean(scores), 4)
-                score_stats["median"] = round(statistics.median(scores), 4)
-                score_stats["std_dev"] = (
-                    round(statistics.stdev(scores), 4) if successful_runs > 1 else 0.0
-                )
-                score_stats["min"] = min(scores)
-                score_stats["max"] = max(scores)
-
+                score_stats = {
+                    "average": round(statistics.mean(scores), 4),
+                    "median": round(statistics.median(scores), 4),
+                    "std_dev": round(statistics.stdev(scores), 4) if successful_runs > 1 else 0.0,
+                    "min": min(scores), "max": max(scores)
+                }
                 score_counts = Counter(scores)
                 for score_value, count in sorted(score_counts.items()):
-                    score_dist.append(
-                        {
-                            "value": score_value,
-                            "count": count,
-                            "percentage": round((count / successful_runs) * 100, 2),
-                        }
-                    )
+                    score_dist.append({
+                        "value": score_value, "count": count,
+                        "percentage": round((count / successful_runs) * 100, 2)
+                    })
 
             if times:
-                time_stats["average"] = round(statistics.mean(times), 4)
-                time_stats["median"] = round(statistics.median(times), 4)
-                time_stats["std_dev"] = (
-                    round(statistics.stdev(times), 4) if len(times) > 1 else 0.0
-                )
-                time_stats["min"] = min(times)
-                time_stats["max"] = max(times)
+                time_stats = {
+                    "average": round(statistics.mean(times), 4),
+                    "median": round(statistics.median(times), 4),
+                    "std_dev": round(statistics.stdev(times), 4) if len(times) > 1 else 0.0,
+                    "min": min(times), "max": max(times)
+                }
 
             summary = {
-                "metric": metric_name,
-                "total_runs": total_runs,
+                "metric_name": metric_name, "total_runs": total_runs,
                 "successful_runs": successful_runs,
-                "successful_runs_percentage": round(
-                    (successful_runs / total_runs) * 100, 2
-                ),
-                "error_runs": error_runs,
-                "error_runs_percentage": round((error_runs / total_runs) * 100, 2),
-                "score_statistics": score_stats if score_stats else None,
-                "execution_time_statistics": time_stats if time_stats else None,
+                "success_rate_percentage": round((successful_runs / total_runs) * 100, 2),
+                "failed_runs": error_runs,
+                "failure_rate_percentage": round((error_runs / total_runs) * 100, 2),
+                "score_statistics": score_stats or None,
+                "duration_statistics_seconds": time_stats or None,
                 "score_distribution": score_dist,
             }
             metrics_summary.append(summary)
 
-        return sorted(metrics_summary, key=lambda x: x["metric"])
+        return sorted(metrics_summary, key=lambda x: x['metric_name'])
 
     def _calculate_error_summary(self, runs: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Agrega todos os erros ocorridos durante o experimento."""
         from collections import defaultdict
 
         error_breakdown = defaultdict(int)
         failed_run_ids = set()
-
+        
         for run in runs:
             has_error = "error" in run
-            for result in run.get("evaluation_results", []):
-                if result.get("error"):
+            for result in run.get("evaluations", []):
+                if result.get("has_error"):
                     has_error = True
-                    error_breakdown[result["eval_name"]] += 1
-
+                    error_breakdown[result["metric_name"]] += 1
+            
             if has_error:
-                failed_run_ids.add(run["task"]["id"])
-
+                failed_run_ids.add(run["task_data"]["id"])
+        
         return {
-            "total_error_runs": len(failed_run_ids),
-            "error_breakdown_by_metric": dict(sorted(error_breakdown.items())),
+            "total_failed_runs": len(failed_run_ids),
+            "errors_per_metric": dict(sorted(error_breakdown.items())),
             "failed_run_ids": sorted(list(failed_run_ids)),
         }
 
     async def run(self, loader: DataLoader):
         start_time = time.monotonic()
         tasks = list(loader.get_tasks())
-
+        
         runs = await tqdm_asyncio.gather(
             *[self._process_task(task) for task in tasks],
             desc=f"Executando: {self.experiment_name}",
         )
-
+        
         end_time = time.monotonic()
-
-        # --- Geração de Sumários ---
-        metrics_summary = self._calculate_metrics_summary(runs)
+        
+        aggregate_metrics = self._calculate_metrics_summary(runs)
         error_summary = self._calculate_error_summary(runs)
+        
+        total_duration_seconds = round(end_time - start_time, 2)
+        
+        task_latencies = [r.get("duration_seconds", 0) for r in runs if "error" not in r]
+        avg_task_duration = round(sum(task_latencies) / len(task_latencies), 2) if task_latencies else 0
+        
+        avg_metric_latencies = [m.get("duration_statistics_seconds", {}).get("average", 0) for m in aggregate_metrics]
+        avg_metric_duration = round(sum(avg_metric_latencies) / len(avg_metric_latencies), 2) if avg_metric_latencies else 0
 
-        total_execution_time = round(end_time - start_time, 2)
-
-        # Correção: Calcula a média da latência de cada task individualmente, ignorando runs que falharam completamente.
-        task_latencies = [
-            r.get("execution_time_seconds", 0) for r in runs if "error" not in r
-        ]
-        avg_latency_per_task = (
-            round(sum(task_latencies) / len(task_latencies), 2) if task_latencies else 0
-        )
-
-        avg_metric_latencies = [
-            m.get("execution_time_statistics", {}).get("average", 0)
-            for m in metrics_summary
-        ]
-        avg_latency_per_metric = (
-            round(sum(avg_metric_latencies) / len(avg_metric_latencies), 2)
-            if avg_metric_latencies
-            else 0
-        )
-
-        execution_details = {
-            "total_execution_time_seconds": total_execution_time,
-            "average_latency_per_task_seconds": avg_latency_per_task,
-            "average_latency_per_metric_seconds": avg_latency_per_metric,
+        execution_summary = {
+            "total_duration_seconds": total_duration_seconds,
+            "average_task_duration_seconds": avg_task_duration,
+            "average_metric_duration_seconds": avg_metric_duration,
         }
 
+        dataset_config = loader.get_dataset_config()
         final_result = {
-            **loader.get_dataset_config(),
+            "dataset_name": dataset_config.get("dataset_name"),
+            "dataset_description": dataset_config.get("dataset_description"),
+            "dataset_id": dataset_config.get("dataset_id"),
             "experiment_id": f"exp_{uuid.uuid4()}",
             "experiment_name": self.experiment_name,
             "experiment_description": self.experiment_description,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "metadata": self.metadata,
-            "execution_details": execution_details,
+            "experiment_timestamp": datetime.now(timezone.utc).isoformat(),
+            "experiment_metadata": self.metadata,
+            "execution_summary": execution_summary,
             "error_summary": error_summary,
-            "metrics_summary": metrics_summary,
+            "aggregate_metrics": aggregate_metrics,
             "runs": runs,
         }
 
