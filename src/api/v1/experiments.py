@@ -9,7 +9,8 @@ from src.utils.bigquery import get_bigquery_result
 from google.cloud.exceptions import GoogleCloudError
 from src.utils.log import logger
 
-router = APIRouter(dependencies=[Depends(validar_token)], tags=["Experiments"])
+# router = APIRouter(dependencies=[Depends(validar_token)], tags=["Experiments"])
+router = APIRouter(tags=["Experiments"])
 
 # --- Pydantic Response Models ---
 
@@ -25,6 +26,7 @@ class DatasetInfo(BaseModel):
     num_runs: int = Field(
         ..., description="Number of experiments run against this dataset."
     )
+    created_at: datetime
 
 
 class DatasetExperimentInfo(BaseModel):
@@ -33,6 +35,7 @@ class DatasetExperimentInfo(BaseModel):
     experiment_name: str
     experiment_description: str
     experiment_timestamp: datetime
+    execution_summary: Dict[str, Any]
     error_summary: Dict[str, Any]
     aggregate_metrics: List[Dict[str, Any]]
 
@@ -71,7 +74,8 @@ async def get_all_datasets():
             CAST(d.dataset_id AS STRING) AS dataset_id,
             d.dataset_name,
             d.dataset_description,
-            COALESCE(ARRAY_LENGTH(JSON_QUERY_ARRAY(d.data)), 0) AS num_examples,
+            d.created_at,
+            COALESCE(ARRAY_LENGTH(JSON_EXTRACT_ARRAY(d.data)), 0) AS num_examples,
             COALESCE(e.num_runs, 0) as num_runs
         FROM
             `{DATASET_TABLE}` AS d
@@ -116,6 +120,7 @@ async def get_dataset_experiments(
             e.experiment_name,
             e.experiment_description,
             e.experiment_timestamp,
+            execution_summary,
             e.error_summary,
             e.aggregate_metrics
         FROM `{EXPERIMENTS_TABLE}` e
@@ -147,7 +152,7 @@ async def get_dataset_examples(
     query = f"""
         SELECT
             CAST(d.dataset_id AS STRING) AS dataset_id,
-            COALESCE(ARRAY_LENGTH(JSON_QUERY_ARRAY(d.data)), 0) AS num_examples,
+            COALESCE(ARRAY_LENGTH(JSON_EXTRACT_ARRAY(d.data)), 0) AS num_examples,
             d.data as examples,
         FROM `{DATASET_TABLE}` AS d
         WHERE d.dataset_id = CAST({dataset_id} AS INT64)
@@ -192,7 +197,6 @@ async def get_experiment_details(
         WHERE dataset_id = CAST({dataset_id} AS INT64) AND experiment_id = CAST({experiment_id} AS INT64) LIMIT 1;
     """
 
-    logger.info(query)
     logger.info(
         f"Executing query for experiment_id: {experiment_id} and dataset_id: {dataset_id}"
     )

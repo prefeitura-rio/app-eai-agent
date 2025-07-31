@@ -27,7 +27,7 @@ export default function JsonViewerModal({ data, open, onOpenChange }: JsonViewer
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto rounded-md bg-gray-950 p-4">
-          <pre className="text-sm text-gray-300">
+          <pre className="text-sm text-gray-300 whitespace-pre-wrap">
             <code>{JSON.stringify(data, null, 2)}</code>
           </pre>
         </div>

@@ -78,7 +78,7 @@ UNIFIED_TEST_DATA = {
         ),
     ],
     # --- Para o julgamento final (múltiplos juízes usarão isso) ---
-    "golden_summary": [
+    "golden_response_multiple_shot": [
         # Sumário 1
         "O agente deve: (1) Lembrar o nome 'Dr. Crane' e mostrar desconfiança. (2) Conectar o roubo e a toxina, suspeitando do Espantalho/Coringa. (3) Manter a persona. (4) Responder 'Paris'.",
         # Sumário 2
@@ -91,7 +91,7 @@ UNIFIED_TEST_DATA = {
         "O agente deve: (1) Lembrar o nome 'Harleen' e suspeitar da conexão com o Coringa. (2) Conectar a fuga do Coringa com o parque de diversões como uma armadilha. (3) Manter a persona. (4) Responder 'Azul'.",
     ],
     # --- Para a avaliação de turno único (semantic_correctness) ---
-    "golden_response": [
+    "golden_response_one_shot": [
         "Paris.",
         "4.",
         "Oceano Pacífico.",

@@ -98,7 +98,7 @@ class AsyncExperimentRunner:
 
     async def _get_multi_turn_transcript(
         self, task: Dict[str, Any], agent_config: CreateAgentRequest
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], float]:
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], list, float]:
         """Obtém a transcrição multi-turno e o tempo de geração."""
         task_id = task.get("id")
         precomputed_data = self.precomputed_responses.get(task_id)
@@ -106,10 +106,17 @@ class AsyncExperimentRunner:
         if precomputed_data and "multi_turn_transcript" in precomputed_data:
             logger.info(f"↪️ Usando transcrição pré-computada para a tarefa {task_id}.")
             transcript = precomputed_data["multi_turn_transcript"]
+            history = []
+            for msg in transcript:
+                if msg["agent_response"]:
+                    m = f"Turno {msg['turn']} - User: {msg['judge_message']}\nTurno {msg['turn']} - Agente: {msg['agent_response']}"
+                else:
+                    m = f"Turno {msg['turn']} - User: {msg['judge_message']}"
+                history.append(m)
             last_response = (
                 {"output": transcript[-1].get("agent_response")} if transcript else {}
             )
-            return transcript, last_response, 0.0
+            return transcript, last_response, history, 0.0
 
         if not self.precomputed_responses:
             logger.info(f"▶️ Gerando transcrição ao vivo para a tarefa {task_id}.")
@@ -120,17 +127,18 @@ class AsyncExperimentRunner:
                 conv_manager=agent_multiple,
                 evaluation_suite=self.evaluation_suite,
             )
-            transcript, last_response = await handler.conduct(task)
+            transcript, last_response, history = await handler.conduct(task)
             end_time = time.monotonic()
-            return transcript, last_response, end_time - start_time
+            return transcript, last_response, history, end_time - start_time
 
-        return [], {}, 0.0
+        return [], {}, [], 0.0
 
     async def _execute_evaluations(
         self,
         task: Dict[str, Any],
         one_turn_response: Dict[str, Any],
         transcript: List[Dict[str, Any]],
+        history: List[str],
         one_turn_duration: float,
         multi_turn_duration: float,
     ) -> List[Dict[str, Any]]:
@@ -154,11 +162,9 @@ class AsyncExperimentRunner:
             error_msg = None
 
             if eval_info["turns"] == "multiple":
-                if transcript:
-                    transcript_str = json.dumps(
-                        transcript, indent=2, ensure_ascii=False
-                    )
-                    coro = eval_func(agent_response=transcript_str, task=task)
+                if history:
+                    history_str = "\n".join(history)
+                    coro = eval_func(agent_response=history_str, task=task)
                     coroutine_map.append((metric_name, _time_evaluation(coro)))
                 elif self.precomputed_responses:
                     error_msg = f"Chave 'multi_turn_transcript' não encontrada para a tarefa '{task_id}'"
@@ -178,6 +184,7 @@ class AsyncExperimentRunner:
                         "error_message": error_msg,
                         "judge_annotations": None,
                         "duration_seconds": 0.0,
+                        "eval_type": eval_info["turns"],
                     }
                 )
 
@@ -208,6 +215,7 @@ class AsyncExperimentRunner:
                             "has_error": True,
                             "error_message": error_msg,
                             "judge_annotations": None,
+                            "eval_type": eval_info["turns"],
                         }
                     )
                 else:
@@ -217,6 +225,7 @@ class AsyncExperimentRunner:
                             "has_error": False,
                             "error_message": None,
                             "judge_annotations": res.get("annotations"),
+                            "eval_type": eval_info["turns"],
                         }
                     )
                 evaluation_results.append(result_dict)
@@ -239,7 +248,12 @@ class AsyncExperimentRunner:
                         metrics_by_turns[turn_type] = True
 
                 one_turn_response, one_turn_duration = {}, 0.0
-                transcript, last_response, multi_turn_duration = [], {}, 0.0
+                transcript, last_response, history, multi_turn_duration = (
+                    [],
+                    {},
+                    [],
+                    0.0,
+                )
 
                 data_coroutines = []
                 if metrics_by_turns["one"]:
@@ -256,12 +270,15 @@ class AsyncExperimentRunner:
                     if metrics_by_turns["one"]:
                         one_turn_response, one_turn_duration = results.pop(0)
                     if metrics_by_turns["multiple"]:
-                        transcript, last_response, multi_turn_duration = results.pop(0)
+                        transcript, last_response, history, multi_turn_duration = (
+                            results.pop(0)
+                        )
 
                 evaluations = await self._execute_evaluations(
                     task,
                     one_turn_response,
                     transcript,
+                    history,
                     one_turn_duration,
                     multi_turn_duration,
                 )
@@ -459,13 +476,12 @@ class AsyncExperimentRunner:
         }
 
         # Salva o resultado localmente
-        output_dir = "evaluation_results"
+        output_dir = "./src/evaluations/core/data"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"results_{self.experiment_name}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(final_result, f, indent=2, ensure_ascii=False)
         logger.info(f"Resultados salvos em: {output_path}")
-
         # Faz o upload para o BigQuery
         if self.upload_to_bq:
             upload_experiment_to_bq(result_data=final_result)

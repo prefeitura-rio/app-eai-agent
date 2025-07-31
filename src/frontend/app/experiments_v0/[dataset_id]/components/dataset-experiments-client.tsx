@@ -106,7 +106,7 @@ export default function DatasetExperimentsClient({
   };
   
   const handleExpRowClick = (experimentId: string) => {
-    router.push(`/experiments/${datasetId}/${experimentId}`);
+    router.push(`/experiments_v0/${datasetId}/${experimentId}`);
   };
 
   const handleDownload = () => {
@@ -201,7 +201,7 @@ export default function DatasetExperimentsClient({
                     {filteredAndSortedExperiments.map((exp) => (
                       <TableRow key={exp.id} onClick={() => handleExpRowClick(exp.id)} className="cursor-pointer">
                         <TableCell>
-                          <Link href={`/experiments/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
+                          <Link href={`/experiments_v0/${datasetId}/${exp.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
                             #{exp.sequenceNumber} {exp.name}
                           </Link>
                         </TableCell>

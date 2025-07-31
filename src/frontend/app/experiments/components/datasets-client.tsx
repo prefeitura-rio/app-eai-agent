@@ -2,8 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dataset } from '@/app/components/types';
-import { exportToCsv } from '@/app/utils/csv';
+import Link from 'next/link';
 import {
   Table,
   TableBody,
@@ -16,25 +15,35 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, Download, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
+import { Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { cn } from '@/app/utils/utils';
-import Link from 'next/link';
+import { useHeader } from '@/app/contexts/HeaderContext';
+import { DatasetInfo } from '../types';
 
 interface DatasetsClientProps {
-  datasets: Dataset[];
+  datasets: DatasetInfo[];
 }
+
+type SortKey = keyof DatasetInfo;
 
 export default function DatasetsClient({ datasets: initialDatasets }: DatasetsClientProps) {
   const router = useRouter();
-  const [datasets, setDatasets] = useState<Dataset[]>(initialDatasets);
+  const { setTitle, setSubtitle } = useHeader();
+  
+  const [datasets, setDatasets] = useState<DatasetInfo[]>(initialDatasets);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Dataset | null; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'created_at', direction: 'descending' });
+
+  useEffect(() => {
+    setTitle('Painel de Datasets');
+    setSubtitle('Selecione um dataset para ver os experimentos');
+  }, [setTitle, setSubtitle]);
 
   useEffect(() => {
     setDatasets(initialDatasets);
   }, [initialDatasets]);
 
-  const handleSort = (key: keyof Dataset) => {
+  const handleSort = (key: SortKey) => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
@@ -47,7 +56,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
 
     if (searchTerm) {
       sortableItems = sortableItems.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        item.dataset_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -56,9 +65,6 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
         const aValue = a[sortConfig.key!];
         const bValue = b[sortConfig.key!];
 
-        if (aValue === null || aValue === undefined) return 1;
-        if (bValue === null || bValue === undefined) return -1;
-        
         if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
@@ -69,19 +75,15 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   }, [datasets, searchTerm, sortConfig]);
 
   const handleRowClick = (datasetId: string) => {
-    router.push(`/experiments_v0/${datasetId}`);
+    router.push(`/experiments/${datasetId}`);
   };
 
-  const handleDownload = () => {
-    exportToCsv('datasets.csv', filteredAndSortedDatasets);
-  };
-
-  const tableHeaders: { key: keyof Dataset; label: string; className?: string }[] = [
-    { key: 'name', label: 'Nome', className: 'w-[30%]' },
-    { key: 'description', label: 'Descrição' },
-    { key: 'exampleCount', label: 'Exemplos', className: 'text-center w-[120px]' },
-    { key: 'experimentCount', label: 'Experimentos', className: 'text-center w-[120px]' },
-    { key: 'createdAt', label: 'Criado em', className: 'text-center w-[180px]' },
+  const tableHeaders: { key: keyof DatasetInfo; label: string; className?: string }[] = [
+    { key: 'dataset_name', label: 'Nome', className: 'w-[30%]' },
+    { key: 'dataset_description', label: 'Descrição' },
+    { key: 'num_examples', label: 'Exemplos', className: 'text-center w-[120px]' },
+    { key: 'num_runs', label: 'Execuções', className: 'text-center w-[120px]' },
+    { key: 'created_at', label: 'Criado em', className: 'text-center w-[180px]' },
   ];
 
   return (
@@ -99,14 +101,6 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" onClick={handleDownload} size="icon">
-                  <Download className="h-4 w-4 text-success" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Download CSV</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
                 <Button variant="outline" onClick={() => window.location.reload()} size="icon">
                   <RefreshCw className="h-4 w-4 text-primary" />
                 </Button>
@@ -120,12 +114,14 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
               <TableRow>
                 {tableHeaders.map(({ key, label, className }) => (
                   <TableHead key={key} className={cn("p-4", className)}>
-                    <Button variant="ghost" onClick={() => handleSort(key)} className="w-full justify-start px-2">
-                      {label}
-                      {sortConfig.key === key && (
-                        sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
-                      )}
-                    </Button>
+                    <div className="flex items-center justify-center">
+                      <Button variant="ghost" onClick={() => handleSort(key)} className="px-2">
+                        {label}
+                        {sortConfig.key === key && (
+                          sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </TableHead>
                 ))}
               </TableRow>
@@ -133,23 +129,23 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
             <TableBody>
               {filteredAndSortedDatasets.length > 0 ? (
                 filteredAndSortedDatasets.map((dataset) => (
-                  <TableRow key={dataset.id} onClick={() => handleRowClick(dataset.id)} className="cursor-pointer">
+                  <TableRow key={dataset.dataset_id} onClick={() => handleRowClick(dataset.dataset_id)} className="cursor-pointer">
                     <TableCell className="p-4 font-medium">
-                      <Link href={`/experiments_v0/${dataset.id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
-                        {dataset.name}
+                      <Link href={`/experiments/${dataset.dataset_id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
+                        {dataset.dataset_name}
                       </Link>
                     </TableCell>
-                    <TableCell className="p-4 text-muted-foreground">{dataset.description || '—'}</TableCell>
+                    <TableCell className="p-4 text-muted-foreground">{dataset.dataset_description || '—'}</TableCell>
                     <TableCell className="p-4 text-center">
-                      <Badge variant="outline" className="text-sm">{dataset.exampleCount}</Badge>
+                      <Badge variant="outline" className="text-sm">{dataset.num_examples}</Badge>
                     </TableCell>
                     <TableCell className="p-4 text-center">
-                      <Badge className="text-sm">{dataset.experimentCount}</Badge>
+                      <Badge className="text-sm">{dataset.num_runs}</Badge>
                     </TableCell>
                     <TableCell className="p-4 text-center text-muted-foreground text-xs">
-                          <div>{new Date(dataset.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                          <div>{new Date(dataset.createdAt).toLocaleTimeString('pt-BR')}</div>
-                        </TableCell>
+                        <div>{new Date(dataset.created_at.replace('Z', '')).toLocaleDateString('pt-BR')}</div>
+                        <div>{new Date(dataset.created_at.replace('Z', '')).toLocaleTimeString('pt-BR')}</div>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (

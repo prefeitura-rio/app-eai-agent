@@ -27,6 +27,7 @@ interface DisabledNavItem extends NavItem {
 const mainNavigation: NavItem[] = [
   { name: 'Início', href: '/', icon: Home },
   { name: 'Experimentos V0', href: '/experiments_v0', icon: FlaskConical },
+  { name: 'Experimentos', href: '/experiments', icon: FlaskConical },
   { name: 'Chat EAI', href: '/chat', icon: MessageSquare },
   { name: 'Configurações EAI', href: '/eai_settings', icon: Bot },
 ];

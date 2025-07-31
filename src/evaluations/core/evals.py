@@ -48,6 +48,7 @@ class Evals:
         Formata um prompt, executa-o contra o cliente juiz e extrai o resultado.
         """
         prompt = prompt_template.format(**kwargs)
+        # logger.info(prompt)
         judgement_response = await self.judge_client.execute(prompt)
         score = _extract_evaluation(judgement_response)
         return {"score": score, "annotations": judgement_response}
@@ -59,7 +60,7 @@ class Evals:
         """Avalia o raciocínio com base em uma transcrição completa."""
         return await self._get_llm_judgement(
             prompt_judges.FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
-            golden_summary=task.get("golden_summary", ""),
+            golden_summary=task.get("golden_response_multiple_shot", ""),
             transcript=agent_response,
         )
 
@@ -70,7 +71,7 @@ class Evals:
         """Avalia a memória com base em uma transcrição completa."""
         return await self._get_llm_judgement(
             prompt_judges.FINAL_MEMORY_JUDGEMENT_PROMPT,
-            golden_summary=task.get("golden_summary", ""),
+            golden_summary=task.get("golden_response_multiple_shot", ""),
             transcript=agent_response,
         )
 
@@ -222,7 +223,7 @@ class ConversationHandler:
 
     async def conduct(
         self, task: Dict[str, Any]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], list]:
         """
         Conduz uma conversa multi-turno, guiada por um juiz, e retorna a transcrição.
         """
@@ -243,7 +244,7 @@ class ConversationHandler:
                 }
             )
             history.append(
-                f"Turno {turn+1} - Juiz: {current_message}\nTurno {turn+1} - Agente: {agent_res.get('output')}"
+                f"Turno {turn+1} - User: {current_message}\nTurno {turn+1} - Agente: {agent_res.get('output')}"
             )
 
             prompt_for_judge = prompt_judges.CONVERSATIONAL_JUDGE_PROMPT.format(
@@ -255,6 +256,18 @@ class ConversationHandler:
                 prompt_for_judge
             )
             if JUDGE_STOP_SIGNAL in judge_res:
+
                 break
             current_message = judge_res
-        return transcript, last_response
+
+        history.append(f"Turno {turn+2} - User: {current_message}")
+        transcript.append(
+            {
+                "turn": turn + 2,
+                "judge_message": current_message,
+                "agent_response": None,
+                "reasoning_trace": None,
+            }
+        )
+
+        return transcript, last_response, history

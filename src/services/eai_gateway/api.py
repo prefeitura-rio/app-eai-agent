@@ -4,6 +4,8 @@ import time
 from typing import Optional, Dict, Any, List, Callable
 from src.config import env
 from pydantic import BaseModel, Field
+from src.utils.log import logger
+
 
 # --- Pydantic Models for API Interaction ---
 

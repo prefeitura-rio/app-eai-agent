@@ -33,6 +33,25 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </Link>
+          <Link href="/experiments" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <FlaskConical className="h-6 w-6" />
+                </div>
+                <CardTitle>Painel de Experimentos</CardTitle>
+                <CardDescription>
+                  Analise e compare os resultados dos experimentos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para Experimentos
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
+          </Link>
           
           <Link href="/eai_settings" className="group">
             <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
