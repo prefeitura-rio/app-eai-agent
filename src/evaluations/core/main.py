@@ -42,6 +42,15 @@ async def run_experiment():
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
     )
 
+    # loader = DataLoader(
+    #     source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",
+    #     id_col="id",
+    #     prompt_col="mensagem_whatsapp_simulada",
+    #     dataset_name="Golden Dataset Servicos",
+    #     dataset_description="Dataser para avaliacao do EAI em servicos",
+    #     metadata_cols=["golden_links_list", "golden_answer"],
+    # )
+
     # --- 2. Definição do Agente (Metadados do Experimento) ---
     # Se estiver usando respostas pré-computadas, estes metadados podem ser apenas para registro.
     agent_config = CreateAgentRequest(
