@@ -4,10 +4,44 @@ from typing import List, Dict, Any
 import base64
 import json
 import src.config.env as env
-from datetime import datetime
+import datetime
 import pytz
 from src.utils.log import logger
 from google.cloud.exceptions import GoogleCloudError
+from src.config import env
+from google.cloud.bigquery.table import Row
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """
+    JSON Encoder customizado que sabe como converter objetos
+    de data, hora e data/hora do Python para strings no padrão ISO 8601.
+    """
+
+    def default(self, obj):
+        # Se o objeto for uma instância de datetime, date ou time...
+        if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
+            # ... converta-o para uma string no formato ISO.
+            return obj.isoformat()
+
+        # Para qualquer outro tipo, deixe o encoder padrão fazer o trabalho.
+        return super().default(obj)
+
+
+def get_bigquery_result(query: str):
+    bq_client = get_bigquery_client()
+    query_job = bq_client.query(query)
+    result = query_job.result(page_size=env.GOOGLE_BIGQUERY_PAGE_SIZE)
+    data = []
+    for page in result.pages:
+        for row in page:
+            row: Row
+            row_data = dict(row.items())
+            data.append(row_data)
+
+    data_str = json.dumps(data, cls=CustomJSONEncoder, indent=2, ensure_ascii=False)
+
+    return json.loads(data_str)
 
 
 def get_bigquery_client() -> bigquery.Client:
@@ -42,7 +76,7 @@ def get_gcp_credentials(scopes: List[str] = None) -> service_account.Credentials
 
 
 def get_datetime() -> str:
-    timestamp = datetime.now(pytz.timezone("America/Sao_Paulo"))
+    timestamp = datetime.datetime.now(pytz.timezone("America/Sao_Paulo"))
     return timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
 

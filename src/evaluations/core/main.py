@@ -46,8 +46,8 @@ async def run_experiment():
     # Se estiver usando respostas pré-computadas, estes metadados podem ser apenas para registro.
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
-        system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém. Utilize o google_search, é mandatorio!",
-        tools=["google_search"],
+        system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
+        tools=[],
         user_number="evaluation_user",
         name="BatmanUnifiedAgent",
         tags=["batman", "unified_test"],

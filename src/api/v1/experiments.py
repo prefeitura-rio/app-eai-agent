@@ -5,8 +5,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from src.core.security.dependencies import validar_token
 
-from src.utils.bigquery import get_bigquery_client
-from google.cloud import bigquery
+from src.utils.bigquery import get_bigquery_result
 from google.cloud.exceptions import GoogleCloudError
 from src.utils.log import logger
 
@@ -14,20 +13,23 @@ router = APIRouter(dependencies=[Depends(validar_token)], tags=["Experiments"])
 
 # --- Pydantic Response Models ---
 
+DATASET_TABLE = "rj-iplanrio.brutos_eai_logs.evaluations_datasets"
+EXPERIMENTS_TABLE = "rj-iplanrio.brutos_eai_logs.evaluations_experiments"
+
 
 class DatasetInfo(BaseModel):
-    dataset_id: int
+    dataset_id: str
     dataset_name: str
     dataset_description: str
-    examples: int = Field(..., description="Number of examples in the dataset.")
+    num_examples: int = Field(..., description="Number of examples in the dataset.")
     num_runs: int = Field(
         ..., description="Number of experiments run against this dataset."
     )
 
 
 class DatasetExperimentInfo(BaseModel):
-    dataset_id: int
-    experiment_id: int
+    dataset_id: str
+    experiment_id: str
     experiment_name: str
     experiment_description: str
     experiment_timestamp: datetime
@@ -35,11 +37,17 @@ class DatasetExperimentInfo(BaseModel):
     aggregate_metrics: List[Dict[str, Any]]
 
 
+class DatasetExamplesInfo(BaseModel):
+    dataset_id: str
+    num_examples: int = Field(..., description="Number of examples in the dataset.")
+    examples: List[Dict[str, Any]]
+
+
 class ExperimentDetails(BaseModel):
-    dataset_id: int
+    dataset_id: str
     dataset_name: str
     dataset_description: str
-    experiment_id: int
+    experiment_id: str
     experiment_name: str
     experiment_description: str
     experiment_timestamp: datetime
@@ -58,25 +66,21 @@ async def get_all_datasets():
     """
     Returns a list of all available datasets with a summary of each.
     """
-    client = get_bigquery_client()
-    datasets_table = "rj-iplanrio.brutos_eai_logs.evaluations_datasets"
-    experiments_table = "rj-iplanrio.brutos_eai_logs.evaluations_experiments"
-
     query = f"""
         SELECT
-            d.dataset_id,
+            CAST(d.dataset_id AS STRING) AS dataset_id,
             d.dataset_name,
             d.dataset_description,
-            JSON_ARRAY_LENGTH(d.data) as examples,
+            COALESCE(ARRAY_LENGTH(JSON_QUERY_ARRAY(d.data)), 0) AS num_examples,
             COALESCE(e.num_runs, 0) as num_runs
         FROM
-            `{datasets_table}` AS d
+            `{DATASET_TABLE}` AS d
         LEFT JOIN (
             SELECT
                 dataset_id,
                 COUNT(experiment_id) as num_runs
             FROM
-                `{experiments_table}`
+                `{EXPERIMENTS_TABLE}`
             GROUP BY
                 dataset_id
         ) AS e
@@ -84,10 +88,10 @@ async def get_all_datasets():
         ORDER BY
             d.dataset_name;
     """
+
     logger.info("Executing query to fetch all datasets summary.")
     try:
-        query_job = client.query(query)
-        results = [dict(row) for row in query_job.result()]
+        results = get_bigquery_result(query)
         return results
     except GoogleCloudError as e:
         logger.error(f"BigQuery error fetching datasets: {e}")
@@ -98,37 +102,29 @@ async def get_all_datasets():
 
 @router.get("/dataset_experiments", response_model=List[DatasetExperimentInfo])
 async def get_dataset_experiments(
-    dataset_id: int = Query(
+    dataset_id: str = Query(
         ..., description="The ID of the dataset to retrieve experiments for."
     )
 ):
     """
     Returns a list of all experiments associated with a specific dataset ID.
     """
-    client = get_bigquery_client()
-    table = "rj-iplanrio.brutos_eai_logs.evaluations_experiments"
     query = f"""
         SELECT
-            dataset_id,
-            experiment_id,
-            experiment_name,
-            experiment_description,
-            experiment_timestamp,
-            error_summary,
-            aggregate_metrics
-        FROM `{table}`
-        WHERE dataset_id = @dataset_id
-        ORDER BY experiment_timestamp DESC;
+            CAST(e.dataset_id AS STRING) AS dataset_id,
+            CAST(e.experiment_id AS STRING) AS experiment_id,
+            e.experiment_name,
+            e.experiment_description,
+            e.experiment_timestamp,
+            e.error_summary,
+            e.aggregate_metrics
+        FROM `{EXPERIMENTS_TABLE}` e
+        WHERE e.dataset_id = CAST({dataset_id} AS INT64)
+        ORDER BY e.experiment_timestamp DESC;
     """
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("dataset_id", "INT64", dataset_id)
-        ]
-    )
     logger.info(f"Executing query for experiments with dataset_id: {dataset_id}")
     try:
-        query_job = client.query(query, job_config=job_config)
-        results = [dict(row) for row in query_job.result()]
+        results = get_bigquery_result(query)
         return results
     except GoogleCloudError as e:
         logger.error(
@@ -139,32 +135,69 @@ async def get_dataset_experiments(
         )
 
 
+@router.get("/dataset_examples", response_model=List[DatasetExamplesInfo])
+async def get_dataset_examples(
+    dataset_id: str = Query(
+        ..., description="The ID of the dataset to retrieve experiments for."
+    )
+):
+    """
+    Returns a list of all available datasets with a summary of each.
+    """
+    query = f"""
+        SELECT
+            CAST(d.dataset_id AS STRING) AS dataset_id,
+            COALESCE(ARRAY_LENGTH(JSON_QUERY_ARRAY(d.data)), 0) AS num_examples,
+            d.data as examples,
+        FROM `{DATASET_TABLE}` AS d
+        WHERE d.dataset_id = CAST({dataset_id} AS INT64)
+    """
+
+    logger.info("Executing query to fetch all datasets summary.")
+    try:
+        results = get_bigquery_result(query)
+        return results
+    except GoogleCloudError as e:
+        logger.error(f"BigQuery error fetching datasets: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve data from BigQuery."
+        )
+
+
 @router.get("/experiments", response_model=ExperimentDetails)
 async def get_experiment_details(
-    dataset_id: int = Query(..., description="The ID of the dataset."),
-    experiment_id: int = Query(
+    dataset_id: str = Query(..., description="The ID of the dataset."),
+    experiment_id: str = Query(
         ..., description="The ID of the experiment to retrieve."
     ),
 ):
     """
     Returns all data for a single, specific experiment.
     """
-    client = get_bigquery_client()
-    table = "rj-iplanrio.brutos_eai_logs.evaluations_experiments"
-    query = f"SELECT * FROM `{table}` WHERE dataset_id = @dataset_id AND experiment_id = @experiment_id LIMIT 1;"
+    query = f"""
+        SELECT 
+            dataset_name,
+            dataset_description,
+            CAST(dataset_id AS STRING) AS dataset_id,
+            CAST(experiment_id AS STRING) AS experiment_id,
+            experiment_name,
+            experiment_description,
+            experiment_timestamp,
+            experiment_metadata,
+            execution_summary,
+            error_summary,
+            aggregate_metrics,
+            runs
+        FROM `{EXPERIMENTS_TABLE}` 
+        WHERE dataset_id = CAST({dataset_id} AS INT64) AND experiment_id = CAST({experiment_id} AS INT64) LIMIT 1;
+    """
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("dataset_id", "INT64", dataset_id),
-            bigquery.ScalarQueryParameter("experiment_id", "INT64", experiment_id),
-        ]
-    )
+    logger.info(query)
     logger.info(
         f"Executing query for experiment_id: {experiment_id} and dataset_id: {dataset_id}"
     )
     try:
-        query_job = client.query(query, job_config=job_config)
-        results = list(query_job.result())
+        results = get_bigquery_result(query)
         if not results:
             raise HTTPException(status_code=404, detail="Experiment not found.")
         return dict(results[0])
