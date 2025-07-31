@@ -1,0 +1,59 @@
+import json
+from typing import List, Dict, Any
+
+
+def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Transforma a lista de mensagens brutas da API em uma estrutura limpa e padronizada.
+    """
+    if not messages:
+        return []
+
+    parsed_list = []
+    for msg in messages:
+        message_type = msg.get("message_type")
+        content = None
+
+        if message_type == "assistant_message":
+            content = msg.get("content")
+        elif message_type == "reasoning_message":
+            content = msg.get("reasoning")
+        elif message_type == "tool_return_message":
+            tool_return = msg.get("tool_return", "{}")
+
+            try:
+                parsed_tool_return = json.loads(tool_return)
+            except (json.JSONDecodeError, TypeError):
+                parsed_tool_return = tool_return
+            content = {"name": msg.get("name"), "tool_return": parsed_tool_return}
+
+        elif message_type == "tool_call_message":
+            tool_call = msg.get("tool_call", {})
+            # Tenta fazer o parse dos argumentos, com fallback para string
+            arguments = tool_call.get("arguments", "{}")
+            try:
+                parsed_args = json.loads(arguments)
+            except (json.JSONDecodeError, TypeError):
+                parsed_args = arguments
+            content = {
+                "name": tool_call.get("name"),
+                "arguments": parsed_args,
+            }
+        elif message_type == "hidden_reasoning_message":
+            content = msg.get("hidden_reasoning")
+        elif message_type in ["system_message", "user_message"]:
+            content = msg.get("content")
+
+        # Tenta fazer o parse do conteúdo se for uma string JSON, com fallback
+        if isinstance(content, str):
+            try:
+                # Evita que strings simples como "Paris." sejam convertidas para JSON
+                if content.strip().startswith(("{", "[")):
+                    content = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                pass  # Mantém como string se o parse falhar
+
+        if message_type:
+            parsed_list.append({"message_type": message_type, "content": content})
+
+    return parsed_list

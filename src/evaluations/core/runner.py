@@ -150,7 +150,9 @@ class AsyncExperimentRunner:
 
             if eval_info["turns"] == "multiple":
                 if transcript:
-                    transcript_str = json.dumps(transcript, indent=2, ensure_ascii=False)
+                    transcript_str = json.dumps(
+                        transcript, indent=2, ensure_ascii=False
+                    )
                     coro = eval_func(agent_response=transcript_str, task=task)
                     coroutine_map.append((metric_name, _time_evaluation(coro)))
                 elif self.precomputed_responses:
@@ -163,10 +165,16 @@ class AsyncExperimentRunner:
                     error_msg = f"Chave 'one_turn_output' não encontrada para a tarefa '{task_id}'"
 
             if error_msg:
-                evaluation_results.append({
-                    "eval_name": metric_name, "score": None, "error": True,
-                    "error_msg": error_msg, "annotations": None, "execution_time_seconds": 0.0
-                })
+                evaluation_results.append(
+                    {
+                        "eval_name": metric_name,
+                        "score": None,
+                        "error": True,
+                        "error_msg": error_msg,
+                        "annotations": None,
+                        "execution_time_seconds": 0.0,
+                    }
+                )
 
         if coroutine_map:
             gathered_results = await asyncio.gather(*[c for _, c in coroutine_map])
@@ -175,22 +183,37 @@ class AsyncExperimentRunner:
             for i, (res, judge_duration) in enumerate(gathered_results):
                 metric_name = valid_metrics[i]
                 eval_info = _EVAL_METHODS_REGISTRY[metric_name]
-                
-                generation_duration = multi_turn_duration if eval_info["turns"] == "multiple" else one_turn_duration
+
+                generation_duration = (
+                    multi_turn_duration
+                    if eval_info["turns"] == "multiple"
+                    else one_turn_duration
+                )
                 total_duration = round(generation_duration + judge_duration, 4)
 
-                result_dict = {"eval_name": metric_name, "execution_time_seconds": total_duration}
+                result_dict = {
+                    "eval_name": metric_name,
+                    "execution_time_seconds": total_duration,
+                }
                 if isinstance(res, Exception):
                     error_msg = f"Exceção durante a avaliação: {str(res)}"
-                    result_dict.update({
-                        "score": None, "error": True,
-                        "error_msg": error_msg, "annotations": None,
-                    })
+                    result_dict.update(
+                        {
+                            "score": None,
+                            "error": True,
+                            "error_msg": error_msg,
+                            "annotations": None,
+                        }
+                    )
                 else:
-                    result_dict.update({
-                        "score": res.get("score", None), "error": False,
-                        "error_msg": None, "annotations": res.get("annotations"),
-                    })
+                    result_dict.update(
+                        {
+                            "score": res.get("score", None),
+                            "error": False,
+                            "error_msg": None,
+                            "annotations": res.get("annotations"),
+                        }
+                    )
                 evaluation_results.append(result_dict)
 
         return sorted(evaluation_results, key=lambda x: x["eval_name"])
@@ -203,13 +226,34 @@ class AsyncExperimentRunner:
         try:
             agent_config_obj = CreateAgentRequest(**self.agent_config)
 
-            one_turn_response, one_turn_duration = await self._get_one_turn_response(task, agent_config_obj)
-            transcript, last_response, multi_turn_duration = await self._get_multi_turn_transcript(task, agent_config_obj)
+            # Determina quais tipos de dados são necessários ANTES de buscá-los.
+            metrics_by_turns = {"one": False, "multiple": False}
+            for m in self.metrics_to_run:
+                turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
+                if turn_type in metrics_by_turns:
+                    metrics_by_turns[turn_type] = True
+
+            one_turn_response, one_turn_duration = {}, 0.0
+            transcript, last_response, multi_turn_duration = [], {}, 0.0
+
+            if metrics_by_turns["one"]:
+                one_turn_response, one_turn_duration = (
+                    await self._get_one_turn_response(task, agent_config_obj)
+                )
+
+            if metrics_by_turns["multiple"]:
+                transcript, last_response, multi_turn_duration = (
+                    await self._get_multi_turn_transcript(task, agent_config_obj)
+                )
 
             evaluation_results = await self._execute_evaluations(
-                task, one_turn_response, transcript, one_turn_duration, multi_turn_duration
+                task,
+                one_turn_response,
+                transcript,
+                one_turn_duration,
+                multi_turn_duration,
             )
-            
+
             end_time = time.monotonic()
             total_duration = round(end_time - start_time, 4)
 
@@ -227,16 +271,21 @@ class AsyncExperimentRunner:
                 "evaluation_results": evaluation_results,
             }
         except Exception as e:
-            logger.error(f"Erro irrecuperável ao processar a tarefa {task_id}: {e}", exc_info=True)
+            logger.error(
+                f"Erro irrecuperável ao processar a tarefa {task_id}: {e}",
+                exc_info=True,
+            )
             end_time = time.monotonic()
             total_duration = round(end_time - start_time, 4)
             return {
                 "execution_time_seconds": total_duration,
-                "task": task, 
-                "error": f"Erro irrecuperável: {e}"
+                "task": task,
+                "error": f"Erro irrecuperável: {e}",
             }
 
-    def _calculate_metrics_summary(self, runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _calculate_metrics_summary(
+        self, runs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """
         Calcula um sumário estatístico detalhado para cada métrica, incluindo scores e tempos de execução.
         """
@@ -250,7 +299,9 @@ class AsyncExperimentRunner:
                 continue
             for result in run.get("evaluation_results", []):
                 metric_name = result["eval_name"]
-                stats_by_metric[metric_name]["times"].append(result.get("execution_time_seconds", 0.0))
+                stats_by_metric[metric_name]["times"].append(
+                    result.get("execution_time_seconds", 0.0)
+                )
                 if result.get("error") or result.get("score") is None:
                     stats_by_metric[metric_name]["errors"] += 1
                 else:
@@ -271,28 +322,38 @@ class AsyncExperimentRunner:
             if successful_runs > 0:
                 score_stats["average"] = round(statistics.mean(scores), 4)
                 score_stats["median"] = round(statistics.median(scores), 4)
-                score_stats["std_dev"] = round(statistics.stdev(scores), 4) if successful_runs > 1 else 0.0
+                score_stats["std_dev"] = (
+                    round(statistics.stdev(scores), 4) if successful_runs > 1 else 0.0
+                )
                 score_stats["min"] = min(scores)
                 score_stats["max"] = max(scores)
-                
+
                 score_counts = Counter(scores)
                 for score_value, count in sorted(score_counts.items()):
-                    score_dist.append({
-                        "value": score_value, "count": count,
-                        "percentage": round((count / successful_runs) * 100, 2)
-                    })
+                    score_dist.append(
+                        {
+                            "value": score_value,
+                            "count": count,
+                            "percentage": round((count / successful_runs) * 100, 2),
+                        }
+                    )
 
             if times:
                 time_stats["average"] = round(statistics.mean(times), 4)
                 time_stats["median"] = round(statistics.median(times), 4)
-                time_stats["std_dev"] = round(statistics.stdev(times), 4) if len(times) > 1 else 0.0
+                time_stats["std_dev"] = (
+                    round(statistics.stdev(times), 4) if len(times) > 1 else 0.0
+                )
                 time_stats["min"] = min(times)
                 time_stats["max"] = max(times)
 
             summary = {
-                "metric": metric_name, "total_runs": total_runs,
+                "metric": metric_name,
+                "total_runs": total_runs,
                 "successful_runs": successful_runs,
-                "successful_runs_percentage": round((successful_runs / total_runs) * 100, 2),
+                "successful_runs_percentage": round(
+                    (successful_runs / total_runs) * 100, 2
+                ),
                 "error_runs": error_runs,
                 "error_runs_percentage": round((error_runs / total_runs) * 100, 2),
                 "score_statistics": score_stats if score_stats else None,
@@ -301,7 +362,7 @@ class AsyncExperimentRunner:
             }
             metrics_summary.append(summary)
 
-        return sorted(metrics_summary, key=lambda x: x['metric'])
+        return sorted(metrics_summary, key=lambda x: x["metric"])
 
     def _calculate_error_summary(self, runs: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Agrega todos os erros ocorridos durante o experimento."""
@@ -309,17 +370,17 @@ class AsyncExperimentRunner:
 
         error_breakdown = defaultdict(int)
         failed_run_ids = set()
-        
+
         for run in runs:
             has_error = "error" in run
             for result in run.get("evaluation_results", []):
                 if result.get("error"):
                     has_error = True
                     error_breakdown[result["eval_name"]] += 1
-            
+
             if has_error:
                 failed_run_ids.add(run["task"]["id"])
-        
+
         return {
             "total_error_runs": len(failed_run_ids),
             "error_breakdown_by_metric": dict(sorted(error_breakdown.items())),
@@ -329,29 +390,37 @@ class AsyncExperimentRunner:
     async def run(self, loader: DataLoader):
         start_time = time.monotonic()
         tasks = list(loader.get_tasks())
-        
+
         runs = await tqdm_asyncio.gather(
             *[self._process_task(task) for task in tasks],
             desc=f"Executando: {self.experiment_name}",
         )
-        
+
         end_time = time.monotonic()
-        
+
         # --- Geração de Sumários ---
         metrics_summary = self._calculate_metrics_summary(runs)
         error_summary = self._calculate_error_summary(runs)
-        
+
         total_execution_time = round(end_time - start_time, 2)
-        
-        # Correção: Calcula a média da latência de cada task individualmente.
-        task_latencies = [r.get("execution_time_seconds", 0) for r in runs]
-        avg_latency_per_task = round(sum(task_latencies) / len(task_latencies), 2) if task_latencies else 0
-        
+
+        # Correção: Calcula a média da latência de cada task individualmente, ignorando runs que falharam completamente.
+        task_latencies = [
+            r.get("execution_time_seconds", 0) for r in runs if "error" not in r
+        ]
+        avg_latency_per_task = (
+            round(sum(task_latencies) / len(task_latencies), 2) if task_latencies else 0
+        )
+
         avg_metric_latencies = [
             m.get("execution_time_statistics", {}).get("average", 0)
             for m in metrics_summary
         ]
-        avg_latency_per_metric = round(sum(avg_metric_latencies) / len(avg_metric_latencies), 2) if avg_metric_latencies else 0
+        avg_latency_per_metric = (
+            round(sum(avg_metric_latencies) / len(avg_metric_latencies), 2)
+            if avg_metric_latencies
+            else 0
+        )
 
         execution_details = {
             "total_execution_time_seconds": total_execution_time,

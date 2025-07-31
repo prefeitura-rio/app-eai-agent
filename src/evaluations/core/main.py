@@ -34,7 +34,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe.head(3),
+        source=dataframe.head(1),
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -49,8 +49,8 @@ async def run_experiment():
     # Se estiver usando respostas pré-computadas, estes metadados podem ser apenas para registro.
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
-        system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém.",
-        tools=[],
+        system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém. Utilize o google_search, é mandatorio!",
+        tools=["google_search"],
         user_number="evaluation_user",
         name="BatmanUnifiedAgent",
         tags=["batman", "unified_test"],
@@ -64,9 +64,9 @@ async def run_experiment():
 
     metrics_to_run = [
         "conversational_reasoning",
-        "conversational_memory",
-        "persona_adherence",
-        "semantic_correctness",
+        # "conversational_memory",
+        # "persona_adherence",
+        # "semantic_correctness",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
