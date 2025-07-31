@@ -1,6 +1,5 @@
 import os
 import traceback
-import logging
 from typing import List, Optional
 import httpx
 from letta_client import Letta, AsyncLetta
@@ -12,7 +11,7 @@ from src.services.letta.message_wrapper import (
     process_stream_raw,
 )
 
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class LettaService:
@@ -189,9 +188,9 @@ class LettaService:
         except Exception as error:
             logger.error(f"Erro detalhado ao enviar message: {error}")
             logger.error(f"Traceback: {traceback.format_exc()}")
-            
+
             # Verificar se é erro específico do servidor Letta
-            if hasattr(error, 'status_code'):
+            if hasattr(error, "status_code"):
                 if error.status_code == 500:
                     return "Erro interno do servidor Letta. Tente novamente em alguns instantes ou verifique se o agente está configurado corretamente."
                 elif error.status_code == 401:
@@ -200,7 +199,7 @@ class LettaService:
                     return "Agente não encontrado. Verifique se o ID do agente está correto."
                 else:
                     return f"Erro do servidor Letta (código {error.status_code}). Tente novamente mais tarde."
-            
+
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
     async def send_message_raw(

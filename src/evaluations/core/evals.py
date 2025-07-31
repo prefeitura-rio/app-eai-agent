@@ -9,9 +9,7 @@ from src.evaluations.core.llm_clients import (
 from src.evaluations.core import prompt_judges
 from typing import Dict, Any, Tuple, List
 
-import logging
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 _EVAL_METHODS_REGISTRY: Dict[str, Dict[str, Any]] = {}

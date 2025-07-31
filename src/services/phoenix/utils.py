@@ -5,7 +5,7 @@ import random
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
-from loguru import logger
+from src.utils.log import logger
 
 from fastapi import HTTPException, HTTPException
 

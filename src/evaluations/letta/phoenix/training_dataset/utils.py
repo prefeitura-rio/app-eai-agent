@@ -32,16 +32,7 @@ from src.services.letta.letta_service import letta_service
 from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
 )
-import logging
-
-
-# Configuração de logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-# logging.getLogger("httpx").setLevel(logging.WARNING)
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 from src.config import env
 
@@ -423,7 +414,6 @@ Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão ca
 - Demonstre emoções reais (preocupação, alívio, gratidão etc).
 """
 
-
     for idx, exemplo in enumerate(exemplos):
         agent_id = await criar_agente_letta(
             index=0,
@@ -448,7 +438,7 @@ Seu papel é participar de uma conversa de WhatsApp como se fosse um cidadão ca
         msg_bot1 = pergunta_inicial
         conversa.append({"bot1": msg_bot1})
         trocas += 1
- 
+
         while trocas < 5 and not resolveu:
             resposta_bot2 = await obter_resposta_letta(agent_id, msg_bot1)
             if not resposta_bot2:
@@ -495,10 +485,10 @@ Responda agora como Bot1, mantendo o tom carioca (abreviações, gírias, emojis
             trocas += 1
 
         todas_conversas[f"exemplo_{idx}"] = {
-            "premissa": premissa, 
-            "pergunta_inicial": pergunta_inicial, 
+            "premissa": premissa,
+            "pergunta_inicial": pergunta_inicial,
             "conversa": conversa,
-            "turnos": trocas
+            "turnos": trocas,
         }
 
         await excluir_agente_letta(agent_id)

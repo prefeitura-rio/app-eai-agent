@@ -7,10 +7,6 @@ router = APIRouter(
     dependencies=[Depends(validar_token)],
 )
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 @router.get("/auth", tags=["Authentication"])
 async def check_auth():

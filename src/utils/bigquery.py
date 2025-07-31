@@ -1,12 +1,13 @@
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from typing import List
+from typing import List, Dict, Any
 import base64
 import json
 import src.config.env as env
 from datetime import datetime
 import pytz
-from loguru import logger
+from src.utils.log import logger
+from google.cloud.exceptions import GoogleCloudError
 
 
 def get_bigquery_client() -> bigquery.Client:
@@ -90,3 +91,207 @@ def save_response_in_bq(
         logger.info(f"Resposta salva no BigQuery: {table_full_name}")
     except Exception:
         raise Exception(json_data)
+
+
+def upload_experiment_to_bq(result_data: Dict[str, Any]):
+    """
+    Faz o upload do resultado do experimento para a tabela de experiments no BigQuery,
+    usando load_table_from_json para garantir a criação da tabela e o schema correto.
+    """
+    try:
+        experiment_id = result_data["experiment_id"]
+        logger.info(f"Fazendo upload do experimento {experiment_id} para o BigQuery...")
+        client = get_bigquery_client()
+        table_full_name = "rj-iplanrio.brutos_eai_logs.evaluations_experiments"
+
+        json_data = [result_data]
+
+        schema = [
+            bigquery.SchemaField(
+                "dataset_name",
+                "STRING",
+                mode="NULLABLE",
+                description="Nome legível do dataset.",
+            ),
+            bigquery.SchemaField(
+                "dataset_description",
+                "STRING",
+                mode="NULLABLE",
+                description="Descrição do dataset.",
+            ),
+            bigquery.SchemaField(
+                "dataset_id",
+                "INTEGER",
+                mode="REQUIRED",
+                description="ID do dataset usado (chave de partição).",
+            ),
+            bigquery.SchemaField(
+                "experiment_id",
+                "INTEGER",
+                mode="REQUIRED",
+                description="ID único da execução do experimento.",
+            ),
+            bigquery.SchemaField(
+                "experiment_name",
+                "STRING",
+                mode="NULLABLE",
+                description="Nome do experimento.",
+            ),
+            bigquery.SchemaField(
+                "experiment_description",
+                "STRING",
+                mode="NULLABLE",
+                description="Descrição dos objetivos do experimento.",
+            ),
+            bigquery.SchemaField(
+                "experiment_timestamp",
+                "TIMESTAMP",
+                mode="REQUIRED",
+                description="Timestamp de conclusão do experimento.",
+            ),
+            bigquery.SchemaField(
+                "experiment_metadata",
+                "JSON",
+                mode="NULLABLE",
+                description="Metadados do experimento (config do agente, prompts).",
+            ),
+            bigquery.SchemaField(
+                "execution_summary",
+                "JSON",
+                mode="NULLABLE",
+                description="Resumo dos tempos de execução.",
+            ),
+            bigquery.SchemaField(
+                "error_summary",
+                "JSON",
+                mode="NULLABLE",
+                description="Resumo de erros e falhas.",
+            ),
+            bigquery.SchemaField(
+                "aggregate_metrics",
+                "JSON",
+                mode="NULLABLE",
+                description="Métricas agregadas de performance.",
+            ),
+            bigquery.SchemaField(
+                "runs",
+                "JSON",
+                mode="NULLABLE",
+                description="Resultados detalhados de cada tarefa (run).",
+            ),
+        ]
+
+        job_config = bigquery.LoadJobConfig(
+            schema=schema,
+            write_disposition="WRITE_APPEND",
+            range_partitioning=bigquery.RangePartitioning(
+                field="dataset_id",
+                range_=bigquery.PartitionRange(start=0, end=100000000, interval=10000),
+            ),
+        )
+
+        job = client.load_table_from_json(
+            json_data, table_full_name, job_config=job_config
+        )
+        job.result()
+
+        logger.info(f"Experimento {experiment_id} salvo com sucesso no BigQuery.")
+
+    except GoogleCloudError as e:
+        logger.error(f"Falha na comunicação com o BigQuery: {e}")
+    except Exception as e:
+        logger.error(
+            f"Erro inesperado durante o upload do experimento para o BigQuery: {e}"
+        )
+
+
+def upload_dataset_to_bq(dataset_config, filtered_df):
+    """
+    Faz o upload do dataset para a tabela de datasets no BigQuery se ele não existir.
+    Apenas as colunas essenciais são enviadas.
+    """
+    try:
+        client = get_bigquery_client()
+        dataset_id = dataset_config["dataset_id"]
+        table_full_name = "rj-iplanrio.brutos_eai_logs.evaluations_datasets"
+
+        try:
+            query = f"SELECT dataset_id FROM `{table_full_name}` WHERE dataset_id = @id LIMIT 1"
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("id", "INT64", dataset_id)
+                ]
+            )
+            query_job = client.query(query, job_config=job_config)
+            if list(query_job.result()):
+                logger.info(
+                    f"Dataset {dataset_id} já existe no BigQuery. Upload ignorado."
+                )
+                return
+        except GoogleCloudError as e:
+            if "Not found" in str(e):
+                logger.info(f"Tabela {table_full_name} não encontrada. Criando...")
+            else:
+                raise
+
+        logger.info(
+            f"Fazendo upload do novo dataset {dataset_id} para o {table_full_name}..."
+        )
+        row_to_insert = {
+            "dataset_id": dataset_id,
+            "dataset_name": dataset_config["dataset_name"],
+            "dataset_description": dataset_config["dataset_description"],
+            "created_at": dataset_config["dataset_created_at"],
+            "data": filtered_df.to_dict(orient="records"),
+        }
+
+        schema = [
+            bigquery.SchemaField(
+                "dataset_id",
+                "INTEGER",
+                mode="REQUIRED",
+                description="ID determinístico do dataset baseado em hash.",
+            ),
+            bigquery.SchemaField(
+                "dataset_name",
+                "STRING",
+                mode="NULLABLE",
+                description="Nome legível do dataset.",
+            ),
+            bigquery.SchemaField(
+                "dataset_description",
+                "STRING",
+                mode="NULLABLE",
+                description="Descrição do propósito do dataset.",
+            ),
+            bigquery.SchemaField(
+                "created_at",
+                "TIMESTAMP",
+                mode="REQUIRED",
+                description="Timestamp da criação do registro (campo de partição).",
+            ),
+            bigquery.SchemaField(
+                "data",
+                "JSON",
+                mode="NULLABLE",
+                description="Conteúdo completo do dataset com as tarefas.",
+            ),
+        ]
+        job_config = bigquery.LoadJobConfig(
+            schema=schema,
+            write_disposition="WRITE_APPEND",
+            time_partitioning=bigquery.TimePartitioning(
+                type_=bigquery.TimePartitioningType.DAY,
+                field="created_at",  # name of column to use for partitioning
+            ),
+        )
+        job = client.load_table_from_json(
+            [row_to_insert], table_full_name, job_config=job_config
+        )
+        job.result()
+        logger.info(f"Dataset {dataset_id} salvo com sucesso no BigQuery.")
+
+    except GoogleCloudError as e:
+        logger.error(f"Falha na comunicação com o BigQuery: {e}")
+    except Exception as e:
+        logger.error(f"Erro inesperado durante o upload para o BigQuery: {e}")

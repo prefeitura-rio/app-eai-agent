@@ -15,9 +15,7 @@ from src.services.eai_gateway.api import (
 )
 from src.evaluations.core.utils import parse_reasoning_messages
 
-import logging
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class AgentConversationManager:
@@ -76,12 +74,14 @@ class AgentConversationManager:
             )
             logger.info(f"Resposta recebida do agente {self.agent_id}.")
             response_dict = response.model_dump(exclude_none=True)
-            
+
             if "data" in response_dict and "messages" in response_dict["data"]:
                 # Transforma a lista de mensagens brutas na estrutura limpa
                 raw_messages = response_dict["data"]["messages"]
-                response_dict["data"]["messages"] = parse_reasoning_messages(raw_messages)
-                
+                response_dict["data"]["messages"] = parse_reasoning_messages(
+                    raw_messages
+                )
+
                 # Extrai o 'output' para conveniência, mantendo a resposta completa
                 for msg in response_dict["data"]["messages"]:
                     if msg.get("message_type") == "assistant_message":
@@ -92,7 +92,7 @@ class AgentConversationManager:
                     logger.warning(
                         "A resposta do agente não continha uma 'assistant_message'."
                     )
-            
+
             return response_dict.get("data", {})
 
         except EAIClientError as e:

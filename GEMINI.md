@@ -1,3 +1,5 @@
+leia todos os arquivos da pasta @src/evaluations/core/ crie um resumo da estrutura dos arquivos e detalhe o que cada arquivo faz,, ssuas classes seus metodos e funcoes, save o resumo em evals.md  
+
 # Plano de Migração para shadcn/ui
 
 Este documento descreve o plano passo a passo para migrar a base de código do frontend existente para usar `shadcn/ui`. O objetivo é melhorar a consistência da UI, a acessibilidade, a experiência do desenvolvedor e a velocidade de implementação de novos recursos.

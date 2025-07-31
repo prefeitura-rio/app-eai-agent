@@ -1,5 +1,5 @@
 from typing import Optional
-import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 
@@ -9,10 +9,11 @@ from src.services.phoenix.dependencies import (
 )
 from src.services.phoenix.schemas import ExperimentData
 from src.core.security.dependencies import validar_token
+from src.utils.log import logger
 
 # Configurações e constantes
 router = APIRouter(dependencies=[Depends(validar_token)], tags=["Phoenix Experiments"])
-logger = logging.getLogger(__name__)
+
 
 # ==================== ROTAS ====================
 
@@ -73,8 +74,14 @@ async def get_experiment_data(
 
         return result
     except Exception as e:
-        logger.error(f"Failed to get experiment data for experiment_id={experiment_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred while fetching data for experiment {experiment_id}.")
+        logger.error(
+            f"Failed to get experiment data for experiment_id={experiment_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred while fetching data for experiment {experiment_id}.",
+        )
 
 
 @router.get("/experiment_data_clean", response_model=ExperimentData)

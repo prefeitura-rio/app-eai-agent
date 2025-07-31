@@ -8,9 +8,8 @@ from src.repositories.user_agent_repository import UserAgentRepository
 from src.services.eai_gateway.api import EAIClient, CreateAgentRequest, EAIClientError
 from pydantic import BaseModel
 from typing import Dict, Any
-import logging
+from src.utils.log import logger
 
-logger = logging.getLogger(__name__)
 
 from typing import Dict, Any, Optional, List
 

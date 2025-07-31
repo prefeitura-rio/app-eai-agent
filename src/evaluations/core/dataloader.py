@@ -2,9 +2,10 @@ import pandas as pd
 import re
 from typing import Generator, Dict, Any, Union, List, Optional
 from urllib.parse import urlparse, parse_qs
-import uuid
 import hashlib
 from datetime import datetime, timezone
+
+from src.utils.bigquery import upload_dataset_to_bq
 
 
 class DataLoader:
@@ -21,6 +22,7 @@ class DataLoader:
         dataset_name: str,
         dataset_description: str,
         metadata_cols: Optional[List[str]] = None,
+        upload_to_bq: bool = True,
     ):
         """
         Inicializa o DataLoader.
@@ -32,10 +34,14 @@ class DataLoader:
             dataset_name (str): Nome do dataset.
             dataset_description (str): Descrição do dataset.
             metadata_cols (List[str], optional): Colunas de metadados adicionais.
+            upload_to_bq (bool): Se True, tenta fazer o upload do dataset para o BigQuery.
         """
         self.id_col = id_col
         self.prompt_col = prompt_col
         self.metadata_cols = metadata_cols if metadata_cols else []
+        self.essential_cols = sorted(
+            list(set([id_col, prompt_col] + self.metadata_cols))
+        )
 
         if isinstance(source, pd.DataFrame):
             self.df = source
@@ -54,14 +60,27 @@ class DataLoader:
             dataset_name, dataset_description
         )
 
-    def _create_dataset_config(self, name: str, description: str) -> Dict[str, Any]:
-        """Cria a configuração e um ID determinístico para o dataset."""
-        # Converte o dataframe para uma string JSON estável para o hash
-        df_json = self.df.to_json(orient="records", lines=True)
-        df_hash = hashlib.sha256(df_json.encode()).hexdigest()
+        if upload_to_bq:
+            upload_dataset_to_bq(
+                dataset_config=self._dataset_config,
+                filtered_df=self.df[self.essential_cols],
+            )
 
-        seed = f"{name}-{df_hash}"
-        dataset_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, seed))
+    def _create_dataset_config(self, name: str, description: str) -> Dict[str, Any]:
+        """
+        Cria a configuração e um ID determinístico em formato de inteiro para o dataset,
+        baseado apenas nas colunas essenciais.
+        """
+        filtered_df = self.df[self.essential_cols]
+        df_json = filtered_df.to_json(
+            orient="records",
+            lines=True,
+        )
+
+        # Gera um hash SHA-256, o converte para um inteiro e o mascara para 63 bits
+        # para garantir que ele se encaixe em um INT64 assinado do BigQuery.
+        df_hash_hex = hashlib.sha256(df_json.encode()).hexdigest()
+        dataset_id = int(df_hash_hex[:16], 16) & (2**63 - 1)
 
         return {
             "dataset_name": name,
@@ -103,8 +122,7 @@ class DataLoader:
 
     def _validate_columns(self):
         """Verifica se as colunas mapeadas existem no DataFrame."""
-        required_cols = {self.id_col, self.prompt_col, *self.metadata_cols}
-        missing_cols = required_cols - set(self.df.columns)
+        missing_cols = set(self.essential_cols) - set(self.df.columns)
         if missing_cols:
             raise ValueError(
                 f"Colunas necessárias não encontradas na fonte de dados: {', '.join(missing_cols)}"

@@ -17,17 +17,13 @@ from src.evaluations.core.prompt_judges import (
     SEMANTIC_CORRECTNESS_PROMPT,
     PERSONA_ADHERENCE_PROMPT,
 )
+from src.utils.log import logger
 
 
 async def run_experiment():
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logger = logging.getLogger(__name__)
 
     logger.info("--- Configurando o Experimento Unificado ---")
 
@@ -41,6 +37,7 @@ async def run_experiment():
         dataset_description="Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
         metadata_cols=["persona", "judge_context", "golden_summary", "golden_response"],
     )
+
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
     )
@@ -72,6 +69,7 @@ async def run_experiment():
 
     metadata = {
         "agent_config": agent_config.model_dump(exclude_none=True),
+        "judge_model": judge_client.model_name,
         "judges_prompts": {
             "conversational_agent": CONVERSATIONAL_JUDGE_PROMPT,
             "conversational_reasoning": FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,

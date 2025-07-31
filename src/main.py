@@ -5,9 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from loguru import logger
 import os
-import logging
 import sys
 
 from src.api import router as api_router
@@ -16,6 +14,9 @@ from src.core.middlewares.logging import LoggingMiddleware
 from src.core.middlewares.static_cache import NoCacheStaticFilesMiddleware
 from src.db import Base, engine
 from src.config import env
+import logging
+
+from src.utils.log import logger
 
 Base.metadata.create_all(bind=engine)
 

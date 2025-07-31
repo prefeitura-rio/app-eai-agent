@@ -1,11 +1,11 @@
 import asyncio
+import hashlib
 import json
 import os
 import uuid
 import time
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
-import logging
 from tqdm.asyncio import tqdm_asyncio
 
 from src.evaluations.core.dataloader import DataLoader
@@ -16,8 +16,9 @@ from src.evaluations.core.evals import (
     ConversationHandler,
 )
 from src.services.eai_gateway.api import CreateAgentRequest
+from src.utils.bigquery import upload_experiment_to_bq
 
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class AsyncExperimentRunner:
@@ -33,6 +34,7 @@ class AsyncExperimentRunner:
         metrics_to_run: List[str],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         max_concurrency: int = 10,
+        upload_to_bq: bool = True,
     ):
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
@@ -44,7 +46,8 @@ class AsyncExperimentRunner:
             precomputed_responses if precomputed_responses else {}
         )
         self.semaphore = asyncio.Semaphore(max_concurrency)
-        
+        self.upload_to_bq = upload_to_bq
+
         if self.precomputed_responses:
             logger.info(
                 f"✅ Runner inicializado com {len(self.precomputed_responses)} respostas pré-computadas."
@@ -152,7 +155,9 @@ class AsyncExperimentRunner:
 
             if eval_info["turns"] == "multiple":
                 if transcript:
-                    transcript_str = json.dumps(transcript, indent=2, ensure_ascii=False)
+                    transcript_str = json.dumps(
+                        transcript, indent=2, ensure_ascii=False
+                    )
                     coro = eval_func(agent_response=transcript_str, task=task)
                     coroutine_map.append((metric_name, _time_evaluation(coro)))
                 elif self.precomputed_responses:
@@ -165,10 +170,16 @@ class AsyncExperimentRunner:
                     error_msg = f"Chave 'one_turn_output' não encontrada para a tarefa '{task_id}'"
 
             if error_msg:
-                evaluation_results.append({
-                    "metric_name": metric_name, "score": None, "has_error": True,
-                    "error_message": error_msg, "judge_annotations": None, "duration_seconds": 0.0
-                })
+                evaluation_results.append(
+                    {
+                        "metric_name": metric_name,
+                        "score": None,
+                        "has_error": True,
+                        "error_message": error_msg,
+                        "judge_annotations": None,
+                        "duration_seconds": 0.0,
+                    }
+                )
 
         if coroutine_map:
             gathered_results = await asyncio.gather(*[c for _, c in coroutine_map])
@@ -177,22 +188,37 @@ class AsyncExperimentRunner:
             for i, (res, judge_duration) in enumerate(gathered_results):
                 metric_name = valid_metrics[i]
                 eval_info = _EVAL_METHODS_REGISTRY[metric_name]
-                
-                generation_duration = multi_turn_duration if eval_info["turns"] == "multiple" else one_turn_duration
+
+                generation_duration = (
+                    multi_turn_duration
+                    if eval_info["turns"] == "multiple"
+                    else one_turn_duration
+                )
                 total_duration = round(generation_duration + judge_duration, 4)
 
-                result_dict = {"metric_name": metric_name, "duration_seconds": total_duration}
+                result_dict = {
+                    "metric_name": metric_name,
+                    "duration_seconds": total_duration,
+                }
                 if isinstance(res, Exception):
                     error_msg = f"Exceção durante a avaliação: {str(res)}"
-                    result_dict.update({
-                        "score": None, "has_error": True,
-                        "error_message": error_msg, "judge_annotations": None,
-                    })
+                    result_dict.update(
+                        {
+                            "score": None,
+                            "has_error": True,
+                            "error_message": error_msg,
+                            "judge_annotations": None,
+                        }
+                    )
                 else:
-                    result_dict.update({
-                        "score": res.get("score", None), "has_error": False,
-                        "error_message": None, "judge_annotations": res.get("annotations"),
-                    })
+                    result_dict.update(
+                        {
+                            "score": res.get("score", None),
+                            "has_error": False,
+                            "error_message": None,
+                            "judge_annotations": res.get("annotations"),
+                        }
+                    )
                 evaluation_results.append(result_dict)
 
         return sorted(evaluation_results, key=lambda x: x["metric_name"])
@@ -214,12 +240,16 @@ class AsyncExperimentRunner:
 
                 one_turn_response, one_turn_duration = {}, 0.0
                 transcript, last_response, multi_turn_duration = [], {}, 0.0
-                
+
                 data_coroutines = []
                 if metrics_by_turns["one"]:
-                    data_coroutines.append(self._get_one_turn_response(task, agent_config_obj))
+                    data_coroutines.append(
+                        self._get_one_turn_response(task, agent_config_obj)
+                    )
                 if metrics_by_turns["multiple"]:
-                    data_coroutines.append(self._get_multi_turn_transcript(task, agent_config_obj))
+                    data_coroutines.append(
+                        self._get_multi_turn_transcript(task, agent_config_obj)
+                    )
 
                 if data_coroutines:
                     results = await asyncio.gather(*data_coroutines)
@@ -229,9 +259,13 @@ class AsyncExperimentRunner:
                         transcript, last_response, multi_turn_duration = results.pop(0)
 
                 evaluations = await self._execute_evaluations(
-                    task, one_turn_response, transcript, one_turn_duration, multi_turn_duration
+                    task,
+                    one_turn_response,
+                    transcript,
+                    one_turn_duration,
+                    multi_turn_duration,
                 )
-                
+
                 end_time = time.monotonic()
                 total_duration = round(end_time - start_time, 4)
 
@@ -249,16 +283,21 @@ class AsyncExperimentRunner:
                     "evaluations": evaluations,
                 }
             except Exception as e:
-                logger.error(f"Erro irrecuperável ao processar a tarefa {task_id}: {e}", exc_info=True)
+                logger.error(
+                    f"Erro irrecuperável ao processar a tarefa {task_id}: {e}",
+                    exc_info=True,
+                )
                 end_time = time.monotonic()
                 total_duration = round(end_time - start_time, 4)
                 return {
                     "duration_seconds": total_duration,
-                    "task_data": task, 
-                    "error": f"Erro irrecuperável: {e}"
+                    "task_data": task,
+                    "error": f"Erro irrecuperável: {e}",
                 }
 
-    def _calculate_metrics_summary(self, runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _calculate_metrics_summary(
+        self, runs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         from collections import defaultdict, Counter
         import statistics
 
@@ -269,7 +308,9 @@ class AsyncExperimentRunner:
                 continue
             for result in run.get("evaluations", []):
                 metric_name = result["metric_name"]
-                stats_by_metric[metric_name]["times"].append(result.get("duration_seconds", 0.0))
+                stats_by_metric[metric_name]["times"].append(
+                    result.get("duration_seconds", 0.0)
+                )
                 if result.get("has_error") or result.get("score") is None:
                     stats_by_metric[metric_name]["errors"] += 1
                 else:
@@ -281,35 +322,50 @@ class AsyncExperimentRunner:
             successful_runs = len(scores)
             total_runs = successful_runs + error_runs
 
-            if total_runs == 0: continue
+            if total_runs == 0:
+                continue
 
             score_stats, time_stats, score_dist = {}, {}, []
             if successful_runs > 0:
                 score_stats = {
                     "average": round(statistics.mean(scores), 4),
                     "median": round(statistics.median(scores), 4),
-                    "std_dev": round(statistics.stdev(scores), 4) if successful_runs > 1 else 0.0,
-                    "min": min(scores), "max": max(scores)
+                    "std_dev": (
+                        round(statistics.stdev(scores), 4)
+                        if successful_runs > 1
+                        else 0.0
+                    ),
+                    "min": min(scores),
+                    "max": max(scores),
                 }
                 score_counts = Counter(scores)
                 for score_value, count in sorted(score_counts.items()):
-                    score_dist.append({
-                        "value": score_value, "count": count,
-                        "percentage": round((count / successful_runs) * 100, 2)
-                    })
+                    score_dist.append(
+                        {
+                            "value": score_value,
+                            "count": count,
+                            "percentage": round((count / successful_runs) * 100, 2),
+                        }
+                    )
 
             if times:
                 time_stats = {
                     "average": round(statistics.mean(times), 4),
                     "median": round(statistics.median(times), 4),
-                    "std_dev": round(statistics.stdev(times), 4) if len(times) > 1 else 0.0,
-                    "min": min(times), "max": max(times)
+                    "std_dev": (
+                        round(statistics.stdev(times), 4) if len(times) > 1 else 0.0
+                    ),
+                    "min": min(times),
+                    "max": max(times),
                 }
 
             summary = {
-                "metric_name": metric_name, "total_runs": total_runs,
+                "metric_name": metric_name,
+                "total_runs": total_runs,
                 "successful_runs": successful_runs,
-                "success_rate_percentage": round((successful_runs / total_runs) * 100, 2),
+                "success_rate_percentage": round(
+                    (successful_runs / total_runs) * 100, 2
+                ),
                 "failed_runs": error_runs,
                 "failure_rate_percentage": round((error_runs / total_runs) * 100, 2),
                 "score_statistics": score_stats or None,
@@ -318,24 +374,24 @@ class AsyncExperimentRunner:
             }
             metrics_summary.append(summary)
 
-        return sorted(metrics_summary, key=lambda x: x['metric_name'])
+        return sorted(metrics_summary, key=lambda x: x["metric_name"])
 
     def _calculate_error_summary(self, runs: List[Dict[str, Any]]) -> Dict[str, Any]:
         from collections import defaultdict
 
         error_breakdown = defaultdict(int)
         failed_run_ids = set()
-        
+
         for run in runs:
             has_error = "error" in run
             for result in run.get("evaluations", []):
                 if result.get("has_error"):
                     has_error = True
                     error_breakdown[result["metric_name"]] += 1
-            
+
             if has_error:
                 failed_run_ids.add(run["task_data"]["id"])
-        
+
         return {
             "total_failed_runs": len(failed_run_ids),
             "errors_per_metric": dict(sorted(error_breakdown.items())),
@@ -345,24 +401,35 @@ class AsyncExperimentRunner:
     async def run(self, loader: DataLoader):
         start_time = time.monotonic()
         tasks = list(loader.get_tasks())
-        
+
         runs = await tqdm_asyncio.gather(
             *[self._process_task(task) for task in tasks],
             desc=f"Executando: {self.experiment_name}",
         )
-        
+
         end_time = time.monotonic()
-        
+
         aggregate_metrics = self._calculate_metrics_summary(runs)
         error_summary = self._calculate_error_summary(runs)
-        
+
         total_duration_seconds = round(end_time - start_time, 2)
-        
-        task_latencies = [r.get("duration_seconds", 0) for r in runs if "error" not in r]
-        avg_task_duration = round(sum(task_latencies) / len(task_latencies), 2) if task_latencies else 0
-        
-        avg_metric_latencies = [m.get("duration_statistics_seconds", {}).get("average", 0) for m in aggregate_metrics]
-        avg_metric_duration = round(sum(avg_metric_latencies) / len(avg_metric_latencies), 2) if avg_metric_latencies else 0
+
+        task_latencies = [
+            r.get("duration_seconds", 0) for r in runs if "error" not in r
+        ]
+        avg_task_duration = (
+            round(sum(task_latencies) / len(task_latencies), 2) if task_latencies else 0
+        )
+
+        avg_metric_latencies = [
+            m.get("duration_statistics_seconds", {}).get("average", 0)
+            for m in aggregate_metrics
+        ]
+        avg_metric_duration = (
+            round(sum(avg_metric_latencies) / len(avg_metric_latencies), 2)
+            if avg_metric_latencies
+            else 0
+        )
 
         execution_summary = {
             "total_duration_seconds": total_duration_seconds,
@@ -371,11 +438,16 @@ class AsyncExperimentRunner:
         }
 
         dataset_config = loader.get_dataset_config()
+
+        # Gera um ID de experimento baseado em hash, mascarado para 63 bits para o BigQuery.
+        exp_hash_hex = hashlib.sha256(uuid.uuid4().hex.encode()).hexdigest()
+        experiment_id = int(exp_hash_hex[:16], 16) & (2**63 - 1)
+
         final_result = {
             "dataset_name": dataset_config.get("dataset_name"),
             "dataset_description": dataset_config.get("dataset_description"),
             "dataset_id": dataset_config.get("dataset_id"),
-            "experiment_id": f"exp_{uuid.uuid4()}",
+            "experiment_id": experiment_id,
             "experiment_name": self.experiment_name,
             "experiment_description": self.experiment_description,
             "experiment_timestamp": datetime.now(timezone.utc).isoformat(),
@@ -386,9 +458,14 @@ class AsyncExperimentRunner:
             "runs": runs,
         }
 
+        # Salva o resultado localmente
         output_dir = "evaluation_results"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"results_{self.experiment_name}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(final_result, f, indent=2, ensure_ascii=False)
         logger.info(f"Resultados salvos em: {output_path}")
+
+        # Faz o upload para o BigQuery
+        if self.upload_to_bq:
+            upload_experiment_to_bq(result_data=final_result)

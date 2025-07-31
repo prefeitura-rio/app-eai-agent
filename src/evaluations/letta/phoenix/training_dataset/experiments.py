@@ -33,7 +33,7 @@ import nest_asyncio
 
 from phoenix.experiments.types import Example
 from phoenix.experiments import run_experiment
-import logging
+from src.utils.log import logger
 
 
 def get_current_date():
@@ -47,10 +47,7 @@ def get_current_date():
 ## NOTE: PARA RODAR O CÓDIGO, TEM UMA PECULIARIDADE EM QUE É PRECISO ALTERAR UM ITEM DA CRIAÇÃO DO AGENTE, QUALQUER DÚVIDA ME CHAMA (FRED) QUE EU EXPLICO O QUE FAZER.
 
 # Configuração de logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+
 
 phoenix_client = px.Client(endpoint=env.PHOENIX_ENDPOINT)
 

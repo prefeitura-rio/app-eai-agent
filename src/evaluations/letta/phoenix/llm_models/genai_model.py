@@ -13,10 +13,10 @@ import os
 import src.config.env as env
 
 # Adicionar o diretório raiz do projeto ao path para permitir importações absolutas
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../')))
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../"))
+)
 from src.services.llm.gemini_service import gemini_service
-
-logger = logging.getLogger(__name__)
 
 
 MODEL_TOKEN_LIMIT_MAPPING = {
@@ -27,7 +27,7 @@ MODEL_TOKEN_LIMIT_MAPPING = {
 @dataclass
 class GenAIModel(BaseModel):
     """
-    Modelo baseado no Google GenAI 
+    Modelo baseado no Google GenAI
         parametrs:
             api_key: str
             default_concurrency: int
@@ -70,6 +70,7 @@ class GenAIModel(BaseModel):
 
     def _init_rate_limiter(self) -> None:
         from google.api_core import exceptions
+
         self._rate_limiter = RateLimiter(
             rate_limit_error=exceptions.ResourceExhausted,
             max_rate_limit_retries=10,
@@ -87,7 +88,9 @@ class GenAIModel(BaseModel):
             "stop_sequences": self.stop_sequences,
         }
 
-    def _generate(self, prompt: Union[str, MultimodalPrompt], **kwargs: Dict[str, Any]) -> str:
+    def _generate(
+        self, prompt: Union[str, MultimodalPrompt], **kwargs: Dict[str, Any]
+    ) -> str:
         kwargs.pop("instruction", None)
 
         if isinstance(prompt, str):
@@ -98,29 +101,37 @@ class GenAIModel(BaseModel):
             prompt: MultimodalPrompt, generation_config: Dict[str, Any], **kwargs: Any
         ) -> Any:
             prompt_str = self._construct_prompt(prompt)
-            
+
             config = {
                 "temperature": generation_config.get("temperature", self.temperature),
-                "max_output_tokens": generation_config.get("max_output_tokens", self.max_tokens),
+                "max_output_tokens": generation_config.get(
+                    "max_output_tokens", self.max_tokens
+                ),
                 "top_p": generation_config.get("top_p", self.top_p),
                 "top_k": generation_config.get("top_k", self.top_k),
             }
-            
+
             if generation_config.get("stop_sequences"):
                 config["stop_sequences"] = generation_config.get("stop_sequences")
-                
+
             # Usamos o event loop para executar de forma síncrona
             import asyncio
-            
+
             # Metodo mais simples e seguro de executar código assíncrono em contexto síncrono
-            response = asyncio.run(gemini_service.generate_content(
-                text=prompt_str,
-                model=self.model,
-                config=config,
-                response_format="raw",
-                **{k: v for k, v in kwargs.items() if k not in ["generation_config"]}
-            ))
-            
+            response = asyncio.run(
+                gemini_service.generate_content(
+                    text=prompt_str,
+                    model=self.model,
+                    config=config,
+                    response_format="raw",
+                    **{
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ["generation_config"]
+                    },
+                )
+            )
+
             return self._parse_response_candidates(response)
 
         response = _rate_limited_completion(
@@ -144,27 +155,33 @@ class GenAIModel(BaseModel):
             prompt: MultimodalPrompt, generation_config: Dict[str, Any], **kwargs: Any
         ) -> Any:
             prompt_str = self._construct_prompt(prompt)
-            
+
             # Usar o gemini_service para geração assíncrona
             config = {
                 "temperature": generation_config.get("temperature", self.temperature),
-                "max_output_tokens": generation_config.get("max_output_tokens", self.max_tokens),
+                "max_output_tokens": generation_config.get(
+                    "max_output_tokens", self.max_tokens
+                ),
                 "top_p": generation_config.get("top_p", self.top_p),
                 "top_k": generation_config.get("top_k", self.top_k),
             }
-            
+
             if generation_config.get("stop_sequences"):
                 config["stop_sequences"] = generation_config.get("stop_sequences")
-                
+
             try:
                 response = await gemini_service.generate_content(
                     text=prompt_str,
                     model=self.model,
                     config=config,
                     response_format="raw",
-                    **{k: v for k, v in kwargs.items() if k not in ["generation_config"]}
+                    **{
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ["generation_config"]
+                    },
                 )
-                
+
                 return self._parse_response_candidates(response)
             except Exception as e:
                 printif(self._verbose, f"Erro na geração assíncrona: {str(e)}")
@@ -186,21 +203,23 @@ class GenAIModel(BaseModel):
                 try:
                     # Nova estrutura do Gemini API
                     if hasattr(response.candidates[0], "content"):
-                        if hasattr(response.candidates[0].content, "parts") and response.candidates[0].content.parts:
+                        if (
+                            hasattr(response.candidates[0].content, "parts")
+                            and response.candidates[0].content.parts
+                        ):
                             return response.candidates[0].content.parts[0]
-                    # Tenta acessar text (estrutura antiga)    
+                    # Tenta acessar text (estrutura antiga)
                     elif hasattr(response.candidates[0], "text"):
                         return response.candidates[0].text
                     else:
                         printif(
-                            self._verbose, "Não foi possível acessar o conteúdo da resposta."
+                            self._verbose,
+                            "Não foi possível acessar o conteúdo da resposta.",
                         )
                         printif(self._verbose, str(response.candidates[0]))
                         return ""
                 except Exception as e:
-                    printif(
-                        self._verbose, f"Erro ao extrair resposta: {str(e)}"
-                    )
+                    printif(self._verbose, f"Erro ao extrair resposta: {str(e)}")
                     printif(self._verbose, str(response.candidates[0]))
                     return ""
             else:
@@ -211,7 +230,10 @@ class GenAIModel(BaseModel):
                 printif(self._verbose, str(response))
                 return ""
         else:
-            printif(self._verbose, "The 'response' object does not have a 'candidates' attribute.")
+            printif(
+                self._verbose,
+                "The 'response' object does not have a 'candidates' attribute.",
+            )
             return ""
 
     def _construct_prompt(self, prompt: MultimodalPrompt) -> str:

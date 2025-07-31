@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
-from loguru import logger
+from src.utils.log import logger
 
 router = APIRouter()
 
