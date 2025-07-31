@@ -72,6 +72,7 @@ class AgentConversationManager:
                 timeout=timeout,
                 polling_interval=polling_interval,
             )
+
             logger.info(f"Resposta recebida do agente {self.agent_id}.")
             response_dict = response.model_dump(exclude_none=True)
 

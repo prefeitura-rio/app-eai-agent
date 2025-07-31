@@ -56,7 +56,7 @@ async def run_experiment():
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
-        tools=[],
+        tools=["google_search"],
         user_number="evaluation_user",
         name="BatmanUnifiedAgent",
         tags=["batman", "unified_test"],
@@ -69,10 +69,10 @@ async def run_experiment():
     evaluation_suite = Evals(judge_client=judge_client)
 
     metrics_to_run = [
-        "conversational_reasoning",
+        # "conversational_reasoning",
         # "conversational_memory",
-        "persona_adherence",
-        # "semantic_correctness",
+        # "persona_adherence",
+        "semantic_correctness",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 

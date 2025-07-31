@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -11,6 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -140,44 +156,84 @@ export default function DatasetDetailsClient({
             </div>
         </div>
       <TabsContent value="experiments">
-        <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background z-10">
-                <TableRow>
-                  <SortableHeader sortKey="experiment_name" className="w-[300px]">Nome</SortableHeader>
-                  <SortableHeader sortKey="experiment_description">Descrição</SortableHeader>
-                  <SortableHeader sortKey="experiment_timestamp" className="text-center w-[180px]">Data</SortableHeader>
-                  {allMetrics.map(metric => (
-                    <TableHead key={metric} className="text-center w-[150px]">{metric}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedExperiments.map((exp) => (
-                  <TableRow key={exp.experiment_id} onClick={() => handleRowClick(exp.experiment_id)} className="cursor-pointer">
-                    <TableCell>
-                      <Link href={`/experiments/${datasetId}/${exp.experiment_id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-primary hover:underline">
-                        {exp.experiment_name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{exp.experiment_description || '—'}</TableCell>
-                    <TableCell className="text-center text-muted-foreground text-xs">
-                        <div>{new Date(exp.experiment_timestamp).toLocaleDateString('pt-BR')}</div>
-                        <div>{new Date(exp.experiment_timestamp).toLocaleTimeString('pt-BR')}</div>
-                    </TableCell>
-                    {allMetrics.map(metric => {
-                      const metricData = exp.aggregate_metrics.find(m => m.metric_name === metric);
-                      const score = metricData?.score_statistics?.average;
-                      return (
-                        <TableCell key={metric} className="text-center">
-                          <ProgressBar score={score} metricName={metric} />
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        <div className="overflow-x-auto border rounded-lg h-[calc(100vh-16rem)]">
+          <div style={{ minWidth: `${350 + 150 * allMetrics.length + 100 * 4}px` }}>
+            {/* Cabeçalho Fixo */}
+            <div className="grid gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b bg-muted/50 sticky top-0"
+                 style={{ gridTemplateColumns: `minmax(350px, 1.5fr) repeat(${allMetrics.length}, 150px) repeat(4, 100px)` }}>
+              <div className="text-left">Experimento</div>
+              {allMetrics.map(metric => (
+                <div key={metric} className="text-center">{metric}</div>
+              ))}
+              <div className="text-center">Duração Total</div>
+              <div className="text-center">Total Runs</div>
+              <div className="text-center">Sucesso</div>
+              <div className="text-center">Falhas</div>
+            </div>
+
+            <Accordion type="multiple" className="w-full">
+              {filteredAndSortedExperiments.map((exp) => (
+                <AccordionItem value={exp.experiment_id} key={exp.experiment_id} className="border-b last:border-b-0">
+                  <AccordionTrigger className="hover:no-underline p-3 rounded-none hover:bg-muted/50">
+                    <div className="grid gap-4 w-full items-start"
+                         style={{ gridTemplateColumns: `minmax(350px, 1.5fr) repeat(${allMetrics.length}, 150px) repeat(4, 100px)` }}>
+                      <div className="text-left">
+                        <Link href={`/experiments/${datasetId}/${exp.experiment_id}`} className="font-semibold text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                          {exp.experiment_name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground mt-1 break-words whitespace-normal">{exp.experiment_description}</p>
+                        <p className="text-xs text-muted-foreground mt-2">{new Date(exp.experiment_timestamp).toLocaleString('pt-BR')}</p>
+                      </div>
+                      {allMetrics.map(metric => {
+                        const metricData = exp.aggregate_metrics.find(m => m.metric_name === metric);
+                        const score = metricData?.score_statistics?.average ?? null;
+                        return (
+                          <div key={metric} className="col-span-1 text-center self-center">
+                            <ProgressBar score={score} metricName={metric} />
+                          </div>
+                        );
+                      })}
+                      <div className="text-center font-semibold self-center">{exp.execution_summary.total_duration_seconds.toFixed(2)}s</div>
+                      <div className="text-center font-semibold self-center">{exp.aggregate_metrics[0]?.total_runs || 0}</div>
+                      <div className="text-center font-semibold text-green-600 self-center">{exp.aggregate_metrics[0]?.successful_runs || 0}</div>
+                      <div className="text-center font-semibold text-red-600 self-center">{exp.error_summary.total_failed_runs}</div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 bg-muted/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {exp.aggregate_metrics.map(metric => (
+                        <div key={metric.metric_name} className="space-y-3">
+                          <h4 className="font-semibold text-base">{metric.metric_name}</h4>
+                          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
+                            <span>Média: <strong className="text-foreground">{metric.score_statistics.average.toFixed(3)}</strong></span>
+                            <span>Mediana: <strong className="text-foreground">{metric.score_statistics.median.toFixed(3)}</strong></span>
+                            <span>Mínimo: <strong className="text-foreground">{metric.score_statistics.min.toFixed(3)}</strong></span>
+                            <span>Máximo: <strong className="text-foreground">{metric.score_statistics.max.toFixed(3)}</strong></span>
+                            <span>Desvio Padrão: <strong className="text-foreground">{metric.score_statistics.std_dev.toFixed(3)}</strong></span>
+                            <span>Duração Média: <strong className="text-foreground">{metric.duration_statistics_seconds.average.toFixed(2)}s</strong></span>
+                            <span>Sucessos: <strong className="text-foreground text-green-600">{metric.successful_runs}</strong></span>
+                            <span>Falhas: <strong className="text-foreground text-red-600">{metric.failed_runs}</strong></span>
+                          </div>
+                          <div>
+                            <h5 className="text-sm font-medium mb-2">Distribuição de Scores</h5>
+                            <div className="space-y-1">
+                              {metric.score_distribution.map(dist => (
+                                <div key={dist.value} className="grid grid-cols-[3rem_1fr_5rem] items-center gap-2 text-xs">
+                                  <div className="text-right font-bold">{dist.value.toFixed(1)}</div>
+                                  <Progress value={dist.percentage} className="h-2" />
+                                  <div className="text-left text-muted-foreground">({dist.count} runs) {dist.percentage.toFixed(0)}%</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         </div>
       </TabsContent>
       <TabsContent value="examples">

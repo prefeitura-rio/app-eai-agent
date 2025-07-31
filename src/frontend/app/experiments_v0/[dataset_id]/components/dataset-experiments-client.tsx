@@ -106,7 +106,7 @@ export default function DatasetExperimentsClient({
   };
   
   const handleExpRowClick = (experimentId: string) => {
-    router.push(`/experiments/${datasetId}/${experimentId}`);
+    router.push(`/experiments_v0/${datasetId}/${experimentId}`);
   };
 
   const handleDownload = () => {

@@ -35,6 +35,7 @@ class DatasetExperimentInfo(BaseModel):
     experiment_name: str
     experiment_description: str
     experiment_timestamp: datetime
+    execution_summary: Dict[str, Any]
     error_summary: Dict[str, Any]
     aggregate_metrics: List[Dict[str, Any]]
 
@@ -119,6 +120,7 @@ async def get_dataset_experiments(
             e.experiment_name,
             e.experiment_description,
             e.experiment_timestamp,
+            execution_summary,
             e.error_summary,
             e.aggregate_metrics
         FROM `{EXPERIMENTS_TABLE}` e

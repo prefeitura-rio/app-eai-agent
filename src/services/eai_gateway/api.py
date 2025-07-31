@@ -4,6 +4,8 @@ import time
 from typing import Optional, Dict, Any, List, Callable
 from src.config import env
 from pydantic import BaseModel, Field
+from src.utils.log import logger
+
 
 # --- Pydantic Models for API Interaction ---
 
@@ -110,6 +112,7 @@ class EAIClient:
         try:
             params = {"message_id": message_id}
             response = await self._client.get("/api/v1/message/response", params=params)
+            logger.info(response)
             response.raise_for_status()
 
             # Log the raw response from the API
@@ -135,6 +138,7 @@ class EAIClient:
         while time.time() - start_time < timeout:
             try:
                 response = await self.get_message_response(send_resp.message_id)
+                logger.info(response)
                 if response.status == "completed":
                     return response
             except httpx.HTTPStatusError as e:
