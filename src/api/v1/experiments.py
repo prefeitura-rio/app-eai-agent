@@ -197,7 +197,6 @@ async def get_experiment_details(
         WHERE dataset_id = CAST({dataset_id} AS INT64) AND experiment_id = CAST({experiment_id} AS INT64) LIMIT 1;
     """
 
-    logger.info(query)
     logger.info(
         f"Executing query for experiment_id: {experiment_id} and dataset_id: {dataset_id}"
     )

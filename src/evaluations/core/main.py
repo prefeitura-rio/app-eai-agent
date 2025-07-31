@@ -30,7 +30,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe,
+        source=dataframe.head(1),
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -122,7 +122,7 @@ async def run_experiment():
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
         max_concurrency=MAX_CONCURRENCY,
-        precomputed_responses=precomputed_responses_dict,
+        # precomputed_responses=precomputed_responses_dict,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
