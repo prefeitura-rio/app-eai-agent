@@ -205,12 +205,12 @@ export default function DatasetDetailsClient({
                         <div key={metric.metric_name} className="space-y-3">
                           <h4 className="font-semibold text-base">{metric.metric_name}</h4>
                           <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                            <span>Média: <strong className="text-foreground">{metric.score_statistics.average.toFixed(3)}</strong></span>
-                            <span>Mediana: <strong className="text-foreground">{metric.score_statistics.median.toFixed(3)}</strong></span>
-                            <span>Mínimo: <strong className="text-foreground">{metric.score_statistics.min.toFixed(3)}</strong></span>
-                            <span>Máximo: <strong className="text-foreground">{metric.score_statistics.max.toFixed(3)}</strong></span>
-                            <span>Desvio Padrão: <strong className="text-foreground">{metric.score_statistics.std_dev.toFixed(3)}</strong></span>
-                            <span>Duração Média: <strong className="text-foreground">{metric.duration_statistics_seconds.average.toFixed(2)}s</strong></span>
+                            <span>Média: <strong className="text-foreground">{metric.score_statistics?.average?.toFixed(3) ?? 'N/A'}</strong></span>
+                            <span>Mediana: <strong className="text-foreground">{metric.score_statistics?.median?.toFixed(3) ?? 'N/A'}</strong></span>
+                            <span>Mínimo: <strong className="text-foreground">{metric.score_statistics?.min?.toFixed(3) ?? 'N/A'}</strong></span>
+                            <span>Máximo: <strong className="text-foreground">{metric.score_statistics?.max?.toFixed(3) ?? 'N/A'}</strong></span>
+                            <span>Desvio Padrão: <strong className="text-foreground">{metric.score_statistics?.std_dev?.toFixed(3) ?? 'N/A'}</strong></span>
+                            <span>Duração Média: <strong className="text-foreground">{metric.duration_statistics_seconds?.average?.toFixed(2) ?? 'N/A'}s</strong></span>
                             <span>Sucessos: <strong className="text-foreground text-green-600">{metric.successful_runs}</strong></span>
                             <span>Falhas: <strong className="text-foreground text-red-600">{metric.failed_runs}</strong></span>
                           </div>

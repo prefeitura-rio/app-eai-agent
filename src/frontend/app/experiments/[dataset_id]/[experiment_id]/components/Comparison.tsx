@@ -3,55 +3,25 @@
 import React, { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { ExperimentRun } from '../../../types';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, Trophy } from 'lucide-react';
+import { CardContent } from "@/components/ui/card";
 
 interface ComparisonProps {
-  run: ExperimentRun;
+  content: string;
 }
 
-export default function Comparison({ run }: ComparisonProps) {
-    const [agentAnswerHtml, setAgentAnswerHtml] = useState('');
-    const [goldenAnswerHtml, setGoldenAnswerHtml] = useState('');
+export default function Comparison({ content }: ComparisonProps) {
+    const [contentHtml, setContentHtml] = useState('');
 
     useEffect(() => {
-        const agentContent = run.agent_response.multi_turn_final || run.agent_response.one_turn || "";
-        const goldenContent = run.task_data.golden_response || "";
-
-        if (agentContent) {
-            setAgentAnswerHtml(DOMPurify.sanitize(marked.parse(agentContent) as string));
+        const text = content || "";
+        if (text) {
+            setContentHtml(DOMPurify.sanitize(marked.parse(text) as string));
         } else {
-            setAgentAnswerHtml("<p class='text-muted-foreground italic'>Nenhuma resposta do agente disponível.</p>");
+            setContentHtml("<p class='text-muted-foreground italic'>Nenhuma resposta disponível.</p>");
         }
-
-        if (goldenContent) {
-            setGoldenAnswerHtml(DOMPurify.sanitize(marked.parse(goldenContent) as string));
-        } else {
-            setGoldenAnswerHtml("<p class='text-muted-foreground italic'>Nenhuma resposta de referência disponível.</p>");
-        }
-    }, [run]);
+    }, [content]);
 
     return (
-        <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-lg">
-                        <Bot className="h-5 w-5 text-primary" />
-                        <span>Resposta do Agente</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="prose text-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: agentAnswerHtml }} />
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-lg">
-                        <Trophy className="h-5 w-5 text-primary" />
-                        <span>Resposta de Referência (Golden)</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="prose text-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: goldenAnswerHtml }} />
-            </Card>
-        </div>
+        <CardContent className="prose text-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: contentHtml }} />
     );
 }

@@ -30,12 +30,17 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe.head(1),
+        source=dataframe,
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
         dataset_description="Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
-        metadata_cols=["persona", "judge_context", "golden_summary", "golden_response"],
+        metadata_cols=[
+            "persona",
+            "judge_context",
+            "golden_response_multiple_shot",
+            "golden_response_one_shot",
+        ],
     )
 
     logger.info(
@@ -69,9 +74,9 @@ async def run_experiment():
     evaluation_suite = Evals(judge_client=judge_client)
 
     metrics_to_run = [
-        # "conversational_reasoning",
-        # "conversational_memory",
-        # "persona_adherence",
+        "conversational_reasoning",
+        "conversational_memory",
+        "persona_adherence",
         "semantic_correctness",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
@@ -108,6 +113,7 @@ async def run_experiment():
 
     # --- 5. Configuração e Execução do Runner ---
     MAX_CONCURRENCY = 10  # Define o número máximo de tarefas em paralelo
+
     runner = AsyncExperimentRunner(
         experiment_name="Batman_Unified_Eval_v1",
         experiment_description="Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
@@ -116,11 +122,11 @@ async def run_experiment():
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
         max_concurrency=MAX_CONCURRENCY,
-        # precomputed_responses=precomputed_responses_dict,
+        precomputed_responses=precomputed_responses_dict,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
-
-    await runner.run(loader)
+    for i in range(1):
+        await runner.run(loader)
 
 
 if __name__ == "__main__":

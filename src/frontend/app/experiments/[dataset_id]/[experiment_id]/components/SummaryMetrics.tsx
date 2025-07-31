@@ -26,7 +26,7 @@ export default function SummaryMetrics({ aggregateMetrics }: SummaryMetricsProps
                     <Card key={metric.metric_name} className="flex flex-col">
                         <CardHeader className="pb-2">
                             <CardTitle>{metric.metric_name}</CardTitle>
-                            <p className="text-2xl font-bold text-primary">{metric.score_statistics.average.toFixed(2)} avg.</p>
+                            <p className="text-2xl font-bold text-primary">{metric.score_statistics?.average?.toFixed(2) ?? 'N/A'} avg.</p>
                         </CardHeader>
                         <CardContent>
                             <hr className="mb-2" />

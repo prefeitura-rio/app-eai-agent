@@ -12,7 +12,7 @@ interface EvaluationsProps {
 
 export default function Evaluations({ evaluations }: EvaluationsProps) {
     if (!evaluations || evaluations.length === 0) {
-        return <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>;
+        return <p className="text-sm text-muted-foreground p-4">Nenhuma avaliação para este modo.</p>;
     }
 
     return (

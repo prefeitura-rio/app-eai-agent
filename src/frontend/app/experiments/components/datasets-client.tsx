@@ -32,7 +32,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
   
   const [datasets, setDatasets] = useState<DatasetInfo[]>(initialDatasets);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'dataset_name', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'created_at', direction: 'descending' });
 
   useEffect(() => {
     setTitle('Painel de Datasets');

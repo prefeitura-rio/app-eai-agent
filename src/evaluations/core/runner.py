@@ -178,6 +178,7 @@ class AsyncExperimentRunner:
                         "error_message": error_msg,
                         "judge_annotations": None,
                         "duration_seconds": 0.0,
+                        "eval_type": eval_info["turns"],
                     }
                 )
 
@@ -208,6 +209,7 @@ class AsyncExperimentRunner:
                             "has_error": True,
                             "error_message": error_msg,
                             "judge_annotations": None,
+                            "eval_type": eval_info["turns"],
                         }
                     )
                 else:
@@ -217,6 +219,7 @@ class AsyncExperimentRunner:
                             "has_error": False,
                             "error_message": None,
                             "judge_annotations": res.get("annotations"),
+                            "eval_type": eval_info["turns"],
                         }
                     )
                 evaluation_results.append(result_dict)

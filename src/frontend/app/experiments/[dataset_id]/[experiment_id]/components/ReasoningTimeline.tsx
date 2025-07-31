@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Lightbulb, Wrench, LogIn, MessageSquare, Bot } from 'lucide-react';
 
 interface ReasoningTimelineProps {
-  reasoningTrace: ExperimentRun['reasoning_trace'];
+  reasoningTrace: ExperimentRun['reasoning_trace']['one_turn'] | ExperimentRun['reasoning_trace']['multi_turn'];
 }
 
 const getStepIcon = (messageType: string) => {
@@ -30,10 +30,10 @@ const StepContent = ({ content }: { content: any }) => {
 }
 
 export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineProps) {
-    const trace = reasoningTrace.multi_turn || reasoningTrace.one_turn || [];
+    const trace = Array.isArray(reasoningTrace) ? reasoningTrace : [];
 
-    if (!trace || trace.length === 0) {
-        return <p className="text-sm text-muted-foreground">Nenhum passo de raciocínio disponível.</p>;
+    if (trace.length === 0) {
+        return <p className="text-sm text-muted-foreground p-4">Nenhum passo de raciocínio disponível para este modo.</p>;
     }
 
     return (
@@ -58,4 +58,4 @@ export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineP
             })}
         </Accordion>
     );
-}
+};
