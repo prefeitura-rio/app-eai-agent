@@ -79,6 +79,17 @@ class Evals:
             transcript=agent_response,
         )
 
+    @eval_method(name="golden_equipment", turns="multiple")
+    async def golden_equipment(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Tuple[bool, str]:
+        """Avalia se o equipamento correto foi chamado na resposta."""
+        return await self._get_llm_judgement(
+            prompt_judges.GOLDEN_EQUIPMENT_PROMPT,
+            golden_summary=task.get("golden_response_multiple_shot", ""),
+            transcript=agent_response,
+        )
+    
     @eval_method(name="semantic_correctness", turns="one")
     async def semantic_correctness(
         self, agent_response: Dict[str, Any], task: Dict[str, Any]
