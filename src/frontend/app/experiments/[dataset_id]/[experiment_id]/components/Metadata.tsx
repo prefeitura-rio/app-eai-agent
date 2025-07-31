@@ -18,7 +18,7 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
     const html = DOMPurify.sanitize(marked.parse(content) as string);
     return (
         <div
-            className="prose prose-sm dark:prose-invert max-w-none p-4 bg-muted rounded-md"
+            className="text-sm max-w-none p-4 bg-muted rounded-md whitespace-pre-wrap"
             dangerouslySetInnerHTML={{ __html: html }}
         />
     );
