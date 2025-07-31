@@ -126,7 +126,7 @@ class ConversationHandler:
                     "turn": turn + 1,
                     "judge_message": current_message,
                     "agent_response": agent_res.get("output"),
-                    "reasoning": agent_res.get("messages"),
+                    "reasoning_trace": agent_res.get("messages"),
                 }
             )
             history.append(

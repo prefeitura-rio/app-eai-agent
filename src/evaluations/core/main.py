@@ -34,7 +34,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe.head(3),
+        source=dataframe.head(1),
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -100,6 +100,7 @@ async def run_experiment():
             logger.error(f"❌ Erro ao carregar {PRECOMPUTED_RESPONSES_PATH}: {e}")
 
     # --- 5. Configuração e Execução do Runner ---
+    MAX_CONCURRENCY = 10  # Define o número máximo de tarefas em paralelo
     runner = AsyncExperimentRunner(
         experiment_name="Batman_Unified_Eval_v1",
         experiment_description="Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
@@ -107,6 +108,7 @@ async def run_experiment():
         agent_config=agent_config.model_dump(exclude_none=True),
         evaluation_suite=evaluation_suite,
         metrics_to_run=metrics_to_run,
+        max_concurrency=MAX_CONCURRENCY,
         # precomputed_responses=precomputed_responses_dict,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")

@@ -32,6 +32,7 @@ class AsyncExperimentRunner:
         evaluation_suite: Evals,
         metrics_to_run: List[str],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
+        max_concurrency: int = 10,
     ):
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
@@ -42,6 +43,8 @@ class AsyncExperimentRunner:
         self.precomputed_responses = (
             precomputed_responses if precomputed_responses else {}
         )
+        self.semaphore = asyncio.Semaphore(max_concurrency)
+        
         if self.precomputed_responses:
             logger.info(
                 f"✅ Runner inicializado com {len(self.precomputed_responses)} respostas pré-computadas."
@@ -195,67 +198,65 @@ class AsyncExperimentRunner:
         return sorted(evaluation_results, key=lambda x: x["metric_name"])
 
     async def _process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        task_id = task.get("id")
-        logger.info(f"Iniciando processamento da tarefa: {task_id}")
-        start_time = time.monotonic()
+        async with self.semaphore:
+            task_id = task.get("id")
+            logger.info(f"Iniciando processamento da tarefa: {task_id}")
+            start_time = time.monotonic()
 
-        try:
-            agent_config_obj = CreateAgentRequest(**self.agent_config)
+            try:
+                agent_config_obj = CreateAgentRequest(**self.agent_config)
 
-            metrics_by_turns = {"one": False, "multiple": False}
-            for m in self.metrics_to_run:
-                turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
-                if turn_type in metrics_by_turns:
-                    metrics_by_turns[turn_type] = True
+                metrics_by_turns = {"one": False, "multiple": False}
+                for m in self.metrics_to_run:
+                    turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
+                    if turn_type in metrics_by_turns:
+                        metrics_by_turns[turn_type] = True
 
-            one_turn_response, one_turn_duration = {}, 0.0
-            transcript, last_response, multi_turn_duration = [], {}, 0.0
-            
-            # Coleta as coroutines de aquisição de dados necessárias
-            data_coroutines = []
-            if metrics_by_turns["one"]:
-                data_coroutines.append(self._get_one_turn_response(task, agent_config_obj))
-            if metrics_by_turns["multiple"]:
-                data_coroutines.append(self._get_multi_turn_transcript(task, agent_config_obj))
-
-            # Executa a aquisição de dados em paralelo
-            if data_coroutines:
-                results = await asyncio.gather(*data_coroutines)
-                # Desempacota os resultados na ordem correta
+                one_turn_response, one_turn_duration = {}, 0.0
+                transcript, last_response, multi_turn_duration = [], {}, 0.0
+                
+                data_coroutines = []
                 if metrics_by_turns["one"]:
-                    one_turn_response, one_turn_duration = results.pop(0)
+                    data_coroutines.append(self._get_one_turn_response(task, agent_config_obj))
                 if metrics_by_turns["multiple"]:
-                    transcript, last_response, multi_turn_duration = results.pop(0)
+                    data_coroutines.append(self._get_multi_turn_transcript(task, agent_config_obj))
 
-            evaluations = await self._execute_evaluations(
-                task, one_turn_response, transcript, one_turn_duration, multi_turn_duration
-            )
-            
-            end_time = time.monotonic()
-            total_duration = round(end_time - start_time, 4)
+                if data_coroutines:
+                    results = await asyncio.gather(*data_coroutines)
+                    if metrics_by_turns["one"]:
+                        one_turn_response, one_turn_duration = results.pop(0)
+                    if metrics_by_turns["multiple"]:
+                        transcript, last_response, multi_turn_duration = results.pop(0)
 
-            return {
-                "duration_seconds": total_duration,
-                "task_data": task,
-                "agent_response": {
-                    "one_turn": one_turn_response.get("output"),
-                    "multi_turn_final": last_response.get("output"),
-                },
-                "reasoning_trace": {
-                    "one_turn": one_turn_response.get("messages"),
-                    "multi_turn": transcript,
-                },
-                "evaluations": evaluations,
-            }
-        except Exception as e:
-            logger.error(f"Erro irrecuperável ao processar a tarefa {task_id}: {e}", exc_info=True)
-            end_time = time.monotonic()
-            total_duration = round(end_time - start_time, 4)
-            return {
-                "duration_seconds": total_duration,
-                "task_data": task, 
-                "error": f"Erro irrecuperável: {e}"
-            }
+                evaluations = await self._execute_evaluations(
+                    task, one_turn_response, transcript, one_turn_duration, multi_turn_duration
+                )
+                
+                end_time = time.monotonic()
+                total_duration = round(end_time - start_time, 4)
+
+                return {
+                    "duration_seconds": total_duration,
+                    "task_data": task,
+                    "agent_response": {
+                        "one_turn": one_turn_response.get("output"),
+                        "multi_turn_final": last_response.get("output"),
+                    },
+                    "reasoning_trace": {
+                        "one_turn": one_turn_response.get("messages"),
+                        "multi_turn": transcript,
+                    },
+                    "evaluations": evaluations,
+                }
+            except Exception as e:
+                logger.error(f"Erro irrecuperável ao processar a tarefa {task_id}: {e}", exc_info=True)
+                end_time = time.monotonic()
+                total_duration = round(end_time - start_time, 4)
+                return {
+                    "duration_seconds": total_duration,
+                    "task_data": task, 
+                    "error": f"Erro irrecuperável: {e}"
+                }
 
     def _calculate_metrics_summary(self, runs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         from collections import defaultdict, Counter
