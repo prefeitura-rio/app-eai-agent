@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Progress } from "@/components/ui/progress";
 import {
@@ -13,15 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -32,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProgressBar from './ProgressBar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import { DatasetExperimentInfo, DatasetExample } from '../../types';
 
@@ -40,6 +30,7 @@ interface ClientProps {
   experiments: DatasetExperimentInfo[];
   examples: DatasetExample[];
   datasetId: string;
+  datasetName: string;
 }
 
 type SortKey = keyof DatasetExperimentInfo;
@@ -47,17 +38,15 @@ type SortKey = keyof DatasetExperimentInfo;
 export default function DatasetDetailsClient({ 
   experiments: initialExperiments, 
   examples: initialExamples, 
-  datasetId
+  datasetId,
+  datasetName
 }: ClientProps) {
-  const router = useRouter();
   const { setTitle, setSubtitle } = useHeader();
   
   const [experiments] = useState<DatasetExperimentInfo[]>(initialExperiments);
   const [examples] = useState<DatasetExample[]>(initialExamples);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'experiment_timestamp', direction: 'descending' });
-
-  const datasetName = initialExperiments[0]?.dataset_name || `Dataset ${datasetId}`;
+  const [sortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'experiment_timestamp', direction: 'descending' });
 
   useEffect(() => {
     setTitle('Experimentos do Dataset');
@@ -99,33 +88,10 @@ export default function DatasetDetailsClient({
     });
   }, [examples, searchTerm]);
 
-  const requestSort = (key: SortKey) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
-  
-  const handleRowClick = (experimentId: string) => {
-    router.push(`/experiments/${datasetId}/${experimentId}`);
-  };
-
   const formatObjectForDisplay = (obj: Record<string, unknown>) => {
     if (!obj) return '';
     return JSON.stringify(obj, null, 2);
   };
-
-  const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => (
-    <TableHead className={className}>
-        <Button variant="ghost" onClick={() => requestSort(sortKey)} className="w-full justify-start px-2 text-xs uppercase">
-            {children}
-            {sortConfig.key === sortKey && (
-                sortConfig.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
-            )}
-        </Button>
-    </TableHead>
-  );
 
   return (
     <Tabs defaultValue="experiments" className="w-full space-y-4">
@@ -196,7 +162,7 @@ export default function DatasetDetailsClient({
                       <div className="text-center font-semibold self-center">{exp.execution_summary.total_duration_seconds.toFixed(2)}s</div>
                       <div className="text-center font-semibold self-center">{exp.aggregate_metrics[0]?.total_runs || 0}</div>
                       <div className="text-center font-semibold text-green-600 self-center">{exp.aggregate_metrics[0]?.successful_runs || 0}</div>
-                      <div className="text-center font-semibold text-red-600 self-center">{exp.error_summary.total_failed_runs}</div>
+                      <div className="text-center font-semibold text-red-600 self-center">{Number(exp.error_summary.total_failed_runs) || 0}</div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="p-6 bg-muted/30">

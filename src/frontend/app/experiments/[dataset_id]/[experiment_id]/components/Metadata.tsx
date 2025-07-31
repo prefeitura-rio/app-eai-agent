@@ -56,12 +56,13 @@ export default function Metadata({ metadata, selectedRun }: MetadataProps) {
     useEffect(() => {
         if (selectedRun && judges_prompts) {
             const newPrompts: Record<string, string> = {};
-            for (const key in judges_prompts) {
-                newPrompts[key] = fillTemplate(judges_prompts[key], selectedRun);
+            const prompts = judges_prompts as Record<string, string>;
+            for (const key in prompts) {
+                newPrompts[key] = fillTemplate(prompts[key], selectedRun);
             }
             setProcessedPrompts(newPrompts);
         } else {
-            setProcessedPrompts(judges_prompts);
+            setProcessedPrompts(judges_prompts as Record<string, string>);
         }
     }, [selectedRun, judges_prompts]);
 

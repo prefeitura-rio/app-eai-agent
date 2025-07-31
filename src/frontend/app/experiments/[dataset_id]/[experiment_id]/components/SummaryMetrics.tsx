@@ -31,7 +31,7 @@ export default function SummaryMetrics({ aggregateMetrics }: SummaryMetricsProps
                         <CardContent>
                             <hr className="mb-2" />
                             <div className="space-y-2">
-                                {metric.score_distribution.map((dist: any) => (
+                                {metric.score_distribution.map((dist) => (
                                     <div key={dist.value} className="grid grid-cols-[2rem_1fr_4rem] items-center gap-2 text-xs">
                                         <div className="text-right">{dist.value.toFixed(1)}</div>
                                         <Progress value={dist.percentage} className="h-2" />
