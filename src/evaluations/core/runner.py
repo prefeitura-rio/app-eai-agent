@@ -157,7 +157,24 @@ class AsyncExperimentRunner:
 
         coroutine_map = []
         for metric_name in self.metrics_to_run:
-            eval_info = _EVAL_METHODS_REGISTRY[metric_name]
+            eval_info = _EVAL_METHODS_REGISTRY.get(metric_name)
+            if not eval_info:
+                logger.warning(
+                    f"Métrica de avaliação '{metric_name}' não encontrada no registro. Pulando."
+                )
+                evaluation_results.append(
+                    {
+                        "metric_name": metric_name,
+                        "score": None,
+                        "has_error": True,
+                        "error_message": f"Métrica '{metric_name}' não registrada.",
+                        "judge_annotations": None,
+                        "duration_seconds": 0.0,
+                        "eval_type": "unknown",
+                    }
+                )
+                continue
+
             eval_func = getattr(self.evaluation_suite, metric_name)
             error_msg = None
 

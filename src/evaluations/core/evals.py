@@ -90,16 +90,16 @@ class Evals:
             task=task,
         )
 
-    # @eval_method(name="persona_adherence", turns="one")
-    # async def persona_adherence(
-    #     self, agent_response: Dict[str, Any], task: Dict[str, Any]
-    # ) -> Dict[str, Any]:
-    #     """Avalia a aderência à persona de uma única resposta."""
-    #     return await self._get_llm_judgement(
-    #         prompt_judges.PERSONA_ADHERENCE_PROMPT,
-    #         output=agent_response.get("output", ""),
-    #         task=task,
-    #     )
+    @eval_method(name="persona_adherence", turns="one")
+    async def persona_adherence(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Avalia a aderência à persona de uma única resposta."""
+        return await self._get_llm_judgement(
+            prompt_judges.PERSONA_ADHERENCE_PROMPT,
+            output=agent_response.get("output", ""),
+            task=task,
+        )
 
     # @eval_method(name="answer_completeness", turns="one")
     # async def answer_completeness(
