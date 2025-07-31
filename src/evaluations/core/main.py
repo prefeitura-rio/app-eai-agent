@@ -78,9 +78,10 @@ async def run_experiment():
 
     metrics_to_run = [
         "conversational_reasoning",
-        # "conversational_memory",
-        # "persona_adherence",
-        # "semantic_correctness",
+        "conversational_memory",
+        "persona_adherence",
+        "semantic_correctness",
+        ########################
         # "answer_completeness",
         # "answer_addressing",
         # "clarity",

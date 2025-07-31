@@ -39,7 +39,7 @@ from src.config import env
 if env.EVAL_MODEL_TYPE == "gpt":
     EVAL_MODEL = OpenAIModel(
         api_key=env.OPENAI_AZURE_API_KEY,
-        azure_endpoint=env.OPENAI_URL,
+        azure_endpoint=env.OPENAI_AZURE_URL,
         api_version="2025-01-01-preview",
         model=env.GPT_EVAL_MODEL,
     )
