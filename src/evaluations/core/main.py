@@ -16,6 +16,9 @@ from src.evaluations.core.prompt_judges import (
     FINAL_MEMORY_JUDGEMENT_PROMPT,
     SEMANTIC_CORRECTNESS_PROMPT,
     PERSONA_ADHERENCE_PROMPT,
+    ANSWER_COMPLETENESS_PROMPT,
+    ANSWER_ADDRESSING_PROMPT,
+    CLARITY_PROMPT,
 )
 from src.utils.log import logger
 
@@ -73,6 +76,12 @@ async def run_experiment():
         # "conversational_memory",
         "persona_adherence",
         # "semantic_correctness",
+        # "answer_completeness",
+        # "answer_addressing",
+        # "clarity",
+        # "activate_search",
+        # "golden_link_in_tool_calling",
+        # "golden_link_in_answer",
     ]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
 
@@ -85,6 +94,9 @@ async def run_experiment():
             "conversational_memory": FINAL_MEMORY_JUDGEMENT_PROMPT,
             "persona_adherence": PERSONA_ADHERENCE_PROMPT,
             "semantic_correctness": SEMANTIC_CORRECTNESS_PROMPT,
+            # "answer_completeness": ANSWER_COMPLETENESS_PROMPT,
+            # "answer_addressing": ANSWER_ADDRESSING_PROMPT,
+            # "clarity": CLARITY_PROMPT,
         },
     }
 
