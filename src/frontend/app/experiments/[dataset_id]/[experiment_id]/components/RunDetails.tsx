@@ -4,7 +4,6 @@ import React, { useState, useMemo } from 'react';
 import { ExperimentRun } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, CheckSquare, Network, Trophy, Bot, MessageSquare } from 'lucide-react';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
     const [viewMode, setViewMode] = useState<'one_turn' | 'multi_turn'>('one_turn');
     const taskDataKeys = useMemo(() => Object.keys(run.task_data), [run.task_data]);
     
+    // Estados separados para cada modo
     const [selectedGoldenKeyOneTurn, setSelectedGoldenKeyOneTurn] = useState<string>('golden_response');
     const [selectedGoldenKeyMultiTurn, setSelectedGoldenKeyMultiTurn] = useState<string>('golden_summary');
 
@@ -31,12 +31,11 @@ export default function RunDetails({ run }: RunDetailsProps) {
 
     const agentResponse = isOneTurn ? run.agent_response.one_turn : run.agent_response.multi_turn_final;
     const goldenResponse = run.task_data[selectedGoldenKey] as string || "";
-    const reasoningTrace = isOneTurn ? run.reasoning_trace.one_turn : run.reasoning_trace.multi_turn;
     const evaluations = run.evaluations.filter(e => e.eval_type === (isOneTurn ? 'one' : 'multiple'));
 
     return (
         <div className="space-y-6">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)} className="w-full">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'one_turn' | 'multi_turn')} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="one_turn">Single-Turn Analysis</TabsTrigger>
                     <TabsTrigger value="multi_turn">Multi-Turn Analysis</TabsTrigger>
@@ -131,7 +130,11 @@ export default function RunDetails({ run }: RunDetailsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pl-12">
-                    <ReasoningTimeline reasoningTrace={reasoningTrace} />
+                    {isOneTurn ? (
+                        <ReasoningTimeline reasoningTrace={run.reasoning_trace.one_turn} />
+                    ) : (
+                        <ConversationTranscript transcript={run.reasoning_trace.multi_turn} />
+                    )}
                 </CardContent>
             </Card>
         </div>

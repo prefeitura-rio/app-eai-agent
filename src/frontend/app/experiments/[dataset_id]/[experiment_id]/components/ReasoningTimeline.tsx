@@ -9,7 +9,8 @@ interface ReasoningTimelineProps {
   reasoningTrace: ExperimentRun['reasoning_trace']['one_turn'] | ExperimentRun['reasoning_trace']['multi_turn'];
 }
 
-const getStepIcon = (messageType: string) => {
+const getStepIcon = (messageType: unknown) => {
+    if (typeof messageType !== 'string') return MessageSquare;
     switch (messageType) {
         case 'reasoning_message': return Lightbulb;
         case 'tool_call_message': return Wrench;
@@ -19,7 +20,7 @@ const getStepIcon = (messageType: string) => {
     }
 };
 
-const StepContent = ({ content }: { content: any }) => {
+const StepContent = ({ content }: { content: unknown }) => {
     if (typeof content === 'string') {
         return <p className="italic text-muted-foreground text-xs pl-6">{content}</p>;
     }
@@ -39,8 +40,14 @@ export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineP
     return (
         <Accordion type="multiple" className="w-full" defaultValue={trace.map((_, i) => `item-${i}`)}>
             {trace.map((step, index) => {
-                const Icon = getStepIcon(step.message_type);
-                const title = step.message_type ? step.message_type.replace(/_/g, ' ') : 'Passo Desconhecido';
+                const isObject = typeof step === 'object' && step !== null;
+
+                const Icon = isObject ? getStepIcon(step.message_type) : MessageSquare;
+                const title = isObject && typeof step.message_type === 'string'
+                    ? step.message_type.replace(/_/g, ' ')
+                    : (isObject ? 'Passo Desconhecido' : 'Mensagem');
+
+                const content = isObject && 'content' in step ? step.content : (isObject ? undefined : step);
 
                 return (
                     <AccordionItem value={`item-${index}`} key={index}>
@@ -51,7 +58,7 @@ export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineP
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="pl-12">
-                            <StepContent content={step.content} />
+                            <StepContent content={content} />
                         </AccordionContent>
                     </AccordionItem>
                 )
@@ -59,3 +66,4 @@ export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineP
         </Accordion>
     );
 };
+

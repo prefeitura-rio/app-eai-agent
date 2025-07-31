@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { ExperimentRun } from '../../../types';
 import { User, Bot } from 'lucide-react';
 
 interface Turn {

@@ -46,7 +46,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
     }
 
     const cleanedRuns = runsToExport.map(run => {
-        const cleanRun: any = { id: run.task_data.id };
+        const cleanRun: Partial<ExperimentRun> = { task_data: { id: run.task_data.id } };
         if (filters.include_task_data) cleanRun.task_data = run.task_data;
         if (filters.include_evaluations) cleanRun.evaluations = run.evaluations;
         if (filters.include_reasoning_trace) cleanRun.reasoning_trace = run.reasoning_trace;
@@ -76,7 +76,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
 
   const selectedRun = useMemo(() => {
     if (!selectedRunId) return null;
-    return filteredRuns.find(run => run.task_data.id === selectedRunId);
+    return filteredRuns.find(run => run.task_data.id === selectedRunId) || null;
   }, [selectedRunId, filteredRuns]);
 
   const handleFilterChange = (newFilteredRuns: ExperimentRun[]) => {
@@ -114,7 +114,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
                               "p-3 rounded-md cursor-pointer border transition-colors",
                               selectedRunId === run.task_data.id
                                   ? "bg-primary text-primary-foreground"
-                                  : "hover:bg-muted/ ৫০"
+                                  : "hover:bg-muted/50"
                           )}
                       >
                           <p className="font-semibold text-sm truncate">ID: {run.task_data.id}</p>

@@ -34,15 +34,15 @@ export default function ExperimentSummary({ experimentData }: { experimentData: 
                         <div key={metric.metric_name} className="mb-4 last:mb-0">
                             <h4 className="font-semibold text-base mb-2">{metric.metric_name}</h4>
                             <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                                <span>Média: <strong className="text-foreground">{metric.score_statistics.average.toFixed(3)}</strong></span>
-                                <span>Mediana: <strong className="text-foreground">{metric.score_statistics.median.toFixed(3)}</strong></span>
+                                <span>Média: <strong className="text-foreground">{metric.score_statistics?.average?.toFixed(3) ?? 'N/A'}</strong></span>
+                                <span>Mediana: <strong className="text-foreground">{metric.score_statistics?.median?.toFixed(3) ?? 'N/A'}</strong></span>
                                 <span>Sucessos: <strong className="text-foreground text-green-600">{metric.successful_runs}</strong></span>
                                 <span>Falhas: <strong className="text-foreground text-red-600">{metric.failed_runs}</strong></span>
                             </div>
                             <div className="mt-2">
                                 <h5 className="text-sm font-medium mb-2">Distribuição de Scores</h5>
                                 <div className="space-y-1">
-                                    {metric.score_distribution.map((dist: any) => (
+                                    {metric.score_distribution.map((dist) => (
                                         <div key={dist.value} className="grid grid-cols-[3rem_1fr_5rem] items-center gap-2 text-xs">
                                             <div className="text-right font-bold">{dist.value.toFixed(1)}</div>
                                             <Progress value={dist.percentage} className="h-2" />
