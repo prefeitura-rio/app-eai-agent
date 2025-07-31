@@ -130,6 +130,17 @@ class Evals:
             task=task,
         )
     
+    @eval_method(name="golden_equipment", turns="one")
+    async def golden_equipment(
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
+    ) -> Tuple[bool, str]:
+        """Avalia se o equipamento correto foi chamado na resposta."""
+        return await self._get_llm_judgement(
+            prompt_judges.GOLDEN_EQUIPMENT_PROMPT,
+            output=agent_response.get("output", ""),
+            task=task,
+        )
+    
     @eval_method(name="activate_search", turns="one")
     async def activate_search(
         self, agent_response: Dict[str, Any], task: Dict[str, Any]
