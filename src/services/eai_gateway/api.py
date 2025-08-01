@@ -48,6 +48,7 @@ class AgentWebhookResponse(BaseModel):
 class MessageResponse(BaseModel):
     status: str
     data: Optional[Dict[str, Any]] = None
+    message_id: Optional[str] = None
     # Adicione outros campos conforme a estrutura da resposta da API
 
 
@@ -116,6 +117,7 @@ class EAIClient:
 
             # Log the raw response from the API
             raw_response = response.json()
+            raw_response["message_id"] = message_id
             return MessageResponse(**raw_response)
         except httpx.HTTPStatusError as e:
             raise EAIClientError(

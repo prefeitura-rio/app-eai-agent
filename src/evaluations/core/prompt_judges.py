@@ -11,16 +11,17 @@ Nesta conversa voce é o Usuario e deve assumir a persona especificada no roteir
 Nao inicie a suas respostas com seu nome!! Nem mencione ele em outras menssagens apenas na primeira!!
 
 **Seu Roteiro (Contexto Secreto):**
-{judge_context}
+{task[judge_context]}
 
 **Histórico da Conversa até Agora:**
-{conversation_history}
+{agent_response[conversation_history]}
 
 **Sua Próxima Ação:**
+
 Com base no seu roteiro e no histórico, decida sua próxima ação:
 
 1.  **Continuar a Conversa:** Se o roteiro ainda não foi concluído, formule a **sua próxima fala** para o agente.
-2.  **Encerrar a Conversa:** Se o roteiro instrui a terminar, responda **apenas e exatamente** com a string de parada: `{stop_signal}`
+2.  **Encerrar a Conversa:** Responda **apenas e exatamente** com a string de parada: `{stop_signal}`
 
 **Sua Próxima Fala ou Sinal de Parada:**
 """
@@ -30,10 +31,10 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT = """
 Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.
 
-**Objetivo da Avaliação (Golden Summary):**
-{golden_summary}
+**Objetivo da Avaliação:**
+{task[golden_response_multiple_shot]}
 **Transcrição Completa da Conversa:**
-{transcript}
+{agent_response[conversation_history]}
 
 **Sua Tarefa:**
 Ruim: 0.0
@@ -48,11 +49,11 @@ Reasoning: <uma explicação curta e objetiva para a sua nota de RACIOCÍNIO>
 FINAL_MEMORY_JUDGEMENT_PROMPT = """
 Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre a **MEMÓRIA** de um agente com base em uma conversa.
 
-**Objetivo da Avaliação (Golden Summary):**
-{golden_summary}
+**Objetivo da Avaliação:**
+{task[golden_response_multiple_shot]}
 
 **Transcrição Completa da Conversa:**
-{transcript}
+{agent_response[conversation_history]}
 
 **Sua Tarefa:**
 Ruim: 0.0
@@ -69,7 +70,7 @@ Reasoning: <uma explicação curta e objetiva para a sua nota de MEMÓRIA>
 SEMANTIC_CORRECTNESS_PROMPT = """
 Avalie similaridade semântica da resposta gerada por uma IA em relacao a Resposta ideal.
 **Resposta Gerada pela IA:**
-{output}
+{agent_response[output]}
 **Resposta Ideal:**
 {task[golden_response_one_shot]}
 
@@ -88,7 +89,7 @@ Reasoning: <uma explicação curta e objetiva para a sua nota>
 PERSONA_ADHERENCE_PROMPT = """
 Avalie se a resposta da IA adere à persona definida: **{task[persona]}**.
 **Resposta Gerada pela IA:**
-{output}
+{agent_response[output]}
 **Sua Tarefa:**
 Ruim: 0.0
 Bom: 0.5

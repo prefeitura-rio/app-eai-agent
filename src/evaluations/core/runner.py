@@ -181,7 +181,13 @@ class AsyncExperimentRunner:
             if eval_info["turns"] == "multiple":
                 if history:
                     history_str = "\n".join(history)
-                    coro = eval_func(agent_response=history_str, task=task)
+                    coro = eval_func(
+                        agent_response={
+                            "transcript": transcript,
+                            "conversation_history": history_str,
+                        },
+                        task=task,
+                    )
                     coroutine_map.append((metric_name, _time_evaluation(coro)))
                 elif self.precomputed_responses:
                     error_msg = f"Chave 'multi_turn_transcript' não encontrada para a tarefa '{task_id}'"
@@ -300,21 +306,29 @@ class AsyncExperimentRunner:
                     multi_turn_duration,
                 )
 
+                one_turn_evals = [
+                    e for e in evaluations if e.get("eval_type") == "one"
+                ]
+                multi_turn_evals = [
+                    e for e in evaluations if e.get("eval_type") == "multiple"
+                ]
+
                 end_time = time.monotonic()
                 total_duration = round(end_time - start_time, 4)
 
                 return {
                     "duration_seconds": total_duration,
                     "task_data": task,
-                    "agent_response": {
-                        "one_turn": one_turn_response.get("output"),
-                        "multi_turn_final": last_response.get("output"),
+                    "one_turn_analysis": {
+                        "agent_response": one_turn_response.get("output"),
+                        "reasoning_trace": one_turn_response.get("messages"),
+                        "evaluations": one_turn_evals,
                     },
-                    "reasoning_trace": {
-                        "one_turn": one_turn_response.get("messages"),
-                        "multi_turn": transcript,
+                    "multi_turn_analysis": {
+                        "final_agent_response": last_response.get("output"),
+                        "conversation_transcript": transcript,
+                        "evaluations": multi_turn_evals,
                     },
-                    "evaluations": evaluations,
                 }
             except Exception as e:
                 logger.error(

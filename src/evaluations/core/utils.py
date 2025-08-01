@@ -45,6 +45,19 @@ def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, A
             content = msg.get("hidden_reasoning")
         elif message_type in ["system_message", "user_message"]:
             content = msg.get("content")
+        elif message_type == "usage_statistics":
+            content = {
+                "agent_name": msg.get("agent_name"),
+                "agent_id": msg.get("agent_id"),
+                "message_id": msg.get("message_id"),
+                "processed_at": msg.get("processed_at"),
+                "total_tokens": msg.get("total_tokens"),
+                "prompt_tokens": msg.get("prompt_tokens"),
+                "completion_tokens": msg.get("completion_tokens"),
+                "step_count": msg.get("step_count"),
+                "steps_messages": msg.get("steps_messages"),
+                "run_ids": msg.get("run_ids"),
+            }
 
         # Tenta fazer o parse do conteúdo se for uma string JSON, com fallback
         if isinstance(content, str):
@@ -60,22 +73,30 @@ def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, A
 
     return parsed_list
 
+
 def parse_golden_links(agent_response: Dict[str, Any]) -> List[str]:
     field = agent_response.get("metadata", {}).get("golden_links_list", "")
     try:
         return ast.literal_eval(field) if isinstance(field, str) else field
     except Exception:
         return []
-    
+
+
 def extract_answer_text(agent_response: Dict[str, Any]) -> str:
     return (
         agent_response.get("agent_output").get("resposta_gpt")
-            or agent_response.get("agent_output", {}).get("texto")
-            or agent_response.get("grouped", {}).get("assistant_messages", [])[-1].get("content", "")
+        or agent_response.get("agent_output", {}).get("texto")
+        or agent_response.get("grouped", {})
+        .get("assistant_messages", [])[-1]
+        .get("content", "")
     )
+
 
 def extract_links_from_text(text: str) -> List[str]:
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", text)
     plain_links = re.findall(r"https?://[^\s)\]]+", text)
-    normalized = [link if link.startswith("http") else f"https://{link}" for link in markdown_links + plain_links]
+    normalized = [
+        link if link.startswith("http") else f"https://{link}"
+        for link in markdown_links + plain_links
+    ]
     return list(dict.fromkeys(normalized))

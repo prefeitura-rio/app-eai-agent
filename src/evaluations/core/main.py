@@ -79,9 +79,9 @@ async def run_experiment():
 
     metrics_to_run = [
         "conversational_reasoning",
-        "conversational_memory",
+        # "conversational_memory",
         "persona_adherence",
-        "semantic_correctness",
+        # "semantic_correctness",
         # "golden_equipment",
         # "answer_completeness",
         # "answer_addressing",
@@ -100,7 +100,7 @@ async def run_experiment():
             "conversational_reasoning": FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
             "conversational_memory": FINAL_MEMORY_JUDGEMENT_PROMPT,
             "persona_adherence": PERSONA_ADHERENCE_PROMPT,
-            "semantic_correctness": SEMANTIC_CORRECTNESS_PROMPT,
+            # "semantic_correctness": SEMANTIC_CORRECTNESS_PROMPT,
             # "golden_equipment": GOLDEN_EQUIPMENT_PROMPT,
             # "answer_completeness": ANSWER_COMPLETENESS_PROMPT,
             # "answer_addressing": ANSWER_ADDRESSING_PROMPT,
@@ -143,7 +143,7 @@ async def run_experiment():
         # upload_to_bq=False,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
-    for _ in range(10):
+    for _ in range(1):
         await runner.run(loader)
 
 

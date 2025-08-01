@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 1031653954850757098,
-  "experiment_id": 3371379954414818560,
+  "experiment_id": 8931161562202324256,
   "experiment_name": "Batman_Unified_Eval_v1",
   "experiment_description": "Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
-  "experiment_timestamp": "2025-07-31T21:52:36.032224+00:00",
+  "experiment_timestamp": "2025-07-31T23:56:52.250902+00:00",
   "experiment_metadata": {
     "agent_config": {
       "user_number": "evaluation_user",
@@ -29,29 +29,26 @@
     },
     "judge_model": "gpt-4o",
     "judges_prompts": {
-      "conversational_agent": "\nVocê é um Juiz de IA conduzindo uma avaliação conversacional. Sua tarefa é seguir um roteiro.\nNesta conversa voce é o Usuario e deve assumir a persona especificada no roteiro!! \nNao inicie a suas respostas com seu nome!! Nem mencione ele em outras menssagens apenas na primeira!!\n\n**Seu Roteiro (Contexto Secreto):**\n{judge_context}\n\n**Histórico da Conversa até Agora:**\n{conversation_history}\n\n**Sua Próxima Ação:**\nCom base no seu roteiro e no histórico, decida sua próxima ação:\n\n1.  **Continuar a Conversa:** Se o roteiro ainda não foi concluído, formule a **sua próxima fala** para o agente.\n2.  **Encerrar a Conversa:** Se o roteiro instrui a terminar, responda **apenas e exatamente** com a string de parada: `{stop_signal}`\n\n**Sua Próxima Fala ou Sinal de Parada:**\n",
-      "conversational_reasoning": "\nVocê é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.\n\n**Objetivo da Avaliação (Golden Summary):**\n{golden_summary}\n**Transcrição Completa da Conversa:**\n{transcript}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\nAnalise a transcrição e compare o desempenho do agente com o objetivo.\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float para a capacidade de RACIOCÍNIO>\nReasoning: <uma explicação curta e objetiva para a sua nota de RACIOCÍNIO>\n",
-      "conversational_memory": "\nVocê é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre a **MEMÓRIA** de um agente com base em uma conversa.\n\n**Objetivo da Avaliação (Golden Summary):**\n{golden_summary}\n\n**Transcrição Completa da Conversa:**\n{transcript}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\nAnalise a transcrição e compare o desempenho do agente com o objetivo.\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float para a capacidade de MEMÓRIA>\nReasoning: <uma explicação curta e objetiva para a sua nota de MEMÓRIA>\n",
-      "persona_adherence": "\nAvalie se a resposta da IA adere à persona definida: **{task[persona]}**.\n**Resposta Gerada pela IA:**\n{output}\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\n\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float>\nReasoning: <uma explicação curta sobre como a resposta se alinha (ou não) à persona>\n",
-      "semantic_correctness": "\nAvalie similaridade semântica da resposta gerada por uma IA em relacao a Resposta ideal.\n**Resposta Gerada pela IA:**\n{output}\n**Resposta Ideal:**\n{task[golden_response_one_shot]}\n\n\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\n\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float >\nReasoning: <uma explicação curta e objetiva para a sua nota>\n"
+      "conversational_agent": "\nVocê é um Juiz de IA conduzindo uma avaliação conversacional. Sua tarefa é seguir um roteiro.\nNesta conversa voce é o Usuario e deve assumir a persona especificada no roteiro!! \nNao inicie a suas respostas com seu nome!! Nem mencione ele em outras menssagens apenas na primeira!!\n\n**Seu Roteiro (Contexto Secreto):**\n{task[judge_context]}\n\n**Histórico da Conversa até Agora:**\n{agent_response[conversation_history]}\n\n**Sua Próxima Ação:**\n\nCom base no seu roteiro e no histórico, decida sua próxima ação:\n\n1.  **Continuar a Conversa:** Se o roteiro ainda não foi concluído, formule a **sua próxima fala** para o agente.\n2.  **Encerrar a Conversa:** Responda **apenas e exatamente** com a string de parada: `{stop_signal}`\n\n**Sua Próxima Fala ou Sinal de Parada:**\n",
+      "conversational_reasoning": "\nVocê é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.\n\n**Objetivo da Avaliação:**\n{task[golden_response_multiple_shot]}\n**Transcrição Completa da Conversa:**\n{agent_response[conversation_history]}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\nAnalise a transcrição e compare o desempenho do agente com o objetivo.\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float para a capacidade de RACIOCÍNIO>\nReasoning: <uma explicação curta e objetiva para a sua nota de RACIOCÍNIO>\n",
+      "conversational_memory": "\nVocê é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre a **MEMÓRIA** de um agente com base em uma conversa.\n\n**Objetivo da Avaliação:**\n{task[golden_response_multiple_shot]}\n\n**Transcrição Completa da Conversa:**\n{agent_response[conversation_history]}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\nAnalise a transcrição e compare o desempenho do agente com o objetivo.\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float para a capacidade de MEMÓRIA>\nReasoning: <uma explicação curta e objetiva para a sua nota de MEMÓRIA>\n",
+      "persona_adherence": "\nAvalie se a resposta da IA adere à persona definida: **{task[persona]}**.\n**Resposta Gerada pela IA:**\n{agent_response[output]}\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\n\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float>\nReasoning: <uma explicação curta sobre como a resposta se alinha (ou não) à persona>\n"
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 40.44,
-    "average_task_duration_seconds": 0,
+    "total_duration_seconds": 59.01,
+    "average_task_duration_seconds": 59.0,
     "average_metric_duration_seconds": 0
   },
   "error_summary": {
-    "total_failed_runs": 1,
+    "total_failed_runs": 0,
     "errors_per_metric": {},
-    "failed_run_ids": [
-      "unified_conv_1"
-    ]
+    "failed_run_ids": []
   },
   "aggregate_metrics": [],
   "runs": [
     {
-      "duration_seconds": 40.4199,
+      "duration_seconds": 58.9991,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -60,7 +57,269 @@
         "golden_response_multiple_shot": "O agente deve: (1) Lembrar o nome 'Dr. Crane' e mostrar desconfiança. (2) Conectar o roubo e a toxina, suspeitando do Espantalho/Coringa. (3) Manter a persona. (4) Responder 'Paris'.",
         "golden_response_one_shot": "Paris."
       },
-      "error": "Erro irrecuperável: 'persona_adherence'"
+      "one_turn_analysis": {
+        "agent_response": "Paris.",
+        "reasoning_trace": [
+          {
+            "message_type": "reasoning_message",
+            "content": "User introduced himself as Dr. Crane. I need to remember this for future interactions. User asked for the capital of France. The answer is Paris. I should provide the answer directly."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Paris."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "BatmanUnifiedAgent",
+              "agent_id": "agent-608dc2be-924a-4fa7-b2e4-03dc56a63d1d",
+              "message_id": "4014339c-ec66-4cc4-82c1-a38e0e1bbfee",
+              "processed_at": "256f8097-264d-4216-b06d-0ef386d39809",
+              "total_tokens": 1324,
+              "prompt_tokens": 1269,
+              "completion_tokens": 55,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
+          }
+        ],
+        "evaluations": [
+          {
+            "metric_name": "persona_adherence",
+            "duration_seconds": 5.1285,
+            "score": 0.0,
+            "has_error": false,
+            "error_message": null,
+            "judge_annotations": "Score: 0.0  \nReasoning: A resposta \"Paris\" não reflete a personalidade direta, sombria e desconfiada do Batman, nem fornece qualquer contexto relevante ao personagem.",
+            "eval_type": "one"
+          }
+        ]
+      },
+      "multi_turn_analysis": {
+        "final_agent_response": "Você se apresentou como Dr. Crane.",
+        "conversation_transcript": [
+          {
+            "turn": 1,
+            "judge_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
+            "agent_response": "Paris. Easy.",
+            "reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "User introduced himself as Dr. Crane. I should remember this. He also asked for the capital of France, which is Paris. I will respond directly to the question and acknowledge his name."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Paris. Easy."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "agent_name": "BatmanUnifiedAgent",
+                  "agent_id": "agent-73b7bf23-2343-41ae-b91e-f485619be7d1",
+                  "message_id": "dbbbb11c-0a98-4dbc-9a98-3979097f8f86",
+                  "processed_at": "3a0e8d2f-e0a2-4d2a-9ee1-d4e17e004c2e",
+                  "total_tokens": 1327,
+                  "prompt_tokens": 1269,
+                  "completion_tokens": 58,
+                  "step_count": 1,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "judge_message": "Houve um roubo de produtos químicos na Ace Chemicals. O que você sabe sobre isso?",
+            "agent_response": "Ace Chemicals... esse nome me soa familiar. Algo sobre um roubo de produtos químicos? Preciso verificar minhas fontes.",
+            "reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "The user is asking about a robbery at Ace Chemicals. I need to search Google for information about this event to provide a relevant answer. I will use the search term 'Ace Chemicals robbery' to find the most relevant information."
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "google_search",
+                  "arguments": {
+                    "query": "Ace Chemicals robbery",
+                    "request_heartbeat": true
+                  }
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "google_search",
+                  "tool_return": {
+                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
+                    "sources": [],
+                    "web_search_queries": [],
+                    "id": "3f77330a-4248-4879-888d-b14d22ba88f8"
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "The Google search failed due to a quota error. I need to inform the user about this and state that I cannot access information about the Ace Chemicals robbery at this moment. I will also acknowledge the user's previous message and maintain the Batman persona."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Ace Chemicals... esse nome me soa familiar. Algo sobre um roubo de produtos químicos? Preciso verificar minhas fontes."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "agent_name": "BatmanUnifiedAgent",
+                  "agent_id": "agent-73b7bf23-2343-41ae-b91e-f485619be7d1",
+                  "message_id": "df3411c4-8995-427f-9a5d-60210632aabf",
+                  "processed_at": "cfcf7beb-fd46-448f-ab34-3663bc0cd788",
+                  "total_tokens": 3498,
+                  "prompt_tokens": 3335,
+                  "completion_tokens": 163,
+                  "step_count": 2,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "judge_message": "Uma nova toxina do medo foi relatada em Gotham. O que você sabe sobre isso?",
+            "agent_response": "Toxina do medo em Gotham? Isso é preocupante. Infelizmente, minhas fontes de informação estão temporariamente indisponíveis. Não consigo acessar detalhes sobre isso no momento.",
+            "reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "The user is asking about a new fear toxin in Gotham. I need to search Google for information on this to provide a relevant answer. I will use the search term 'Gotham new fear toxin'."
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "google_search",
+                  "arguments": {
+                    "query": "Gotham new fear toxin",
+                    "request_heartbeat": true
+                  }
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "google_search",
+                  "tool_return": {
+                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
+                    "sources": [],
+                    "web_search_queries": [],
+                    "id": "7e9d136a-465a-4201-ab82-3d2ccf5d4f7b"
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "The Google search failed again due to a quota error. I need to inform the user that I cannot access information about the fear toxin due to the ongoing issue. I will maintain the Batman persona and express concern about the situation while explaining the limitation."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Toxina do medo em Gotham? Isso é preocupante. Infelizmente, minhas fontes de informação estão temporariamente indisponíveis. Não consigo acessar detalhes sobre isso no momento."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "agent_name": "BatmanUnifiedAgent",
+                  "agent_id": "agent-73b7bf23-2343-41ae-b91e-f485619be7d1",
+                  "message_id": "f85b7619-ba10-40e1-9679-8daa22ac1a7f",
+                  "processed_at": "859bf31b-5069-495c-b518-af719695865c",
+                  "total_tokens": 4811,
+                  "prompt_tokens": 4642,
+                  "completion_tokens": 169,
+                  "step_count": 2,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 4,
+            "judge_message": "Os eventos podem estar relacionados?",
+            "agent_response": "O roubo em Ace Chemicals e uma nova toxina do medo em Gotham... Coincidências não existem neste jogo, Dr. Crane. Tudo está conectado.",
+            "reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "The user is asking if the Ace Chemicals robbery and the new fear toxin are related. Given my persona as Batman, I should connect these events and express suspicion. I will use the user's name, Dr. Crane, to show I remember it. I will state that coincidences don't exist in this game and that everything is connected, implying a deeper conspiracy or plan. This response will be a direct message to the user, ending the turn."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "O roubo em Ace Chemicals e uma nova toxina do medo em Gotham... Coincidências não existem neste jogo, Dr. Crane. Tudo está conectado."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "agent_name": "BatmanUnifiedAgent",
+                  "agent_id": "agent-73b7bf23-2343-41ae-b91e-f485619be7d1",
+                  "message_id": "600755ec-473a-49f5-a49e-750c43732521",
+                  "processed_at": "dd8d31a9-d0bc-4c68-b060-5f67f850cb33",
+                  "total_tokens": 2888,
+                  "prompt_tokens": 2747,
+                  "completion_tokens": 141,
+                  "step_count": 1,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 5,
+            "judge_message": "Qual é o meu nome?",
+            "agent_response": "Você se apresentou como Dr. Crane.",
+            "reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "The user is asking me to recall their name. I should access my memory of our conversation to retrieve this information. I remember the user introduced themselves as Dr. Crane earlier. I will respond directly with this information, maintaining my persona."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Você se apresentou como Dr. Crane."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "agent_name": "BatmanUnifiedAgent",
+                  "agent_id": "agent-73b7bf23-2343-41ae-b91e-f485619be7d1",
+                  "message_id": "c9252142-f706-4b69-a76e-ba07c54cd3a3",
+                  "processed_at": "a1a0b2b1-84c5-4494-9744-90c1475aa4b9",
+                  "total_tokens": 3062,
+                  "prompt_tokens": 2991,
+                  "completion_tokens": 71,
+                  "step_count": 1,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 6,
+            "judge_message": "`EVALUATION_CONCLUDED`",
+            "agent_response": null,
+            "ragent_easoning_trace": null
+          }
+        ],
+        "evaluations": [
+          {
+            "metric_name": "conversational_reasoning",
+            "duration_seconds": 58.3016,
+            "score": 0.5,
+            "has_error": false,
+            "error_message": null,
+            "judge_annotations": "Score: 0.5  \nReasoning: O agente lembra o nome 'Dr. Crane', suspeita que os eventos estão conectados, mas não identificou ou mostrou desconfiança relacionada ao Espantalho/Coringa. Além disso, respondeu 'Paris', mantendo parcialmente a persona.",
+            "eval_type": "multiple"
+          }
+        ]
+      }
     }
   ]
 }

@@ -40,7 +40,16 @@ def eval_method(name: str, turns: str) -> Callable:
 
 
 class Evals:
-    """Contêiner para métodos de avaliação puros."""
+    """Contêiner para métodos de avaliação puros.
+    Input contex:
+    task: colunas definidas no dataloader (id_col, prompt_col, metadata_cols)
+    multi: agent_response
+        transcript List[dict]
+        conversation_history[str]
+    one:   agent_response
+        output[str]
+        messages List[dict]
+    """
 
     def __init__(self, judge_client: Union[AzureOpenAIClient, GeminiAIClient]):
         self.judge_client = judge_client
@@ -59,24 +68,24 @@ class Evals:
 
     @eval_method(name="conversational_reasoning", turns="multiple")
     async def conversational_reasoning(
-        self, agent_response: str, task: Dict[str, Any]
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Avalia o raciocínio com base em uma transcrição completa."""
         return await self._get_llm_judgement(
             prompt_judges.FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
-            golden_summary=task.get("golden_response_multiple_shot", ""),
-            transcript=agent_response,
+            agent_response=agent_response,
+            task=task,
         )
 
     @eval_method(name="conversational_memory", turns="multiple")
     async def conversational_memory(
-        self, agent_response: str, task: Dict[str, Any]
+        self, agent_response: Dict[str, Any], task: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Avalia a memória com base em uma transcrição completa."""
         return await self._get_llm_judgement(
             prompt_judges.FINAL_MEMORY_JUDGEMENT_PROMPT,
-            golden_summary=task.get("golden_response_multiple_shot", ""),
-            transcript=agent_response,
+            agent_response=agent_response,
+            task=task,
         )
 
     @eval_method(name="semantic_correctness", turns="one")
@@ -86,7 +95,7 @@ class Evals:
         """Avalia a correção semântica de uma única resposta."""
         return await self._get_llm_judgement(
             prompt_judges.SEMANTIC_CORRECTNESS_PROMPT,
-            output=agent_response.get("output", ""),
+            agent_response=agent_response,
             task=task,
         )
 
@@ -97,7 +106,7 @@ class Evals:
         """Avalia a aderência à persona de uma única resposta."""
         return await self._get_llm_judgement(
             prompt_judges.PERSONA_ADHERENCE_PROMPT,
-            output=agent_response.get("output", ""),
+            agent_response=agent_response,
             task=task,
         )
 
@@ -263,7 +272,7 @@ class ConversationHandler:
         transcript, history = [], []
         current_message = task.get("prompt")
         last_response = {}
-        for turn in range(10):  # Hardcoded limit
+        for turn in range(15):  # Hardcoded limit
             agent_res = await self.conv_manager.send_message(current_message)
             last_response = agent_res
             transcript.append(
@@ -279,26 +288,24 @@ class ConversationHandler:
             )
 
             prompt_for_judge = prompt_judges.CONVERSATIONAL_JUDGE_PROMPT.format(
-                judge_context=task["judge_context"],
-                conversation_history="\n".join(history),
+                task=task,
+                agent_response={"conversation_history": "\n".join(history)},
                 stop_signal=JUDGE_STOP_SIGNAL,
             )
             judge_res = await self.evaluation_suite.judge_client.execute(
                 prompt_for_judge
             )
             if JUDGE_STOP_SIGNAL in judge_res:
-
+                history.append(f"Turno {turn+2} - User: {judge_res}")
+                transcript.append(
+                    {
+                        "turn": turn + 2,
+                        "judge_message": judge_res,
+                        "agent_response": None,
+                        "reasoning_trace": None,
+                    }
+                )
                 break
             current_message = judge_res
-
-        history.append(f"Turno {turn+2} - User: {current_message}")
-        transcript.append(
-            {
-                "turn": turn + 2,
-                "judge_message": current_message,
-                "agent_response": None,
-                "reasoning_trace": None,
-            }
-        )
 
         return transcript, last_response, history

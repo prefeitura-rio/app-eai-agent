@@ -72,12 +72,20 @@ class AgentConversationManager:
                 timeout=timeout,
                 polling_interval=polling_interval,
             )
-
+            # logger.info(response)
             logger.info(f"Resposta recebida do agente {self.agent_id}.")
             response_dict = response.model_dump(exclude_none=True)
-
             if "data" in response_dict and "messages" in response_dict["data"]:
                 # Transforma a lista de mensagens brutas na estrutura limpa
+                response_dict["data"]["usage"].update(
+                    {
+                        "agent_id": response_dict["data"]["agent_id"],
+                        "agent_name": self.agent_config.name,
+                        "message_id": response_dict["message_id"],
+                        "processed_at": response_dict["data"]["processed_at"],
+                    }
+                )
+                response_dict["data"]["messages"].append(response_dict["data"]["usage"])
                 raw_messages = response_dict["data"]["messages"]
                 response_dict["data"]["messages"] = parse_reasoning_messages(
                     raw_messages
@@ -94,7 +102,10 @@ class AgentConversationManager:
                         "A resposta do agente não continha uma 'assistant_message'."
                     )
 
-            return response_dict.get("data", {})
+            return {
+                "output": response_dict["data"]["output"],
+                "messages": response_dict["data"]["messages"],
+            }
 
         except EAIClientError as e:
             logger.error(
@@ -220,11 +231,11 @@ async def main():
         response1 = await manager.send_message(prompt1)
         print(json.dumps(response1, ensure_ascii=False, indent=2))
 
-        # Envia a segunda mensagem na mesma conversa
-        prompt2 = "E qual a sua missão?"
-        print(f"\nEnviando: {prompt2}")
-        response2 = await manager.send_message(prompt2)
-        print(json.dumps(response2, ensure_ascii=False, indent=2))
+        # # Envia a segunda mensagem na mesma conversa
+        # prompt2 = "E qual a sua missão?"
+        # print(f"\nEnviando: {prompt2}")
+        # response2 = await manager.send_message(prompt2)
+        # print(json.dumps(response2, ensure_ascii=False, indent=2))
 
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
