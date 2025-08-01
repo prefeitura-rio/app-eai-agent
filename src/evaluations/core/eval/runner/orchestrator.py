@@ -21,9 +21,21 @@ from src.evaluations.core.eval.runner.task_processor import TaskProcessor
 from src.evaluations.core.eval.runner.result_analyzer import ResultAnalyzer
 from src.evaluations.core.eval.runner.persistence import ResultPersistence
 from src.evaluations.core.eval.log import logger
-from src.evaluations.core.eval.schemas import PrecomputedResponseModel
+from src.evaluations.core.eval.schemas import ConversationTurn, ReasoningStep
 import time
 from src.services.eai_gateway.api import EAIClient
+
+
+class PrecomputedResponseModel(BaseModel):
+    """
+    Define o schema esperado para cada entrada no arquivo de respostas pré-computadas,
+    usado para validação.
+    """
+
+    id: str
+    one_turn_agent_message: Optional[str] = None
+    one_turn_reasoning_trace: Optional[List[ReasoningStep]] = None
+    multi_turn_transcript: Optional[List[ConversationTurn]] = None
 
 
 class AsyncExperimentRunner:

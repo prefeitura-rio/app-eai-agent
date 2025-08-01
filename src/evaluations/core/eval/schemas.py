@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import List, Dict, Any, Optional, Union
 
 
@@ -108,10 +108,18 @@ class TaskOutput(BaseModel):
 class PrecomputedResponseModel(BaseModel):
     """
     Define o schema esperado para cada entrada no arquivo de respostas pré-computadas,
-    usado para validação.
+    usado para validação estrutural.
     """
 
     id: str
     one_turn_agent_message: Optional[str] = None
     one_turn_reasoning_trace: Optional[List[ReasoningStep]] = None
     multi_turn_transcript: Optional[List[ConversationTurn]] = None
+
+    @model_validator(mode="after")
+    def check_at_least_one_response_present(self) -> "PrecomputedResponseModel":
+        if not self.one_turn_agent_message and not self.multi_turn_transcript:
+            raise ValueError(
+                "Cada resposta pré-computada deve ter pelo menos 'one_turn_agent_message' ou 'multi_turn_transcript'."
+            )
+        return self

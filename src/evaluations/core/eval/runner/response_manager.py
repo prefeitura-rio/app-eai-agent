@@ -58,7 +58,11 @@ class ResponseManager:
         """Obtém resposta de turno único, usando cache se disponível."""
         task_id = task.id
         if self.precomputed_responses:
-            precomputed = self.precomputed_responses.get(task_id, {})
+            if task_id not in self.precomputed_responses:
+                logger.warning(f"A tarefa '{task_id}' nao existe nos dados em precomputed_responses")
+                return AgentResponse(message=None, reasoning_trace=[]), 0.0
+
+            precomputed = self.precomputed_responses[task_id]
             if "one_turn_agent_message" in precomputed:
                 logger.debug(f"↪️ Usando one-turn pré-computado para {task_id}")
                 message = precomputed["one_turn_agent_message"]
@@ -75,8 +79,9 @@ class ResponseManager:
                 )
                 return response, 0.0
             else:
+                # Este caso agora é tratado pelo validador, mas mantemos como fallback
                 logger.warning(
-                    f"❌ Dados one-turn não encontrados para {task_id} em precomputed_responses"
+                    f"❌ A chave 'one_turn_agent_message' não foi encontrada para a tarefa {task_id} em precomputed_responses"
                 )
                 return AgentResponse(message=None, reasoning_trace=[]), 0.0
 
@@ -96,7 +101,11 @@ class ResponseManager:
         """Obtém transcrição multi-turn, usando cache se disponível."""
         task_id = task.id
         if self.precomputed_responses:
-            precomputed = self.precomputed_responses.get(task_id, {})
+            if task_id not in self.precomputed_responses:
+                logger.warning(f"A tarefa '{task_id}' nao existe nos dados em precomputed_responses")
+                return None
+
+            precomputed = self.precomputed_responses[task_id]
             if "multi_turn_transcript" in precomputed:
                 logger.debug(f"↪️ Usando multi-turn pré-computado para {task_id}")
                 try:
@@ -127,8 +136,9 @@ class ResponseManager:
                     )
                     return None
             else:
+                # Este caso agora é tratado pelo validador, mas mantemos como fallback
                 logger.warning(
-                    f"❌ Dados multi-turn não encontrados para {task_id} em precomputed_responses"
+                    f"❌ A chave 'multi_turn_transcript' não foi encontrada para a tarefa {task_id} em precomputed_responses"
                 )
                 return None
 
