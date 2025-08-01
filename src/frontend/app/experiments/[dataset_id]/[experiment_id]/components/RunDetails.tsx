@@ -57,6 +57,13 @@ export default function RunDetails({ run }: RunDetailsProps) {
 
     const goldenResponse = run.task_data[selectedGoldenKey] as string || "";
 
+    const multiTurnReasoningTrace = useMemo(() => {
+        if (isOneTurn || !run.multi_turn_analysis.transcript) {
+            return [];
+        }
+        return run.multi_turn_analysis.transcript.flatMap(turn => turn.agent_reasoning_trace || []);
+    }, [isOneTurn, run.multi_turn_analysis.transcript]);
+
     return (
         <div className="space-y-6">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'one_turn' | 'multi_turn')} className="w-full">
@@ -161,7 +168,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                             {isOneTurn ? (
                                 <ReasoningTimeline reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} />
                             ) : (
-                                <ConversationTranscript transcript={run.multi_turn_analysis.transcript} />
+                                <ReasoningTimeline reasoningTrace={multiTurnReasoningTrace} />
                             )}
                         </CardContent>
                     </Card>

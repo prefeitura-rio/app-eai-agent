@@ -62,11 +62,16 @@ class ResponseManager:
             if "one_turn_agent_message" in precomputed:
                 logger.debug(f"↪️ Usando one-turn pré-computado para {task_id}")
                 message = precomputed["one_turn_agent_message"]
+                
+                # Carrega o trace pré-computado se existir, senão cria um dummy
+                trace_data = precomputed.get("one_turn_reasoning_trace")
+                reasoning_trace = [ReasoningStep(**step) for step in trace_data] if trace_data else [
+                    ReasoningStep(message_type="precomputed", content=message)
+                ]
+                
                 response = AgentResponse(
                     message=message,
-                    reasoning_trace=[
-                        ReasoningStep(message_type="precomputed", content=message)
-                    ],
+                    reasoning_trace=reasoning_trace,
                 )
                 return response, 0.0
             else:

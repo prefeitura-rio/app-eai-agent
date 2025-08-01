@@ -103,3 +103,15 @@ class TaskOutput(BaseModel):
     task_data: EvaluationTask
     one_turn_analysis: OneTurnAnalysis
     multi_turn_analysis: MultiTurnAnalysis
+
+
+class PrecomputedResponseModel(BaseModel):
+    """
+    Define o schema esperado para cada entrada no arquivo de respostas pré-computadas,
+    usado para validação.
+    """
+
+    id: str
+    one_turn_agent_message: Optional[str] = None
+    one_turn_reasoning_trace: Optional[List[ReasoningStep]] = None
+    multi_turn_transcript: Optional[List[ConversationTurn]] = None

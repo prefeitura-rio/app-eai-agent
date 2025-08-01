@@ -121,7 +121,7 @@ async def run_experiment():
         output_dir=EXPERIMENT_DATA_PATH,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
-    for i in range(10):
+    for i in range(1):
         await runner.run(loader)
 
 

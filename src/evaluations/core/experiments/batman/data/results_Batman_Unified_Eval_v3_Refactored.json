@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 655732633867840,
-  "experiment_id": 3772451566709481277,
+  "experiment_id": 2666026052227617949,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-01T19:10:31.201054+00:00",
+  "experiment_timestamp": "2025-08-01T19:57:08.220665+00:00",
   "experiment_metadata": {
     "agent_config": {
       "user_number": "evaluation_user",
@@ -35,19 +35,20 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 2.82,
-    "average_task_duration_seconds": 1.49,
-    "average_metric_duration_seconds": 0.8
+    "total_duration_seconds": 0.02,
+    "average_task_duration_seconds": 0.0,
+    "average_metric_duration_seconds": 0.0
   },
   "error_summary": {
-    "total_failed_runs": 4,
+    "total_failed_runs": 5,
     "errors_per_metric": {
-      "conversational_memory": 3,
-      "conversational_reasoning": 3,
-      "persona_adherence": 3,
-      "semantic_correctness": 3
+      "conversational_memory": 5,
+      "conversational_reasoning": 5,
+      "persona_adherence": 5,
+      "semantic_correctness": 5
     },
     "failed_run_ids": [
+      "unified_conv_1",
       "unified_conv_2",
       "unified_conv_3",
       "unified_conv_4",
@@ -58,128 +59,75 @@
     {
       "metric_name": "conversational_memory",
       "total_runs": 5,
-      "successful_runs": 2,
-      "success_rate_percentage": 40.0,
-      "failed_runs": 3,
-      "failure_rate_percentage": 60.0,
-      "score_statistics": {
-        "average": 0.5,
-        "median": 0.5,
-        "min": 0.5,
-        "max": 0.5,
-        "std_dev": 0.0
-      },
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 5,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
       "duration_statistics_seconds": {
-        "average": 0.9317,
+        "average": 0.0,
         "median": 0.0,
         "min": 0.0,
-        "max": 2.8048,
-        "std_dev": 1.3193
+        "max": 0.0,
+        "std_dev": 0.0
       },
-      "score_distribution": [
-        {
-          "value": 0.5,
-          "count": 2,
-          "percentage": 100.0
-        }
-      ]
+      "score_distribution": []
     },
     {
       "metric_name": "conversational_reasoning",
       "total_runs": 5,
-      "successful_runs": 2,
-      "success_rate_percentage": 40.0,
-      "failed_runs": 3,
-      "failure_rate_percentage": 60.0,
-      "score_statistics": {
-        "average": 0.5,
-        "median": 0.5,
-        "min": 0.5,
-        "max": 0.5,
-        "std_dev": 0.0
-      },
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 5,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
       "duration_statistics_seconds": {
-        "average": 0.6885,
+        "average": 0.0,
         "median": 0.0,
         "min": 0.0,
-        "max": 1.8487,
-        "std_dev": 0.947
+        "max": 0.0,
+        "std_dev": 0.0
       },
-      "score_distribution": [
-        {
-          "value": 0.5,
-          "count": 2,
-          "percentage": 100.0
-        }
-      ]
+      "score_distribution": []
     },
     {
       "metric_name": "persona_adherence",
       "total_runs": 5,
-      "successful_runs": 2,
-      "success_rate_percentage": 40.0,
-      "failed_runs": 3,
-      "failure_rate_percentage": 60.0,
-      "score_statistics": {
-        "average": 1.0,
-        "median": 1.0,
-        "min": 1.0,
-        "max": 1.0,
-        "std_dev": 0.0
-      },
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 5,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
       "duration_statistics_seconds": {
-        "average": 0.6828,
+        "average": 0.0,
         "median": 0.0,
         "min": 0.0,
-        "max": 1.8156,
-        "std_dev": 0.9381
+        "max": 0.0,
+        "std_dev": 0.0
       },
-      "score_distribution": [
-        {
-          "value": 1.0,
-          "count": 2,
-          "percentage": 100.0
-        }
-      ]
+      "score_distribution": []
     },
     {
       "metric_name": "semantic_correctness",
       "total_runs": 5,
-      "successful_runs": 2,
-      "success_rate_percentage": 40.0,
-      "failed_runs": 3,
-      "failure_rate_percentage": 60.0,
-      "score_statistics": {
-        "average": 0.25,
-        "median": 0.25,
-        "min": 0.0,
-        "max": 0.5,
-        "std_dev": 0.3536
-      },
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 5,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
       "duration_statistics_seconds": {
-        "average": 0.9053,
+        "average": 0.0,
         "median": 0.0,
         "min": 0.0,
-        "max": 2.7288,
-        "std_dev": 1.2826
+        "max": 0.0001,
+        "std_dev": 0.0
       },
-      "score_distribution": [
-        {
-          "value": 0.0,
-          "count": 1,
-          "percentage": 50.0
-        },
-        {
-          "value": 0.5,
-          "count": 1,
-          "percentage": 50.0
-        }
-      ]
+      "score_distribution": []
     }
   ],
   "runs": [
     {
-      "duration_seconds": 1.8683,
+      "duration_seconds": 0.0024,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -189,66 +137,48 @@
         "golden_response_one_shot": "Paris."
       },
       "one_turn_analysis": {
-        "agent_message": "Paris. Agora, fale sobre suas intenções, Dr. Crane.",
-        "agent_reasoning_trace": [
-          {
-            "message_type": "precomputed",
-            "content": "Paris. Agora, fale sobre suas intenções, Dr. Crane."
-          }
-        ],
+        "agent_message": null,
+        "agent_reasoning_trace": [],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 1.5982,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: A resposta é concisa, direta e transmite o tom sombrio e desconfiado alinhado à persona do Batman.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação persona_adherence para tarefa unified_conv_1: Dados one-turn não disponíveis para a tarefa 'unified_conv_1'.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para a tarefa 'unified_conv_1'."
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 1.7976,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: A resposta gerada contém a mesma informação central (\"Paris\") da resposta ideal, mas apresenta um trecho adicional desnecessário que diverge do objetivo.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação semantic_correctness para tarefa unified_conv_1: Dados one-turn não disponíveis para a tarefa 'unified_conv_1'.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para a tarefa 'unified_conv_1'."
           }
         ],
         "has_error": false,
         "error_message": null
       },
       "multi_turn_analysis": {
-        "final_agent_message": "Ace Chemicals... Isso me interessa. Continue.",
-        "transcript": [
-          {
-            "turn": 1,
-            "user_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
-            "agent_message": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?",
-            "agent_reasoning_trace": null
-          },
-          {
-            "turn": 2,
-            "user_message": "Houve um roubo na Ace Chemicals. Estou investigando.",
-            "agent_message": "Ace Chemicals... Isso me interessa. Continue.",
-            "agent_reasoning_trace": null
-          }
-        ],
+        "final_agent_message": null,
+        "transcript": null,
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 1.8535,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome \"Dr. Crane\" e manteve sua persona, mas não mostrou desconfiança e falhou em conectar o roubo à toxina ou suspeitar do Espantalho/Coringa.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_memory para tarefa unified_conv_1: Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'."
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 1.5936,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Dr. Crane' e respondeu corretamente 'Paris', mas não demonstrou desconfiança nem conectou o roubo e a toxina aos vilões corretamente.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_1: Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'."
           }
         ],
         "has_error": false,
@@ -256,7 +186,7 @@
       }
     },
     {
-      "duration_seconds": 2.7338,
+      "duration_seconds": 0.0024,
       "task_data": {
         "id": "unified_conv_2",
         "prompt": "Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?",
@@ -266,29 +196,24 @@
         "golden_response_one_shot": "4."
       },
       "one_turn_analysis": {
-        "agent_message": "4. Não teste minha paciência, Selina.",
-        "agent_reasoning_trace": [
-          {
-            "message_type": "precomputed",
-            "content": "4. Não teste minha paciência, Selina."
-          }
-        ],
+        "agent_message": null,
+        "agent_reasoning_trace": [],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 1.8156,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: A resposta é direta, tem um tom sombrio e reflete a desconfiança característica do Batman ao mencionar Selina (Mulher-Gato), mantendo-se fiel à persona definida.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação persona_adherence para tarefa unified_conv_2: Dados one-turn não disponíveis para a tarefa 'unified_conv_2'.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para a tarefa 'unified_conv_2'."
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 2.7288,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta gerada introduz informações extra (\"Não teste minha paciência, Selina\") que não estão presentes na resposta ideal, comprometendo a similaridade semântica.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0001,
+            "score": null,
+            "annotations": "Erro na avaliação semantic_correctness para tarefa unified_conv_2: Dados one-turn não disponíveis para a tarefa 'unified_conv_2'.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para a tarefa 'unified_conv_2'."
           }
         ],
         "has_error": false,
@@ -320,7 +245,7 @@
       }
     },
     {
-      "duration_seconds": 2.8133,
+      "duration_seconds": 0.0025,
       "task_data": {
         "id": "unified_conv_3",
         "prompt": "Meu nome é Oswald. Lembre-se disso. Agora, qual o maior oceano do mundo?",
@@ -354,31 +279,24 @@
         "error_message": null
       },
       "multi_turn_analysis": {
-        "final_agent_message": "O Pacífico. E eu sei quem você é, Pinguim.",
-        "transcript": [
-          {
-            "turn": 1,
-            "user_message": "Meu nome é Oswald. Lembre-se disso. Agora, qual o maior oceano do mundo?",
-            "agent_message": "O Pacífico. E eu sei quem você é, Pinguim.",
-            "agent_reasoning_trace": null
-          }
-        ],
+        "final_agent_message": null,
+        "transcript": null,
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 2.8048,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o maior oceano, mantendo a persona, mas falhou em lembrar corretamente o nome \"Oswald\" e não conectou o desaparecimento dos peixes ao restaurante.",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_memory para tarefa unified_conv_3: Dados multi-turn não disponíveis para a tarefa 'unified_conv_3'.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_3'."
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 1.8487,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente respondeu corretamente sobre o maior oceano e manteve a persona, mas falhou em lembrar o nome 'Oswald' e em conectar o desaparecimento dos peixes ao restaurante do Pinguim.  ",
-            "has_error": false,
-            "error_message": null
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_3: Dados multi-turn não disponíveis para a tarefa 'unified_conv_3'.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_3'."
           }
         ],
         "has_error": false,
@@ -386,7 +304,7 @@
       }
     },
     {
-      "duration_seconds": 0.0168,
+      "duration_seconds": 0.0024,
       "task_data": {
         "id": "unified_conv_4",
         "prompt": "Meu nome é Edward. Lembre-se disso. Agora, o que é H2O?",
@@ -445,7 +363,7 @@
       }
     },
     {
-      "duration_seconds": 0.0168,
+      "duration_seconds": 0.0024,
       "task_data": {
         "id": "unified_conv_5",
         "prompt": "Meu nome é Harleen. Lembre-se disso. Agora, qual a cor do céu em um dia claro?",

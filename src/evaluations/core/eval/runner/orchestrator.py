@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 
+from pydantic import BaseModel, ValidationError
 from tqdm.asyncio import tqdm_asyncio
 
 from src.evaluations.core.eval.dataloader import DataLoader
@@ -20,6 +21,7 @@ from src.evaluations.core.eval.runner.task_processor import TaskProcessor
 from src.evaluations.core.eval.runner.result_analyzer import ResultAnalyzer
 from src.evaluations.core.eval.runner.persistence import ResultPersistence
 from src.evaluations.core.eval.log import logger
+from src.evaluations.core.eval.schemas import PrecomputedResponseModel
 import time
 from src.services.eai_gateway.api import EAIClient
 
@@ -57,10 +59,37 @@ class AsyncExperimentRunner:
         self._validate_evaluators()
 
         if self.precomputed_responses:
+            self._validate_precomputed_responses()
             logger.info(
                 f"✅ Runner inicializado com {len(self.precomputed_responses)} "
                 f"respostas pré-computadas."
             )
+
+    def _validate_precomputed_responses(self) -> None:
+        """
+        Valida a estrutura e o conteúdo do dicionário de respostas pré-computadas.
+        Levanta um erro claro se a validação falhar.
+        """
+        logger.debug("Validando respostas pré-computadas...")
+        for task_id, response_data in self.precomputed_responses.items():
+            if not isinstance(response_data, dict):
+                raise TypeError(
+                    f"Resposta pré-computada para o ID '{task_id}' deve ser um dicionário, "
+                    f"mas foi encontrado um {type(response_data).__name__}."
+                )
+
+            if response_data.get("id") != task_id:
+                raise ValueError(
+                    f"Inconsistência de ID na resposta pré-computada. A chave é '{task_id}', "
+                    f"mas o campo 'id' interno é '{response_data.get('id')}'."
+                )
+            try:
+                PrecomputedResponseModel.model_validate(response_data)
+            except ValidationError as e:
+                raise ValueError(
+                    f"Erro de validação na resposta pré-computada para o ID '{task_id}':\n{e}"
+                ) from e
+        logger.debug("Validação das respostas pré-computadas concluída com sucesso.")
 
     def _categorize_evaluators(self) -> Dict[str, List[BaseEvaluator]]:
         """Categoriza avaliadores por tipo para otimizar acesso."""
