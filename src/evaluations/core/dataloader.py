@@ -6,6 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 
 from src.utils.bigquery import upload_dataset_to_bq
+from src.evaluations.core.schemas import EvaluationTask
 
 
 class DataLoader:
@@ -128,17 +129,17 @@ class DataLoader:
                 f"Colunas necessárias não encontradas na fonte de dados: {', '.join(missing_cols)}"
             )
 
-    def get_tasks(self) -> Generator[Dict[str, Any], None, None]:
+    def get_tasks(self) -> Generator[EvaluationTask, None, None]:
         """
-        Retorna um gerador que produz cada linha como uma tarefa padronizada.
-        A coluna especificada em `prompt_col` é mapeada para a chave 'prompt'.
+        Retorna um gerador que produz cada linha como uma tarefa padronizada
+        e validada pelo Pydantic.
         """
-        for _, row in self.df.iterrows():
-            task = {
-                "id": row[self.id_col],
-                "prompt": row[self.prompt_col],
-            }
-            for col in self.metadata_cols:
-                if col != self.prompt_col:  # Evita duplicar o prompt
-                    task[col] = row[col]
-            yield task
+        # Mapeia a coluna de prompt especificada para o nome de campo 'prompt' esperado pelo schema
+        df_renamed = self.df.rename(columns={self.prompt_col: "prompt"})
+        for _, row in df_renamed.iterrows():
+            try:
+                task = EvaluationTask(**row.to_dict())
+                yield task
+            except Exception as e:
+                # logger.warning(f"Pulando linha com ID {row.get(self.id_col, 'N/A')} devido a erro de validação: {e}")
+                continue

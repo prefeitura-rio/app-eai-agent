@@ -14,6 +14,7 @@ from src.services.eai_gateway.api import (
     EAIClientError,
 )
 from src.evaluations.core.utils import parse_reasoning_messages
+from src.evaluations.core.schemas import AgentResponse, ReasoningStep
 
 from src.utils.log import logger
 
@@ -54,10 +55,10 @@ class AgentConversationManager:
 
     async def send_message(
         self, message: str, timeout: int = 180, polling_interval: int = 2
-    ) -> Dict[str, Any]:
+    ) -> AgentResponse:
         """
         Envia uma mensagem para o agente existente e retorna a resposta com o
-        reasoning já parseado.
+        reasoning já parseado e as estatísticas de uso incluídas.
         """
         if not self.agent_id:
             raise RuntimeError(
@@ -72,40 +73,43 @@ class AgentConversationManager:
                 timeout=timeout,
                 polling_interval=polling_interval,
             )
-            # logger.info(response)
             logger.info(f"Resposta recebida do agente {self.agent_id}.")
             response_dict = response.model_dump(exclude_none=True)
+
             if "data" in response_dict and "messages" in response_dict["data"]:
-                # Transforma a lista de mensagens brutas na estrutura limpa
-                response_dict["data"]["usage"].update(
+                # Adiciona as estatísticas de uso à lista de mensagens para serem parseadas
+                usage_stats = response_dict["data"].get("usage", {})
+                usage_stats.update(
                     {
-                        "agent_id": response_dict["data"]["agent_id"],
+                        "agent_id": response_dict["data"].get("agent_id"),
                         "agent_name": self.agent_config.name,
-                        "message_id": response_dict["message_id"],
-                        "processed_at": response_dict["data"]["processed_at"],
+                        "message_id": response_dict.get("message_id"),
+                        "processed_at": response_dict["data"].get("processed_at"),
+                        "message_type": "usage_statistics",  # Garante que o parser identifique o tipo
                     }
                 )
-                response_dict["data"]["messages"].append(response_dict["data"]["usage"])
                 raw_messages = response_dict["data"]["messages"]
-                response_dict["data"]["messages"] = parse_reasoning_messages(
-                    raw_messages
-                )
+                raw_messages.append(usage_stats)
 
-                # Extrai o 'output' para conveniência, mantendo a resposta completa
-                for msg in response_dict["data"]["messages"]:
+                # Parseia a lista completa de mensagens
+                parsed_messages = parse_reasoning_messages(raw_messages)
+
+                # Extrai o output da mensagem do assistente
+                output_content = None
+                for msg in parsed_messages:
                     if msg.get("message_type") == "assistant_message":
-                        response_dict["data"]["output"] = msg.get("content")
+                        output_content = msg.get("content")
                         break
-
-                if "output" not in response_dict["data"]:
+                if not output_content:
                     logger.warning(
                         "A resposta do agente não continha uma 'assistant_message'."
                     )
 
-            return {
-                "output": response_dict["data"]["output"],
-                "messages": response_dict["data"]["messages"],
-            }
+                # Converte a lista de dicionários para uma lista de objetos Pydantic
+                reasoning_steps = [ReasoningStep(**msg) for msg in parsed_messages]
+                return AgentResponse(output=output_content, messages=reasoning_steps)
+
+            return AgentResponse(output=None, messages=[])
 
         except EAIClientError as e:
             logger.error(
