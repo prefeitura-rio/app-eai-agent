@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { ExperimentDetails, ExperimentRun } from '../../../types';
+import { ExperimentDetails } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,6 @@ import { Settings, Bot, Scale } from 'lucide-react';
 
 interface MetadataProps {
   metadata: ExperimentDetails['experiment_metadata'];
-  selectedRun: ExperimentRun | null;
 }
 
 const MarkdownRenderer = ({ content }: { content: string }) => {
@@ -25,54 +24,8 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
     );
 };
 
-const fillTemplate = (template: string, run: ExperimentRun): string => {
-    if (!template || !run) return template;
-
-    // Regex para encontrar placeholders como {task[key]} ou {agent_response[message]}
-    return template.replace(/\{(.*?)\}/g, (match, key) => {
-        key = key.trim();
-        
-        const taskMatch = key.match(/^task\['"]?(.+?)['"]?\]$/);
-        if (taskMatch) {
-            const taskKey = taskMatch[1];
-            return String(run.task_data[taskKey] ?? match);
-        }
-
-        const agentResponseMatch = key.match(/^agent_response\['"]?(.+?)['"]?\]$/);
-        if (agentResponseMatch) {
-            const responseKey = agentResponseMatch[1];
-            if (responseKey === 'message') {
-                return run.one_turn_analysis.agent_message || match;
-            }
-        }
-        
-        if (key === 'history' || key === 'agent_response.conversation_history') {
-            return run.multi_turn_analysis.transcript
-                ?.map(t => `User: ${t.user_message}\nAgent: ${t.agent_message}`)
-                .join('\n\n') || match;
-        }
-
-        return match; // Retorna o placeholder original se não encontrar
-    });
-};
-
-
-export default function Metadata({ metadata, selectedRun }: MetadataProps) {
+export default function Metadata({ metadata }: MetadataProps) {
     const { agent_config, judge_model, judges_prompts } = metadata;
-    const [processedPrompts, setProcessedPrompts] = useState(judges_prompts);
-
-    useEffect(() => {
-        if (selectedRun && judges_prompts) {
-            const newPrompts: Record<string, string> = {};
-            const prompts = judges_prompts as Record<string, string>;
-            for (const key in prompts) {
-                newPrompts[key] = fillTemplate(prompts[key], selectedRun);
-            }
-            setProcessedPrompts(newPrompts);
-        } else {
-            setProcessedPrompts(judges_prompts as Record<string, string>);
-        }
-    }, [selectedRun, judges_prompts]);
 
     return (
         <Card>
@@ -107,17 +60,17 @@ export default function Metadata({ metadata, selectedRun }: MetadataProps) {
                             </AccordionContent>
                         </AccordionItem>
                     )}
-                    {processedPrompts && Object.keys(processedPrompts).length > 0 && (
+                    {judges_prompts && Object.keys(judges_prompts).length > 0 && (
                         <AccordionItem value="judge-prompts">
                             <AccordionTrigger>Prompts do Juiz</AccordionTrigger>
                             <AccordionContent className="overflow-visible">
-                                <Tabs defaultValue={Object.keys(processedPrompts)[0]} className="w-full">
+                                <Tabs defaultValue={Object.keys(judges_prompts)[0]} className="w-full">
                                     <TabsList>
-                                        {Object.keys(processedPrompts).map(key => (
+                                        {Object.keys(judges_prompts).map(key => (
                                             <TabsTrigger key={key} value={key} className="text-xs">{key.replace(/_/g, ' ')}</TabsTrigger>
                                         ))}
                                     </TabsList>
-                                    {Object.entries(processedPrompts).map(([key, value]) => (
+                                    {Object.entries(judges_prompts).map(([key, value]) => (
                                         <TabsContent key={key} value={key}>
                                             <MarkdownRenderer content={String(value)} />
                                         </TabsContent>
