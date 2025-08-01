@@ -118,7 +118,7 @@ async def run_experiment():
         evaluators=evaluators_to_run,
         judge_client=judge_client,
         max_concurrency=MAX_CONCURRENCY,
-        # precomputed_responses=precomputed_responses_dict,
+        precomputed_responses=precomputed_responses_dict,
         upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
     )

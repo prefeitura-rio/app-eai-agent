@@ -3,7 +3,10 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Union, Tuple, List
 
-from src.evaluations.core.eval.llm_clients import BaseJudgeClient, AgentConversationManager
+from src.evaluations.core.eval.llm_clients import (
+    BaseJudgeClient,
+    AgentConversationManager,
+)
 from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     EvaluationResult,

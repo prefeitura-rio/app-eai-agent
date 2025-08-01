@@ -16,7 +16,7 @@ from src.services.eai_gateway.api import (
 from src.evaluations.core.eval.utils import parse_reasoning_messages
 from src.evaluations.core.eval.schemas import AgentResponse, ReasoningStep
 
-from src.utils.log import logger
+from src.evaluations.core.eval.log import logger
 
 
 class AgentConversationManager:

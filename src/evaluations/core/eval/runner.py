@@ -46,7 +46,7 @@ from src.evaluations.core.eval.schemas import (
 )
 from src.services.eai_gateway.api import CreateAgentRequest
 from src.utils.bigquery import upload_experiment_to_bq
-from src.utils.log import logger
+from src.evaluations.core.eval.log import logger
 
 
 class MetricStats(TypedDict):
@@ -171,7 +171,6 @@ class AsyncExperimentRunner:
     async def _get_one_turn_response(
         self,
         task: EvaluationTask,
-        agent_manager: Optional[AgentConversationManager],
     ) -> Tuple[AgentResponse, float]:
         """Obtém resposta de turno único com tratamento melhorado de erros."""
         task_id = task.id
@@ -199,18 +198,17 @@ class AsyncExperimentRunner:
                 )
                 return AgentResponse(output=None, messages=[]), 0.0
 
-        # Modo ao vivo
-        if agent_manager is None:
-            raise ValueError(f"Agent manager necessário para tarefa {task_id}")
-
         logger.debug(f"▶️ Gerando one-turn ao vivo para {task_id}")
         start_time = time.perf_counter()
         try:
-            response = await agent_manager.send_message(task.prompt)
-            return response, time.perf_counter() - start_time
+            async with self._get_agent_manager(task_id) as agent_manager:
+                if agent_manager is None:  # Verificação de segurança
+                    raise RuntimeError("Falha ao inicializar o agente para one-turn.")
+
+                response = await agent_manager.send_message(task.prompt)
+                return response, time.perf_counter() - start_time
         except Exception as e:
             logger.error(f"Erro ao gerar resposta one-turn para {task_id}: {e}")
-            # Retorna resposta vazia em caso de erro
             return (
                 AgentResponse(output=None, messages=[]),
                 time.perf_counter() - start_time,
@@ -220,7 +218,6 @@ class AsyncExperimentRunner:
         self,
         task: EvaluationTask,
         conv_evaluator: BaseConversationEvaluator,
-        agent_manager: Optional[AgentConversationManager],
     ) -> Optional[ConversationOutput]:
         """Obtém transcrição multi-turn com tratamento melhorado de erros."""
         task_id = task.id
@@ -270,14 +267,12 @@ class AsyncExperimentRunner:
                 )
                 return None
 
-        # Modo ao vivo
-        if agent_manager is None:
-            logger.error(f"Agent manager necessário para multi-turn em {task_id}")
-            return None
-
         logger.debug(f"▶️ Gerando multi-turn ao vivo para {task_id}")
         try:
-            return await conv_evaluator.evaluate(task, agent_manager)
+            async with self._get_agent_manager(task_id) as agent_manager:
+                if agent_manager is None:  # Verificação de segurança
+                    raise RuntimeError("Falha ao inicializar o agente para multi-turn.")
+                return await conv_evaluator.evaluate(task, agent_manager)
         except Exception as e:
             logger.error(f"Erro ao gerar multi-turn para {task_id}: {e}")
             return None
@@ -290,69 +285,72 @@ class AsyncExperimentRunner:
         multi_turn_output: Optional[ConversationOutput],
     ) -> Tuple[Dict[str, Any], float]:
         """Executa uma única avaliação com medição de tempo."""
-        start_time = time.perf_counter()
+        log_context_string = f"{evaluator.turn_type}/{evaluator.name}"
+        with logger.contextualize(task_id=task.id, turn_type=log_context_string):
+            start_time = time.perf_counter()
+            try:
+                if evaluator.turn_type == "multiple":
+                    if not multi_turn_output:
+                        raise ValueError(
+                            f"Dados multi-turn não disponíveis para tarefa '{task.id}'. "
+                            f"Verifique se os dados pré-computados contêm 'multi_turn_transcript' "
+                            f"ou se o avaliador conversation está configurado corretamente."
+                        )
 
-        try:
-            if evaluator.turn_type == "multiple":
-                if not multi_turn_output:
-                    raise ValueError(
-                        f"Dados multi-turn não disponíveis para tarefa '{task.id}'. "
-                        f"Verifique se os dados pré-computados contêm 'multi_turn_transcript' "
-                        f"ou se o avaliador conversation está configurado corretamente."
+                    multi_turn_context = MultiTurnContext(
+                        conversation_history="\n".join(
+                            multi_turn_output.history_for_judge
+                        ),
+                        transcript=multi_turn_output.transcript,
+                    )
+                    result = await evaluator.evaluate(
+                        agent_response=multi_turn_context, task=task
                     )
 
-                multi_turn_context = MultiTurnContext(
-                    conversation_history="\n".join(multi_turn_output.history_for_judge),
-                    transcript=multi_turn_output.transcript,
-                )
-                result = await evaluator.evaluate(
-                    agent_response=multi_turn_context, task=task
-                )
+                elif evaluator.turn_type == "one":
+                    if one_turn_response.output is None:
+                        raise ValueError(
+                            f"Dados one-turn não disponíveis para tarefa '{task.id}'. "
+                            f"Verifique se os dados pré-computados contêm 'one_turn_output' "
+                            f"ou se o agente está configurado corretamente."
+                        )
 
-            elif evaluator.turn_type == "one":
-                if one_turn_response.output is None:
+                    result = await evaluator.evaluate(
+                        agent_response=one_turn_response, task=task
+                    )
+                else:
                     raise ValueError(
-                        f"Dados one-turn não disponíveis para tarefa '{task.id}'. "
-                        f"Verifique se os dados pré-computados contêm 'one_turn_output' "
-                        f"ou se o agente está configurado corretamente."
+                        f"Tipo de avaliador inválido: {evaluator.turn_type}"
                     )
 
-                result = await evaluator.evaluate(
-                    agent_response=one_turn_response, task=task
+                eval_duration = time.perf_counter() - start_time
+                eval_result = EvaluationResult.model_validate(result)
+
+                return {
+                    "metric_name": evaluator.name,
+                    "duration_seconds": round(eval_duration, 4),
+                    **eval_result.model_dump(),
+                    "turn_type": evaluator.turn_type,
+                }, eval_duration
+
+            except Exception as e:
+                eval_duration = time.perf_counter() - start_time
+                error_msg = f"Erro na avaliação {evaluator.name} para tarefa {task.id}: {str(e)}"
+                logger.error(error_msg)
+
+                eval_result = EvaluationResult(
+                    annotations=error_msg,
+                    has_error=True,
+                    error_message=str(e),
+                    score=None,  # Garantir que score seja None em caso de erro
                 )
-            else:
-                raise ValueError(f"Tipo de avaliador inválido: {evaluator.turn_type}")
 
-            eval_duration = time.perf_counter() - start_time
-            eval_result = EvaluationResult.model_validate(result)
-
-            return {
-                "metric_name": evaluator.name,
-                "duration_seconds": round(eval_duration, 4),
-                **eval_result.model_dump(),
-                "turn_type": evaluator.turn_type,
-            }, eval_duration
-
-        except Exception as e:
-            eval_duration = time.perf_counter() - start_time
-            error_msg = (
-                f"Erro na avaliação {evaluator.name} para tarefa {task.id}: {str(e)}"
-            )
-            logger.error(error_msg)
-
-            eval_result = EvaluationResult(
-                annotations=error_msg,
-                has_error=True,
-                error_message=str(e),
-                score=None,  # Garantir que score seja None em caso de erro
-            )
-
-            return {
-                "metric_name": evaluator.name,
-                "duration_seconds": round(eval_duration, 4),
-                **eval_result.model_dump(),
-                "turn_type": evaluator.turn_type,
-            }, eval_duration
+                return {
+                    "metric_name": evaluator.name,
+                    "duration_seconds": round(eval_duration, 4),
+                    **eval_result.model_dump(),
+                    "turn_type": evaluator.turn_type,
+                }, eval_duration
 
     async def _execute_evaluations(
         self,
@@ -420,33 +418,87 @@ class AsyncExperimentRunner:
             start_time = time.perf_counter()
 
             try:
-                # Determina quais tipos de avaliação são necessários
                 needs_one_turn = bool(self._evaluator_cache["one_turn"])
                 needs_multi_turn = bool(self._evaluator_cache["multi_turn"])
 
-                # Type cast seguro pois sabemos que 'conversation' só contém BaseConversationEvaluator
                 conv_evaluator: Optional[BaseConversationEvaluator] = None
                 if self._evaluator_cache["conversation"]:
-                    conv_evaluator = self._evaluator_cache["conversation"][0]  # type: ignore[assignment]
-
-                async with self._get_agent_manager(task_id) as agent_manager:
-                    # Executa one-turn se necessário
-                    one_turn_response = AgentResponse(output=None, messages=[])
-                    one_turn_duration = 0.0
-
-                    if needs_one_turn:
-                        one_turn_response, one_turn_duration = (
-                            await self._get_one_turn_response(task, agent_manager)
+                    potential_evaluator = self._evaluator_cache["conversation"][0]
+                    if isinstance(potential_evaluator, BaseConversationEvaluator):
+                        conv_evaluator = potential_evaluator
+                    else:
+                        logger.error(
+                            f"Erro de tipo inesperado: o avaliador em 'conversation' "
+                            f"não é um BaseConversationEvaluator para a tarefa {task_id}"
                         )
 
-                    # Executa multi-turn se necessário
-                    multi_turn_output = None
-                    if needs_multi_turn and conv_evaluator:
-                        multi_turn_output = await self._get_multi_turn_transcript(
-                            task, conv_evaluator, agent_manager
-                        )
+                # Inicializa as variáveis de tarefa como None fora dos blocos if
+                one_turn_task = None
+                multi_turn_task = None
 
-                # Executa avaliações
+                # Cria as tarefas se necessário
+                if needs_one_turn:
+
+                    async def one_turn_with_context():
+                        with logger.contextualize(
+                            task_id=task_id, turn_type="one-turn"
+                        ):
+                            return await self._get_one_turn_response(task)
+
+                    one_turn_task = asyncio.create_task(one_turn_with_context())
+
+                if needs_multi_turn and conv_evaluator:
+
+                    async def multi_turn_with_context():
+                        with logger.contextualize(
+                            task_id=task_id, turn_type="multi-turn"
+                        ):
+                            return await self._get_multi_turn_transcript(
+                                task, conv_evaluator
+                            )
+
+                    multi_turn_task = asyncio.create_task(multi_turn_with_context())
+
+                # Coleta apenas as tarefas que foram realmente criadas
+                tasks_to_run = [
+                    t for t in [one_turn_task, multi_turn_task] if t is not None
+                ]
+
+                if not tasks_to_run:
+                    results = []
+                else:
+                    results = await asyncio.gather(*tasks_to_run)
+
+                # Desempacota os resultados
+                one_turn_response, one_turn_duration = (
+                    AgentResponse(output=None, messages=[]),
+                    0.0,
+                )
+                multi_turn_output = None
+
+                result_index = 0
+                # Verifica se a TAREFA foi criada para saber se devemos esperar um resultado
+                if one_turn_task:
+                    one_turn_response, one_turn_duration = results[result_index]
+                    result_index += 1
+                if multi_turn_task:
+                    multi_turn_output = results[result_index]
+
+                # Desempacota os resultados na ordem correta
+                one_turn_response, one_turn_duration = (
+                    AgentResponse(output=None, messages=[]),
+                    0.0,
+                )
+                multi_turn_output = None
+
+                result_index = 0
+                if one_turn_task:
+                    one_turn_response, one_turn_duration = results[result_index]
+                    result_index += 1
+                if multi_turn_task:
+                    multi_turn_output = results[result_index]
+
+                # O resto do método continua como está...
                 evaluations = await self._execute_evaluations(
                     task, one_turn_response, one_turn_duration, multi_turn_output
                 )

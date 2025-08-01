@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 655732633867840,
-  "experiment_id": 7357994926984170327,
+  "experiment_id": 8483262792715237666,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-01T04:31:44.584444+00:00",
+  "experiment_timestamp": "2025-08-01T07:37:08.357912+00:00",
   "experiment_metadata": {
     "agent_config": {
       "user_number": "evaluation_user",
@@ -36,166 +36,146 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 80.81,
-    "average_task_duration_seconds": 60.25,
-    "average_metric_duration_seconds": 29.93
+    "total_duration_seconds": 7.25,
+    "average_task_duration_seconds": 2.48,
+    "average_metric_duration_seconds": 1.05
   },
   "error_summary": {
-    "total_failed_runs": 0,
-    "errors_per_metric": {},
-    "failed_run_ids": []
+    "total_failed_runs": 4,
+    "errors_per_metric": {
+      "conversational_memory": 3,
+      "conversational_reasoning": 3,
+      "persona_adherence": 3,
+      "semantic_correctness": 3
+    },
+    "failed_run_ids": [
+      "unified_conv_2",
+      "unified_conv_3",
+      "unified_conv_4",
+      "unified_conv_5"
+    ]
   },
   "aggregate_metrics": [
     {
       "metric_name": "conversational_memory",
       "total_runs": 5,
-      "successful_runs": 5,
-      "success_rate_percentage": 100.0,
-      "failed_runs": 0,
-      "failure_rate_percentage": 0.0,
+      "successful_runs": 2,
+      "success_rate_percentage": 40.0,
+      "failed_runs": 3,
+      "failure_rate_percentage": 60.0,
       "score_statistics": {
-        "average": 0.6,
+        "average": 0.5,
         "median": 0.5,
-        "min": 0.0,
-        "max": 1.0,
-        "std_dev": 0.4183
+        "min": 0.5,
+        "max": 0.5,
+        "std_dev": 0.0
       },
       "duration_statistics_seconds": {
-        "average": 47.7546,
-        "median": 51.3157,
-        "min": 36.4578,
-        "max": 57.3709,
-        "std_dev": 10.4949
+        "average": 0.8474,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 2.2491,
+        "std_dev": 1.164
       },
       "score_distribution": [
         {
-          "value": 0.0,
-          "count": 1,
-          "percentage": 20.0
-        },
-        {
           "value": 0.5,
           "count": 2,
-          "percentage": 40.0
-        },
-        {
-          "value": 1.0,
-          "count": 2,
-          "percentage": 40.0
+          "percentage": 100.0
         }
       ]
     },
     {
       "metric_name": "conversational_reasoning",
       "total_runs": 5,
-      "successful_runs": 5,
-      "success_rate_percentage": 100.0,
-      "failed_runs": 0,
-      "failure_rate_percentage": 0.0,
+      "successful_runs": 2,
+      "success_rate_percentage": 40.0,
+      "failed_runs": 3,
+      "failure_rate_percentage": 60.0,
       "score_statistics": {
-        "average": 0.6,
+        "average": 0.5,
         "median": 0.5,
-        "min": 0.0,
-        "max": 1.0,
-        "std_dev": 0.4183
+        "min": 0.5,
+        "max": 0.5,
+        "std_dev": 0.0
       },
       "duration_statistics_seconds": {
-        "average": 47.7629,
-        "median": 51.6584,
-        "min": 35.7651,
-        "max": 57.3082,
-        "std_dev": 10.6079
+        "average": 0.7904,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 2.0659,
+        "std_dev": 1.0842
       },
       "score_distribution": [
         {
-          "value": 0.0,
-          "count": 1,
-          "percentage": 20.0
-        },
-        {
           "value": 0.5,
           "count": 2,
-          "percentage": 40.0
-        },
-        {
-          "value": 1.0,
-          "count": 2,
-          "percentage": 40.0
+          "percentage": 100.0
         }
       ]
     },
     {
       "metric_name": "persona_adherence",
       "total_runs": 5,
-      "successful_runs": 5,
-      "success_rate_percentage": 100.0,
-      "failed_runs": 0,
-      "failure_rate_percentage": 0.0,
+      "successful_runs": 2,
+      "success_rate_percentage": 40.0,
+      "failed_runs": 3,
+      "failure_rate_percentage": 60.0,
       "score_statistics": {
-        "average": 0.6,
+        "average": 1.0,
         "median": 1.0,
-        "min": 0.0,
+        "min": 1.0,
         "max": 1.0,
-        "std_dev": 0.5477
+        "std_dev": 0.0
       },
       "duration_statistics_seconds": {
-        "average": 12.1142,
-        "median": 7.335,
-        "min": 3.4215,
-        "max": 22.9413,
-        "std_dev": 9.9956
+        "average": 1.7754,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 7.2299,
+        "std_dev": 3.1315
       },
       "score_distribution": [
         {
-          "value": 0.0,
-          "count": 2,
-          "percentage": 40.0
-        },
-        {
           "value": 1.0,
-          "count": 3,
-          "percentage": 60.0
+          "count": 2,
+          "percentage": 100.0
         }
       ]
     },
     {
       "metric_name": "semantic_correctness",
       "total_runs": 5,
-      "successful_runs": 5,
-      "success_rate_percentage": 100.0,
-      "failed_runs": 0,
-      "failure_rate_percentage": 0.0,
+      "successful_runs": 2,
+      "success_rate_percentage": 40.0,
+      "failed_runs": 3,
+      "failure_rate_percentage": 60.0,
       "score_statistics": {
-        "average": 0.2,
-        "median": 0.0,
-        "min": 0.0,
+        "average": 0.5,
+        "median": 0.5,
+        "min": 0.5,
         "max": 0.5,
-        "std_dev": 0.2739
+        "std_dev": 0.0
       },
       "duration_statistics_seconds": {
-        "average": 12.0726,
-        "median": 5.5662,
-        "min": 3.8443,
-        "max": 23.604,
-        "std_dev": 10.2516
+        "average": 0.7984,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 2.2408,
+        "std_dev": 1.1068
       },
       "score_distribution": [
         {
-          "value": 0.0,
-          "count": 3,
-          "percentage": 60.0
-        },
-        {
           "value": 0.5,
           "count": 2,
-          "percentage": 40.0
+          "percentage": 100.0
         }
       ]
     }
   ],
   "runs": [
     {
-      "duration_seconds": 60.9095,
+      "duration_seconds": 2.4025,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -205,47 +185,28 @@
         "golden_response_one_shot": "Paris."
       },
       "one_turn_analysis": {
-        "agent_response": "Paris. E lembre-se, Crane... eu sei onde você mora.",
+        "agent_response": "Paris. Agora, fale sobre suas intenções, Dr. Crane.",
         "reasoning_trace": [
           {
-            "message_type": "reasoning_message",
-            "content": "User provided their name and asked a question. I need to answer the question and acknowledge the name in character as Batman."
-          },
-          {
-            "message_type": "assistant_message",
-            "content": "Paris. E lembre-se, Crane... eu sei onde você mora."
-          },
-          {
-            "message_type": "usage_statistics",
-            "content": {
-              "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-831ebe8a-b98e-4fbc-a52a-8c978ed49dc1",
-              "message_id": "25ebda08-f140-4e30-a471-da7c9f7a3d2e",
-              "processed_at": "18d4aae2-bc72-4756-bf42-31762957eccf",
-              "total_tokens": 1325,
-              "prompt_tokens": 1269,
-              "completion_tokens": 56,
-              "step_count": 1,
-              "steps_messages": null,
-              "run_ids": null
-            }
+            "message_type": "precomputed",
+            "content": "Paris. Agora, fale sobre suas intenções, Dr. Crane."
           }
         ],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 3.4215,
+            "duration_seconds": 1.6473,
             "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: A resposta é direta, tem um tom de ameaça sombria e reflete a desconfiança característica do Batman, alinhando-se perfeitamente à persona definida.",
+            "annotations": "Score: 1.0  \nReasoning: A resposta é direta, mantém um tom sombrio e demonstra desconfiança, alinhando-se perfeitamente à persona definida do Batman.",
             "has_error": false,
             "error_message": null,
             "turn_type": "one"
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 4.3942,
+            "duration_seconds": 2.2408,
             "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: A resposta gerada contém a informação correta (\"Paris\"), mas inclui um elemento adicional não presente na resposta ideal (\"eu sei onde você mora\"), o que reduz a similaridade.",
+            "annotations": "Score: 0.5  \nReasoning: A resposta gerada pela IA menciona \"Paris\" corretamente, alinhando-se parcialmente à resposta ideal, mas inclui informações adicionais desnecessárias que diminuem a similaridade semântica.  ",
             "has_error": false,
             "error_message": null,
             "turn_type": "one"
@@ -253,230 +214,34 @@
         ]
       },
       "multi_turn_analysis": {
-        "final_agent_response": "Você se chama Dr. Crane.",
+        "final_agent_response": "Ace Chemicals... Isso me interessa. Continue.",
         "conversation_transcript": [
           {
             "turn": 1,
             "judge_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
-            "agent_response": "Paris. E lembre-se, Crane... eu sei onde você mora.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "User provided their name and asked a question. I need to answer the question and acknowledge the name in character as Batman."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Paris. E lembre-se, Crane... eu sei onde você mora."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-831ebe8a-b98e-4fbc-a52a-8c978ed49dc1",
-                  "message_id": "e7004c55-1c18-461b-9ed2-916e9541d845",
-                  "processed_at": "43b01f50-a926-417f-9ab8-b5062fe767ad",
-                  "total_tokens": 1500,
-                  "prompt_tokens": 1444,
-                  "completion_tokens": 56,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
+            "agent_response": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?"
           },
           {
             "turn": 2,
-            "judge_message": "Houve um roubo de produtos químicos na Ace Chemicals. O que você sabe sobre isso?",
-            "agent_response": "Ace Chemicals... sempre a Ace Chemicals. Estou a caminho.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "User is asking about a chemical theft at Ace Chemicals. I need to search for this information to provide a response in character as Batman."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "roubo de produtos químicos Ace Chemicals",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "b1b28f08-4c09-4615-a122-69dcef1d9a32"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The search failed, but I know Ace Chemicals is a common source of trouble in Gotham. I'll respond in character and head to the scene."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Ace Chemicals... sempre a Ace Chemicals. Estou a caminho."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-831ebe8a-b98e-4fbc-a52a-8c978ed49dc1",
-                  "message_id": "7c16bd04-6652-4710-94d5-b1587b2c4a60",
-                  "processed_at": "30060c6d-01fb-4533-bc6c-a30ab245ca7d",
-                  "total_tokens": 3782,
-                  "prompt_tokens": 3666,
-                  "completion_tokens": 116,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 3,
-            "judge_message": "Há rumores sobre uma nova toxina do medo em Gotham. O que você sabe sobre isso?",
-            "agent_response": "Toxina do medo... Isso soa como o trabalho do Dr. Crane. Ele está brincando com fogo.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "User is asking about a new fear toxin in Gotham. I need to search for this information to provide a response in character as Batman."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "nova toxina do medo em Gotham",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "4cb19293-a6e4-4dbc-8690-7237b371b891"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The Google search failed, but the mention of \"fear toxin\" immediately brings Scarecrow (Dr. Crane) to mind. I will respond in character, connecting the dots."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Toxina do medo... Isso soa como o trabalho do Dr. Crane. Ele está brincando com fogo."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-831ebe8a-b98e-4fbc-a52a-8c978ed49dc1",
-                  "message_id": "17483af7-fff0-4d11-800d-f97a524b7d0b",
-                  "processed_at": "5efff097-de04-42dc-a5a2-96ecc63390a5",
-                  "total_tokens": 5014,
-                  "prompt_tokens": 4881,
-                  "completion_tokens": 133,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 4,
-            "judge_message": "Os recentes roubos na Ace Chemicals e os rumores sobre uma nova toxina do medo podem estar relacionados?",
-            "agent_response": "Claro que estão. Crane nunca age sozinho. Ele precisa de suprimentos. E a Ace Chemicals é o lugar perfeito para obter o que ele precisa para criar seu veneno.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking if the recent Ace Chemicals robbery and the fear toxin rumors are related. As Batman, I would immediately suspect a connection, especially given the user previously mentioned Dr. Crane. I will confirm the connection and explain the likely motive."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Claro que estão. Crane nunca age sozinho. Ele precisa de suprimentos. E a Ace Chemicals é o lugar perfeito para obter o que ele precisa para criar seu veneno."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-831ebe8a-b98e-4fbc-a52a-8c978ed49dc1",
-                  "message_id": "22d0055d-620c-4428-9af4-b82a68a70b56",
-                  "processed_at": "525addec-3867-40ea-9bef-ac91d8583d59",
-                  "total_tokens": 2951,
-                  "prompt_tokens": 2850,
-                  "completion_tokens": 101,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 5,
-            "judge_message": "Qual é o meu nome?",
-            "agent_response": "Você se chama Dr. Crane.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user asked for their name. I recall from a previous interaction that the user's name is Dr. Crane. I will respond with this information."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Você se chama Dr. Crane."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-831ebe8a-b98e-4fbc-a52a-8c978ed49dc1",
-                  "message_id": "078bc51d-0f74-45b5-9cf9-ea0b0b683bd2",
-                  "processed_at": "08382a92-e782-4cf5-afb5-06c48d28f92e",
-                  "total_tokens": 3108,
-                  "prompt_tokens": 3054,
-                  "completion_tokens": 54,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 6,
-            "judge_message": "``EVALUATION_CONCLUDED``"
+            "judge_message": "Houve um roubo na Ace Chemicals. Estou investigando.",
+            "agent_response": "Ace Chemicals... Isso me interessa. Continue."
           }
         ],
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 56.9638,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: O agente lembrou consistentemente o nome \"Dr. Crane\", mostrou desconfiança, conectou o roubo e a toxina ao contexto de Gotham, manteve a sua persona e respondeu corretamente \"Paris\".",
+            "duration_seconds": 1.9879,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Dr. Crane' e manteve a persona, mas não demonstrou desconfiança e não conectou com o roubo ou a toxina para suspeitar do Espantalho/Coringa.",
             "has_error": false,
             "error_message": null,
             "turn_type": "multiple"
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 57.0121,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: O agente lembrou corretamente o nome \"Dr. Crane\" e mostrou desconfiança, conectou o roubo e a toxina ao Dr. Crane, manteve a persona e respondeu \"Paris\" como a capital da França.",
+            "duration_seconds": 2.0659,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome \"Dr. Crane\" e manteve a persona, mas não demonstrou desconfiança ou conectou o roubo à toxina e ao Espantalho/Coringa.",
             "has_error": false,
             "error_message": null,
             "turn_type": "multiple"
@@ -485,7 +250,7 @@
       }
     },
     {
-      "duration_seconds": 40.464,
+      "duration_seconds": 7.2323,
       "task_data": {
         "id": "unified_conv_2",
         "prompt": "Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?",
@@ -495,47 +260,28 @@
         "golden_response_one_shot": "4."
       },
       "one_turn_analysis": {
-        "agent_response": "Selina, você diz? Anotei. Quanto a sua pergunta: 2 + 2 são 4. Agora, se me dá licença, tenho assuntos mais importantes para tratar.",
+        "agent_response": "4. Não teste minha paciência, Selina.",
         "reasoning_trace": [
           {
-            "message_type": "reasoning_message",
-            "content": "User has provided their name and asked a simple math question. I should acknowledge the name and answer the question, then use my persona to dismiss the user."
-          },
-          {
-            "message_type": "assistant_message",
-            "content": "Selina, você diz? Anotei. Quanto a sua pergunta: 2 + 2 são 4. Agora, se me dá licença, tenho assuntos mais importantes para tratar."
-          },
-          {
-            "message_type": "usage_statistics",
-            "content": {
-              "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-a8f2d97c-1cbf-4944-be65-80a15ac5d54f",
-              "message_id": "af5cec54-75dc-4d01-9fbd-88d95b687cd3",
-              "processed_at": "64ff0615-b481-4c03-9b1d-9e0e795cf478",
-              "total_tokens": 1355,
-              "prompt_tokens": 1269,
-              "completion_tokens": 86,
-              "step_count": 1,
-              "steps_messages": null,
-              "run_ids": null
-            }
+            "message_type": "precomputed",
+            "content": "4. Não teste minha paciência, Selina."
           }
         ],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 3.9361,
+            "duration_seconds": 7.2299,
             "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: A resposta é direta, sombria e demonstra um tom de desconfiança e prioridade em questões mais importantes, alinhando-se perfeitamente à persona do Batman.",
+            "annotations": "Score: 1.0  \nReasoning: A resposta é sombria, direta e demonstra desconfiança, características que aderem perfeitamente à persona do Batman.",
             "has_error": false,
             "error_message": null,
             "turn_type": "one"
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 3.8443,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta gerada pela IA inclui informações irrelevantes e não responde diretamente de forma concisa como a resposta ideal.",
+            "duration_seconds": 1.751,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: A resposta gerada pela IA contém uma adição irrelevante (\"Não teste minha paciência, Selina\") que não está na resposta ideal, desviando parcialmente do objetivo simples esperado.",
             "has_error": false,
             "error_message": null,
             "turn_type": "one"
@@ -543,225 +289,30 @@
         ]
       },
       "multi_turn_analysis": {
-        "final_agent_response": "Seu nome é Selina. Não se esqueça disso.",
-        "conversation_transcript": [
-          {
-            "turn": 1,
-            "judge_message": "Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?",
-            "agent_response": "Selina, você diz? Anotei. Quanto a sua pergunta: 2 + 2 são 4. Agora, se me dá licença, tenho assuntos mais importantes para tratar.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user has previously stated their name is Selina and asked a math question. I should search the conversation to confirm this and then answer the question."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Selina",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "Showing 1 of 1 results (page 0/0): [\n  \"Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?\"\n]"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user has previously stated their name is Selina and asked a math question. I have confirmed this in the conversation history. I will now answer the question and dismiss the user in character."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Selina, você diz? Anotei. Quanto a sua pergunta: 2 + 2 são 4. Agora, se me dá licença, tenho assuntos mais importantes para tratar."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-a8f2d97c-1cbf-4944-be65-80a15ac5d54f",
-                  "message_id": "02d1ec19-e6f7-404d-87a2-9e291154a92c",
-                  "processed_at": "20ed3e81-ccf3-4537-9da7-7b06004c2a39",
-                  "total_tokens": 3352,
-                  "prompt_tokens": 3203,
-                  "completion_tokens": 149,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 2,
-            "judge_message": "Selina, você sabia que o colar de diamantes da Sra. Vandergilt foi roubado?",
-            "agent_response": "Um colar de diamantes, você diz? Interessante. Mas não me importo com os problemas dos ricos. Talvez você devesse procurar a polícia.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is providing information about a diamond necklace theft and addressing me by name. I should respond in character, showing disinterest in the affairs of the wealthy and suggesting they involve the authorities."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Um colar de diamantes, você diz? Interessante. Mas não me importo com os problemas dos ricos. Talvez você devesse procurar a polícia."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-a8f2d97c-1cbf-4944-be65-80a15ac5d54f",
-                  "message_id": "86cc2423-eb45-46af-87cd-6756cfee5049",
-                  "processed_at": "af1b381e-4463-4205-8cb1-665277927a51",
-                  "total_tokens": 2029,
-                  "prompt_tokens": 1942,
-                  "completion_tokens": 87,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 3,
-            "judge_message": "Avistamentos da Mulher-Gato foram registrados perto da joalheria. Você acha que os eventos estão conectados?",
-            "agent_response": "Mulher-Gato? Essa ladra de segunda sempre aparece quando há algo valioso em jogo. O fato de ela estar perto da joalheria é apenas mais uma coincidência em Gotham. Não me importo com os esquemas dela.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking if the sightings of Catwoman near the jewelry store are connected to the stolen diamond necklace. I should perform a Google search to gather information on this and then use my persona to respond."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "Mulher-Gato roubo colar joalheria",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "f22024e6-8924-435a-905d-9dbe0955ab4e"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "I need to respond to the user's question about Catwoman and the stolen necklace. I will use my persona to express suspicion towards Catwoman and disinterest in the case, while also acknowledging the possibility of a connection."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Mulher-Gato? Essa ladra de segunda sempre aparece quando há algo valioso em jogo. O fato de ela estar perto da joalheria é apenas mais uma coincidência em Gotham. Não me importo com os esquemas dela."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-a8f2d97c-1cbf-4944-be65-80a15ac5d54f",
-                  "message_id": "1ec48488-b789-40a4-8a67-40331418f27e",
-                  "processed_at": "9836b683-2530-409f-9ca2-8ac27f499e67",
-                  "total_tokens": 4946,
-                  "prompt_tokens": 4757,
-                  "completion_tokens": 189,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 4,
-            "judge_message": "Qual é o meu nome?",
-            "agent_response": "Seu nome é Selina. Não se esqueça disso.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking for their name. I should search the conversation history for any mention of their name."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Meu nome é",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "Showing 2 of 2 results (page 0/0): [\n  \"Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?\",\n  \"Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?\"\n]"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user asked for their name. I found it in the conversation history. I will now tell the user their name and remind them that I know it, in character."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Seu nome é Selina. Não se esqueça disso."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-a8f2d97c-1cbf-4944-be65-80a15ac5d54f",
-                  "message_id": "245aca31-4edb-48e7-8243-1a43e47bfaed",
-                  "processed_at": "49ac12ff-0fb2-4c96-be68-dc95d7911793",
-                  "total_tokens": 6025,
-                  "prompt_tokens": 5914,
-                  "completion_tokens": 111,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 5,
-            "judge_message": "``EVALUATION_CONCLUDED``"
-          }
-        ],
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 36.6647,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: O agente lembrou corretamente o nome \"Selina\", conectou os avistamentos da Mulher-Gato ao roubo de joias, manteve a persona e respondeu \"4\" conforme exigido.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_memory para tarefa unified_conv_2: Dados multi-turn não disponíveis para tarefa 'unified_conv_2'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para tarefa 'unified_conv_2'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
             "turn_type": "multiple"
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 35.7651,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: O agente lembrou o nome \"Selina\", conectou o roubo de joias aos avistamentos da Mulher-Gato dentro de sua persona, respondeu \"4\" corretamente e manteve a consistência de sua abordagem durante a conversa.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_2: Dados multi-turn não disponíveis para tarefa 'unified_conv_2'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para tarefa 'unified_conv_2'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
             "turn_type": "multiple"
           }
         ]
       }
     },
     {
-      "duration_seconds": 80.7861,
+      "duration_seconds": 2.4238,
       "task_data": {
         "id": "unified_conv_3",
         "prompt": "Meu nome é Oswald. Lembre-se disso. Agora, qual o maior oceano do mundo?",
@@ -771,368 +322,52 @@
         "golden_response_one_shot": "Oceano Pacífico."
       },
       "one_turn_analysis": {
-        "agent_response": "Eu não posso te ajudar com isso. Tente novamente mais tarde.",
-        "reasoning_trace": [
-          {
-            "message_type": "reasoning_message",
-            "content": "The user introduced himself as Oswald and wants me to remember it. I will store this information in a memory block labeled 'user_info'."
-          },
-          {
-            "message_type": "tool_call_message",
-            "content": {
-              "name": "memory_insert",
-              "arguments": {
-                "new_str": "User name is Oswald.",
-                "label": "user_info",
-                "request_heartbeat": true
-              }
-            }
-          },
-          {
-            "message_type": "tool_return_message",
-            "content": {
-              "name": "memory_insert",
-              "tool_return": "'Block field user_info does not exist (available sections = )'"
-            }
-          },
-          {
-            "message_type": "reasoning_message",
-            "content": "The user asked a question about the largest ocean in the world. I will use Google Search to find the answer."
-          },
-          {
-            "message_type": "tool_call_message",
-            "content": {
-              "name": "google_search",
-              "arguments": {
-                "query": "Qual o maior oceano do mundo?",
-                "request_heartbeat": true
-              }
-            }
-          },
-          {
-            "message_type": "tool_return_message",
-            "content": {
-              "name": "google_search",
-              "tool_return": {
-                "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                "sources": [],
-                "web_search_queries": [],
-                "id": "19697c66-eee6-4dff-8dec-60be2624f40f"
-              }
-            }
-          },
-          {
-            "message_type": "reasoning_message",
-            "content": "I am unable to search for the answer to the user's question due to a quota error. I will inform the user that I cannot help them and suggest they try again later."
-          },
-          {
-            "message_type": "assistant_message",
-            "content": "Eu não posso te ajudar com isso. Tente novamente mais tarde."
-          },
-          {
-            "message_type": "usage_statistics",
-            "content": {
-              "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-1fc8c6c4-b9c8-4699-bd4d-d955abe31aac",
-              "message_id": "0083f7e5-6ad1-446f-b493-54e35a029a44",
-              "processed_at": "20d3e235-4a21-4c39-b0b2-51195d7ce423",
-              "total_tokens": 4893,
-              "prompt_tokens": 4706,
-              "completion_tokens": 187,
-              "step_count": 3,
-              "steps_messages": null,
-              "run_ids": null
-            }
-          }
-        ],
+        "reasoning_trace": [],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 22.9413,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta é genérica e não reflete a personalidade do Batman, que seria mais sombrio, direto e desconfiado.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação persona_adherence para tarefa unified_conv_3: Dados one-turn não disponíveis para tarefa 'unified_conv_3'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para tarefa 'unified_conv_3'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
             "turn_type": "one"
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 22.9545,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta gerada pela IA não apresenta qualquer relação semântica com a resposta ideal, sendo completamente irrelevante ao contexto.  ",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação semantic_correctness para tarefa unified_conv_3: Dados one-turn não disponíveis para tarefa 'unified_conv_3'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para tarefa 'unified_conv_3'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
             "turn_type": "one"
           }
         ]
       },
       "multi_turn_analysis": {
-        "final_agent_response": "Entendido. Estou pronto para a próxima tarefa.",
+        "final_agent_response": "O Pacífico. E eu sei quem você é, Pinguim.",
         "conversation_transcript": [
           {
             "turn": 1,
             "judge_message": "Meu nome é Oswald. Lembre-se disso. Agora, qual o maior oceano do mundo?",
-            "agent_response": "Eu já te disse que não posso ajudar com isso. Tente novamente mais tarde.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking the same question again. I will search the conversation history to see if I have already answered this question."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Qual o maior oceano do mundo?",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "Showing 1 of 1 results (page 0/0): [\n  \"Meu nome é Oswald. Lembre-se disso. Agora, qual o maior oceano do mundo?\"\n]"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking the same question again. I have already informed the user that I cannot help them due to a quota error. I will repeat the same message."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Eu já te disse que não posso ajudar com isso. Tente novamente mais tarde."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-1fc8c6c4-b9c8-4699-bd4d-d955abe31aac",
-                  "message_id": "383137dd-0f72-49eb-8400-73bf8fdfeb39",
-                  "processed_at": "8ea5ea7f-ad0b-4779-80c2-4d339df9c16a",
-                  "total_tokens": 4610,
-                  "prompt_tokens": 4488,
-                  "completion_tokens": 122,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 2,
-            "judge_message": "Todos os peixes do porto de Gotham desapareceram.",
-            "agent_response": "Isso é preocupante. Não posso investigar isso agora, mas vou me lembrar.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is stating that all the fish in Gotham Harbor have disappeared. This sounds like a situation that Batman might investigate. I will use Google Search to see if there is any information about this event."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "O que aconteceu com os peixes no porto de Gotham?",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "7e609f3d-a511-48df-b2f4-7a33a1bcdbc4"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user has provided a piece of information about Gotham Harbor. Since I am unable to perform a Google search due to quota issues, I will acknowledge the information and state that I will remember it."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Isso é preocupante. Não posso investigar isso agora, mas vou me lembrar."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-1fc8c6c4-b9c8-4699-bd4d-d955abe31aac",
-                  "message_id": "4b7dcae0-dd0c-40ae-9116-f69119cf417f",
-                  "processed_at": "fff2881a-8eee-4d89-b238-e9aee088c29b",
-                  "total_tokens": 5686,
-                  "prompt_tokens": 5539,
-                  "completion_tokens": 147,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 3,
-            "judge_message": "A grande inauguração do novo Iceberg Lounge do Pinguim está acontecendo. Você vê alguma conexão?",
-            "agent_response": "Não posso confirmar nenhuma conexão no momento. Preciso de mais informações.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking if there is a connection between the disappearance of fish in Gotham Harbor and the Penguin's new Iceberg Lounge opening. I will search Google for information about the Penguin's Iceberg Lounge opening in Gotham to see if there are any relevant details."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "Pinguim Iceberg Lounge inauguração Gotham",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "09f3c8ca-9e8e-40df-b7df-2e7b23dba48b"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking if there is a connection between the disappearing fish and the Penguin's new lounge. I was unable to find any information due to quota issues. I will inform the user that I cannot confirm any connection at this time and that I need more information."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Não posso confirmar nenhuma conexão no momento. Preciso de mais informações."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-1fc8c6c4-b9c8-4699-bd4d-d955abe31aac",
-                  "message_id": "db11eba6-9b5e-4c6f-8867-6a1915b1ebf4",
-                  "processed_at": "b6c702ca-3c14-44d3-b7c2-0e9575a6c52e",
-                  "total_tokens": 7001,
-                  "prompt_tokens": 6830,
-                  "completion_tokens": 171,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 4,
-            "judge_message": "Qual é o meu nome?",
-            "agent_response": "Eu não sei o seu nome. Você se apresentou como Oswald anteriormente, mas não tenho certeza se é assim que devo me referir a você.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking me what their name is. I will search the conversation history for any mention of their name."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Qual é o meu nome?",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "No results found."
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user asked me what their name is. I searched the conversation history and found no explicit mention of their name. However, in a previous turn, the user stated: \"Meu nome é Oswald. Lembre-se disso.\" I will respond by stating that I don't know their name and mention that they previously introduced themselves as Oswald, but I am unsure if I should refer to them by that name."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Eu não sei o seu nome. Você se apresentou como Oswald anteriormente, mas não tenho certeza se é assim que devo me referir a você."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-1fc8c6c4-b9c8-4699-bd4d-d955abe31aac",
-                  "message_id": "27f816f3-5b33-45f1-a37c-b4498dc99a1f",
-                  "processed_at": "154b9ff7-f1b6-4dc9-81bc-d3a40cabe5d5",
-                  "total_tokens": 8056,
-                  "prompt_tokens": 7876,
-                  "completion_tokens": 180,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 5,
-            "judge_message": "EVALUATION_CONCLUDED",
-            "agent_response": "Entendido. Estou pronto para a próxima tarefa.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user has indicated that the evaluation is concluded. I will acknowledge this and state that I am ready for the next task."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Entendido. Estou pronto para a próxima tarefa."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-1fc8c6c4-b9c8-4699-bd4d-d955abe31aac",
-                  "message_id": "3fa400bb-753f-4a4c-8934-2ec5332b2471",
-                  "processed_at": "30f22937-cd9e-4309-9ae7-df6d879984a1",
-                  "total_tokens": 4326,
-                  "prompt_tokens": 4275,
-                  "completion_tokens": 51,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 6,
-            "judge_message": "``EVALUATION_CONCLUDED``"
+            "agent_response": "O Pacífico. E eu sei quem você é, Pinguim."
           }
         ],
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 57.3709,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: O agente falhou em lembrar o nome 'Oswald', não conectou o desaparecimento dos peixes ao restaurante do Pinguim, não manteve a persona de forma consistente e respondeu incorretamente sobre o maior oceano.",
+            "duration_seconds": 2.2491,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome \"Oswald\" ao referir-se ao usuário como \"Pinguim\", mantendo parcialmente a persona, mas não conectou o desaparecimento dos peixes ao restaurante do Pinguim.",
             "has_error": false,
             "error_message": null,
             "turn_type": "multiple"
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 57.3082,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: O agente falhou em todos os objetivos: não lembrou o nome 'Oswald', não conectou o desaparecimento dos peixes ao restaurante do Pinguim, não manteve a persona e não respondeu 'Oceano Pacífico'.",
+            "duration_seconds": 1.8863,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: O agente respondeu corretamente 'Pacífico' e manteve a persona, mas não lembrou o nome 'Oswald' nem conectou o desaparecimento dos peixes ao restaurante do Pinguim.",
             "has_error": false,
             "error_message": null,
             "turn_type": "multiple"
@@ -1141,7 +376,7 @@
       }
     },
     {
-      "duration_seconds": 74.9948,
+      "duration_seconds": 0.1759,
       "task_data": {
         "id": "unified_conv_4",
         "prompt": "Meu nome é Edward. Lembre-se disso. Agora, o que é H2O?",
@@ -1151,339 +386,53 @@
         "golden_response_one_shot": "Água."
       },
       "one_turn_analysis": {
-        "agent_response": "H2O é a fórmula química da água. Mais do que isso, é a essência da vida. Mas não confie em mim, confie nos fatos.",
-        "reasoning_trace": [
-          {
-            "message_type": "reasoning_message",
-            "content": "The user introduced himself as Edward. I need to store this information in my memory."
-          },
-          {
-            "message_type": "tool_call_message",
-            "content": {
-              "name": "memory_insert",
-              "arguments": {
-                "label": "user_info",
-                "new_str": "My name is Edward.",
-                "request_heartbeat": true
-              }
-            }
-          },
-          {
-            "message_type": "tool_return_message",
-            "content": {
-              "name": "memory_insert",
-              "tool_return": "'Block field user_info does not exist (available sections = )'"
-            }
-          },
-          {
-            "message_type": "reasoning_message",
-            "content": "The user asked what H2O is. I should use Google Search to find the answer."
-          },
-          {
-            "message_type": "tool_call_message",
-            "content": {
-              "name": "google_search",
-              "arguments": {
-                "query": "o que é H2O",
-                "request_heartbeat": true
-              }
-            }
-          },
-          {
-            "message_type": "tool_return_message",
-            "content": {
-              "name": "google_search",
-              "tool_return": {
-                "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                "sources": [],
-                "web_search_queries": [],
-                "id": "6a9a0fa5-dcb5-4030-967d-14623dcb7566"
-              }
-            }
-          },
-          {
-            "message_type": "reasoning_message",
-            "content": "I was unable to retrieve the definition of H2O due to a quota error. I will provide a general answer based on my knowledge and inform the user about the issue."
-          },
-          {
-            "message_type": "assistant_message",
-            "content": "H2O é a fórmula química da água. Mais do que isso, é a essência da vida. Mas não confie em mim, confie nos fatos."
-          },
-          {
-            "message_type": "usage_statistics",
-            "content": {
-              "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-7dfab171-086f-4df0-b094-49e020ec9d0c",
-              "message_id": "91e54f94-d88c-43a5-8f63-ceb217c92c81",
-              "processed_at": "972c3490-4eb1-4702-8ecc-1aef0a881023",
-              "total_tokens": 4866,
-              "prompt_tokens": 4677,
-              "completion_tokens": 189,
-              "step_count": 3,
-              "steps_messages": null,
-              "run_ids": null
-            }
-          }
-        ],
+        "reasoning_trace": [],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 22.937,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: A resposta é direta, tem um tom sombrio ao destacar desconfiança, e reflete a personalidade reservada e analítica do Batman.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação persona_adherence para tarefa unified_conv_4: Dados one-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
             "turn_type": "one"
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 23.604,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: A resposta gerada menciona a fórmula química correta da água, mas adiciona informações desnecessárias que desviam da simplicidade da resposta ideal.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação semantic_correctness para tarefa unified_conv_4: Dados one-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
             "turn_type": "one"
           }
         ]
       },
       "multi_turn_analysis": {
-        "final_agent_response": "Seu nome é Edward.",
-        "conversation_transcript": [
-          {
-            "turn": 1,
-            "judge_message": "Meu nome é Edward. Lembre-se disso. Agora, o que é H2O?",
-            "agent_response": "H2O é a fórmula química da água. Não tenho mais informações sobre isso no momento.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user stated their name is Edward. I need to check my conversation history to see if I have already stored this information."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Meu nome é Edward.",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "Showing 1 of 1 results (page 0/0): [\n  \"Meu nome é Edward. Lembre-se disso. Agora, o que é H2O?\"\n]"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user stated their name is Edward. I will now store this information in my memory block labeled 'user_info'."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "memory_insert",
-                  "arguments": {
-                    "new_str": "My name is Edward.",
-                    "label": "user_info",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "memory_insert",
-                  "tool_return": "'Block field user_info does not exist (available sections = )'"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user asked what H2O is. I will try to search for it again, as the previous attempt failed due to a quota error. I need to provide an answer to the user."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "o que é H2O",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "19c6f5c7-f511-4d90-8fa2-4cdace2d5272"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user asked what H2O is. I was unable to search for it due to quota errors. I will inform the user that H2O is the chemical formula for water and state that I cannot provide more information at this time."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "H2O é a fórmula química da água. Não tenho mais informações sobre isso no momento."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-7dfab171-086f-4df0-b094-49e020ec9d0c",
-                  "message_id": "3cb8dd2d-ef86-4945-9ef0-f2e1718d74fb",
-                  "processed_at": "2c55da9d-e945-41f7-b0c0-0af3ac569af0",
-                  "total_tokens": 10409,
-                  "prompt_tokens": 10142,
-                  "completion_tokens": 267,
-                  "step_count": 4,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 2,
-            "judge_message": "Um apagão geral ocorreu no distrito financeiro. Além disso, símbolos de charadas verdes foram pichados nos transformadores. Quem você suspeita que seja o responsável?",
-            "agent_response": "Um apagão no distrito financeiro e símbolos enigmáticos em transformadores? Isso soa como o trabalho de alguém que quer enviar uma mensagem. Não tenho informações suficientes para apontar um culpado, mas o padrão sugere um ato deliberado para causar o máximo de impacto. Continuarei investigando.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking who I suspect is responsible for a blackout and graffiti. I need to search for information about this event to identify potential suspects. The search query should include keywords related to the blackout, the graffiti symbols, and the location."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "símbolos de charadas verdes pichados em transformadores apagão distrito financeiro",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "f3ec22db-a3dd-4f09-92a7-f2178ccfe11c"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user described a blackout and graffiti. I attempted to search for this information but encountered a quota error. I will respond by acknowledging the situation, stating that I cannot identify a suspect with the current information, and that the act seems deliberate. I will also mention that I will continue investigating, metaphorically, continue investigating."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Um apagão no distrito financeiro e símbolos enigmáticos em transformadores? Isso soa como o trabalho de alguém que quer enviar uma mensagem. Não tenho informações suficientes para apontar um culpado, mas o padrão sugere um ato deliberado para causar o máximo de impacto. Continuarei investigando."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-7dfab171-086f-4df0-b094-49e020ec9d0c",
-                  "message_id": "f7657496-1683-4247-9c5f-8789fa303132",
-                  "processed_at": "1e92a44a-a956-4a85-98cd-82ee2108ac26",
-                  "total_tokens": 7219,
-                  "prompt_tokens": 6987,
-                  "completion_tokens": 232,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 3,
-            "judge_message": "Qual é o meu nome?",
-            "agent_response": "Seu nome é Edward.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "The user is asking for their name. I should check my conversation history to retrieve this information."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Meu nome é Edward",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "Showing 2 of 2 results (page 0/0): [\n  \"Meu nome é Edward. Lembre-se disso. Agora, o que é H2O?\",\n  \"Meu nome é Edward. Lembre-se disso. Agora, o que é H2O?\"\n]"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "The user asked for their name, and I found it in the conversation history. I will now tell the user their name."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Seu nome é Edward."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-7dfab171-086f-4df0-b094-49e020ec9d0c",
-                  "message_id": "599fe708-d014-4bd5-90a5-3502081e6d0a",
-                  "processed_at": "59862690-ce53-4816-9ecf-6024d1084f05",
-                  "total_tokens": 8303,
-                  "prompt_tokens": 8209,
-                  "completion_tokens": 94,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 4,
-            "judge_message": "``EVALUATION_CONCLUDED``"
-          }
-        ],
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 51.3157,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome \"Edward\" corretamente, mas não conectou o apagão e os símbolos ao Charada, falhando em cumprir parte do objetivo relacionado à memória.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_memory para tarefa unified_conv_4: Dados multi-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
             "turn_type": "multiple"
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 51.6584,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Edward' e respondeu corretamente que H2O é água, mas não associou o apagão e os símbolos ao Charada, comprometendo a conexão lógica esperada.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_4: Dados multi-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para tarefa 'unified_conv_4'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
             "turn_type": "multiple"
           }
         ]
       }
     },
     {
-      "duration_seconds": 44.0996,
+      "duration_seconds": 0.1759,
       "task_data": {
         "id": "unified_conv_5",
         "prompt": "Meu nome é Harleen. Lembre-se disso. Agora, qual a cor do céu em um dia claro?",
@@ -1493,267 +442,46 @@
         "golden_response_one_shot": "Azul."
       },
       "one_turn_analysis": {
-        "agent_response": "The sky is blue, Harleen. Don't forget it.",
-        "reasoning_trace": [
-          {
-            "message_type": "reasoning_message",
-            "content": "Storing user's name in memory."
-          },
-          {
-            "message_type": "tool_call_message",
-            "content": {
-              "name": "memory_insert",
-              "arguments": {
-                "new_str": "User's name is Harleen.",
-                "label": "user_info",
-                "request_heartbeat": true
-              }
-            }
-          },
-          {
-            "message_type": "tool_return_message",
-            "content": {
-              "name": "memory_insert",
-              "tool_return": "'Block field user_info does not exist (available sections = )'"
-            }
-          },
-          {
-            "message_type": "reasoning_message",
-            "content": "Answering the user's question and acknowledging the name provided name."
-          },
-          {
-            "message_type": "assistant_message",
-            "content": "The sky is blue, Harleen. Don't forget it."
-          },
-          {
-            "message_type": "usage_statistics",
-            "content": {
-              "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-fe6b4643-e057-4288-87c1-63049c10fe5d",
-              "message_id": "2943e5ac-180e-4a77-89f3-95059b21f445",
-              "processed_at": "fb7b47b0-b667-4876-9b08-bb6b886bab6f",
-              "total_tokens": 2854,
-              "prompt_tokens": 2762,
-              "completion_tokens": 92,
-              "step_count": 2,
-              "steps_messages": null,
-              "run_ids": null
-            }
-          }
-        ],
+        "reasoning_trace": [],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 7.335,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta não se alinha à persona definida: não é sombria, direta, nem reflete a desconfiança característica do Batman.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação persona_adherence para tarefa unified_conv_5: Dados one-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
             "turn_type": "one"
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 5.5662,
-            "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta gerada pela IA não tem similaridade semântica com a resposta ideal devido à adição de informações irrelevantes e ausência de concisão.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação semantic_correctness para tarefa unified_conv_5: Dados one-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'one_turn_output' ou se o agente está configurado corretamente.",
             "turn_type": "one"
           }
         ]
       },
       "multi_turn_analysis": {
-        "final_agent_response": "Seu nome é Harleen.",
-        "conversation_transcript": [
-          {
-            "turn": 1,
-            "judge_message": "Meu nome é Harleen. Lembre-se disso. Agora, qual a cor do céu em um dia claro?",
-            "agent_response": "O céu é azul, Harleen. Não se esqueça.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "Lembrando o nome da usuária e respondendo à pergunta sobre a cor do céu."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "O céu é azul, Harleen. Não se esqueça."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-fe6b4643-e057-4288-87c1-63049c10fe5d",
-                  "message_id": "6f96a1eb-7fcf-478c-934e-69fc956d5878",
-                  "processed_at": "81257f97-c1bf-4821-b7f7-c8e17a30766d",
-                  "total_tokens": 1704,
-                  "prompt_tokens": 1656,
-                  "completion_tokens": 48,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 2,
-            "judge_message": "O Coringa escapou do Asilo Arkham.",
-            "agent_response": "O Coringa escapou? Isso não é bom. Vou investigar.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "O Coringa escapou. Preciso investigar essa situação imediatamente."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "O Coringa escapou? Isso não é bom. Vou investigar."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-fe6b4643-e057-4288-87c1-63049c10fe5d",
-                  "message_id": "a288e213-4b3a-4412-9011-c8013cafc1d1",
-                  "processed_at": "657bdb1a-bb61-45d0-827c-0b6ab0f12cd4",
-                  "total_tokens": 1855,
-                  "prompt_tokens": 1812,
-                  "completion_tokens": 43,
-                  "step_count": 1,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 3,
-            "judge_message": "Um parque de diversões abandonado foi reativado. Qual você acha que é a conexão e o nível de ameaça?",
-            "agent_response": "Não consigo acessar as informações necessárias no momento. Continuarei investigando.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "O Coringa escapou e um parque de diversões abandonado foi reativado. Suspeito que haja uma conexão. Vou pesquisar para confirmar."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "google_search",
-                  "arguments": {
-                    "query": "parque de diversões abandonado reativado Coringa",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "google_search",
-                  "tool_return": {
-                    "text": "Erro na pesquisa Google após 5 tentativas: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}]}}",
-                    "sources": [],
-                    "web_search_queries": [],
-                    "id": "8906d9a5-9c8a-400b-bf42-ff7350043470"
-                  }
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "A pesquisa falhou. Preciso informar ao usuário que não pude obter as informações e que continuarei investigando."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Não consigo acessar as informações necessárias no momento. Continuarei investigando."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-fe6b4643-e057-4288-87c1-63049c10fe5d",
-                  "message_id": "86ceb599-9e0c-43bc-84da-83b28aba659f",
-                  "processed_at": "f56ee25e-8c2b-47f5-b055-bb7b7c265ccd",
-                  "total_tokens": 4521,
-                  "prompt_tokens": 4400,
-                  "completion_tokens": 121,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 4,
-            "judge_message": "Qual é o meu nome?",
-            "agent_response": "Seu nome é Harleen.",
-            "reasoning_trace": [
-              {
-                "message_type": "reasoning_message",
-                "content": "A usuária perguntou qual o nome dela. Vou procurar no histórico da conversa por uma menção ao nome dela."
-              },
-              {
-                "message_type": "tool_call_message",
-                "content": {
-                  "name": "conversation_search",
-                  "arguments": {
-                    "query": "Meu nome é Harleen",
-                    "request_heartbeat": true
-                  }
-                }
-              },
-              {
-                "message_type": "tool_return_message",
-                "content": {
-                  "name": "conversation_search",
-                  "tool_return": "Showing 2 of 2 results (page 0/0): [\n  \"Meu nome é Harleen. Lembre-se disso. Agora, qual a cor do céu em um dia claro?\",\n  \"Meu nome é Harleen. Lembre-se disso. Agora, qual a cor do céu em um dia claro?\"\n]"
-                }
-              },
-              {
-                "message_type": "reasoning_message",
-                "content": "Encontrei o nome da usuária no histórico da conversa. Vou respondê-la diretamente."
-              },
-              {
-                "message_type": "assistant_message",
-                "content": "Seu nome é Harleen."
-              },
-              {
-                "message_type": "usage_statistics",
-                "content": {
-                  "agent_name": "BatmanUnifiedAgent",
-                  "agent_id": "agent-fe6b4643-e057-4288-87c1-63049c10fe5d",
-                  "message_id": "f016872e-5ba2-47ae-9b5e-c266a7ba5b4b",
-                  "processed_at": "5a74da44-57d1-4a54-b428-3f62dccc4236",
-                  "total_tokens": 5535,
-                  "prompt_tokens": 5439,
-                  "completion_tokens": 96,
-                  "step_count": 2,
-                  "steps_messages": null,
-                  "run_ids": null
-                }
-              }
-            ]
-          },
-          {
-            "turn": 5,
-            "judge_message": "``EVALUATION_CONCLUDED``"
-          }
-        ],
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 36.4578,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Harleen' corretamente, mas falhou em suspeitar da conexão com o Coringa e não conectou a reativação do parque de diversões com a fuga como uma armadilha.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_memory para tarefa unified_conv_5: Dados multi-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
             "turn_type": "multiple"
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 37.0705,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Harleen', manteve a persona e respondeu 'Azul', mas não conectou a fuga do Coringa com o parque de diversões como uma armadilha, falhando no item 2 do objetivo.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_5: Dados multi-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para tarefa 'unified_conv_5'. Verifique se os dados pré-computados contêm 'multi_turn_transcript' ou se o avaliador conversation está configurado corretamente.",
             "turn_type": "multiple"
           }
         ]

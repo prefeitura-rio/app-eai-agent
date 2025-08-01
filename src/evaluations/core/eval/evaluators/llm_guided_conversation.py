@@ -9,6 +9,8 @@ from src.evaluations.core.eval import (
     AgentResponse,
 )
 
+from src.evaluations.core.eval.log import logger
+
 
 class LLMGuidedConversation(BaseConversationEvaluator):
     """
@@ -53,39 +55,42 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
         last_response = AgentResponse(output=None, messages=[])
 
         for turn in range(15):  # Limite de turnos para evitar loops infinitos
-            agent_res = await agent_manager.send_message(current_message)
-            last_response = agent_res
-            transcript.append(
-                ConversationTurn(
-                    turn=turn + 1,
-                    judge_message=current_message,
-                    agent_response=agent_res.output,
-                    reasoning_trace=agent_res.messages,
-                )
-            )
-            history.append(
-                f"Turno {turn+1} - User: {current_message}\nTurno {turn+1} - Agente: {agent_res.output}"
-            )
+            turn_context_string = f"multi-turn[{turn + 1}]"
+            with logger.contextualize(turn_type=turn_context_string):
 
-            prompt_for_judge = self.CONVERSATIONAL_JUDGE_PROMPT.format(
-                task=task.model_dump(),
-                agent_response={"conversation_history": "\n".join(history)},
-                stop_signal=JUDGE_STOP_SIGNAL,
-            )
-            judge_res = await self.judge_client.execute(prompt_for_judge)
-
-            if JUDGE_STOP_SIGNAL in judge_res:
-                history.append(f"Turno {turn+2} - User: {judge_res}")
+                agent_res = await agent_manager.send_message(current_message)
+                last_response = agent_res
                 transcript.append(
                     ConversationTurn(
-                        turn=turn + 2,
-                        judge_message=judge_res,
-                        agent_response=None,
-                        reasoning_trace=None,
+                        turn=turn + 1,
+                        judge_message=current_message,
+                        agent_response=agent_res.output,
+                        reasoning_trace=agent_res.messages,
                     )
                 )
-                break
-            current_message = judge_res
+                history.append(
+                    f"Turno {turn+1} - User: {current_message}\nTurno {turn+1} - Agente: {agent_res.output}"
+                )
+
+                prompt_for_judge = self.CONVERSATIONAL_JUDGE_PROMPT.format(
+                    task=task.model_dump(),
+                    agent_response={"conversation_history": "\n".join(history)},
+                    stop_signal=JUDGE_STOP_SIGNAL,
+                )
+                judge_res = await self.judge_client.execute(prompt_for_judge)
+
+                if JUDGE_STOP_SIGNAL in judge_res:
+                    history.append(f"Turno {turn+2} - User: {judge_res}")
+                    transcript.append(
+                        ConversationTurn(
+                            turn=turn + 2,
+                            judge_message=judge_res,
+                            agent_response=None,
+                            reasoning_trace=None,
+                        )
+                    )
+                    break
+                current_message = judge_res
 
         end_time = time.monotonic()
         duration = end_time - start_time
