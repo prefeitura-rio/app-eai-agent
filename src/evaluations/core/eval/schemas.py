@@ -14,9 +14,9 @@ class ConversationTurn(BaseModel):
     """Representa um turno completo em uma conversa multi-turno."""
 
     turn: int
-    judge_message: str
-    agent_response: Optional[str] = None
-    reasoning_trace: Optional[List[ReasoningStep]] = None
+    user_message: str
+    agent_message: Optional[str] = None
+    agent_reasoning_trace: Optional[List[ReasoningStep]] = None
 
 
 class EvaluationTask(BaseModel):
@@ -38,8 +38,8 @@ class AgentResponse(BaseModel):
     Estrutura a resposta de uma interação com o agente, seja de um ou múltiplos turnos.
     """
 
-    output: Optional[str] = None
-    messages: Optional[List[ReasoningStep]] = None
+    message: Optional[str] = None
+    reasoning_trace: Optional[List[ReasoningStep]] = None
 
 
 class MultiTurnContext(BaseModel):
@@ -56,8 +56,8 @@ class ConversationOutput(BaseModel):
     """
 
     transcript: List[ConversationTurn]
-    final_agent_response: AgentResponse
-    history_for_judge: List[str]
+    final_agent_message_details: AgentResponse
+    conversation_history: List[str]
     duration_seconds: float
 
 
@@ -76,19 +76,21 @@ class EvaluationResult(BaseModel):
 class OneTurnAnalysis(BaseModel):
     """Estrutura a análise completa para uma avaliação de turno único."""
 
-    agent_response: Optional[str] = None
-    reasoning_trace: Optional[List[ReasoningStep]] = None
+    agent_message: Optional[str] = None
+    agent_reasoning_trace: Optional[List[ReasoningStep]] = None
     evaluations: List[Dict[str, Any]] = []
-    error: Optional[str] = None
+    has_error: bool = False
+    error_message: Optional[str] = None
 
 
 class MultiTurnAnalysis(BaseModel):
     """Estrutura a análise completa para uma avaliação multi-turno."""
 
-    final_agent_response: Optional[str] = None
-    conversation_transcript: Optional[List[ConversationTurn]] = None
+    final_agent_message: Optional[str] = None
+    transcript: Optional[List[ConversationTurn]] = None
     evaluations: List[Dict[str, Any]] = []
-    error: Optional[str] = None
+    has_error: bool = False
+    error_message: Optional[str] = None
 
 
 class RunResult(BaseModel):
@@ -101,4 +103,3 @@ class RunResult(BaseModel):
     task_data: EvaluationTask
     one_turn_analysis: OneTurnAnalysis
     multi_turn_analysis: MultiTurnAnalysis
-    error: Optional[str] = None

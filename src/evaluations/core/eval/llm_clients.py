@@ -116,9 +116,11 @@ class EAIConversationManager:
 
                 # Converte a lista de dicionários para uma lista de objetos Pydantic
                 reasoning_steps = [ReasoningStep(**msg) for msg in parsed_messages]
-                return AgentResponse(output=output_content, messages=reasoning_steps)
+                return AgentResponse(
+                    message=output_content, reasoning_trace=reasoning_steps
+                )
 
-            return AgentResponse(output=None, messages=[])
+            return AgentResponse(message=None, reasoning_trace=[])
 
         except EAIClientError as e:
             # Apenas loga e relança a exceção já contextualizada

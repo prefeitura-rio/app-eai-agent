@@ -56,36 +56,36 @@ class TaskProcessor:
         one_turn_result, multi_turn_result = results
 
         # 2. Processa o resultado de one-turn
-        one_turn_response = AgentResponse(output=None, messages=[])
+        one_turn_response = AgentResponse(message=None, reasoning_trace=[])
         one_turn_duration = 0.0
         one_turn_analysis = OneTurnAnalysis()
 
         if isinstance(one_turn_result, Exception):
             error_msg = f"Falha ao obter resposta one-turn: {str(one_turn_result)}"
             logger.error(f"{error_msg} para a tarefa {task_id}", exc_info=False)
-            one_turn_analysis.error = error_msg
+            one_turn_analysis.has_error = True
+            one_turn_analysis.error_message = error_msg
         else:
             one_turn_response, one_turn_duration = one_turn_result
-            one_turn_analysis.agent_response = one_turn_response.output
-            one_turn_analysis.reasoning_trace = one_turn_response.messages
+            one_turn_analysis.agent_message = one_turn_response.message
+            one_turn_analysis.agent_reasoning_trace = one_turn_response.reasoning_trace
 
         # 3. Processa o resultado de multi-turn
         multi_turn_output: Optional[ConversationOutput] = None
         multi_turn_analysis = MultiTurnAnalysis()
 
         if isinstance(multi_turn_result, Exception):
-            error_msg = (
-                f"Falha ao obter resposta multi-turn: {str(multi_turn_result)}"
-            )
+            error_msg = f"Falha ao obter resposta multi-turn: {str(multi_turn_result)}"
             logger.error(f"{error_msg} para a tarefa {task_id}", exc_info=False)
-            multi_turn_analysis.error = error_msg
+            multi_turn_analysis.has_error = True
+            multi_turn_analysis.error_message = error_msg
         else:
             multi_turn_output = multi_turn_result
             if multi_turn_output:
-                multi_turn_analysis.final_agent_response = (
-                    multi_turn_output.final_agent_response.output
+                multi_turn_analysis.final_agent_message = (
+                    multi_turn_output.final_agent_message_details.message
                 )
-                multi_turn_analysis.conversation_transcript = multi_turn_output.transcript
+                multi_turn_analysis.transcript = multi_turn_output.transcript
 
         # 4. Executa as avaliações com os dados disponíveis
         evaluations = await self._execute_evaluations(
@@ -106,7 +106,7 @@ class TaskProcessor:
             one_turn_analysis=one_turn_analysis,
             multi_turn_analysis=multi_turn_analysis,
         )
-        return run_result.model_dump(exclude_none=True)
+        return run_result.model_dump()
 
     async def _get_one_turn_response(
         self, task: EvaluationTask
@@ -259,7 +259,7 @@ class TaskProcessor:
                 f"Dados multi-turn não disponíveis para a tarefa '{task.id}'."
             )
         multi_turn_context = MultiTurnContext(
-            conversation_history="\n".join(multi_turn_output.history_for_judge),
+            conversation_history="\n".join(multi_turn_output.conversation_history),
             transcript=multi_turn_output.transcript,
         )
         return await evaluator.evaluate(agent_response=multi_turn_context, task=task)
@@ -270,7 +270,7 @@ class TaskProcessor:
         task: EvaluationTask,
         one_turn_response: AgentResponse,
     ) -> EvaluationResult:
-        if one_turn_response.output is None:
+        if one_turn_response.message is None:
             raise ValueError(
                 f"Dados one-turn não disponíveis para a tarefa '{task.id}'."
             )

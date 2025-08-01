@@ -19,7 +19,7 @@ class SemanticCorrectnessEvaluator(BaseEvaluator):
     PROMPT_TEMPLATE = """
 Avalie similaridade semântica da resposta gerada por uma IA em relacao a Resposta ideal.
 **Resposta Gerada pela IA:**
-{agent_response[output]}
+{agent_response[message]}
 **Resposta Ideal:**
 {task[golden_response_one_shot]}
 

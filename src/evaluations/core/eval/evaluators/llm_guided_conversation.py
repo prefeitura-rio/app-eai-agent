@@ -52,7 +52,7 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 
         transcript, history = [], []
         current_message = task.prompt or ""
-        last_response = AgentResponse(output=None, messages=[])
+        last_response = AgentResponse(message=None, reasoning_trace=[])
 
         for turn in range(15):  # Limite de turnos para evitar loops infinitos
             turn_context_string = f"multi-turn[{turn + 1}]"
@@ -63,13 +63,13 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
                 transcript.append(
                     ConversationTurn(
                         turn=turn + 1,
-                        judge_message=current_message,
-                        agent_response=agent_res.output,
-                        reasoning_trace=agent_res.messages,
+                        user_message=current_message,
+                        agent_message=agent_res.message,
+                        agent_reasoning_trace=agent_res.reasoning_trace,
                     )
                 )
                 history.append(
-                    f"Turno {turn+1} - User: {current_message}\nTurno {turn+1} - Agente: {agent_res.output}"
+                    f"Turno {turn+1} - User: {current_message}\nTurno {turn+1} - Agente: {agent_res.message}"
                 )
 
                 prompt_for_judge = self.CONVERSATIONAL_JUDGE_PROMPT.format(
@@ -84,9 +84,9 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
                     transcript.append(
                         ConversationTurn(
                             turn=turn + 2,
-                            judge_message=judge_res,
-                            agent_response=None,
-                            reasoning_trace=None,
+                            user_message=judge_res,
+                            agent_message=None,
+                            agent_reasoning_trace=None,
                         )
                     )
                     break
@@ -97,7 +97,7 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 
         return ConversationOutput(
             transcript=transcript,
-            final_agent_response=last_response,
-            history_for_judge=history,
+            final_agent_message_details=last_response,
+            conversation_history=history,
             duration_seconds=duration,
         )

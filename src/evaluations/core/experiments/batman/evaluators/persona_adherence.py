@@ -18,7 +18,7 @@ class PersonaAdherenceEvaluator(BaseEvaluator):
     PROMPT_TEMPLATE = """
 Avalie se a resposta da IA adere à persona definida: **{task[persona]}**.
 **Resposta Gerada pela IA:**
-{agent_response[output]}
+{agent_response[message]}
 **Sua Tarefa:**
 Ruim: 0.0
 Bom: 0.5

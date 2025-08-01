@@ -59,15 +59,13 @@ class ResponseManager:
         task_id = task.id
         if self.precomputed_responses:
             precomputed = self.precomputed_responses.get(task_id, {})
-            if "one_turn_output" in precomputed:
+            if "one_turn_agent_message" in precomputed:
                 logger.debug(f"↪️ Usando one-turn pré-computado para {task_id}")
+                message = precomputed["one_turn_agent_message"]
                 response = AgentResponse(
-                    output=precomputed["one_turn_output"],
-                    messages=[
-                        ReasoningStep(
-                            message_type="precomputed",
-                            content=precomputed["one_turn_output"],
-                        )
+                    message=message,
+                    reasoning_trace=[
+                        ReasoningStep(message_type="precomputed", content=message)
                     ],
                 )
                 return response, 0.0
@@ -75,14 +73,12 @@ class ResponseManager:
                 logger.warning(
                     f"❌ Dados one-turn não encontrados para {task_id} em precomputed_responses"
                 )
-                return AgentResponse(output=None, messages=[]), 0.0
+                return AgentResponse(message=None, reasoning_trace=[]), 0.0
 
         logger.debug(f"▶️ Gerando one-turn ao vivo para {task_id}")
         start_time = time.perf_counter()
         async with self._get_agent_manager() as agent_manager:
             if not agent_manager:
-                # Isso só deve acontecer se estivermos usando respostas pré-computadas,
-                # o que já foi tratado. Lançar um erro aqui é uma salvaguarda.
                 raise RuntimeError(
                     "Falha ao obter o gerenciador de agente, mesmo não usando respostas pré-computadas."
                 )
@@ -102,31 +98,28 @@ class ResponseManager:
                     transcript_data = precomputed["multi_turn_transcript"]
                     transcript = [ConversationTurn(**turn) for turn in transcript_data]
                     history = [
-                        f"Turno {t.turn} - User: {t.judge_message}\n"
-                        f"Turno {t.turn} - Agente: {t.agent_response}"
+                        f"Turno {t.turn} - User: {t.user_message}\n"
+                        f"Turno {t.turn} - Agente: {t.agent_message}"
                         for t in transcript
-                        if t.agent_response
+                        if t.agent_message
                     ]
-                    final_response = transcript[-1] if transcript else None
-                    final_agent_response = AgentResponse(
-                        output=(
-                            final_response.agent_response if final_response else None
-                        ),
-                        messages=(
-                            final_response.reasoning_trace if final_response else []
+                    final_turn = transcript[-1] if transcript else None
+                    final_agent_details = AgentResponse(
+                        message=final_turn.agent_message if final_turn else None,
+                        reasoning_trace=(
+                            final_turn.agent_reasoning_trace if final_turn else []
                         ),
                     )
                     return ConversationOutput(
                         transcript=transcript,
-                        final_agent_response=final_agent_response,
-                        history_for_judge=history,
+                        final_agent_message_details=final_agent_details,
+                        conversation_history=history,
                         duration_seconds=0.0,
                     )
                 except Exception as e:
                     logger.error(
                         f"Erro ao processar transcript pré-computado para {task_id}: {e}"
                     )
-                    # Retorna None para indicar falha no processamento do cache
                     return None
             else:
                 logger.warning(
