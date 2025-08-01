@@ -49,6 +49,18 @@ class MultiTurnContext(BaseModel):
     transcript: List[ConversationTurn]
 
 
+class ConversationOutput(BaseModel):
+    """
+    Estrutura a saída de um avaliador do tipo 'conversation', contendo
+    todos os artefatos gerados durante o diálogo.
+    """
+
+    transcript: List[ConversationTurn]
+    final_agent_response: AgentResponse
+    history_for_judge: List[str]
+    duration_seconds: float
+
+
 class EvaluationResult(BaseModel):
     """
     Define a saída padronizada para qualquer método de avaliação, garantindo

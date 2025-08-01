@@ -6,9 +6,11 @@ Este pacote fornece um conjunto de ferramentas modulares e extensíveis para
 conduzir avaliações complexas de agentes de IA.
 """
 
-from src.evaluations.core.eval.conversation import ConversationHandler
 from src.evaluations.core.eval.dataloader import DataLoader
-from src.evaluations.core.eval.evaluators.base import BaseEvaluator
+from src.evaluations.core.eval.evaluators.base import (
+    BaseEvaluator,
+    BaseConversationEvaluator,
+)
 from src.evaluations.core.eval.llm_clients import (
     AgentConversationManager,
     AzureOpenAIClient,
@@ -26,12 +28,13 @@ from src.evaluations.core.eval.schemas import (
     MultiTurnAnalysis,
     ReasoningStep,
     RunResult,
+    ConversationOutput,
 )
 
 __all__ = [
-    "ConversationHandler",
     "DataLoader",
     "BaseEvaluator",
+    "BaseConversationEvaluator",
     "AgentConversationManager",
     "AzureOpenAIClient",
     "BaseJudgeClient",
@@ -46,4 +49,5 @@ __all__ = [
     "MultiTurnAnalysis",
     "ReasoningStep",
     "RunResult",
+    "ConversationOutput",
 ]

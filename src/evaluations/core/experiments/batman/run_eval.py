@@ -10,7 +10,6 @@ from src.evaluations.core.eval import (
     AzureOpenAIClient,
     GeminiAIClient,
     AsyncExperimentRunner,
-    ConversationHandler,
 )
 from src.services.eai_gateway.api import CreateAgentRequest
 from src.evaluations.core.experiments.batman.data.test_data import UNIFIED_TEST_DATA
@@ -23,8 +22,11 @@ from src.evaluations.core.experiments.batman.evaluators import (
     ConversationalMemoryEvaluator,
     SemanticCorrectnessEvaluator,
 )
+from src.evaluations.core.eval.evaluators.llm_guided_conversation import (
+    LLMGuidedConversation,
+)
 
-EXPERIMENT_DATA_PATH = Path("./src/evaluations/core/experiments/batman/data")
+EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 
 
 async def run_experiment():
@@ -36,7 +38,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe.head(1),
+        source=dataframe,
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -69,6 +71,7 @@ async def run_experiment():
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
+        LLMGuidedConversation(judge_client),
         ConversationalReasoningEvaluator(judge_client),
         ConversationalMemoryEvaluator(judge_client),
         PersonaAdherenceEvaluator(judge_client),
@@ -83,10 +86,6 @@ async def run_experiment():
         for evaluator in evaluators_to_run
         if hasattr(evaluator, "PROMPT_TEMPLATE")
     }
-    # Adiciona o prompt de condução da conversa, que agora está em ConversationHandler
-    judges_prompts["conversational_agent"] = (
-        ConversationHandler.CONVERSATIONAL_JUDGE_PROMPT
-    )
 
     metadata = {
         "agent_config": agent_config.model_dump(exclude_none=True),
@@ -95,21 +94,15 @@ async def run_experiment():
     }
 
     # --- 4. Carregamento de Respostas Pré-computadas (Opcional) ---
-    PRECOMPUTED_RESPONSES_PATH = (
-        EXPERIMENT_DATA_PATH / "precomputed_responses.json"
-    )  # ou None
+    PRECOMPUTED_RESPONSES_PATH = EXPERIMENT_DATA_PATH / "precomputed_responses.json"
     precomputed_responses_dict: Optional[Dict[str, Dict[str, Any]]] = None
-    if PRECOMPUTED_RESPONSES_PATH:
+    if PRECOMPUTED_RESPONSES_PATH and PRECOMPUTED_RESPONSES_PATH.exists():
         try:
             with open(PRECOMPUTED_RESPONSES_PATH, "r", encoding="utf-8") as f:
                 responses = json.load(f)
                 precomputed_responses_dict = {item["id"]: item for item in responses}
             logger.info(
                 f"✅ Respostas pré-computadas carregadas de {PRECOMPUTED_RESPONSES_PATH}"
-            )
-        except FileNotFoundError:
-            logger.warning(
-                f"⚠️ Arquivo de respostas pré-computadas não encontrado: {PRECOMPUTED_RESPONSES_PATH}"
             )
         except Exception as e:
             logger.error(f"❌ Erro ao carregar {PRECOMPUTED_RESPONSES_PATH}: {e}")
@@ -118,8 +111,8 @@ async def run_experiment():
     MAX_CONCURRENCY = 10
 
     runner = AsyncExperimentRunner(
-        experiment_name="Batman_Unified_Eval_v2_Refactored",
-        experiment_description="Avaliação de múltiplas facetas com arquitetura de avaliadores plugáveis.",
+        experiment_name="Batman_Unified_Eval_v3_Refactored",
+        experiment_description="Avaliação com ConversationEvaluator plugável.",
         metadata=metadata,
         agent_config=agent_config.model_dump(exclude_none=True),
         evaluators=evaluators_to_run,

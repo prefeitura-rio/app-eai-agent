@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-from src.evaluations.core.eval.llm_clients import (
-    AgentConversationManager,
-    BaseJudgeClient,
-)
-from src.evaluations.core.eval.schemas import (
+import time
+from src.evaluations.core.eval import (
+    BaseConversationEvaluator,
     EvaluationTask,
-    AgentResponse,
+    AgentConversationManager,
+    ConversationOutput,
     ConversationTurn,
+    AgentResponse,
 )
 
 
-class ConversationHandler:
+class LLMGuidedConversation(BaseConversationEvaluator):
     """
-    Gerencia a condução de uma única conversa entre um juiz LLM e o agente
-    a ser avaliado.
+    Conduz uma conversa onde um LLM-Juiz atua como o usuário,
+    seguindo um roteiro dinamicamente.
     """
+
+    name = "llm_guided_conversation"
 
     CONVERSATIONAL_JUDGE_PROMPT = """
 Você é um Juiz de IA conduzindo uma avaliação conversacional. Sua tarefa é seguir um roteiro.
@@ -37,18 +39,13 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 **Sua Próxima Fala ou Sinal de Parada:**
 """
 
-    def __init__(
-        self, conv_manager: AgentConversationManager, judge_client: BaseJudgeClient
-    ):
-        self.conv_manager = conv_manager
-        self.judge_client = judge_client
-
-    async def conduct(self, task: EvaluationTask):
+    async def evaluate(
+        self, task: EvaluationTask, agent_manager: AgentConversationManager
+    ) -> ConversationOutput:
         """
-        Conduz uma conversa multi-turno, guiada por um juiz, e retorna a
-        transcrição completa, a resposta final do agente e o histórico
-        formatado para avaliações.
+        Executa a lógica de condução da conversa.
         """
+        start_time = time.monotonic()
         JUDGE_STOP_SIGNAL = "`EVALUATION_CONCLUDED`"
 
         transcript, history = [], []
@@ -56,7 +53,7 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
         last_response = AgentResponse(output=None, messages=[])
 
         for turn in range(15):  # Limite de turnos para evitar loops infinitos
-            agent_res = await self.conv_manager.send_message(current_message)
+            agent_res = await agent_manager.send_message(current_message)
             last_response = agent_res
             transcript.append(
                 ConversationTurn(
@@ -90,4 +87,12 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
                 break
             current_message = judge_res
 
-        return transcript, last_response, history
+        end_time = time.monotonic()
+        duration = end_time - start_time
+
+        return ConversationOutput(
+            transcript=transcript,
+            final_agent_response=last_response,
+            history_for_judge=history,
+            duration_seconds=duration,
+        )

@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any, Union, Tuple, List
 
-from src.evaluations.core.eval.llm_clients import BaseJudgeClient
+from src.evaluations.core.eval.llm_clients import BaseJudgeClient, AgentConversationManager
 from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     EvaluationResult,
     AgentResponse,
     MultiTurnContext,
+    ConversationOutput,
 )
 from src.utils.log import logger
 
@@ -27,7 +28,7 @@ class BaseEvaluator(ABC):
     """
 
     name: str
-    turn_type: str  # 'one' ou 'multiple'
+    turn_type: str  # 'one', 'multiple', ou 'conversation'
 
     def __init__(self, judge_client: BaseJudgeClient):
         """
@@ -40,21 +41,10 @@ class BaseEvaluator(ABC):
         self.judge_client = judge_client
 
     @abstractmethod
-    async def evaluate(
-        self, agent_response: Any, task: EvaluationTask
-    ) -> EvaluationResult:
+    async def evaluate(self, *args, **kwargs) -> Any:
         """
-        Método abstrato que executa a lógica de avaliação específica da métrica.
-
-        Args:
-            agent_response (Any): A resposta do agente. Pode ser um `AgentResponse`
-                                  para avaliações de turno único ou um `MultiTurnContext`
-                                  para avaliações multi-turno.
-            task (EvaluationTask): A tarefa de avaliação contendo os dados de entrada
-                                   e os metadados necessários.
-
-        Returns:
-            EvaluationResult: O resultado padronizado da avaliação.
+        Método principal que será implementado por todas as subclasses.
+        A assinatura varia dependendo do tipo de avaliador.
         """
         raise NotImplementedError
 
@@ -95,3 +85,29 @@ class BaseEvaluator(ABC):
                 has_error=True,
                 error_message=str(e),
             )
+
+
+class BaseConversationEvaluator(BaseEvaluator):
+    """
+    Classe base para avaliadores que GERAM uma conversa multi-turno.
+    Seu propósito não é pontuar, mas sim produzir a transcrição que
+    outros avaliadores irão analisar.
+    """
+
+    turn_type: str = "conversation"
+
+    @abstractmethod
+    async def evaluate(
+        self, task: EvaluationTask, agent_manager: AgentConversationManager
+    ) -> ConversationOutput:
+        """
+        Executa a lógica de condução da conversa.
+
+        Args:
+            task (EvaluationTask): A tarefa inicial.
+            agent_manager (AgentConversationManager): O gerenciador para interagir com o agente.
+
+        Returns:
+            Um objeto ConversationOutput contendo os artefatos da conversa.
+        """
+        pass
