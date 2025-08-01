@@ -15,8 +15,8 @@ class ConversationTurn(BaseModel):
 
     turn: int
     judge_message: str
-    agent_response: Optional[str]
-    reasoning_trace: Optional[List[ReasoningStep]]
+    agent_response: Optional[str] = None
+    reasoning_trace: Optional[List[ReasoningStep]] = None
 
 
 class EvaluationTask(BaseModel):
@@ -38,8 +38,8 @@ class AgentResponse(BaseModel):
     Estrutura a resposta de uma interação com o agente, seja de um ou múltiplos turnos.
     """
 
-    output: Optional[str]
-    messages: Optional[List[ReasoningStep]]
+    output: Optional[str] = None
+    messages: Optional[List[ReasoningStep]] = None
 
 
 class MultiTurnContext(BaseModel):
@@ -55,7 +55,7 @@ class EvaluationResult(BaseModel):
     consistência nos resultados.
     """
 
-    score: Optional[float]
+    score: Optional[float] = None
     annotations: str
     has_error: bool = False
     error_message: Optional[str] = None
@@ -64,16 +64,16 @@ class EvaluationResult(BaseModel):
 class OneTurnAnalysis(BaseModel):
     """Estrutura a análise completa para uma avaliação de turno único."""
 
-    agent_response: Optional[str]
-    reasoning_trace: Optional[List[ReasoningStep]]
+    agent_response: Optional[str] = None
+    reasoning_trace: Optional[List[ReasoningStep]] = None
     evaluations: List[Dict[str, Any]]  # Mantido como Dict por flexibilidade no runner
 
 
 class MultiTurnAnalysis(BaseModel):
     """Estrutura a análise completa para uma avaliação multi-turno."""
 
-    final_agent_response: Optional[str]
-    conversation_transcript: Optional[List[ConversationTurn]]
+    final_agent_response: Optional[str] = None
+    conversation_transcript: Optional[List[ConversationTurn]] = None
     evaluations: List[Dict[str, Any]]  # Mantido como Dict por flexibilidade no runner
 
 

@@ -1,6 +1,7 @@
 import asyncio
 import json
 from typing import Dict, Any, Union
+from abc import ABC, abstractmethod
 from src.config import env
 
 from google import genai
@@ -134,9 +135,29 @@ class AgentConversationManager:
         # No futuro, poderia chamar uma API para deletar o agente
 
 
-class AzureOpenAIClient:
+class BaseJudgeClient(ABC):
     """
-    Cliente para Azure OpenAI, que herda de BaseLLMClient.
+    Define a interface para um cliente de LLM que atua como juiz,
+    garantindo que qualquer cliente (Azure, Gemini, etc.) tenha um método `execute`.
+    """
+
+    @abstractmethod
+    async def execute(self, prompt: str) -> str:
+        """
+        Executa um prompt e retorna a resposta em texto.
+
+        Args:
+            prompt (str): O prompt a ser enviado para o LLM.
+
+        Returns:
+            str: A resposta do LLM.
+        """
+        pass
+
+
+class AzureOpenAIClient(BaseJudgeClient):
+    """
+    Cliente para Azure OpenAI.
     """
 
     def __init__(self, model_name: str):
@@ -171,9 +192,9 @@ class AzureOpenAIClient:
             raise
 
 
-class GeminiAIClient:
+class GeminiAIClient(BaseJudgeClient):
     """
-    Cliente para Azure OpenAI, que herda de BaseLLMClient.
+    Cliente para a API Gemini do Google.
     """
 
     def __init__(self, model_name: str):
@@ -233,13 +254,13 @@ async def main():
         prompt1 = "Quem é voce?"
         print(f"\nEnviando: {prompt1}")
         response1 = await manager.send_message(prompt1)
-        print(json.dumps(response1, ensure_ascii=False, indent=2))
+        print(json.dumps(response1.model_dump(), ensure_ascii=False, indent=2))
 
         # # Envia a segunda mensagem na mesma conversa
         # prompt2 = "E qual a sua missão?"
         # print(f"\nEnviando: {prompt2}")
         # response2 = await manager.send_message(prompt2)
-        # print(json.dumps(response2, ensure_ascii=False, indent=2))
+        # print(json.dumps(response2.model_dump(), ensure_ascii=False, indent=2))
 
     except Exception as e:
         print(f"Ocorreu um erro: {e}")

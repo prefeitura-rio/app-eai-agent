@@ -9,12 +9,9 @@ from typing import List, Dict, Any, Optional, Tuple
 from tqdm.asyncio import tqdm_asyncio
 
 from src.evaluations.core.dataloader import DataLoader
-from src.evaluations.core.llm_clients import AgentConversationManager
-from src.evaluations.core.evals import (
-    Evals,
-    _EVAL_METHODS_REGISTRY,
-    ConversationHandler,
-)
+from src.evaluations.core.llm_clients import AgentConversationManager, BaseJudgeClient
+from src.evaluations.core.evaluators.base import BaseEvaluator
+from src.evaluations.core.conversation import ConversationHandler
 from src.evaluations.core.schemas import (
     EvaluationTask,
     AgentResponse,
@@ -28,7 +25,6 @@ from src.evaluations.core.schemas import (
 )
 from src.services.eai_gateway.api import CreateAgentRequest
 from src.utils.bigquery import upload_experiment_to_bq
-
 from src.utils.log import logger
 
 
@@ -41,8 +37,8 @@ class AsyncExperimentRunner:
         experiment_description: str,
         metadata: Dict[str, Any],
         agent_config: Dict[str, Any],
-        evaluation_suite: Evals,
-        metrics_to_run: List[str],
+        evaluators: List[BaseEvaluator],
+        judge_client: BaseJudgeClient,
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         max_concurrency: int = 10,
         upload_to_bq: bool = True,
@@ -51,8 +47,8 @@ class AsyncExperimentRunner:
         self.experiment_description = experiment_description
         self.metadata = metadata
         self.agent_config = agent_config
-        self.evaluation_suite = evaluation_suite
-        self.metrics_to_run = metrics_to_run
+        self.evaluators = evaluators
+        self.judge_client = judge_client
         self.precomputed_responses = (
             precomputed_responses if precomputed_responses else {}
         )
@@ -145,7 +141,7 @@ class AsyncExperimentRunner:
             await agent_multiple.initialize()
             handler = ConversationHandler(
                 conv_manager=agent_multiple,
-                evaluation_suite=self.evaluation_suite,
+                judge_client=self.judge_client,
             )
             transcript, last_response, history = await handler.conduct(task)
             end_time = time.monotonic()
@@ -173,82 +169,65 @@ class AsyncExperimentRunner:
             return result, end_time - start_time
 
         coroutine_map = []
-        for metric_name in self.metrics_to_run:
-            eval_info = _EVAL_METHODS_REGISTRY.get(metric_name)
-            if not eval_info:
-                logger.warning(
-                    f"Métrica de avaliação '{metric_name}' não encontrada no registro. Pulando."
-                )
-                evaluation_results.append(
-                    {
-                        "metric_name": metric_name,
-                        "score": None,
-                        "has_error": True,
-                        "error_message": f"Métrica '{metric_name}' não registrada.",
-                        "annotations": None,
-                        "duration_seconds": 0.0,
-                        "eval_type": "unknown",
-                    }
-                )
-                continue
-
-            eval_func = getattr(self.evaluation_suite, metric_name)
+        for evaluator in self.evaluators:
             error_msg = None
-
-            if eval_info["turns"] == "multiple":
+            if evaluator.turn_type == "multiple":
                 if history:
                     multi_turn_context = MultiTurnContext(
                         conversation_history="\n".join(history),
                         transcript=transcript,
                     )
-                    coro = eval_func(agent_response=multi_turn_context, task=task)
-                    coroutine_map.append((metric_name, _time_evaluation(coro)))
+                    coro = evaluator.evaluate(
+                        agent_response=multi_turn_context, task=task
+                    )
+                    coroutine_map.append((evaluator, _time_evaluation(coro)))
                 elif self.precomputed_responses:
                     error_msg = f"Chave 'multi_turn_transcript' não encontrada para a tarefa '{task_id}'"
-            else:
+            else:  # turn_type == "one"
                 if one_turn_response.output is not None:
-                    coro = eval_func(agent_response=one_turn_response, task=task)
-                    coroutine_map.append((metric_name, _time_evaluation(coro)))
+                    coro = evaluator.evaluate(
+                        agent_response=one_turn_response, task=task
+                    )
+                    coroutine_map.append((evaluator, _time_evaluation(coro)))
                 elif self.precomputed_responses:
                     error_msg = f"Chave 'one_turn_output' não encontrada para a tarefa '{task_id}'"
 
             if error_msg:
                 evaluation_results.append(
                     {
-                        "metric_name": metric_name,
+                        "metric_name": evaluator.name,
                         "score": None,
                         "has_error": True,
                         "error_message": error_msg,
                         "annotations": None,
                         "duration_seconds": 0.0,
-                        "eval_type": eval_info["turns"],
+                        "turn_type": evaluator.turn_type,
                     }
                 )
 
         if coroutine_map:
             gathered_results = await asyncio.gather(*[c for _, c in coroutine_map])
-            valid_metrics = [m for m, _ in coroutine_map]
+            valid_evaluators = [e for e, _ in coroutine_map]
 
             for i, (res, judge_duration) in enumerate(gathered_results):
-                metric_name = valid_metrics[i]
-                eval_info = _EVAL_METHODS_REGISTRY[metric_name]
+                evaluator = valid_evaluators[i]
                 res_model = EvaluationResult.model_validate(res)
 
                 generation_duration = (
                     multi_turn_duration
-                    if eval_info["turns"] == "multiple"
+                    if evaluator.turn_type == "multiple"
                     else one_turn_duration
                 )
                 total_duration = round(generation_duration + judge_duration, 4)
 
                 result_dict = {
-                    "metric_name": metric_name,
+                    "metric_name": evaluator.name,
                     "duration_seconds": total_duration,
                     "score": res_model.score,
                     "has_error": res_model.has_error,
                     "error_message": res_model.error_message,
                     "annotations": res_model.annotations,
-                    "eval_type": eval_info["turns"],
+                    "turn_type": evaluator.turn_type,
                 }
                 evaluation_results.append(result_dict)
 
@@ -264,10 +243,9 @@ class AsyncExperimentRunner:
                 agent_config_obj = CreateAgentRequest(**self.agent_config)
 
                 metrics_by_turns = {"one": False, "multiple": False}
-                for m in self.metrics_to_run:
-                    turn_type = _EVAL_METHODS_REGISTRY.get(m, {}).get("turns")
-                    if turn_type in metrics_by_turns:
-                        metrics_by_turns[turn_type] = True
+                for evaluator in self.evaluators:
+                    if evaluator.turn_type in metrics_by_turns:
+                        metrics_by_turns[evaluator.turn_type] = True
 
                 one_turn_response, one_turn_duration = (
                     AgentResponse(output=None, messages=[]),
@@ -308,9 +286,9 @@ class AsyncExperimentRunner:
                     multi_turn_duration,
                 )
 
-                one_turn_evals = [e for e in evaluations if e.get("eval_type") == "one"]
+                one_turn_evals = [e for e in evaluations if e.get("turn_type") == "one"]
                 multi_turn_evals = [
-                    e for e in evaluations if e.get("eval_type") == "multiple"
+                    e for e in evaluations if e.get("turn_type") == "multiple"
                 ]
 
                 end_time = time.monotonic()
@@ -343,7 +321,6 @@ class AsyncExperimentRunner:
                 end_time = time.monotonic()
                 total_duration = round(end_time - start_time, 4)
 
-                # Retorna um dicionário em caso de erro para manter a consistência da saída
                 return {
                     "duration_seconds": total_duration,
                     "task_data": task.model_dump(),
@@ -369,7 +346,13 @@ class AsyncExperimentRunner:
         for run in runs:
             if "error" in run:
                 continue
-            for result in run.get("evaluations", []):
+
+            # Acessa as avaliações de ambos os tipos de análise
+            one_turn_evals = run.get("one_turn_analysis", {}).get("evaluations", [])
+            multi_turn_evals = run.get("multi_turn_analysis", {}).get("evaluations", [])
+            all_evals = one_turn_evals + multi_turn_evals
+
+            for result in all_evals:
                 metric_name = result["metric_name"]
                 metric_stats = stats_by_metric[metric_name]
                 metric_stats["times"].append(result.get("duration_seconds", 0.0))
@@ -445,13 +428,18 @@ class AsyncExperimentRunner:
         failed_run_ids = set()
 
         for run in runs:
-            has_error = "error" in run
-            for result in run.get("evaluations", []):
+            has_run_error = "error" in run
+
+            one_turn_evals = run.get("one_turn_analysis", {}).get("evaluations", [])
+            multi_turn_evals = run.get("multi_turn_analysis", {}).get("evaluations", [])
+            all_evals = one_turn_evals + multi_turn_evals
+
+            for result in all_evals:
                 if result.get("has_error"):
-                    has_error = True
+                    has_run_error = True
                     error_breakdown[result["metric_name"]] += 1
 
-            if has_error:
+            if has_run_error:
                 failed_run_ids.add(run["task_data"]["id"])
 
         return {
@@ -501,7 +489,6 @@ class AsyncExperimentRunner:
 
         dataset_config = loader.get_dataset_config()
 
-        # Gera um ID de experimento baseado em hash, mascarado para 63 bits para o BigQuery.
         exp_hash_hex = hashlib.sha256(uuid.uuid4().hex.encode()).hexdigest()
         experiment_id = int(exp_hash_hex[:16], 16) & (2**63 - 1)
 
@@ -520,13 +507,12 @@ class AsyncExperimentRunner:
             "runs": runs,
         }
 
-        # Salva o resultado localmente
         output_dir = "./src/evaluations/core/data"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"results_{self.experiment_name}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(final_result, f, indent=2, ensure_ascii=False)
         logger.info(f"Resultados salvos em: {output_path}")
-        # Faz o upload para o BigQuery
+
         if self.upload_to_bq:
             upload_experiment_to_bq(result_data=final_result)

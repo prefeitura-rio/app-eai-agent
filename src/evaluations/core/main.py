@@ -6,30 +6,32 @@ from typing import Dict, Any, Optional
 
 from src.evaluations.core.dataloader import DataLoader
 from src.evaluations.core.llm_clients import AzureOpenAIClient, GeminiAIClient
-from src.evaluations.core.evals import Evals
 from src.evaluations.core.runner import AsyncExperimentRunner
+from src.evaluations.core.conversation import ConversationHandler
 from src.services.eai_gateway.api import CreateAgentRequest
 from src.evaluations.core.data.test_data import UNIFIED_TEST_DATA
-from src.evaluations.core.prompt_judges import (
-    CONVERSATIONAL_JUDGE_PROMPT,
-    FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
-    FINAL_MEMORY_JUDGEMENT_PROMPT,
-    SEMANTIC_CORRECTNESS_PROMPT,
-    PERSONA_ADHERENCE_PROMPT,
-    GOLDEN_EQUIPMENT_PROMPT,
-    ANSWER_COMPLETENESS_PROMPT,
-    ANSWER_ADDRESSING_PROMPT,
-    CLARITY_PROMPT,
-)
 from src.utils.log import logger
+
+# Importa os avaliadores modulares
+from src.evaluations.core.evaluators.persona_adherence import (
+    PersonaAdherenceEvaluator,
+)
+from src.evaluations.core.evaluators.conversational_reasoning import (
+    ConversationalReasoningEvaluator,
+)
+from src.evaluations.core.evaluators.conversational_memory import (
+    ConversationalMemoryEvaluator,
+)
+from src.evaluations.core.evaluators.semantic_correctness import (
+    SemanticCorrectnessEvaluator,
+)
 
 
 async def run_experiment():
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-
-    logger.info("--- Configurando o Experimento Unificado ---")
+    logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
@@ -46,22 +48,11 @@ async def run_experiment():
             "golden_response_one_shot",
         ],
     )
-
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
     )
 
-    # loader = DataLoader(
-    #     source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",
-    #     id_col="id",
-    #     prompt_col="mensagem_whatsapp_simulada",
-    #     dataset_name="Golden Dataset Servicos",
-    #     dataset_description="Dataser para avaliacao do EAI em servicos",
-    #     metadata_cols=["golden_links_list", "golden_answer"],
-    # )
-
     # --- 2. Definição do Agente (Metadados do Experimento) ---
-    # Se estiver usando respostas pré-computadas, estes metadados podem ser apenas para registro.
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
@@ -74,38 +65,33 @@ async def run_experiment():
 
     # --- 3. Definição da Suíte de Avaliação ---
     judge_client = AzureOpenAIClient(model_name="gpt-4o")
-    # judge_client = GeminiAIClient(model_name="gemini-2.5-flash")
-    evaluation_suite = Evals(judge_client=judge_client)
+    # judge_client = GeminiAIClient(model_name="gemini-1.5-flash-latest")
 
-    metrics_to_run = [
-        "conversational_reasoning",
-        # "conversational_memory",
-        "persona_adherence",
-        # "semantic_correctness",
-        # "golden_equipment",
-        # "answer_completeness",
-        # "answer_addressing",
-        # "clarity",
-        # "activate_search",
-        # "golden_link_in_tool_calling",
-        # "golden_link_in_answer",
+    # Instancia os avaliadores que serão executados
+    evaluators_to_run = [
+        ConversationalReasoningEvaluator(judge_client),
+        ConversationalMemoryEvaluator(judge_client),
+        PersonaAdherenceEvaluator(judge_client),
+        SemanticCorrectnessEvaluator(judge_client),
     ]
-    logger.info(f"✅ Suíte de avaliações configurada para rodar: {metrics_to_run}")
+    evaluator_names = [e.name for e in evaluators_to_run]
+    logger.info(f"✅ Suíte de avaliações configurada para rodar: {evaluator_names}")
+
+    # Coleta os prompts de cada avaliador para os metadados
+    judges_prompts = {
+        evaluator.name: evaluator.PROMPT_TEMPLATE
+        for evaluator in evaluators_to_run
+        if hasattr(evaluator, "PROMPT_TEMPLATE")
+    }
+    # Adiciona o prompt de condução da conversa, que agora está em ConversationHandler
+    judges_prompts["conversational_agent"] = (
+        ConversationHandler.CONVERSATIONAL_JUDGE_PROMPT
+    )
 
     metadata = {
         "agent_config": agent_config.model_dump(exclude_none=True),
         "judge_model": judge_client.model_name,
-        "judges_prompts": {
-            "conversational_agent": CONVERSATIONAL_JUDGE_PROMPT,
-            "conversational_reasoning": FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT,
-            "conversational_memory": FINAL_MEMORY_JUDGEMENT_PROMPT,
-            "persona_adherence": PERSONA_ADHERENCE_PROMPT,
-            # "semantic_correctness": SEMANTIC_CORRECTNESS_PROMPT,
-            # "golden_equipment": GOLDEN_EQUIPMENT_PROMPT,
-            # "answer_completeness": ANSWER_COMPLETENESS_PROMPT,
-            # "answer_addressing": ANSWER_ADDRESSING_PROMPT,
-            # "clarity": CLARITY_PROMPT,
-        },
+        "judges_prompts": judges_prompts,
     }
 
     # --- 4. Carregamento de Respostas Pré-computadas (Opcional) ---
@@ -129,29 +115,27 @@ async def run_experiment():
             logger.error(f"❌ Erro ao carregar {PRECOMPUTED_RESPONSES_PATH}: {e}")
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 10  # Define o número máximo de tarefas em paralelo
+    MAX_CONCURRENCY = 10
 
     runner = AsyncExperimentRunner(
-        experiment_name="Batman_Unified_Eval_v1",
-        experiment_description="Avaliação de múltiplas facetas em uma única conversa, com julgamentos em paralelo.",
+        experiment_name="Batman_Unified_Eval_v2_Refactored",
+        experiment_description="Avaliação de múltiplas facetas com arquitetura de avaliadores plugáveis.",
         metadata=metadata,
         agent_config=agent_config.model_dump(exclude_none=True),
-        evaluation_suite=evaluation_suite,
-        metrics_to_run=metrics_to_run,
+        evaluators=evaluators_to_run,
+        judge_client=judge_client,
         max_concurrency=MAX_CONCURRENCY,
         # precomputed_responses=precomputed_responses_dict,
-        # upload_to_bq=False,
+        upload_to_bq=False,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
-    for _ in range(1):
-        await runner.run(loader)
+    await runner.run(loader)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(run_experiment())
     except Exception as e:
-        # Usar logging.getLogger aqui garante que o logger exista mesmo se a configuração falhar.
         logging.getLogger(__name__).error(
             f"Ocorreu um erro fatal durante a execução do experimento: {e}",
             exc_info=True,
