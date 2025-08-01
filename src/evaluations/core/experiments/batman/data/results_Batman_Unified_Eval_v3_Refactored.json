@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 4089654504172656708,
-  "experiment_id": 4665238623248125201,
+  "experiment_id": 5203391144404647364,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-01T08:20:52.105593+00:00",
+  "experiment_timestamp": "2025-08-01T09:51:55.817189+00:00",
   "experiment_metadata": {
     "agent_config": {
       "user_number": "evaluation_user",
@@ -34,16 +34,17 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 1.78,
-    "average_task_duration_seconds": 1.76,
-    "average_metric_duration_seconds": 1.24
+    "total_duration_seconds": 13.96,
+    "average_task_duration_seconds": 13.82,
+    "average_metric_duration_seconds": 5.45
   },
   "error_summary": {
-    "total_failed_runs": 1,
+    "total_failed_runs": 2,
     "errors_per_metric": {
-      "conversational_reasoning": 1
+      "conversational_reasoning": 2
     },
     "failed_run_ids": [
+      "unified_conv_1",
       "unified_conv_2"
     ]
   },
@@ -51,31 +52,19 @@
     {
       "metric_name": "conversational_reasoning",
       "total_runs": 2,
-      "successful_runs": 1,
-      "success_rate_percentage": 50.0,
-      "failed_runs": 1,
-      "failure_rate_percentage": 50.0,
-      "score_statistics": {
-        "average": 0.5,
-        "median": 0.5,
-        "min": 0.5,
-        "max": 0.5,
-        "std_dev": 0.0
-      },
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 2,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
       "duration_statistics_seconds": {
-        "average": 0.804,
-        "median": 0.804,
-        "min": 0.0,
-        "max": 1.6079,
-        "std_dev": 1.137
+        "average": 4.713,
+        "median": 4.713,
+        "min": 3.6088,
+        "max": 5.8171,
+        "std_dev": 1.5615
       },
-      "score_distribution": [
-        {
-          "value": 0.5,
-          "count": 1,
-          "percentage": 100.0
-        }
-      ]
+      "score_distribution": []
     },
     {
       "metric_name": "semantic_correctness",
@@ -85,18 +74,18 @@
       "failed_runs": 0,
       "failure_rate_percentage": 0.0,
       "score_statistics": {
-        "average": 0.25,
-        "median": 0.25,
+        "average": 0.5,
+        "median": 0.5,
         "min": 0.0,
-        "max": 0.5,
-        "std_dev": 0.3536
+        "max": 1.0,
+        "std_dev": 0.7071
       },
       "duration_statistics_seconds": {
-        "average": 1.6828,
-        "median": 1.6828,
-        "min": 1.6058,
-        "max": 1.7598,
-        "std_dev": 0.1089
+        "average": 6.1865,
+        "median": 6.1865,
+        "min": 5.0292,
+        "max": 7.3437,
+        "std_dev": 1.6366
       },
       "score_distribution": [
         {
@@ -105,7 +94,7 @@
           "percentage": 50.0
         },
         {
-          "value": 0.5,
+          "value": 1.0,
           "count": 1,
           "percentage": 50.0
         }
@@ -114,7 +103,7 @@
   ],
   "runs": [
     {
-      "duration_seconds": 1.7613,
+      "duration_seconds": 13.7028,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -124,19 +113,38 @@
         "golden_response_one_shot": "Paris."
       },
       "one_turn_analysis": {
-        "agent_response": "Paris. Agora, fale sobre suas intenções, Dr. Crane.",
+        "agent_response": "Paris.",
         "reasoning_trace": [
           {
-            "message_type": "precomputed",
-            "content": "Paris. Agora, fale sobre suas intenções, Dr. Crane."
+            "message_type": "reasoning_message",
+            "content": "User introduced himself as Dr. Crane. I need to remember this for future interactions. User asked for the capital of France. The answer is Paris. I will respond directly with the answer and then confirm the name."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Paris."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "BatmanUnifiedAgent",
+              "agent_id": "agent-ed937702-af8b-4bfd-b038-99ecc5a26759",
+              "message_id": "0aab98b8-fb1f-46a4-b7f9-f2feb10226f3",
+              "processed_at": "db564656-ba7b-4fe6-9957-bce7498e0f89",
+              "total_tokens": 1330,
+              "prompt_tokens": 1269,
+              "completion_tokens": 61,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
           }
         ],
         "evaluations": [
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 1.7598,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: A resposta gerada menciona \"Paris\", refletindo a resposta ideal, mas inclui informação adicional desnecessária que não contribui semanticamente para a resposta ideal.",
+            "duration_seconds": 5.0292,
+            "score": 1.0,
+            "annotations": "Score: 1.0  \nReasoning: As respostas são idênticas, indicando total similaridade semântica.  ",
             "has_error": false,
             "error_message": null,
             "turn_type": "one"
@@ -144,34 +152,22 @@
         ]
       },
       "multi_turn_analysis": {
-        "final_agent_response": "Ace Chemicals... Isso me interessa. Continue.",
-        "conversation_transcript": [
-          {
-            "turn": 1,
-            "judge_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
-            "agent_response": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?"
-          },
-          {
-            "turn": 2,
-            "judge_message": "Houve um roubo na Ace Chemicals. Estou investigando.",
-            "agent_response": "Ace Chemicals... Isso me interessa. Continue."
-          }
-        ],
         "evaluations": [
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 1.6079,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Dr. Crane' e respondeu 'Paris', mas não mostrou desconfiança nem conectou o roubo e a toxina ao Espantalho/Coringa.",
-            "has_error": false,
-            "error_message": null,
+            "duration_seconds": 3.6088,
+            "score": null,
+            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_1: Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'.",
+            "has_error": true,
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'.",
             "turn_type": "multiple"
           }
-        ]
+        ],
+        "error": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-d617bd84-a6d2-49db-be75-176feffa0749', message_id='a6ca13f9-15d6-41b8-ae8c-4807e2197c78']"
       }
     },
     {
-      "duration_seconds": 1.7611,
+      "duration_seconds": 13.9376,
       "task_data": {
         "id": "unified_conv_2",
         "prompt": "Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?",
@@ -181,19 +177,38 @@
         "golden_response_one_shot": "4."
       },
       "one_turn_analysis": {
-        "agent_response": "4. Não teste minha paciência, Selina.",
+        "agent_response": "Selina. Anotado. Quanto a sua pergunta, 2 + 2 = 4. Não pense que isso significa que confio em você.",
         "reasoning_trace": [
           {
-            "message_type": "precomputed",
-            "content": "4. Não teste minha paciência, Selina."
+            "message_type": "reasoning_message",
+            "content": "User introduced herself as Selina and asked a simple math question. I should answer the question and acknowledge her name while maintaining the Batman persona of distrust."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Selina. Anotado. Quanto a sua pergunta, 2 + 2 = 4. Não pense que isso significa que confio em você."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "BatmanUnifiedAgent",
+              "agent_id": "agent-f7bdeadb-8e6f-4267-ab7f-97f7973ae930",
+              "message_id": "9ed1c6b9-d364-4a37-bcfd-540dca74fd6a",
+              "processed_at": "b2fb286d-0c2d-48de-9483-6652dd2c3459",
+              "total_tokens": 1347,
+              "prompt_tokens": 1269,
+              "completion_tokens": 78,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
           }
         ],
         "evaluations": [
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 1.6058,
+            "duration_seconds": 7.3437,
             "score": 0.0,
-            "annotations": "Score: 0.0  \nReasoning: A resposta gerada pela IA inclui informações adicionais que não estão presentes na resposta ideal, removendo a similaridade semântica.",
+            "annotations": "Score: 0.0  \nReasoning: A resposta gerada pela IA inclui informações que não estão presentes na resposta ideal, desviando-se significativamente da concisão e semelhança desejadas.",
             "has_error": false,
             "error_message": null,
             "turn_type": "one"
@@ -204,14 +219,15 @@
         "evaluations": [
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 0.0,
+            "duration_seconds": 5.8171,
             "score": null,
             "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_2: Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'.",
             "has_error": true,
             "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'.",
             "turn_type": "multiple"
           }
-        ]
+        ],
+        "error": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-67f91b44-844a-4168-9227-c3cbbdad783e', message_id='36f7e66b-c2c9-4fec-af9e-9070b18fe7a0']"
       }
     }
   ]

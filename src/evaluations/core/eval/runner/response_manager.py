@@ -75,18 +75,15 @@ class ResponseManager:
 
         logger.debug(f"▶️ Gerando one-turn ao vivo para {task_id}")
         start_time = time.perf_counter()
-        try:
-            async with self._get_agent_manager() as agent_manager:
-                if not agent_manager:
-                    raise RuntimeError("Falha ao inicializar o agente para one-turn.")
-                response = await agent_manager.send_message(task.prompt)
-                return response, time.perf_counter() - start_time
-        except Exception as e:
-            logger.error(f"Erro ao gerar resposta one-turn para {task_id}: {e}")
-            return (
-                AgentResponse(output=None, messages=[]),
-                time.perf_counter() - start_time,
-            )
+        async with self._get_agent_manager() as agent_manager:
+            if not agent_manager:
+                # Isso só deve acontecer se estivermos usando respostas pré-computadas,
+                # o que já foi tratado. Lançar um erro aqui é uma salvaguarda.
+                raise RuntimeError(
+                    "Falha ao obter o gerenciador de agente, mesmo não usando respostas pré-computadas."
+                )
+            response = await agent_manager.send_message(task.prompt)
+            return response, time.perf_counter() - start_time
 
     async def get_multi_turn_transcript(
         self, task: EvaluationTask, conv_evaluator: BaseConversationEvaluator
@@ -108,8 +105,12 @@ class ResponseManager:
                     ]
                     final_response = transcript[-1] if transcript else None
                     final_agent_response = AgentResponse(
-                        output=final_response.agent_response if final_response else None,
-                        messages=final_response.reasoning_trace if final_response else [],
+                        output=(
+                            final_response.agent_response if final_response else None
+                        ),
+                        messages=(
+                            final_response.reasoning_trace if final_response else []
+                        ),
                     )
                     return ConversationOutput(
                         transcript=transcript,
@@ -121,6 +122,7 @@ class ResponseManager:
                     logger.error(
                         f"Erro ao processar transcript pré-computado para {task_id}: {e}"
                     )
+                    # Retorna None para indicar falha no processamento do cache
                     return None
             else:
                 logger.warning(
@@ -129,11 +131,7 @@ class ResponseManager:
                 return None
 
         logger.debug(f"▶️ Gerando multi-turn ao vivo para {task_id}")
-        try:
-            async with self._get_agent_manager() as agent_manager:
-                if not agent_manager:
-                    raise RuntimeError("Falha ao inicializar o agente para multi-turn.")
-                return await conv_evaluator.evaluate(task, agent_manager)
-        except Exception as e:
-            logger.error(f"Erro ao gerar multi-turn para {task_id}: {e}")
-            return None
+        async with self._get_agent_manager() as agent_manager:
+            if not agent_manager:
+                raise RuntimeError("Falha ao inicializar o agente para multi-turn.")
+            return await conv_evaluator.evaluate(task, agent_manager)

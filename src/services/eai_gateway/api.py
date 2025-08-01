@@ -56,9 +56,30 @@ class MessageResponse(BaseModel):
 
 
 class EAIClientError(Exception):
-    """Custom exception for EAI client errors."""
+    """Custom exception for EAI client errors with context."""
 
-    pass
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        agent_id: Optional[str] = None,
+        message_id: Optional[str] = None,
+    ):
+        self.message = message
+        self.status_code = status_code
+        self.agent_id = agent_id
+        self.message_id = message_id
+
+        details = []
+        if status_code:
+            details.append(f"status_code={status_code}")
+        if agent_id:
+            details.append(f"agent_id='{agent_id}'")
+        if message_id:
+            details.append(f"message_id='{message_id}'")
+
+        full_message = f"{message} [{', '.join(details)}]" if details else message
+        super().__init__(full_message)
 
 
 # --- EAI Client ---
@@ -86,10 +107,13 @@ class EAIClient:
             return response.json()
         except httpx.HTTPStatusError as e:
             raise EAIClientError(
-                f"API Error: {e.response.status_code} - {e.response.text}"
+                message=f"API Error creating agent: {e.response.text}",
+                status_code=e.response.status_code,
             ) from e
         except Exception as e:
-            raise EAIClientError(f"An unexpected error occurred: {e}") from e
+            raise EAIClientError(
+                f"An unexpected error occurred while creating agent: {e}"
+            ) from e
 
     async def send_message_to_agent(
         self, request: AgentWebhookRequest
@@ -103,10 +127,15 @@ class EAIClient:
             return AgentWebhookResponse(**response.json())
         except httpx.HTTPStatusError as e:
             raise EAIClientError(
-                f"API Error: {e.response.status_code} - {e.response.text}"
+                message=f"API Error sending message: {e.response.text}",
+                status_code=e.response.status_code,
+                agent_id=request.agent_id,
             ) from e
         except Exception as e:
-            raise EAIClientError(f"An unexpected error occurred: {e}") from e
+            raise EAIClientError(
+                message=f"An unexpected error occurred while sending message: {e}",
+                agent_id=request.agent_id,
+            ) from e
 
     async def get_message_response(self, message_id: str) -> MessageResponse:
         """(Low-level) Polls for the response of a sent message."""
@@ -121,10 +150,15 @@ class EAIClient:
             return MessageResponse(**raw_response)
         except httpx.HTTPStatusError as e:
             raise EAIClientError(
-                f"API Error: {e.response.status_code} - {e.response.text}"
+                message=f"API Error getting response: {e.response.text}",
+                status_code=e.response.status_code,
+                message_id=message_id,
             ) from e
         except Exception as e:
-            raise EAIClientError(f"An unexpected error occurred: {e}") from e
+            raise EAIClientError(
+                message=f"An unexpected error occurred while getting response: {e}",
+                message_id=message_id,
+            ) from e
 
     async def send_message_and_get_response(
         self, agent_id: str, message: str, timeout: int = 180, polling_interval: int = 2
@@ -134,22 +168,31 @@ class EAIClient:
         """
         send_req = AgentWebhookRequest(agent_id=agent_id, message=message)
         send_resp = await self.send_message_to_agent(send_req)
+        message_id = send_resp.message_id
 
         start_time = time.time()
         while time.time() - start_time < timeout:
             try:
-                response = await self.get_message_response(send_resp.message_id)
+                response = await self.get_message_response(message_id)
                 if response.status == "completed":
                     return response
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code != 404:
+            except EAIClientError as e:
+                # Ignore 404 Not Found, as it means the response is not ready yet.
+                if e.status_code != 404:
                     raise EAIClientError(
-                        f"API Error during polling: {e.response.status_code}"
+                        message=f"API Error during polling: {e.message}",
+                        status_code=e.status_code,
+                        agent_id=agent_id,
+                        message_id=message_id,
                     ) from e
 
             await asyncio.sleep(polling_interval)
 
-        raise asyncio.TimeoutError("Timeout waiting for agent response.")
+        raise EAIClientError(
+            message="Timeout waiting for agent response.",
+            agent_id=agent_id,
+            message_id=message_id,
+        )
 
     async def close(self):
         await self._client.aclose()

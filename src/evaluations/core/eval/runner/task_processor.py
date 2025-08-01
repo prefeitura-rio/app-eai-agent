@@ -38,63 +38,75 @@ class TaskProcessor:
     async def process(self, task: EvaluationTask) -> Dict[str, Any]:
         """
         Processa uma única tarefa, retornando seu resultado completo.
+        Falhas na obtenção de resposta de um tipo (one-turn vs multi-turn)
+        são registradas, mas não impedem o processamento do outro.
         """
         task_id = task.id
         logger.info(f"Iniciando processamento da tarefa: {task_id}")
         start_time = time.perf_counter()
 
-        try:
-            # Cria e executa as tarefas de coleta de dados em paralelo
-            one_turn_task = asyncio.create_task(self._get_one_turn_response(task))
-            multi_turn_task = asyncio.create_task(self._get_multi_turn_output(task))
+        # 1. Coleta de dados de forma resiliente
+        one_turn_task = asyncio.create_task(self._get_one_turn_response(task))
+        multi_turn_task = asyncio.create_task(self._get_multi_turn_output(task))
 
-            results = await asyncio.gather(one_turn_task, multi_turn_task)
-            (
-                one_turn_response,
-                one_turn_duration,
-            ), multi_turn_output = results
+        results = await asyncio.gather(
+            one_turn_task, multi_turn_task, return_exceptions=True
+        )
 
-            evaluations = await self._execute_evaluations(
-                task, one_turn_response, one_turn_duration, multi_turn_output
+        one_turn_result, multi_turn_result = results
+
+        # 2. Processa o resultado de one-turn
+        one_turn_response = AgentResponse(output=None, messages=[])
+        one_turn_duration = 0.0
+        one_turn_analysis = OneTurnAnalysis()
+
+        if isinstance(one_turn_result, Exception):
+            error_msg = f"Falha ao obter resposta one-turn: {str(one_turn_result)}"
+            logger.error(f"{error_msg} para a tarefa {task_id}", exc_info=False)
+            one_turn_analysis.error = error_msg
+        else:
+            one_turn_response, one_turn_duration = one_turn_result
+            one_turn_analysis.agent_response = one_turn_response.output
+            one_turn_analysis.reasoning_trace = one_turn_response.messages
+
+        # 3. Processa o resultado de multi-turn
+        multi_turn_output: Optional[ConversationOutput] = None
+        multi_turn_analysis = MultiTurnAnalysis()
+
+        if isinstance(multi_turn_result, Exception):
+            error_msg = (
+                f"Falha ao obter resposta multi-turn: {str(multi_turn_result)}"
             )
+            logger.error(f"{error_msg} para a tarefa {task_id}", exc_info=False)
+            multi_turn_analysis.error = error_msg
+        else:
+            multi_turn_output = multi_turn_result
+            if multi_turn_output:
+                multi_turn_analysis.final_agent_response = (
+                    multi_turn_output.final_agent_response.output
+                )
+                multi_turn_analysis.conversation_transcript = multi_turn_output.transcript
 
-            one_turn_evals = [e for e in evaluations if e.get("turn_type") == "one"]
-            multi_turn_evals = [
-                e for e in evaluations if e.get("turn_type") == "multiple"
-            ]
+        # 4. Executa as avaliações com os dados disponíveis
+        evaluations = await self._execute_evaluations(
+            task, one_turn_response, one_turn_duration, multi_turn_output
+        )
 
-            run_result = RunResult(
-                duration_seconds=round(time.perf_counter() - start_time, 4),
-                task_data=task,
-                one_turn_analysis=OneTurnAnalysis(
-                    agent_response=one_turn_response.output,
-                    reasoning_trace=one_turn_response.messages,
-                    evaluations=one_turn_evals,
-                ),
-                multi_turn_analysis=MultiTurnAnalysis(
-                    final_agent_response=(
-                        multi_turn_output.final_agent_response.output
-                        if multi_turn_output
-                        else None
-                    ),
-                    conversation_transcript=(
-                        multi_turn_output.transcript if multi_turn_output else None
-                    ),
-                    evaluations=multi_turn_evals,
-                ),
-            )
-            return run_result.model_dump(exclude_none=True)
+        one_turn_analysis.evaluations = [
+            e for e in evaluations if e.get("turn_type") == "one"
+        ]
+        multi_turn_analysis.evaluations = [
+            e for e in evaluations if e.get("turn_type") == "multiple"
+        ]
 
-        except Exception as e:
-            duration = round(time.perf_counter() - start_time, 4)
-            logger.error(
-                f"Erro irrecuperável ao processar tarefa {task_id}: {e}", exc_info=True
-            )
-            return {
-                "duration_seconds": duration,
-                "task_data": task.model_dump(),
-                "error": f"Erro irrecuperável: {str(e)}",
-            }
+        # 5. Monta o resultado final
+        run_result = RunResult(
+            duration_seconds=round(time.perf_counter() - start_time, 4),
+            task_data=task,
+            one_turn_analysis=one_turn_analysis,
+            multi_turn_analysis=multi_turn_analysis,
+        )
+        return run_result.model_dump(exclude_none=True)
 
     async def _get_one_turn_response(
         self, task: EvaluationTask

@@ -78,7 +78,8 @@ class OneTurnAnalysis(BaseModel):
 
     agent_response: Optional[str] = None
     reasoning_trace: Optional[List[ReasoningStep]] = None
-    evaluations: List[Dict[str, Any]]  # Mantido como Dict por flexibilidade no runner
+    evaluations: List[Dict[str, Any]] = []
+    error: Optional[str] = None
 
 
 class MultiTurnAnalysis(BaseModel):
@@ -86,7 +87,8 @@ class MultiTurnAnalysis(BaseModel):
 
     final_agent_response: Optional[str] = None
     conversation_transcript: Optional[List[ConversationTurn]] = None
-    evaluations: List[Dict[str, Any]]  # Mantido como Dict por flexibilidade no runner
+    evaluations: List[Dict[str, Any]] = []
+    error: Optional[str] = None
 
 
 class RunResult(BaseModel):

@@ -43,18 +43,22 @@ class AgentConversationManager:
             create_resp = await self.client.create_agent(self.agent_config)
             self.agent_id = create_resp.get("agent_id")
             if not self.agent_id:
-                logger.error("Falha ao obter o agent_id na resposta da API.")
-                raise ConnectionError("Falha ao criar o agente ou obter o agent_id.")
+                # Se o agent_id não for retornado, mesmo com status 200.
+                raise EAIClientError(
+                    "Falha ao obter o agent_id na resposta da API, embora a chamada tenha sido bem-sucedida."
+                )
             logger.info(f"Agente inicializado com sucesso. ID: {self.agent_id}")
         except EAIClientError as e:
+            # Apenas loga e relança a exceção já contextualizada de api.py
             logger.error(f"Erro de cliente EAI ao inicializar o agente: {e}")
-            raise ConnectionError(f"Erro ao inicializar o agente: {e}")
+            raise
         except Exception as e:
             logger.error(f"Erro inesperado ao inicializar o agente: {e}", exc_info=True)
-            raise
+            # Encapsula exceções inesperadas na nossa exceção customizada para consistência
+            raise EAIClientError(f"Erro inesperado ao inicializar o agente: {e}") from e
 
     async def send_message(
-        self, message: str, timeout: int = 180, polling_interval: int = 2
+        self, message: str, timeout: int = 5, polling_interval: int = 2
     ) -> AgentResponse:
         """
         Envia uma mensagem para o agente existente e retorna a resposta com o
@@ -112,18 +116,20 @@ class AgentConversationManager:
             return AgentResponse(output=None, messages=[])
 
         except EAIClientError as e:
+            # Apenas loga e relança a exceção já contextualizada
             logger.error(
                 f"Erro de cliente EAI ao comunicar com o agente {self.agent_id}: {e}"
             )
-            raise ConnectionError(f"Error communicating with EAI service: {e}")
-        except asyncio.TimeoutError:
-            logger.error(f"Timeout esperando pela resposta do agente {self.agent_id}.")
-            raise ConnectionError("Timeout waiting for EAI response.")
+            raise
         except Exception as e:
             logger.error(
                 f"Erro inesperado ao enviar mensagem para o agente: {e}", exc_info=True
             )
-            raise
+            # Encapsula exceções inesperadas na nossa exceção customizada
+            raise EAIClientError(
+                message=f"Erro inesperado na comunicação com o agente: {e}",
+                agent_id=self.agent_id,
+            ) from e
 
     async def close(self):
         """
