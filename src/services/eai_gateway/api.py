@@ -161,7 +161,7 @@ class EAIClient:
             ) from e
 
     async def send_message_and_get_response(
-        self, agent_id: str, message: str, timeout: int = 180, polling_interval: int = 2
+        self, agent_id: str, message: str, timeout: int = 10, polling_interval: int = 2
     ) -> MessageResponse:
         """
         High-level method to send a message and poll for the final response.

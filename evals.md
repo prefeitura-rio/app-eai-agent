@@ -41,7 +41,7 @@ src/evaluations/core/
 
 #### 2. `eval/llm_clients.py`
 
--   **`AgentConversationManager`**:
+-   **`EAIConversationManager`**:
     -   **Responsabilidade**: Gerenciar o ciclo de vida de uma conversa com um agente EAI, garantindo que o mesmo `agent_id` seja usado em todas as interações.
     -   **Métodos Principais**:
         -   `initialize()`: Cria o agente via API antes de qualquer interação.

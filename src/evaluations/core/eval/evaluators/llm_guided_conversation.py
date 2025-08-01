@@ -3,7 +3,7 @@ import time
 from src.evaluations.core.eval import (
     BaseConversationEvaluator,
     EvaluationTask,
-    AgentConversationManager,
+    EAIConversationManager,
     ConversationOutput,
     ConversationTurn,
     AgentResponse,
@@ -42,7 +42,7 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 """
 
     async def evaluate(
-        self, task: EvaluationTask, agent_manager: AgentConversationManager
+        self, task: EvaluationTask, agent_manager: EAIConversationManager
     ) -> ConversationOutput:
         """
         Executa a lógica de condução da conversa.

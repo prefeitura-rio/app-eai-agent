@@ -19,6 +19,7 @@ from src.evaluations.core.eval.runner.result_analyzer import ResultAnalyzer
 from src.evaluations.core.eval.runner.persistence import ResultPersistence
 from src.evaluations.core.eval.log import logger
 import time
+from src.services.eai_gateway.api import EAIClient
 
 
 class AsyncExperimentRunner:
@@ -48,6 +49,7 @@ class AsyncExperimentRunner:
         self.semaphore = asyncio.Semaphore(max_concurrency)
         self.upload_to_bq = upload_to_bq
         self.output_dir = Path(output_dir)
+        self.eai_client = EAIClient()
 
         self._evaluator_cache = self._categorize_evaluators()
         self._validate_evaluators()
@@ -80,7 +82,10 @@ class AsyncExperimentRunner:
             raise ValueError(
                 "Apenas um avaliador do tipo 'conversation' é permitido por experimento."
             )
-        if self._evaluator_cache["multi_turn"] and not self._evaluator_cache["conversation"]:
+        if (
+            self._evaluator_cache["multi_turn"]
+            and not self._evaluator_cache["conversation"]
+        ):
             raise ValueError(
                 "Avaliadores 'multiple' requerem um avaliador 'conversation'."
             )
@@ -105,7 +110,11 @@ class AsyncExperimentRunner:
         logger.info(f"Carregadas {len(tasks)} tarefas para processamento.")
 
         # Inicializa os componentes
-        response_manager = ResponseManager(self.agent_config, self.precomputed_responses)
+        response_manager = ResponseManager(
+            agent_config=self.agent_config,
+            precomputed_responses=self.precomputed_responses,
+            eai_client=self.eai_client,
+        )
         task_processor = TaskProcessor(self._evaluator_cache, response_manager)
         result_analyzer = ResultAnalyzer()
         persistence = ResultPersistence(
@@ -149,4 +158,7 @@ class AsyncExperimentRunner:
             f"Experimento '{self.experiment_name}' concluído em "
             f"{analysis_summary['execution_summary']['total_duration_seconds']}s"
         )
+
+        await self.eai_client.close()
+        logger.info("EAI Client encerrado.")
         return final_result

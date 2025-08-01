@@ -5,7 +5,7 @@ from typing import Any, Union, Tuple, List
 
 from src.evaluations.core.eval.llm_clients import (
     BaseJudgeClient,
-    AgentConversationManager,
+    EAIConversationManager,
 )
 from src.evaluations.core.eval.schemas import (
     EvaluationTask,
@@ -101,14 +101,14 @@ class BaseConversationEvaluator(BaseEvaluator):
 
     @abstractmethod
     async def evaluate(
-        self, task: EvaluationTask, agent_manager: AgentConversationManager
+        self, task: EvaluationTask, agent_manager: EAIConversationManager
     ) -> ConversationOutput:
         """
         Executa a lógica de condução da conversa.
 
         Args:
             task (EvaluationTask): A tarefa inicial.
-            agent_manager (AgentConversationManager): O gerenciador para interagir com o agente.
+            agent_manager (EAIConversationManager): O gerenciador para interagir com o agente.
 
         Returns:
             Um objeto ConversationOutput contendo os artefatos da conversa.

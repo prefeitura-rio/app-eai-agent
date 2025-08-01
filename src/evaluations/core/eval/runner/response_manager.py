@@ -3,7 +3,7 @@ import time
 from typing import Optional, Dict, Any, Tuple, AsyncGenerator
 from contextlib import asynccontextmanager
 
-from src.evaluations.core.eval.llm_clients import AgentConversationManager
+from src.evaluations.core.eval.llm_clients import EAIConversationManager
 from src.evaluations.core.eval.schemas import (
     AgentResponse,
     ReasoningStep,
@@ -14,6 +14,7 @@ from src.evaluations.core.eval.schemas import (
 from src.evaluations.core.eval.evaluators.base import BaseConversationEvaluator
 from src.services.eai_gateway.api import CreateAgentRequest
 from src.evaluations.core.eval.log import logger
+from src.services.eai_gateway.api import EAIClient
 
 
 class ResponseManager:
@@ -26,21 +27,24 @@ class ResponseManager:
         self,
         agent_config: Dict[str, Any],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
+        eai_client: EAIClient = EAIClient(),
     ):
         self.agent_config = agent_config
         self.precomputed_responses = precomputed_responses or {}
+        self.eai_client = eai_client
 
     @asynccontextmanager
     async def _get_agent_manager(
         self,
-    ) -> AsyncGenerator[Optional[AgentConversationManager], None]:
+    ) -> AsyncGenerator[Optional[EAIConversationManager], None]:
         """Context manager para gerenciar o ciclo de vida do agente."""
         if self.precomputed_responses:
             yield None
             return
 
-        agent_manager = AgentConversationManager(
-            CreateAgentRequest(**self.agent_config)
+        agent_manager = EAIConversationManager(
+            agent_config=CreateAgentRequest(**self.agent_config),
+            eai_client=self.eai_client,
         )
         try:
             await agent_manager.initialize()

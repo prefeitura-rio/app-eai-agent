@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Optional
 from abc import ABC, abstractmethod
 from src.config import env
 
@@ -19,15 +20,19 @@ from src.evaluations.core.eval.schemas import AgentResponse, ReasoningStep
 from src.evaluations.core.eval.log import logger
 
 
-class AgentConversationManager:
+class EAIConversationManager:
     """
     Gerencia o ciclo de vida de uma única conversa com um agente,
     garantindo que o mesmo agent_id seja usado em todas as interações.
     """
 
-    def __init__(self, agent_config: CreateAgentRequest):
+    def __init__(
+        self,
+        agent_config: CreateAgentRequest,
+        eai_client: EAIClient = EAIClient(),
+    ):
+        self.eai_client = eai_client
         self.agent_config = agent_config
-        self.client = EAIClient()
         self.agent_id: str | None = None
 
     async def initialize(self):
@@ -40,7 +45,7 @@ class AgentConversationManager:
 
         try:
             logger.info("Inicializando agente via API...")
-            create_resp = await self.client.create_agent(self.agent_config)
+            create_resp = await self.eai_client.create_agent(self.agent_config)
             self.agent_id = create_resp.get("agent_id")
             if not self.agent_id:
                 # Se o agent_id não for retornado, mesmo com status 200.
@@ -71,7 +76,7 @@ class AgentConversationManager:
 
         try:
             logger.info(f"Enviando mensagem para o agente {self.agent_id}...")
-            response = await self.client.send_message_and_get_response(
+            response = await self.eai_client.send_message_and_get_response(
                 agent_id=self.agent_id,
                 message=message,
                 timeout=timeout,
@@ -117,9 +122,7 @@ class AgentConversationManager:
 
         except EAIClientError as e:
             # Apenas loga e relança a exceção já contextualizada
-            logger.error(
-                f"Erro de cliente EAI ao comunicar com o agente {self.agent_id}: {e}"
-            )
+            logger.error(e)
             raise
         except Exception as e:
             logger.error(
@@ -238,7 +241,7 @@ class GeminiAIClient(BaseJudgeClient):
 
 
 async def main():
-    # Exemplo de uso do novo AgentConversationManager
+    # Exemplo de uso do novo EAIConversationManager
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="voce é o batman",
@@ -248,7 +251,7 @@ async def main():
         tags=["batman"],
     )
 
-    manager = AgentConversationManager(agent_config=agent_config)
+    manager = EAIConversationManager(agent_config=agent_config)
 
     try:
         # Inicia a conversa (cria o agente)

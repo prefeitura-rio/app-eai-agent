@@ -12,7 +12,7 @@ from src.evaluations.core.eval.evaluators.base import (
     BaseConversationEvaluator,
 )
 from src.evaluations.core.eval.llm_clients import (
-    AgentConversationManager,
+    EAIConversationManager,
     AzureOpenAIClient,
     BaseJudgeClient,
     GeminiAIClient,
@@ -35,7 +35,7 @@ __all__ = [
     "DataLoader",
     "BaseEvaluator",
     "BaseConversationEvaluator",
-    "AgentConversationManager",
+    "EAIConversationManager",
     "AzureOpenAIClient",
     "BaseJudgeClient",
     "GeminiAIClient",
