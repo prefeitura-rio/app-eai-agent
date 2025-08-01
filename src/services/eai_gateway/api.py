@@ -49,6 +49,9 @@ class MessageResponse(BaseModel):
     status: str
     data: Optional[Dict[str, Any]] = None
     message_id: Optional[str] = None
+    error: Optional[str] = None
+    message: Optional[str] = None
+
     # Adicione outros campos conforme a estrutura da resposta da API
 
 
@@ -78,7 +81,12 @@ class EAIClientError(Exception):
         if message_id:
             details.append(f"message_id='{message_id}'")
 
-        full_message = f"{message} [{', '.join(details)}]" if details else message
+        # Escape curly braces in the main message to prevent formatting errors in loggers
+        escaped_message = message.replace("{", "{{").replace("}", "}}")
+
+        full_message = (
+            f"{escaped_message} [{', '.join(details)}]" if details else escaped_message
+        )
         super().__init__(full_message)
 
 
@@ -176,6 +184,13 @@ class EAIClient:
                 response = await self.get_message_response(message_id)
                 if response.status == "completed":
                     return response
+                elif response.status == "failed":
+                    raise EAIClientError(
+                        message=f"API Error during polling: {response.status} | error: {response.error} | message: {response.message}",
+                        status_code=200,
+                        agent_id=agent_id,
+                        message_id=message_id,
+                    )
             except EAIClientError as e:
                 # Ignore 404 Not Found, as it means the response is not ready yet.
                 if e.status_code != 404:
