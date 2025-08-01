@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 
 from src.utils.bigquery import upload_dataset_to_bq
-from src.evaluations.core.schemas import EvaluationTask
+from src.evaluations.core.eval.schemas import EvaluationTask
 
 
 class DataLoader:

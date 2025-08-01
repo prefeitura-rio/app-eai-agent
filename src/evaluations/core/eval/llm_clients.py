@@ -1,6 +1,5 @@
 import asyncio
 import json
-from typing import Dict, Any, Union
 from abc import ABC, abstractmethod
 from src.config import env
 
@@ -14,8 +13,8 @@ from src.services.eai_gateway.api import (
     CreateAgentRequest,
     EAIClientError,
 )
-from src.evaluations.core.utils import parse_reasoning_messages
-from src.evaluations.core.schemas import AgentResponse, ReasoningStep
+from src.evaluations.core.eval.utils import parse_reasoning_messages
+from src.evaluations.core.eval.schemas import AgentResponse, ReasoningStep
 
 from src.utils.log import logger
 
@@ -126,7 +125,7 @@ class AgentConversationManager:
             )
             raise
 
-    async def close(self):
+    async def close():
         """
         Encerra o agente ou limpa os recursos.
         """

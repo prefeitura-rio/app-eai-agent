@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-from src.evaluations.core.llm_clients import AgentConversationManager, BaseJudgeClient
-from src.evaluations.core.schemas import (
+from src.evaluations.core.eval.llm_clients import (
+    AgentConversationManager,
+    BaseJudgeClient,
+)
+from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     AgentResponse,
     ConversationTurn,

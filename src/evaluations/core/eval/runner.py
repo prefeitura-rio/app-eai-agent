@@ -5,14 +5,18 @@ import os
 import uuid
 import time
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Union
 from tqdm.asyncio import tqdm_asyncio
+from pathlib import Path
 
-from src.evaluations.core.dataloader import DataLoader
-from src.evaluations.core.llm_clients import AgentConversationManager, BaseJudgeClient
-from src.evaluations.core.evaluators.base import BaseEvaluator
-from src.evaluations.core.conversation import ConversationHandler
-from src.evaluations.core.schemas import (
+from src.evaluations.core.eval.dataloader import DataLoader
+from src.evaluations.core.eval.llm_clients import (
+    AgentConversationManager,
+    BaseJudgeClient,
+)
+from src.evaluations.core.eval.evaluators.base import BaseEvaluator
+from src.evaluations.core.eval.conversation import ConversationHandler
+from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     AgentResponse,
     EvaluationResult,
@@ -42,6 +46,7 @@ class AsyncExperimentRunner:
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         max_concurrency: int = 10,
         upload_to_bq: bool = True,
+        output_dir: Union[str, Path] = "./data",
     ):
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
@@ -54,6 +59,7 @@ class AsyncExperimentRunner:
         )
         self.semaphore = asyncio.Semaphore(max_concurrency)
         self.upload_to_bq = upload_to_bq
+        self.output_dir = output_dir
 
         if self.precomputed_responses:
             logger.info(
@@ -507,9 +513,7 @@ class AsyncExperimentRunner:
             "runs": runs,
         }
 
-        output_dir = "./src/evaluations/core/data"
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"results_{self.experiment_name}.json")
+        output_path = Path(self.output_dir) / f"results_{self.experiment_name}.json"
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(final_result, f, indent=2, ensure_ascii=False)
         logger.info(f"Resultados salvos em: {output_path}")

@@ -3,28 +3,28 @@ import pandas as pd
 import logging
 import json
 from typing import Dict, Any, Optional
+from pathlib import Path
 
-from src.evaluations.core.dataloader import DataLoader
-from src.evaluations.core.llm_clients import AzureOpenAIClient, GeminiAIClient
-from src.evaluations.core.runner import AsyncExperimentRunner
-from src.evaluations.core.conversation import ConversationHandler
+from src.evaluations.core.eval import (
+    DataLoader,
+    AzureOpenAIClient,
+    GeminiAIClient,
+    AsyncExperimentRunner,
+    ConversationHandler,
+)
 from src.services.eai_gateway.api import CreateAgentRequest
-from src.evaluations.core.data.test_data import UNIFIED_TEST_DATA
+from src.evaluations.core.experiments.batman.data.test_data import UNIFIED_TEST_DATA
 from src.utils.log import logger
 
 # Importa os avaliadores modulares
-from src.evaluations.core.evaluators.persona_adherence import (
+from src.evaluations.core.experiments.batman.evaluators import (
     PersonaAdherenceEvaluator,
-)
-from src.evaluations.core.evaluators.conversational_reasoning import (
     ConversationalReasoningEvaluator,
-)
-from src.evaluations.core.evaluators.conversational_memory import (
     ConversationalMemoryEvaluator,
-)
-from src.evaluations.core.evaluators.semantic_correctness import (
     SemanticCorrectnessEvaluator,
 )
+
+EXPERIMENT_DATA_PATH = Path("./src/evaluations/core/experiments/batman/data")
 
 
 async def run_experiment():
@@ -96,8 +96,8 @@ async def run_experiment():
 
     # --- 4. Carregamento de Respostas Pré-computadas (Opcional) ---
     PRECOMPUTED_RESPONSES_PATH = (
-        "./src/evaluations/core/data/precomputed_responses.json"  # ou None
-    )
+        EXPERIMENT_DATA_PATH / "precomputed_responses.json"
+    )  # ou None
     precomputed_responses_dict: Optional[Dict[str, Dict[str, Any]]] = None
     if PRECOMPUTED_RESPONSES_PATH:
         try:
@@ -125,8 +125,9 @@ async def run_experiment():
         evaluators=evaluators_to_run,
         judge_client=judge_client,
         max_concurrency=MAX_CONCURRENCY,
-        # precomputed_responses=precomputed_responses_dict,
+        precomputed_responses=precomputed_responses_dict,
         upload_to_bq=False,
+        output_dir=EXPERIMENT_DATA_PATH,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     await runner.run(loader)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from src.evaluations.core.evaluators.base import BaseEvaluator
-from src.evaluations.core.schemas import (
+from src.evaluations.core.eval import (
+    BaseEvaluator,
     EvaluationTask,
     EvaluationResult,
     MultiTurnContext,

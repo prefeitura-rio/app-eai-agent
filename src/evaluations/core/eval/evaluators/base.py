@@ -3,8 +3,8 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Union
 
-from src.evaluations.core.llm_clients import BaseJudgeClient
-from src.evaluations.core.schemas import (
+from src.evaluations.core.eval.llm_clients import BaseJudgeClient
+from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     EvaluationResult,
     AgentResponse,

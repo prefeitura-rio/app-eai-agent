@@ -8,20 +8,20 @@ Isso torna o sistema extensível, permitindo que novas métricas sejam
 adicionadas sem modificar o código central do runner.
 """
 
-from src.evaluations.core.evaluators.base import BaseEvaluator
-from src.evaluations.core.evaluators.conversational_memory import (
+from src.evaluations.core.experiments.batman.evaluators.conversational_memory import (
     ConversationalMemoryEvaluator,
 )
-from src.evaluations.core.evaluators.conversational_reasoning import (
+from src.evaluations.core.experiments.batman.evaluators.conversational_reasoning import (
     ConversationalReasoningEvaluator,
 )
-from src.evaluations.core.evaluators.persona_adherence import PersonaAdherenceEvaluator
-from src.evaluations.core.evaluators.semantic_correctness import (
+from src.evaluations.core.experiments.batman.evaluators.persona_adherence import (
+    PersonaAdherenceEvaluator,
+)
+from src.evaluations.core.experiments.batman.evaluators.semantic_correctness import (
     SemanticCorrectnessEvaluator,
 )
 
 __all__ = [
-    "BaseEvaluator",
     "ConversationalMemoryEvaluator",
     "ConversationalReasoningEvaluator",
     "PersonaAdherenceEvaluator",
