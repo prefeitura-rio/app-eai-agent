@@ -17,7 +17,7 @@ from src.evaluations.core.eval.llm_clients import (
     BaseJudgeClient,
     GeminiAIClient,
 )
-from src.evaluations.core.eval.runner import AsyncExperimentRunner
+from src.evaluations.core.eval.runner.orchestrator import AsyncExperimentRunner
 from src.evaluations.core.eval.schemas import (
     AgentResponse,
     ConversationTurn,

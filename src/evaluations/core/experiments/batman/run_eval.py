@@ -38,7 +38,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe,
+        source=dataframe.head(2),
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -73,8 +73,8 @@ async def run_experiment():
     evaluators_to_run = [
         LLMGuidedConversation(judge_client),
         ConversationalReasoningEvaluator(judge_client),
-        ConversationalMemoryEvaluator(judge_client),
-        PersonaAdherenceEvaluator(judge_client),
+        # ConversationalMemoryEvaluator(judge_client),
+        # PersonaAdherenceEvaluator(judge_client),
         SemanticCorrectnessEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -116,7 +116,6 @@ async def run_experiment():
         metadata=metadata,
         agent_config=agent_config.model_dump(exclude_none=True),
         evaluators=evaluators_to_run,
-        judge_client=judge_client,
         max_concurrency=MAX_CONCURRENCY,
         precomputed_responses=precomputed_responses_dict,
         upload_to_bq=False,

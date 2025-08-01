@@ -1,116 +1,88 @@
-# Resumo da Estrutura de Avaliação
+# Resumo da Estrutura e Funcionamento do Framework de Avaliação
 
-Este documento detalha a estrutura e a funcionalidade dos arquivos no diretório `src/evaluations/core/`. O sistema é projetado para carregar dados, executar experimentos de avaliação de LLM de forma assíncrona, avaliar as respostas usando "juízes" de LLM e registrar os resultados.
+O diretório `src/evaluations/core/` contém o framework principal para a avaliação de agentes de IA. A estrutura foi refatorada para promover a modularidade e a separação de responsabilidades.
 
----
+### Estrutura de Arquivos
 
-### 1. `dataloader.py`
+```
+src/evaluations/core/
+├── eval/
+│   ├── __init__.py                 # Ponto de entrada do pacote `eval`
+│   ├── dataloader.py               # Carregamento e preparação de dados
+│   ├── llm_clients.py              # Clientes para interagir com LLMs (agentes e juízes)
+│   ├── schemas.py                  # Modelos Pydantic para estruturação de dados
+│   ├── log.py                      # Configuração de logging contextualizado
+│   ├── utils.py                    # Funções utilitárias
+│   ├── evaluators/                 # Lógica de avaliação de métricas
+│   │   ├── __init__.py
+│   │   ├── base.py                 # Classes base para todos os avaliadores
+│   │   └── llm_guided_conversation.py # Avaliador que conduz uma conversa
+│   └── runner/                     # Orquestração e execução de experimentos
+│       ├── __init__.py
+│       ├── orchestrator.py         # O orquestrador principal do experimento
+│       ├── persistence.py          # Lógica para salvar resultados
+│       ├── response_manager.py     # Gerencia a obtenção de respostas do agente
+│       ├── result_analyzer.py      # Analisa os resultados agregados
+│       └── task_processor.py       # Processa uma única tarefa de avaliação
+└── experiments/
+    └── ... (Estrutura de experimentos específicos, como 'batman')
+```
 
-Este arquivo é responsável por carregar e preparar os dados para os experimentos de avaliação.
+### Detalhamento dos Arquivos e Classes
 
--   **Classe `DataLoader`**:
-    -   **Propósito**: Carrega dados de várias fontes (arquivos CSV, Google Sheets ou DataFrames do pandas), valida as colunas necessárias e formata os dados em "tarefas" para avaliação.
-    -   **Método `__init__`**:
-        -   Recebe uma fonte de dados, nomes de colunas para ID, prompt e metadados.
-        -   Recebe o nome e a descrição do conjunto de dados.
-        -   Cria uma configuração de conjunto de dados determinística, incluindo um ID de hash.
-        -   Opcionalmente, faz o upload da configuração e dos dados para o BigQuery.
-    -   **Método `_load_from_file`**: Carrega dados de um arquivo CSV.
-    -   **Método `_load_from_gsheet`**: Carrega dados de uma planilha do Google Sheets usando a URL de exportação CSV.
-    -   **Método `_validate_columns`**: Garante que todas as colunas essenciais existam no DataFrame.
-    -   **Método `get_tasks`**: Retorna um gerador que produz cada linha do DataFrame como um dicionário de tarefas padronizado, pronto para ser usado pelo executor do experimento.
+#### 1. `eval/dataloader.py`
 
----
+-   **`DataLoader`**:
+    -   **Responsabilidade**: Carregar dados de diferentes fontes (CSV, Google Sheets, DataFrame), validar a presença de colunas essenciais e preparar os dados como tarefas de avaliação.
+    -   **Métodos Principais**:
+        -   `__init__(...)`: Inicializa com a fonte de dados, nomes de colunas e metadados do dataset. Pode fazer o upload para o BigQuery.
+        -   `get_tasks()`: Retorna um gerador de objetos `EvaluationTask`, que são usados pelo runner.
+        -   `get_dataset_config()`: Retorna um dicionário com metadados do dataset, incluindo um ID determinístico.
 
-### 2. `llm_clients.py`
+#### 2. `eval/llm_clients.py`
 
-Este arquivo define os clientes para interagir com os modelos de linguagem (LLMs), tanto para o agente que está sendo avaliado quanto para o "juiz" que realiza a avaliação.
+-   **`AgentConversationManager`**:
+    -   **Responsabilidade**: Gerenciar o ciclo de vida de uma conversa com um agente EAI, garantindo que o mesmo `agent_id` seja usado em todas as interações.
+    -   **Métodos Principais**:
+        -   `initialize()`: Cria o agente via API antes de qualquer interação.
+        -   `send_message(...)`: Envia uma mensagem para o agente e retorna um `AgentResponse` padronizado, com o *reasoning* já processado.
+        -   `close()`: Encerra a conversa.
+-   **`BaseJudgeClient` (Abstrata)**:
+    -   **Responsabilidade**: Define a interface para qualquer cliente de LLM que atuará como "juiz", garantindo um método `execute`.
+-   **`AzureOpenAIClient` / `GeminiAIClient`**:
+    -   **Responsabilidade**: Implementações concretas do `BaseJudgeClient` para os respectivos serviços de LLM.
 
--   **Classe `AgentConversationManager`**:
-    -   **Propósito**: Gerencia o ciclo de vida de uma única conversa com um agente através da API EAI Gateway. Garante que um `agent_id` consistente seja usado para todas as interações em uma conversa.
-    -   **Método `initialize`**: Cria um novo agente usando a API e armazena o `agent_id` para a sessão.
-    -   **Método `send_message`**: Envia uma mensagem para o agente criado e aguarda a resposta completa, incluindo a cadeia de pensamento (reasoning).
-    -   **Método `close`**: Encerra a sessão de conversação.
+#### 3. `eval/schemas.py`
 
--   **Classe `AzureOpenAIClient`**:
-    -   **Propósito**: Cliente para interagir com a API do Azure OpenAI. Usado principalmente para o "juiz" da avaliação.
-    -   **Método `execute`**: Envia um prompt para o modelo do Azure e retorna a resposta de texto.
+-   **Responsabilidade**: Define a estrutura de todos os dados usados no framework de avaliação usando Pydantic. Isso garante consistência e validação automática.
+-   **Schemas Principais**:
+    -   `EvaluationTask`: Uma única tarefa de avaliação (uma linha do dataset).
+    -   `AgentResponse`: A resposta de um agente, incluindo o output final e o *reasoning trace*.
+    -   `EvaluationResult`: A saída padronizada de um avaliador (score, anotações, erro).
+    -   `ConversationTurn`: Um único turno (usuário + agente) em uma conversa.
+    -   `RunResult`: O resultado completo para uma única `EvaluationTask`, agregando as análises de turno único e múltiplos turnos.
 
--   **Classe `GeminiAIClient`**:
-    -   **Propósito**: Cliente para interagir com a API do Google Gemini. Também usado como um "juiz".
-    -   **Método `execute`**: Envia um prompt para o modelo Gemini e retorna a resposta de texto.
+#### 4. `eval/evaluators/base.py`
 
----
+-   **`BaseEvaluator` (Abstrata)**:
+    -   **Responsabilidade**: Classe base para todos os avaliadores de métricas. Define a interface (`evaluate`) e fornece um método auxiliar (`_get_llm_judgement`) para formatar o prompt e obter o julgamento do LLM.
+-   **`BaseConversationEvaluator` (Abstrata)**:
+    -   **Responsabilidade**: Classe base para avaliadores que **geram** uma conversa multi-turno. Seu propósito não é pontuar, mas sim produzir a transcrição que outros avaliadores irão analisar.
 
-### 3. `prompt_judges.py`
+#### 5. `eval/runner/` (Componentes do Runner Refatorado)
 
-Este arquivo é um repositório central para todos os templates de prompt usados pelos "juízes" LLM para avaliar as respostas do agente.
-
--   **Constantes de Prompt**:
-    -   `CONVERSATIONAL_JUDGE_PROMPT`: Usado para guiar o juiz durante uma conversa multi-turno, instruindo-o sobre como continuar ou encerrar a conversa com base em um roteiro.
-    -   `FINAL_CONVERSATIONAL_JUDGEMENT_PROMPT`: Usado para uma avaliação final do **raciocínio** do agente após uma conversa completa.
-    -   `FINAL_MEMORY_JUDGEMENT_PROMPT`: Usado para uma avaliação final da **memória** do agente após uma conversa completa.
-    -   `SEMANTIC_CORRECTNESS_PROMPT`: Avalia a correção semântica de uma resposta de turno único em comparação com uma resposta ideal ("golden").
-    -   `PERSONA_ADHERENCE_PROMPT`: Avalia se a resposta de turno único do agente adere a uma persona predefinida.
-
----
-
-### 4. `evals.py`
-
-Este arquivo contém a lógica de avaliação principal, usando os clientes LLM e os prompts de julgamento para pontuar as respostas do agente.
-
--   **Decorador `@eval_method`**:
-    -   Registra uma função de avaliação em um registro global (`_EVAL_METHODS_REGISTRY`), especificando seu nome e o tipo de avaliação (`one` para turno único, `multiple` para multi-turno).
-
--   **Classe `Evals`**:
-    -   **Propósito**: Contém os métodos de avaliação que chamam o LLM juiz.
-    -   **Método `_get_llm_judgement`**: Uma função auxiliar que formata um prompt com os dados da tarefa, envia-o para o cliente juiz e extrai uma pontuação numérica da resposta.
-    -   **Métodos de Avaliação (decorados com `@eval_method`)**:
-        -   `conversational_reasoning`: Avalia o raciocínio em uma conversa multi-turno.
-        -   `conversational_memory`: Avalia a memória em uma conversa multi-turno.
-        -   `semantic_correctness`: Avalia a correção semântica de uma resposta de turno único.
-        -   `persona_adherence`: Avalia a aderência à persona de uma resposta de turno único.
-
--   **Classe `ConversationHandler`**:
-    -   **Propósito**: Orquestra uma conversa completa entre o agente e o juiz LLM.
-    -   **Método `conduct`**: Inicia uma conversa, envia mensagens em turnos, obtém a próxima ação do juiz e continua até que um sinal de parada seja recebido. Retorna a transcrição completa da conversa.
-
----
-
-### 5. `runner.py`
-
-Este arquivo contém o orquestrador principal para executar um experimento de avaliação de ponta a ponta.
-
--   **Classe `AsyncExperimentRunner`**:
-    -   **Propósito**: Gerencia a execução de todas as tarefas em um conjunto de dados, executa as avaliações de forma concorrente e compila os resultados.
-    -   **Método `__init__`**: Configura o nome do experimento, metadados, configuração do agente, suíte de avaliação e o nível de concorrência. Pode ser inicializado com respostas pré-computadas para evitar a execução ao vivo do agente.
-    -   **Método `_process_task`**: Processa uma única tarefa do conjunto de dados. Ele obtém a resposta do agente (seja ao vivo ou pré-computada), executa todas as avaliações configuradas em paralelo e retorna um resultado estruturado para a tarefa.
-    -   **Métodos `_get_one_turn_response` e `_get_multi_turn_transcript`**: Funções auxiliares para obter as respostas do agente, usando dados pré-computados se disponíveis.
-    -   **Método `_execute_evaluations`**: Executa as funções de avaliação relevantes para uma tarefa, medindo o tempo de execução.
-    -   **Métodos de sumarização (`_calculate_metrics_summary`, `_calculate_error_summary`)**: Calculam métricas agregadas (média, mediana, etc.) e resumos de erros em todos os `runs`.
-    -   **Método `run`**: O ponto de entrada principal. Pega um `DataLoader`, itera sobre as tarefas, processa-as em paralelo usando `asyncio.gather` e `tqdm` para uma barra de progresso, calcula os resumos e salva o resultado final em um arquivo JSON e, opcionalmente, no BigQuery.
-
----
-
-### 6. `utils.py`
-
-Este arquivo fornece funções de utilidade, principalmente para o processamento dos dados de resposta.
-
--   **Função `parse_reasoning_messages`**:
-    -   **Propósito**: Transforma a lista de mensagens brutas retornadas pela API EAI Gateway em uma estrutura mais limpa e padronizada.
-    -   **Lógica**: Itera sobre as mensagens, extrai o conteúdo relevante com base no `message_type` e tenta analisar strings JSON aninhadas (como argumentos de chamada de ferramenta ou retornos de ferramenta) em objetos Python.
-
----
-
-### 7. `main.py`
-
-Este arquivo serve como o ponto de entrada para executar um experimento de exemplo.
-
--   **Função `run_experiment`**:
-    -   **Propósito**: Demonstra como configurar e executar um experimento completo.
-    -   **Passos**:
-        1.  **Define o Dataset**: Cria um `DataLoader` com um DataFrame de exemplo.
-        2.  **Define o Agente**: Cria um `CreateAgentRequest` com a configuração do agente a ser testado.
-        3.  **Define a Suíte de Avaliação**: Instancia um cliente juiz (por exemplo, `AzureOpenAIClient`) e a classe `Evals`.
-        4.  **Configura o Runner**: Instancia o `AsyncExperimentRunner` com todas as configurações, incluindo metadados, métricas a serem executadas e, opcionalmente, respostas pré-computadas.
-        5.  **Executa**: Chama o método `runner.run()` para iniciar o processo de avaliação.
+-   **`orchestrator.py` -> `AsyncExperimentRunner`**:
+    -   **Responsabilidade**: Orquestrador de alto nível. Inicializa os outros componentes, carrega as tarefas e coordena o fluxo do experimento.
+    -   **Método Principal**: `run(loader)`: Executa o experimento completo, delegando o trabalho para os outros componentes.
+-   **`response_manager.py` -> `ResponseManager`**:
+    -   **Responsabilidade**: Abstrai a origem das respostas do agente (execução ao vivo ou cache pré-computado).
+    -   **Métodos Principais**: `get_one_turn_response()`, `get_multi_turn_transcript()`.
+-   **`task_processor.py` -> `TaskProcessor`**:
+    -   **Responsabilidade**: Processa **uma única** `EvaluationTask`. Obtém as respostas via `ResponseManager`, executa os avaliadores e retorna o `RunResult`.
+    -   **Método Principal**: `process(task)`.
+-   **`result_analyzer.py` -> `ResultAnalyzer`**:
+    -   **Responsabilidade**: Calcula todas as estatísticas agregadas (médias, desvio padrão, taxas de erro) a partir da lista completa de `RunResult`.
+    -   **Método Principal**: `analyze(runs, total_duration)`.
+-   **`persistence.py` -> `ResultPersistence`**:
+    -   **Responsabilidade**: Salva os resultados finais em disco (JSON) e, opcionalmente, no BigQuery.
+    -   **Método Principal**: `save(final_result)`.
