@@ -28,23 +28,31 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
 const fillTemplate = (template: string, run: ExperimentRun): string => {
     if (!template || !run) return template;
 
-    return template.replace(/\{([^}]+)\}/g, (match, key) => {
+    // Regex para encontrar placeholders como {task[key]} ou {agent_response[message]}
+    return template.replace(/\{(.*?)\}/g, (match, key) => {
         key = key.trim();
         
-        const taskMatch = key.match(/^task\[['"]?(.+)['"]?\]$/);
+        const taskMatch = key.match(/^task\['"]?(.+?)['"]?\]$/);
         if (taskMatch) {
             const taskKey = taskMatch[1];
-            return run.task_data[taskKey] as string || match;
+            return String(run.task_data[taskKey] ?? match);
         }
 
-        if (key === 'output') {
-            return run.agent_response.one_turn || match;
+        const agentResponseMatch = key.match(/^agent_response\['"]?(.+?)['"]?\]$/);
+        if (agentResponseMatch) {
+            const responseKey = agentResponseMatch[1];
+            if (responseKey === 'message') {
+                return run.one_turn_analysis.agent_message || match;
+            }
         }
-        if (key === 'transcript') {
-            return JSON.stringify(run.reasoning_trace.multi_turn, null, 2);
+        
+        if (key === 'history' || key === 'agent_response.conversation_history') {
+            return run.multi_turn_analysis.transcript
+                ?.map(t => `User: ${t.user_message}\nAgent: ${t.agent_message}`)
+                .join('\n\n') || match;
         }
 
-        return run.task_data[key] as string || match;
+        return match; // Retorna o placeholder original se não encontrar
     });
 };
 
@@ -99,7 +107,7 @@ export default function Metadata({ metadata, selectedRun }: MetadataProps) {
                             </AccordionContent>
                         </AccordionItem>
                     )}
-                    {processedPrompts && (
+                    {processedPrompts && Object.keys(processedPrompts).length > 0 && (
                         <AccordionItem value="judge-prompts">
                             <AccordionTrigger>Prompts do Juiz</AccordionTrigger>
                             <AccordionContent className="overflow-visible">

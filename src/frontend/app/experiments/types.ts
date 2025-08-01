@@ -1,5 +1,65 @@
 // src/frontend/app/experiments/types.ts
 
+// --- Base Schemas from Backend ---
+
+export interface ReasoningStep {
+    message_type: string;
+    content: string | Record<string, any> | null;
+}
+
+export interface ConversationTurn {
+    turn: number;
+    user_message: string;
+    agent_message: string | null;
+    agent_reasoning_trace: ReasoningStep[] | null;
+}
+
+export interface EvaluationTask {
+    id: string;
+    prompt: string;
+    [key: string]: any; // For other metadata columns
+}
+
+export interface EvaluationResult {
+    score: number | null;
+    annotations: string;
+    has_error: boolean;
+    error_message: string | null;
+}
+
+// Combined evaluation result with metadata from the runner
+export interface Evaluation extends EvaluationResult {
+    metric_name: string;
+    duration_seconds: number;
+}
+
+export interface OneTurnAnalysis {
+    agent_message: string | null;
+    agent_reasoning_trace: ReasoningStep[] | null;
+    evaluations: Evaluation[];
+    has_error: boolean;
+    error_message: string | null;
+}
+
+export interface MultiTurnAnalysis {
+    final_agent_message: string | null;
+    transcript: ConversationTurn[] | null;
+    evaluations: Evaluation[];
+    has_error: boolean;
+    error_message: string | null;
+}
+
+// This is the main object for a single run, matching `TaskOutput` from the backend.
+export interface ExperimentRun {
+    duration_seconds: number;
+    task_data: EvaluationTask;
+    one_turn_analysis: OneTurnAnalysis;
+    multi_turn_analysis: MultiTurnAnalysis;
+}
+
+
+// --- Aggregate and Info Schemas (Mostly Unchanged) ---
+
 export interface DatasetInfo {
     dataset_id: string;
     dataset_name: string;
@@ -67,38 +127,7 @@ export interface DatasetExamplesInfo {
     examples: DatasetExample[];
 }
 
-interface Turn {
-    turn: number;
-    judge_message: string;
-    agent_response: string;
-    [key: string]: unknown;
-}
-
-export interface ExperimentRun {
-    duration_seconds: number;
-    task_data: {
-        id: string;
-        prompt?: string;
-        [key: string]: unknown;
-    };
-    agent_response: {
-        one_turn: string | null;
-        multi_turn_final: string | null;
-    };
-    reasoning_trace: {
-        one_turn: { message_type: string; [key: string]: unknown }[] | null;
-        multi_turn: Turn[] | null;
-    };
-    evaluations: {
-        metric_name: string;
-        score: number | null;
-        judge_annotations: string | null;
-        eval_type?: 'one' | 'multiple';
-        [key: string]: unknown;
-    }[];
-    [key: string]: unknown;
-}
-
+// This is the top-level object for the entire experiment data.
 export interface ExperimentDetails {
     dataset_id: string;
     dataset_name: string;

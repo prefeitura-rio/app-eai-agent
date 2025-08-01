@@ -36,20 +36,30 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
   }, [experimentData]);
 
   const handleDownloadCleanJson = async (numRuns: number | null, filters: LlmJsonFilters): Promise<boolean> => {
-    console.log("Downloading clean JSON with", { numRuns, filters });
-    
     let runsToExport = [...experimentData.runs];
     
     if (numRuns !== null && numRuns < runsToExport.length) {
-        runsToExport.sort(() => 0.5 - Math.random());
-        runsToExport = runsToExport.slice(0, numRuns);
+        runsToExport = [...runsToExport].sort(() => 0.5 - Math.random()).slice(0, numRuns);
     }
 
     const cleanedRuns = runsToExport.map(run => {
-        const cleanRun: Partial<ExperimentRun> = { task_data: { id: run.task_data.id } };
-        if (filters.include_task_data) cleanRun.task_data = run.task_data;
-        if (filters.include_evaluations) cleanRun.evaluations = run.evaluations;
-        if (filters.include_reasoning_trace) cleanRun.reasoning_trace = run.reasoning_trace;
+        const cleanRun: any = {};
+        if (filters.include_task_data) {
+            cleanRun.task_data = run.task_data;
+        }
+        
+        const analysis: any = {};
+        if (filters.include_evaluations) {
+            analysis.evaluations = [
+                ...run.one_turn_analysis.evaluations,
+                ...run.multi_turn_analysis.evaluations
+            ];
+        }
+        if (filters.include_reasoning_trace) {
+            analysis.one_turn_reasoning = run.one_turn_analysis.agent_reasoning_trace;
+            analysis.multi_turn_transcript = run.multi_turn_analysis.transcript;
+        }
+        cleanRun.analysis = analysis;
         return cleanRun;
     });
 

@@ -17,14 +17,13 @@ from src.utils.log import logger
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.batman.evaluators import (
+    BatmanLLMGuidedConversation,
     PersonaAdherenceEvaluator,
     ConversationalReasoningEvaluator,
     ConversationalMemoryEvaluator,
     SemanticCorrectnessEvaluator,
 )
-from src.evaluations.core.eval.evaluators.llm_guided_conversation import (
-    LLMGuidedConversation,
-)
+
 
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 
@@ -38,7 +37,7 @@ async def run_experiment():
     # --- 1. Definição do Dataset ---
     dataframe = pd.DataFrame(UNIFIED_TEST_DATA)
     loader = DataLoader(
-        source=dataframe.head(2),
+        source=dataframe,
         id_col="id",
         prompt_col="initial_prompt",
         dataset_name="Batman Unified Conversation Test",
@@ -58,7 +57,7 @@ async def run_experiment():
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
-        tools=["google_search"],
+        tools=[],
         user_number="evaluation_user",
         name="BatmanUnifiedAgent",
         tags=["batman", "unified_test"],
@@ -71,10 +70,10 @@ async def run_experiment():
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
-        LLMGuidedConversation(judge_client),
+        BatmanLLMGuidedConversation(judge_client),
         ConversationalReasoningEvaluator(judge_client),
-        # ConversationalMemoryEvaluator(judge_client),
-        # PersonaAdherenceEvaluator(judge_client),
+        ConversationalMemoryEvaluator(judge_client),
+        PersonaAdherenceEvaluator(judge_client),
         SemanticCorrectnessEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -117,12 +116,13 @@ async def run_experiment():
         agent_config=agent_config.model_dump(exclude_none=True),
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
-        # precomputed_responses=precomputed_responses_dict,
-        upload_to_bq=False,
+        precomputed_responses=precomputed_responses_dict,
+        # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
-    await runner.run(loader)
+    for i in range(10):
+        await runner.run(loader)
 
 
 if __name__ == "__main__":

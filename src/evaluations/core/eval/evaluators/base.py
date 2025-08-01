@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
+import time
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any, Union, List
 
 from src.evaluations.core.eval.llm_clients import (
     BaseJudgeClient,
@@ -13,6 +14,7 @@ from src.evaluations.core.eval.schemas import (
     AgentResponse,
     MultiTurnEvaluationInput,
     ConversationOutput,
+    ConversationTurn,
 )
 from src.utils.log import logger
 
@@ -140,24 +142,104 @@ class BaseMultipleTurnEvaluator(BaseEvaluator, ABC):
 class BaseConversationEvaluator(BaseEvaluator):
     """
     Classe base para avaliadores que GERAM uma conversa multi-turno.
-    Seu propósito não é pontuar, mas sim produzir a transcrição que
-    outros avaliadores irão analisar.
+    Contém a lógica de orquestração do loop da conversa, permitindo que
+    classes filhas customizem o comportamento através da implementação de
+    métodos específicos.
     """
 
     turn_type: str = "conversation"
+    max_turns: int = 15
+    stop_signal: str = "`EVALUATION_CONCLUDED`"
 
     @abstractmethod
+    def get_judge_prompt(self, task: EvaluationTask, history: List[str]) -> str:
+        """
+        Retorna o prompt a ser enviado ao LLM-Juiz para decidir a próxima ação.
+        Este método DEVE ser implementado pela classe filha.
+
+        Args:
+            task (EvaluationTask): A tarefa de avaliação atual.
+            history (List[str]): O histórico da conversa formatado como uma lista de strings.
+
+        Returns:
+            str: O prompt completo para o LLM-Juiz.
+        """
+        raise NotImplementedError
+
+    def is_conversation_finished(self, judge_response: str) -> bool:
+        """
+        Verifica se a resposta do juiz contém o sinal de parada.
+        Pode ser sobrescrito para lógicas de parada mais complexas.
+
+        Args:
+            judge_response (str): A resposta do LLM-Juiz.
+
+        Returns:
+            bool: True se a conversa deve terminar, False caso contrário.
+        """
+        return self.stop_signal in judge_response
+
     async def evaluate(
         self, task: EvaluationTask, agent_manager: EAIConversationManager
     ) -> ConversationOutput:
         """
         Executa a lógica de condução da conversa.
-
-        Args:
-            task (EvaluationTask): A tarefa inicial.
-            agent_manager (EAIConversationManager): O gerenciador para interagir com o agente.
-
-        Returns:
-            Um objeto ConversationOutput contendo os artefatos da conversa.
+        Este método é concreto e orquestra o diálogo usando os métodos
+        `get_judge_prompt` e `is_conversation_finished` implementados/sobrescritos
+        pelas classes filhas.
         """
-        pass
+        start_time = time.monotonic()
+        transcript, history = [], []
+        current_message = task.prompt or ""
+        last_response = AgentResponse(message=None, reasoning_trace=[])
+
+        for turn in range(self.max_turns):
+            turn_context_string = f"multi[{turn + 1}]"
+            with logger.contextualize(turn_type=turn_context_string):
+                agent_res = await agent_manager.send_message(current_message)
+                last_response = agent_res
+
+                # Adiciona o turno ao transcript e ao histórico
+                transcript.append(
+                    ConversationTurn(
+                        turn=turn + 1,
+                        user_message=current_message,
+                        agent_message=agent_res.message,
+                        agent_reasoning_trace=agent_res.reasoning_trace,
+                    )
+                )
+                history.append(
+                    f"Turno {turn+1} - User: {current_message}\nTurno {turn+1} - Agente: {agent_res.message}"
+                )
+
+                # Usa o método da subclasse para obter o prompt do juiz
+                prompt_for_judge = self.get_judge_prompt(task, history)
+                judge_res = await self.judge_client.execute(prompt_for_judge)
+
+                # Usa o método da subclasse para verificar a condição de parada
+                if self.is_conversation_finished(judge_res):
+                    history.append(f"Turno {turn+2} - User: {judge_res}")
+                    transcript.append(
+                        ConversationTurn(
+                            turn=turn + 2,
+                            user_message=judge_res,
+                            agent_message=None,
+                            agent_reasoning_trace=None,
+                        )
+                    )
+                    break
+                current_message = judge_res
+        else:
+            logger.warning(
+                f"A conversa para a tarefa {task.id} atingiu o limite de {self.max_turns} turnos."
+            )
+
+        end_time = time.monotonic()
+        duration = end_time - start_time
+
+        return ConversationOutput(
+            transcript=transcript,
+            final_agent_message_details=last_response,
+            conversation_history=history,
+            duration_seconds=duration,
+        )

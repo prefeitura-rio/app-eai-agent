@@ -19,13 +19,20 @@ export default function Filters({ runs, onFilterChange }: FiltersProps) {
   const filterOptions = useMemo(() => {
       const options: { [key: string]: Set<number> } = {};
       runs.forEach(run => {
-          run.evaluations?.forEach(ev => {
-              if (ev.score !== null) {
+          // Aggregate evaluations from both one_turn and multi_turn analysis
+          const allEvaluations = [
+              ...run.one_turn_analysis.evaluations,
+              ...run.multi_turn_analysis.evaluations
+          ];
+
+          allEvaluations.forEach(ev => {
+              if (ev.score !== null && !ev.has_error) {
                 if (!options[ev.metric_name]) options[ev.metric_name] = new Set();
                 options[ev.metric_name].add(ev.score);
               }
           });
       });
+      // Sort the scores numerically
       Object.keys(options).forEach(key => {
           options[key] = new Set(Array.from(options[key]).sort((a, b) => a - b));
       });
@@ -46,7 +53,11 @@ export default function Filters({ runs, onFilterChange }: FiltersProps) {
 
       const filtered = runs.filter(run => {
           return activeFilters.every(([metricName, value]) => {
-              const evaluation = run.evaluations?.find(ev => ev.metric_name === metricName);
+              const allEvaluations = [
+                  ...run.one_turn_analysis.evaluations,
+                  ...run.multi_turn_analysis.evaluations
+              ];
+              const evaluation = allEvaluations.find(ev => ev.metric_name === metricName);
               return evaluation && evaluation.score === parseFloat(value);
           });
       });
