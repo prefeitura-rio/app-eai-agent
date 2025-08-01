@@ -42,7 +42,7 @@ class AgentResponse(BaseModel):
     reasoning_trace: Optional[List[ReasoningStep]] = None
 
 
-class MultiTurnContext(BaseModel):
+class MultiTurnEvaluationInput(BaseModel):
     """Contém todo o contexto de uma conversa multi-turno para avaliação."""
 
     conversation_history: str
@@ -93,7 +93,7 @@ class MultiTurnAnalysis(BaseModel):
     error_message: Optional[str] = None
 
 
-class RunResult(BaseModel):
+class TaskOutput(BaseModel):
     """
     Define a estrutura completa do resultado para um único 'run' (tarefa)
     dentro de um experimento.

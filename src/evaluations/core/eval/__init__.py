@@ -23,11 +23,11 @@ from src.evaluations.core.eval.schemas import (
     ConversationTurn,
     EvaluationResult,
     EvaluationTask,
-    MultiTurnContext,
+    MultiTurnEvaluationInput,
     OneTurnAnalysis,
     MultiTurnAnalysis,
     ReasoningStep,
-    RunResult,
+    TaskOutput,
     ConversationOutput,
 )
 
@@ -44,10 +44,10 @@ __all__ = [
     "ConversationTurn",
     "EvaluationResult",
     "EvaluationTask",
-    "MultiTurnContext",
+    "MultiTurnEvaluationInput",
     "OneTurnAnalysis",
     "MultiTurnAnalysis",
     "ReasoningStep",
-    "RunResult",
+    "TaskOutput",
     "ConversationOutput",
 ]

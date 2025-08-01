@@ -11,7 +11,7 @@ from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     EvaluationResult,
     AgentResponse,
-    MultiTurnContext,
+    MultiTurnEvaluationInput,
     ConversationOutput,
 )
 from src.utils.log import logger
@@ -55,7 +55,7 @@ class BaseEvaluator(ABC):
         self,
         prompt_template: str,
         task: EvaluationTask,
-        agent_response: Union[AgentResponse, MultiTurnContext],
+        agent_response: Union[AgentResponse, MultiTurnEvaluationInput],
     ) -> EvaluationResult:
         """
         Formata um prompt, executa-o contra o cliente juiz e retorna um

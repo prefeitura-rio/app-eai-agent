@@ -6,12 +6,12 @@ from typing import List, Dict, Any, Optional, Tuple
 from src.evaluations.core.eval.schemas import (
     EvaluationTask,
     AgentResponse,
-    RunResult,
+    TaskOutput,
     OneTurnAnalysis,
     MultiTurnAnalysis,
     ConversationOutput,
     EvaluationResult,
-    MultiTurnContext,
+    MultiTurnEvaluationInput,
 )
 from src.evaluations.core.eval.evaluators.base import (
     BaseEvaluator,
@@ -100,19 +100,19 @@ class TaskProcessor:
         ]
 
         # 5. Monta o resultado final
-        run_result = RunResult(
+        task_output = TaskOutput(
             duration_seconds=round(time.perf_counter() - start_time, 4),
             task_data=task,
             one_turn_analysis=one_turn_analysis,
             multi_turn_analysis=multi_turn_analysis,
         )
-        return run_result.model_dump()
+        return task_output.model_dump()
 
     async def _get_one_turn_response(
         self, task: EvaluationTask
     ) -> Tuple[AgentResponse, float]:
         if not self.evaluator_cache["one_turn"]:
-            return AgentResponse(output=None, messages=[]), 0.0
+            return AgentResponse(message=None, reasoning_trace=[]), 0.0
 
         with logger.contextualize(task_id=task.id, turn_type="one-turn"):
             return await self.response_manager.get_one_turn_response(task)
@@ -258,11 +258,13 @@ class TaskProcessor:
             raise ValueError(
                 f"Dados multi-turn não disponíveis para a tarefa '{task.id}'."
             )
-        multi_turn_context = MultiTurnContext(
+        multi_turn_evaluation_input = MultiTurnEvaluationInput(
             conversation_history="\n".join(multi_turn_output.conversation_history),
             transcript=multi_turn_output.transcript,
         )
-        return await evaluator.evaluate(agent_response=multi_turn_context, task=task)
+        return await evaluator.evaluate(
+            agent_response=multi_turn_evaluation_input, task=task
+        )
 
     async def _evaluate_one_turn(
         self,

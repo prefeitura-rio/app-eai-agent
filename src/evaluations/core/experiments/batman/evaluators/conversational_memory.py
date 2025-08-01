@@ -3,7 +3,7 @@ from src.evaluations.core.eval import (
     BaseEvaluator,
     EvaluationTask,
     EvaluationResult,
-    MultiTurnContext,
+    MultiTurnEvaluationInput,
 )
 
 
@@ -36,7 +36,7 @@ Reasoning: <uma explicação curta e objetiva para a sua nota de MEMÓRIA>
 """
 
     async def evaluate(
-        self, agent_response: MultiTurnContext, task: EvaluationTask
+        self, agent_response: MultiTurnEvaluationInput, task: EvaluationTask
     ) -> EvaluationResult:
         """
         Executa a avaliação de memória conversacional usando o cliente juiz.
