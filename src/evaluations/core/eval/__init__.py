@@ -10,6 +10,7 @@ from src.evaluations.core.eval.dataloader import DataLoader
 from src.evaluations.core.eval.evaluators.base import (
     BaseEvaluator,
     BaseConversationEvaluator,
+    BaseAnalysisEvaluator,
 )
 from src.evaluations.core.eval.llm_clients import (
     EAIConversationManager,
@@ -23,9 +24,7 @@ from src.evaluations.core.eval.schemas import (
     ConversationTurn,
     EvaluationResult,
     EvaluationTask,
-    MultiTurnContext,
-    OneTurnAnalysis,
-    MultiTurnAnalysis,
+    EvaluationContext,
     ReasoningStep,
     RunResult,
     ConversationOutput,
@@ -35,6 +34,7 @@ __all__ = [
     "DataLoader",
     "BaseEvaluator",
     "BaseConversationEvaluator",
+    "BaseAnalysisEvaluator",
     "EAIConversationManager",
     "AzureOpenAIClient",
     "BaseJudgeClient",
@@ -44,9 +44,7 @@ __all__ = [
     "ConversationTurn",
     "EvaluationResult",
     "EvaluationTask",
-    "MultiTurnContext",
-    "OneTurnAnalysis",
-    "MultiTurnAnalysis",
+    "EvaluationContext",
     "ReasoningStep",
     "RunResult",
     "ConversationOutput",

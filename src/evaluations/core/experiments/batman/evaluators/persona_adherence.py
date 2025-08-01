@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 from src.evaluations.core.eval import (
-    BaseEvaluator,
-    EvaluationTask,
-    AgentResponse,
+    BaseAnalysisEvaluator,
+    EvaluationContext,
     EvaluationResult,
 )
 
 
-class PersonaAdherenceEvaluator(BaseEvaluator):
+class PersonaAdherenceEvaluator(BaseAnalysisEvaluator):
     """
     Avalia se a resposta de um agente adere a uma persona pré-definida.
     """
 
     name = "persona_adherence"
-    turn_type = "one"
+    required_context = "one_turn"
 
     PROMPT_TEMPLATE = """
-Avalie se a resposta da IA adere à persona definida: **{task[persona]}**.
+Avalie se a resposta da IA adere à persona definida: **{context[task][persona]}**.
 **Resposta Gerada pela IA:**
-{agent_response[output]}
+{context[one_turn_response][output]}
 **Sua Tarefa:**
 Ruim: 0.0
 Bom: 0.5
@@ -29,14 +28,11 @@ Score: <um valor float>
 Reasoning: <uma explicação curta sobre como a resposta se alinha (ou não) à persona>
 """
 
-    async def evaluate(
-        self, agent_response: AgentResponse, task: EvaluationTask
-    ) -> EvaluationResult:
+    async def _evaluate_logic(self, context: EvaluationContext) -> EvaluationResult:
         """
         Executa a avaliação de aderência à persona usando o cliente juiz.
         """
         return await self._get_llm_judgement(
             prompt_template=self.PROMPT_TEMPLATE,
-            task=task,
-            agent_response=agent_response,
+            context=context,
         )

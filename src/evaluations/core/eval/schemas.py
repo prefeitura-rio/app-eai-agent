@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional, Union
 
 
@@ -35,18 +35,13 @@ class EvaluationTask(BaseModel):
 
 class AgentResponse(BaseModel):
     """
-    Estrutura a resposta de uma interação com o agente, seja de um ou múltiplos turnos.
+    Estrutura a resposta de uma interação com o agente.
     """
 
     output: Optional[str] = None
     messages: Optional[List[ReasoningStep]] = None
-
-
-class MultiTurnContext(BaseModel):
-    """Contém todo o contexto de uma conversa multi-turno para avaliação."""
-
-    conversation_history: str
-    transcript: List[ConversationTurn]
+    has_error: bool = False
+    error_message: Optional[str] = None
 
 
 class ConversationOutput(BaseModel):
@@ -55,10 +50,19 @@ class ConversationOutput(BaseModel):
     todos os artefatos gerados durante o diálogo.
     """
 
-    transcript: List[ConversationTurn]
-    final_agent_response: AgentResponse
-    history_for_judge: List[str]
-    duration_seconds: float
+    transcript: List[ConversationTurn] = []
+    conversation_history: str = ""
+    duration_seconds: float = 0.0
+    has_error: bool = False
+    error_message: Optional[str] = None
+
+
+class EvaluationContext(BaseModel):
+    """Contém todo o contexto necessário para um avaliador executar."""
+
+    task: EvaluationTask
+    one_turn_response: AgentResponse
+    multi_turn_output: Optional[ConversationOutput] = None
 
 
 class EvaluationResult(BaseModel):
@@ -73,24 +77,6 @@ class EvaluationResult(BaseModel):
     error_message: Optional[str] = None
 
 
-class OneTurnAnalysis(BaseModel):
-    """Estrutura a análise completa para uma avaliação de turno único."""
-
-    agent_response: Optional[str] = None
-    reasoning_trace: Optional[List[ReasoningStep]] = None
-    evaluations: List[Dict[str, Any]] = []
-    error: Optional[str] = None
-
-
-class MultiTurnAnalysis(BaseModel):
-    """Estrutura a análise completa para uma avaliação multi-turno."""
-
-    final_agent_response: Optional[str] = None
-    conversation_transcript: Optional[List[ConversationTurn]] = None
-    evaluations: List[Dict[str, Any]] = []
-    error: Optional[str] = None
-
-
 class RunResult(BaseModel):
     """
     Define a estrutura completa do resultado para um único 'run' (tarefa)
@@ -99,6 +85,6 @@ class RunResult(BaseModel):
 
     duration_seconds: float
     task_data: EvaluationTask
-    one_turn_analysis: OneTurnAnalysis
-    multi_turn_analysis: MultiTurnAnalysis
-    error: Optional[str] = None
+    one_turn_response: AgentResponse
+    multi_turn_output: Optional[ConversationOutput] = None
+    evaluations: List[Dict[str, Any]] = []

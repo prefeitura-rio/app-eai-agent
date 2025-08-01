@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 4089654504172656708,
-  "experiment_id": 1757881746577007865,
+  "experiment_id": 1741319725262862007,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-01T11:06:57.932256+00:00",
+  "experiment_timestamp": "2025-08-01T12:51:23.881835+00:00",
   "experiment_metadata": {
     "agent_config": {
       "user_number": "evaluation_user",
@@ -29,21 +29,23 @@
     },
     "judge_model": "gpt-4o",
     "judges_prompts": {
-      "conversational_reasoning": "\nVocê é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.\n\n**Objetivo da Avaliação:**\n{task[golden_response_multiple_shot]}\n**Transcrição Completa da Conversa:**\n{agent_response[conversation_history]}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\nAnalise a transcrição e compare o desempenho do agente com o objetivo.\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float para a capacidade de RACIOCÍNIO>\nReasoning: <uma explicação curta e objetiva para a sua nota de RACIOCÍNIO>\n",
-      "semantic_correctness": "\nAvalie similaridade semântica da resposta gerada por uma IA em relacao a Resposta ideal.\n**Resposta Gerada pela IA:**\n{agent_response[output]}\n**Resposta Ideal:**\n{task[golden_response_one_shot]}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\n\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float >\nReasoning: <uma explicação curta e objetiva para a sua nota>\n"
+      "conversational_reasoning": "\nVocê é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.\n\n**Objetivo da Avaliação:**\n{context[task][golden_response_multiple_shot]}\n**Transcrição Completa da Conversa:**\n{context[multi_turn_output][conversation_history]}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\nAnalise a transcrição e compare o desempenho do agente com o objetivo.\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float para a capacidade de RACIOCÍNIO>\nReasoning: <uma explicação curta e objetiva para a sua nota de RACIOCÍNIO>\n",
+      "semantic_correctness": "\nAvalie similaridade semântica da resposta gerada por uma IA em relacao a Resposta ideal.\n**Resposta Gerada pela IA:**\n{context[one_turn_response][output]}\n**Resposta Ideal:**\n{context[task][golden_response_one_shot]}\n\n**Sua Tarefa:**\nRuim: 0.0\nBom: 0.5\nExelente:1.0\n\nResponda em duas linhas separadas, formatadas EXATAMENTE assim:\nScore: <um valor float >\nReasoning: <uma explicação curta e objetiva para a sua nota>\n"
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 2.08,
-    "average_task_duration_seconds": 1.98,
-    "average_metric_duration_seconds": 1.38
+    "total_duration_seconds": 13.15,
+    "average_task_duration_seconds": 12.91,
+    "average_metric_duration_seconds": 0.67
   },
   "error_summary": {
-    "total_failed_runs": 1,
-    "errors_per_metric": {
-      "conversational_reasoning": 1
+    "total_failed_runs": 2,
+    "errors_per_metric_or_stage": {
+      "conversational_reasoning": 2,
+      "multi_turn_generation": 2
     },
     "failed_run_ids": [
+      "unified_conv_1",
       "unified_conv_2"
     ]
   },
@@ -51,31 +53,19 @@
     {
       "metric_name": "conversational_reasoning",
       "total_runs": 2,
-      "successful_runs": 1,
-      "success_rate_percentage": 50.0,
-      "failed_runs": 1,
-      "failure_rate_percentage": 50.0,
-      "score_statistics": {
-        "average": 0.5,
-        "median": 0.5,
-        "min": 0.5,
-        "max": 0.5,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 2,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
         "std_dev": 0.0
       },
-      "duration_statistics_seconds": {
-        "average": 0.8655,
-        "median": 0.8655,
-        "min": 0.0,
-        "max": 1.731,
-        "std_dev": 1.224
-      },
-      "score_distribution": [
-        {
-          "value": 0.5,
-          "count": 1,
-          "percentage": 100.0
-        }
-      ]
+      "score_distribution": []
     },
     {
       "metric_name": "semantic_correctness",
@@ -85,31 +75,36 @@
       "failed_runs": 0,
       "failure_rate_percentage": 0.0,
       "score_statistics": {
-        "average": 0.5,
-        "median": 0.5,
+        "average": 0.75,
+        "median": 0.75,
         "min": 0.5,
-        "max": 0.5,
-        "std_dev": 0.0
+        "max": 1.0,
+        "std_dev": 0.3536
       },
       "duration_statistics_seconds": {
-        "average": 1.8984,
-        "median": 1.8984,
-        "min": 1.7373,
-        "max": 2.0594,
-        "std_dev": 0.2278
+        "average": 1.3458,
+        "median": 1.3458,
+        "min": 1.2646,
+        "max": 1.4271,
+        "std_dev": 0.1149
       },
       "score_distribution": [
         {
           "value": 0.5,
-          "count": 2,
-          "percentage": 100.0
+          "count": 1,
+          "percentage": 50.0
+        },
+        {
+          "value": 1.0,
+          "count": 1,
+          "percentage": 50.0
         }
       ]
     }
   ],
   "runs": [
     {
-      "duration_seconds": 1.894,
+      "duration_seconds": 12.6822,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -118,55 +113,64 @@
         "golden_response_multiple_shot": "O agente deve: (1) Lembrar o nome 'Dr. Crane' e mostrar desconfiança. (2) Conectar o roubo e a toxina, suspeitando do Espantalho/Coringa. (3) Manter a persona. (4) Responder 'Paris'.",
         "golden_response_one_shot": "Paris."
       },
-      "one_turn_analysis": {
-        "agent_response": "Paris. Agora, fale sobre suas intenções, Dr. Crane.",
-        "reasoning_trace": [
+      "one_turn_response": {
+        "output": "Paris.",
+        "messages": [
           {
-            "message_type": "precomputed",
-            "content": "Paris. Agora, fale sobre suas intenções, Dr. Crane."
-          }
-        ],
-        "evaluations": [
-          {
-            "metric_name": "semantic_correctness",
-            "duration_seconds": 1.7373,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: A resposta da IA incluiu \"Paris\", sendo semanticamente equivalente ao início da resposta ideal, mas adicionou informações irrelevantes que se desviam do objetivo direto da resposta.",
-            "has_error": false,
-            "error_message": null,
-            "turn_type": "one"
-          }
-        ]
-      },
-      "multi_turn_analysis": {
-        "final_agent_response": "Ace Chemicals... Isso me interessa. Continue.",
-        "conversation_transcript": [
-          {
-            "turn": 1,
-            "judge_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
-            "agent_response": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?"
+            "message_type": "reasoning_message",
+            "content": "User introduced himself as Dr. Crane. I must remember this. He asked for the capital of France. The answer is Paris. I will provide the answer directly as Batman would, without pleasantries."
           },
           {
-            "turn": 2,
-            "judge_message": "Houve um roubo na Ace Chemicals. Estou investigando.",
-            "agent_response": "Ace Chemicals... Isso me interessa. Continue."
+            "message_type": "assistant_message",
+            "content": "Paris."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "BatmanUnifiedAgent",
+              "agent_id": "agent-5645d522-87ad-47aa-9853-b9a93bb7666f",
+              "message_id": "b47cb68e-3408-4d8e-9737-8f70d3e20c49",
+              "processed_at": "832d9bc5-f17e-443e-afaf-d82072ce3eb1",
+              "total_tokens": 1327,
+              "prompt_tokens": 1269,
+              "completion_tokens": 58,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
           }
         ],
-        "evaluations": [
-          {
-            "metric_name": "conversational_reasoning",
-            "duration_seconds": 1.731,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: O agente respondeu corretamente 'Paris' e mostrou algum interesse e engajamento em relação ao roubo, mas deixou de expressar desconfiança pelo nome 'Dr. Crane' e não conectou o roubo e a toxina aos vilões.",
-            "has_error": false,
-            "error_message": null,
-            "turn_type": "multiple"
-          }
-        ]
-      }
+        "has_error": false,
+        "error_message": null
+      },
+      "multi_turn_output": {
+        "transcript": [],
+        "conversation_history": "",
+        "duration_seconds": 0.0,
+        "has_error": true,
+        "error_message": "Falha crítica ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-f5af4012-2f1c-4f56-b821-fef25d762b0c', message_id='316480ca-2806-48c4-b915-e08663c6ab97']"
+      },
+      "evaluations": [
+        {
+          "metric_name": "conversational_reasoning",
+          "duration_seconds": 0.0,
+          "score": null,
+          "annotations": "Avaliação pulada devido a erro na geração da conversa multi-turno.",
+          "has_error": true,
+          "error_message": "Erro upstream: Falha crítica ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-f5af4012-2f1c-4f56-b821-fef25d762b0c', message_id='316480ca-2806-48c4-b915-e08663c6ab97']"
+        },
+        {
+          "metric_name": "semantic_correctness",
+          "duration_seconds": 1.2646,
+          "score": 1.0,
+          "annotations": "Score: 1.0  \nReasoning: As respostas são idênticas, apresentando total similaridade semântica.",
+          "has_error": false,
+          "error_message": null
+        }
+      ]
     },
     {
-      "duration_seconds": 2.0605,
+      "duration_seconds": 13.1327,
       "task_data": {
         "id": "unified_conv_2",
         "prompt": "Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?",
@@ -175,39 +179,61 @@
         "golden_response_multiple_shot": "O agente deve: (1) Lembrar o nome 'Selina'. (2) Conectar o roubo de joias aos avistamentos da Mulher-Gato. (3) Manter a persona. (4) Responder '4'.",
         "golden_response_one_shot": "4."
       },
-      "one_turn_analysis": {
-        "agent_response": "4. Não teste minha paciência, Selina.",
-        "reasoning_trace": [
+      "one_turn_response": {
+        "output": "Selina. Um nome que não me diz nada. Quanto a sua pergunta, 2+2 são 4. Não espere que eu me importe com mais nada.",
+        "messages": [
           {
-            "message_type": "precomputed",
-            "content": "4. Não teste minha paciência, Selina."
+            "message_type": "reasoning_message",
+            "content": "The user has provided their name, Selina, and asked a simple math question. I need to respond in character as Batman, acknowledging the name but showing indifference and directly answering the question. I will use send_message to deliver this response."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Selina. Um nome que não me diz nada. Quanto a sua pergunta, 2+2 são 4. Não espere que eu me importe com mais nada."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "BatmanUnifiedAgent",
+              "agent_id": "agent-6c23c621-71c0-48ed-9b7a-918292b7f088",
+              "message_id": "38808986-8848-4740-9c5f-c14fedc34636",
+              "processed_at": "1199d1b9-a7b1-49e9-a9e2-e0e00558b00d",
+              "total_tokens": 1369,
+              "prompt_tokens": 1269,
+              "completion_tokens": 100,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
           }
         ],
-        "evaluations": [
-          {
-            "metric_name": "semantic_correctness",
-            "duration_seconds": 2.0594,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: A resposta gerada apresenta a mesma numeração e personagem, mas adiciona conteúdo desnecessário que diverge da resposta ideal minimalista.  ",
-            "has_error": false,
-            "error_message": null,
-            "turn_type": "one"
-          }
-        ]
+        "has_error": false,
+        "error_message": null
       },
-      "multi_turn_analysis": {
-        "evaluations": [
-          {
-            "metric_name": "conversational_reasoning",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_2: Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'.",
-            "has_error": true,
-            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'.",
-            "turn_type": "multiple"
-          }
-        ]
-      }
+      "multi_turn_output": {
+        "transcript": [],
+        "conversation_history": "",
+        "duration_seconds": 0.0,
+        "has_error": true,
+        "error_message": "Falha crítica ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-8ad1bf20-5a67-4abf-a8ac-4099897328c8', message_id='377dc4f4-b8f1-4a24-94dd-b23b8791b5f2']"
+      },
+      "evaluations": [
+        {
+          "metric_name": "conversational_reasoning",
+          "duration_seconds": 0.0,
+          "score": null,
+          "annotations": "Avaliação pulada devido a erro na geração da conversa multi-turno.",
+          "has_error": true,
+          "error_message": "Erro upstream: Falha crítica ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-8ad1bf20-5a67-4abf-a8ac-4099897328c8', message_id='377dc4f4-b8f1-4a24-94dd-b23b8791b5f2']"
+        },
+        {
+          "metric_name": "semantic_correctness",
+          "duration_seconds": 1.4271,
+          "score": 0.5,
+          "annotations": "Score: 0.5  \nReasoning: A resposta gerada inclui o valor correto \"4\", mas adiciona conteúdo irrelevante, divergindo da concisão da resposta ideal.",
+          "has_error": false,
+          "error_message": null
+        }
+      ]
     }
   ]
 }

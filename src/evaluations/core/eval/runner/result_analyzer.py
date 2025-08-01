@@ -71,16 +71,11 @@ class ResultAnalyzer:
         )
 
         for run in runs:
-            if "error" in run:
+            # Pula runs que falharam antes mesmo da fase de avaliação
+            if run.get("error"):
                 continue
 
-            all_evaluations = []
-            for analysis_key in ["one_turn_analysis", "multi_turn_analysis"]:
-                analysis = run.get(analysis_key)
-                if analysis and "evaluations" in analysis:
-                    all_evaluations.extend(analysis["evaluations"])
-
-            for evaluation in all_evaluations:
+            for evaluation in run.get("evaluations", []):
                 metric_name = evaluation.get("metric_name", "unknown")
                 stats = stats_by_metric[metric_name]
                 stats["times"].append(evaluation.get("duration_seconds", 0.0))
@@ -143,24 +138,34 @@ class ResultAnalyzer:
 
         for run in runs:
             run_id = run.get("task_data", {}).get("id", "unknown")
-            if "error" in run:
-                failed_run_ids.add(run_id)
-                continue
+            has_error_in_run = False
 
-            has_evaluation_error = False
-            for analysis_key in ["one_turn_analysis", "multi_turn_analysis"]:
-                analysis = run.get(analysis_key)
-                if analysis and "evaluations" in analysis:
-                    for evaluation in analysis["evaluations"]:
-                        if evaluation.get("has_error"):
-                            has_evaluation_error = True
-                            error_breakdown[evaluation.get("metric_name", "unknown")] += 1
-            if has_evaluation_error:
+            # Verifica erro na geração da resposta one-turn
+            one_turn_response = run.get("one_turn_response", {})
+            if one_turn_response and one_turn_response.get("has_error"):
+                has_error_in_run = True
+                error_breakdown["one_turn_generation"] += 1
+
+            # Verifica erro na geração da conversa multi-turn
+            multi_turn_output = run.get("multi_turn_output")
+            if multi_turn_output and multi_turn_output.get("has_error"):
+                has_error_in_run = True
+                error_breakdown["multi_turn_generation"] += 1
+
+            # Verifica erros específicos dentro das avaliações
+            for evaluation in run.get("evaluations", []):
+                if evaluation.get("has_error"):
+                    has_error_in_run = True
+                    error_breakdown[
+                        evaluation.get("metric_name", "unknown")
+                    ] += 1
+
+            if has_error_in_run:
                 failed_run_ids.add(run_id)
 
         return {
             "total_failed_runs": len(failed_run_ids),
-            "errors_per_metric": dict(sorted(error_breakdown.items())),
+            "errors_per_metric_or_stage": dict(sorted(error_breakdown.items())),
             "failed_run_ids": sorted(list(failed_run_ids)),
         }
 

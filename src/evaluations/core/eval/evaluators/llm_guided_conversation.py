@@ -52,14 +52,12 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 
         transcript, history = [], []
         current_message = task.prompt or ""
-        last_response = AgentResponse(output=None, messages=[])
 
         for turn in range(15):  # Limite de turnos para evitar loops infinitos
             turn_context_string = f"multi-turn[{turn + 1}]"
             with logger.contextualize(turn_type=turn_context_string):
 
                 agent_res = await agent_manager.send_message(current_message)
-                last_response = agent_res
                 transcript.append(
                     ConversationTurn(
                         turn=turn + 1,
@@ -97,7 +95,6 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
 
         return ConversationOutput(
             transcript=transcript,
-            final_agent_response=last_response,
-            history_for_judge=history,
+            conversation_history="\n".join(history),
             duration_seconds=duration,
         )

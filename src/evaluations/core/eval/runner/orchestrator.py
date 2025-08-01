@@ -63,31 +63,21 @@ class AsyncExperimentRunner:
     def _categorize_evaluators(self) -> Dict[str, List[BaseEvaluator]]:
         """Categoriza avaliadores por tipo para otimizar acesso."""
         categories: Dict[str, List[BaseEvaluator]] = {
-            "one_turn": [],
-            "multi_turn": [],
+            "analysis": [],
             "conversation": [],
         }
         for evaluator in self.evaluators:
             if isinstance(evaluator, BaseConversationEvaluator):
                 categories["conversation"].append(evaluator)
-            elif evaluator.turn_type == "one":
-                categories["one_turn"].append(evaluator)
-            elif evaluator.turn_type == "multiple":
-                categories["multi_turn"].append(evaluator)
+            else:
+                categories["analysis"].append(evaluator)
         return categories
 
     def _validate_evaluators(self) -> None:
         """Valida a configuração dos avaliadores."""
         if len(self._evaluator_cache["conversation"]) > 1:
             raise ValueError(
-                "Apenas um avaliador do tipo 'conversation' é permitido por experimento."
-            )
-        if (
-            self._evaluator_cache["multi_turn"]
-            and not self._evaluator_cache["conversation"]
-        ):
-            raise ValueError(
-                "Avaliadores 'multiple' requerem um avaliador 'conversation'."
+                "Apenas um avaliador do tipo 'conversation' (que gera a conversa) é permitido por experimento."
             )
 
     def _generate_experiment_id(self) -> int:
