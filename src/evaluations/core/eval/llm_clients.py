@@ -125,7 +125,7 @@ class AgentConversationManager:
             )
             raise
 
-    async def close():
+    async def close(self):
         """
         Encerra o agente ou limpa os recursos.
         """

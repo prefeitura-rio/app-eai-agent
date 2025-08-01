@@ -150,6 +150,7 @@ class AsyncExperimentRunner:
                 judge_client=self.judge_client,
             )
             transcript, last_response, history = await handler.conduct(task)
+            await agent_multiple.close()
             end_time = time.monotonic()
             return transcript, last_response, history, end_time - start_time
 
