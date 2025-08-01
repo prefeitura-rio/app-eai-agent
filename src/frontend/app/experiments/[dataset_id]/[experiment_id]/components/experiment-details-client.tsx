@@ -43,12 +43,12 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
     }
 
     const cleanedRuns = runsToExport.map(run => {
-        const cleanRun: any = {};
+        const cleanRun: Record<string, unknown> = {};
         if (filters.include_task_data) {
             cleanRun.task_data = run.task_data;
         }
         
-        const analysis: any = {};
+        const analysis: Record<string, unknown> = {};
         if (filters.include_evaluations) {
             analysis.evaluations = [
                 ...run.one_turn_analysis.evaluations,

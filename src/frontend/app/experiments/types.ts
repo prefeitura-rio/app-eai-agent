@@ -4,7 +4,7 @@
 
 export interface ReasoningStep {
     message_type: string;
-    content: string | Record<string, any> | null;
+    content: string | Record<string, unknown> | null;
 }
 
 export interface ConversationTurn {
@@ -17,7 +17,7 @@ export interface ConversationTurn {
 export interface EvaluationTask {
     id: string;
     prompt: string;
-    [key: string]: any; // For other metadata columns
+    [key: string]: unknown; // For other metadata columns
 }
 
 export interface EvaluationResult {

@@ -36,7 +36,7 @@ export default function Evaluations({ evaluations }: EvaluationsProps) {
                 <AccordionItem value={ev.metric_name} key={ev.metric_name}>
                     <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center gap-3">
-                            <Badge className={getScoreBadgeClass(ev.score)}>
+                            <Badge className={getScoreBadgeClass(ev.score ?? 0)}>
                                 {ev.score?.toFixed(1) ?? 'N/A'}
                             </Badge>
                             <span className="font-semibold text-left">{ev.metric_name}</span>

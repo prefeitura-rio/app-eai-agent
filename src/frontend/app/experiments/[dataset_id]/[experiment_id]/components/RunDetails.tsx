@@ -110,7 +110,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                     )}
                                 </div>
                             </CardHeader>
-                            <Comparison content={agentResponse} />
+                            <Comparison content={agentResponse || ''} />
                         </Card>
 
                         <Card>
