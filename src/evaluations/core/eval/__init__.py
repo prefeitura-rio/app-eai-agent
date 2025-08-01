@@ -10,6 +10,8 @@ from src.evaluations.core.eval.dataloader import DataLoader
 from src.evaluations.core.eval.evaluators.base import (
     BaseEvaluator,
     BaseConversationEvaluator,
+    BaseOneTurnEvaluator,
+    BaseMultipleTurnEvaluator,
 )
 from src.evaluations.core.eval.llm_clients import (
     EAIConversationManager,
@@ -35,6 +37,8 @@ __all__ = [
     "DataLoader",
     "BaseEvaluator",
     "BaseConversationEvaluator",
+    "BaseOneTurnEvaluator",
+    "BaseMultipleTurnEvaluator",
     "EAIConversationManager",
     "AzureOpenAIClient",
     "BaseJudgeClient",

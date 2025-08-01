@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 from src.evaluations.core.eval import (
-    BaseEvaluator,
     EvaluationTask,
     EvaluationResult,
     MultiTurnEvaluationInput,
+    BaseMultipleTurnEvaluator,
 )
 
 
-class ConversationalMemoryEvaluator(BaseEvaluator):
+class ConversationalMemoryEvaluator(BaseMultipleTurnEvaluator):
     """
     Avalia a capacidade de memória do agente com base na transcrição
     completa de uma conversa.
     """
 
     name = "conversational_memory"
-    turn_type = "multiple"
 
     PROMPT_TEMPLATE = """
 Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre a **MEMÓRIA** de um agente com base em uma conversa.

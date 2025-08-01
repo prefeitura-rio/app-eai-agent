@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Union, Tuple, List
+from typing import Any, Union
 
 from src.evaluations.core.eval.llm_clients import (
     BaseJudgeClient,
@@ -31,7 +31,20 @@ class BaseEvaluator(ABC):
     """
 
     name: str
-    turn_type: str  # 'one', 'multiple', ou 'conversation'
+    turn_type: str  # 'one', 'multi', ou 'conversation'
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Ignora a validação para as próprias classes base abstratas
+        if not ABC in cls.__bases__ and not "Mixin" in cls.__name__:
+            if not hasattr(cls, "turn_type") or cls.turn_type not in [
+                "one",
+                "multi",
+                "conversation",
+            ]:
+                raise TypeError(
+                    f"Avaliador '{cls.__name__}' deve definir um 'turn_type' válido ('one', 'multi', ou 'conversation')."
+                )
 
     def __init__(self, judge_client: BaseJudgeClient):
         """
@@ -88,6 +101,40 @@ class BaseEvaluator(ABC):
                 has_error=True,
                 error_message=str(e),
             )
+
+
+class BaseOneTurnEvaluator(BaseEvaluator, ABC):
+    """
+    Classe base para avaliadores que analisam uma única interação (one-turn).
+    """
+
+    turn_type: str = "one"
+
+    @abstractmethod
+    async def evaluate(
+        self, agent_response: AgentResponse, task: EvaluationTask
+    ) -> EvaluationResult:
+        """
+        Avalia uma única resposta do agente.
+        """
+        raise NotImplementedError
+
+
+class BaseMultipleTurnEvaluator(BaseEvaluator, ABC):
+    """
+    Classe base para avaliadores que analisam uma conversa completa (multi-turn).
+    """
+
+    turn_type: str = "multi"
+
+    @abstractmethod
+    async def evaluate(
+        self, agent_response: MultiTurnEvaluationInput, task: EvaluationTask
+    ) -> EvaluationResult:
+        """
+        Avalia uma transcrição de conversa.
+        """
+        raise NotImplementedError
 
 
 class BaseConversationEvaluator(BaseEvaluator):

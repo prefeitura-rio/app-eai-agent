@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 from src.evaluations.core.eval import (
-    BaseEvaluator,
     EvaluationTask,
     AgentResponse,
     EvaluationResult,
+    BaseOneTurnEvaluator,
 )
 
 
-class SemanticCorrectnessEvaluator(BaseEvaluator):
+class SemanticCorrectnessEvaluator(BaseOneTurnEvaluator):
     """
     Avalia a correção semântica de uma única resposta do agente em comparação
     com uma resposta de referência ("golden").
     """
 
     name = "semantic_correctness"
-    turn_type = "one"
 
     PROMPT_TEMPLATE = """
 Avalie similaridade semântica da resposta gerada por uma IA em relacao a Resposta ideal.

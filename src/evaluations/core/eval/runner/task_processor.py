@@ -16,6 +16,8 @@ from src.evaluations.core.eval.schemas import (
 from src.evaluations.core.eval.evaluators.base import (
     BaseEvaluator,
     BaseConversationEvaluator,
+    BaseOneTurnEvaluator,
+    BaseMultipleTurnEvaluator,
 )
 from src.evaluations.core.eval.runner.response_manager import ResponseManager
 from src.evaluations.core.eval.log import logger
@@ -88,15 +90,19 @@ class TaskProcessor:
                 multi_turn_analysis.transcript = multi_turn_output.transcript
 
         # 4. Executa as avaliações com os dados disponíveis
-        evaluations = await self._execute_evaluations(
+        evaluations_with_type = await self._execute_evaluations(
             task, one_turn_response, one_turn_duration, multi_turn_output
         )
 
         one_turn_analysis.evaluations = [
-            e for e in evaluations if e.get("turn_type") == "one"
+            result_dict
+            for evaluator, result_dict in evaluations_with_type
+            if isinstance(evaluator, BaseOneTurnEvaluator)
         ]
         multi_turn_analysis.evaluations = [
-            e for e in evaluations if e.get("turn_type") == "multiple"
+            result_dict
+            for evaluator, result_dict in evaluations_with_type
+            if isinstance(evaluator, BaseMultipleTurnEvaluator)
         ]
 
         # 5. Monta o resultado final
@@ -114,7 +120,7 @@ class TaskProcessor:
         if not self.evaluator_cache["one_turn"]:
             return AgentResponse(message=None, reasoning_trace=[]), 0.0
 
-        with logger.contextualize(task_id=task.id, turn_type="one-turn"):
+        with logger.contextualize(task_id=task.id, turn_type="one"):
             return await self.response_manager.get_one_turn_response(task)
 
     async def _get_multi_turn_output(
@@ -124,7 +130,7 @@ class TaskProcessor:
         if not self.evaluator_cache["multi_turn"] or not conv_evaluator:
             return None
 
-        with logger.contextualize(task_id=task.id, turn_type="multi-turn"):
+        with logger.contextualize(task_id=task.id, turn_type="multi"):
             return await self.response_manager.get_multi_turn_transcript(
                 task, conv_evaluator
             )
@@ -149,7 +155,7 @@ class TaskProcessor:
         one_turn_response: AgentResponse,
         one_turn_duration: float,
         multi_turn_output: Optional[ConversationOutput],
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Tuple[BaseEvaluator, Dict[str, Any]]]:
         """Executa todas as avaliações de análise para uma tarefa."""
         analysis_evaluators = (
             self.evaluator_cache["one_turn"] + self.evaluator_cache["multi_turn"]
@@ -175,25 +181,25 @@ class TaskProcessor:
                     has_error=True,
                     error_message=str(result),
                 )
-                processed_results.append(
-                    {
-                        "metric_name": evaluator.name,
-                        "duration_seconds": 0.0,
-                        **eval_result.model_dump(),
-                        "turn_type": evaluator.turn_type,
-                    }
-                )
+                result_dict = {
+                    "metric_name": evaluator.name,
+                    "duration_seconds": 0.0,
+                    **eval_result.model_dump(),
+                }
             else:
                 eval_dict, judge_duration = result
                 gen_duration = (
                     multi_turn_output.duration_seconds
-                    if eval_dict["turn_type"] == "multiple" and multi_turn_output
+                    if isinstance(evaluator, BaseMultipleTurnEvaluator)
+                    and multi_turn_output
                     else one_turn_duration
                 )
                 eval_dict["duration_seconds"] = round(gen_duration + judge_duration, 4)
-                processed_results.append(eval_dict)
+                result_dict = eval_dict
 
-        return sorted(processed_results, key=lambda x: x["metric_name"])
+            processed_results.append((evaluator, result_dict))
+
+        return sorted(processed_results, key=lambda x: x[1]["metric_name"])
 
     async def _execute_single_evaluation(
         self,
@@ -207,17 +213,17 @@ class TaskProcessor:
         with logger.contextualize(task_id=task.id, turn_type=log_context):
             start_time = time.perf_counter()
             try:
-                if evaluator.turn_type == "multiple":
+                if isinstance(evaluator, BaseMultipleTurnEvaluator):
                     result = await self._evaluate_multi_turn(
                         evaluator, task, multi_turn_output
                     )
-                elif evaluator.turn_type == "one":
+                elif isinstance(evaluator, BaseOneTurnEvaluator):
                     result = await self._evaluate_one_turn(
                         evaluator, task, one_turn_response
                     )
                 else:
                     raise ValueError(
-                        f"Tipo de avaliador inválido: {evaluator.turn_type}"
+                        f"Tipo de avaliador não suportado: {type(evaluator).__name__}"
                     )
 
                 duration = time.perf_counter() - start_time
@@ -226,7 +232,6 @@ class TaskProcessor:
                     "metric_name": evaluator.name,
                     "duration_seconds": round(duration, 4),
                     **eval_result.model_dump(),
-                    "turn_type": evaluator.turn_type,
                 }, duration
 
             except Exception as e:
@@ -245,7 +250,6 @@ class TaskProcessor:
                     "metric_name": evaluator.name,
                     "duration_seconds": round(duration, 4),
                     **eval_result.model_dump(),
-                    "turn_type": evaluator.turn_type,
                 }, duration
 
     async def _evaluate_multi_turn(

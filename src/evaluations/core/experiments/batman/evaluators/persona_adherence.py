@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 from src.evaluations.core.eval import (
-    BaseEvaluator,
     EvaluationTask,
     AgentResponse,
     EvaluationResult,
+    BaseOneTurnEvaluator,
 )
 
 
-class PersonaAdherenceEvaluator(BaseEvaluator):
+class PersonaAdherenceEvaluator(BaseOneTurnEvaluator):
     """
     Avalia se a resposta de um agente adere a uma persona pré-definida.
     """
 
     name = "persona_adherence"
-    turn_type = "one"
 
     PROMPT_TEMPLATE = """
 Avalie se a resposta da IA adere à persona definida: **{task[persona]}**.

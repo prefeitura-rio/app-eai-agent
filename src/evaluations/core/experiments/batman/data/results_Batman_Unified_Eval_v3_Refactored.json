@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 4089654504172656708,
-  "experiment_id": 1397994797507464540,
+  "experiment_id": 2163172682640137722,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-01T15:13:12.583384+00:00",
+  "experiment_timestamp": "2025-08-01T16:27:47.674996+00:00",
   "experiment_metadata": {
     "agent_config": {
       "user_number": "evaluation_user",
@@ -34,14 +34,15 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 17.46,
-    "average_task_duration_seconds": 15.6,
-    "average_metric_duration_seconds": 5.22
+    "total_duration_seconds": 15.03,
+    "average_task_duration_seconds": 13.48,
+    "average_metric_duration_seconds": 3.32
   },
   "error_summary": {
     "total_failed_runs": 2,
     "errors_per_metric": {
-      "conversational_reasoning": 2
+      "conversational_reasoning": 2,
+      "semantic_correctness": 1
     },
     "failed_run_ids": [
       "unified_conv_1",
@@ -58,52 +59,47 @@
       "failure_rate_percentage": 100.0,
       "score_statistics": null,
       "duration_statistics_seconds": {
-        "average": 4.6841,
-        "median": 4.6841,
-        "min": 4.678,
-        "max": 4.6901,
-        "std_dev": 0.0086
+        "average": 3.0017,
+        "median": 3.0017,
+        "min": 0.0,
+        "max": 6.0035,
+        "std_dev": 4.2451
       },
       "score_distribution": []
     },
     {
       "metric_name": "semantic_correctness",
       "total_runs": 2,
-      "successful_runs": 2,
-      "success_rate_percentage": 100.0,
-      "failed_runs": 0,
-      "failure_rate_percentage": 0.0,
+      "successful_runs": 1,
+      "success_rate_percentage": 50.0,
+      "failed_runs": 1,
+      "failure_rate_percentage": 50.0,
       "score_statistics": {
-        "average": 0.75,
-        "median": 0.75,
-        "min": 0.5,
-        "max": 1.0,
-        "std_dev": 0.3536
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
       },
       "duration_statistics_seconds": {
-        "average": 5.7589,
-        "median": 5.7589,
-        "min": 5.6702,
-        "max": 5.8475,
-        "std_dev": 0.1254
+        "average": 3.6305,
+        "median": 3.6305,
+        "min": 0.0,
+        "max": 7.2609,
+        "std_dev": 5.1342
       },
       "score_distribution": [
         {
-          "value": 0.5,
+          "value": 0.0,
           "count": 1,
-          "percentage": 50.0
-        },
-        {
-          "value": 1.0,
-          "count": 1,
-          "percentage": 50.0
+          "percentage": 100.0
         }
       ]
     }
   ],
   "runs": [
     {
-      "duration_seconds": 13.7758,
+      "duration_seconds": 11.9568,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -113,45 +109,20 @@
         "golden_response_one_shot": "Paris."
       },
       "one_turn_analysis": {
-        "agent_message": "Paris.",
-        "agent_reasoning_trace": [
-          {
-            "message_type": "reasoning_message",
-            "content": "User introduced himself as Dr. Crane. I must remember this. The user asked for the capital of France, which is Paris. I will respond directly with the answer."
-          },
-          {
-            "message_type": "assistant_message",
-            "content": "Paris."
-          },
-          {
-            "message_type": "usage_statistics",
-            "content": {
-              "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-b1bbbe7f-6367-4be4-a6e4-8c381946d21b",
-              "message_id": "42571363-60a6-4433-b3bc-c50cad9f9578",
-              "processed_at": "c1d821f6-20dc-40b7-9aa7-01f11a646af6",
-              "total_tokens": 1321,
-              "prompt_tokens": 1269,
-              "completion_tokens": 52,
-              "step_count": 1,
-              "steps_messages": null,
-              "run_ids": null
-            }
-          }
-        ],
+        "agent_message": null,
+        "agent_reasoning_trace": null,
         "evaluations": [
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 5.6702,
-            "score": 1.0,
-            "annotations": "Score: 1.0  \nReasoning: A resposta gerada pela IA corresponde exatamente à resposta ideal, sem qualquer diferença semântica ou factual.",
-            "has_error": false,
-            "error_message": null,
-            "turn_type": "one"
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Erro na avaliação semantic_correctness para tarefa unified_conv_1: Dados one-turn não disponíveis para a tarefa 'unified_conv_1'.",
+            "has_error": true,
+            "error_message": "Dados one-turn não disponíveis para a tarefa 'unified_conv_1'."
           }
         ],
-        "has_error": false,
-        "error_message": null
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-7ccedd33-4c46-472e-ac03-b1058b6ea1bb', message_id='bfbd470d-6f65-4105-b29a-d51474c45664']"
       },
       "multi_turn_analysis": {
         "final_agent_message": null,
@@ -159,20 +130,19 @@
         "evaluations": [
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 4.678,
+            "duration_seconds": 0.0,
             "score": null,
             "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_1: Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'.",
             "has_error": true,
-            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'.",
-            "turn_type": "multiple"
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_1'."
           }
         ],
         "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-2b402a38-ed35-4147-89a2-71f1e725c3ba', message_id='ecdbd73a-7e3e-489f-a231-25345d17bb27']"
+        "error_message": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-4e13bb07-873d-4184-9010-705921576f9e', message_id='8feae77b-b014-4071-855a-38f5fb2a244f']"
       }
     },
     {
-      "duration_seconds": 17.4229,
+      "duration_seconds": 15.0053,
       "task_data": {
         "id": "unified_conv_2",
         "prompt": "Meu nome é Selina. Lembre-se disso. Agora, quanto é 2 + 2?",
@@ -182,26 +152,26 @@
         "golden_response_one_shot": "4."
       },
       "one_turn_analysis": {
-        "agent_message": "2 + 2 = 4. Don't forget it.",
+        "agent_message": "Selina... Que seja. 2 + 2 são 4. Não espere mais do que isso.",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "User identified as Selina. Responded to arithmetic query. Persona maintained."
+            "content": "O usuário se apresentou como Selina e fez uma pergunta matemática simples. Vou responder diretamente e manter a persona do Batman, desconfiado e direto ao extremo."
           },
           {
             "message_type": "assistant_message",
-            "content": "2 + 2 = 4. Don't forget it."
+            "content": "Selina... Que seja. 2 + 2 são 4. Não espere mais do que isso."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "BatmanUnifiedAgent",
-              "agent_id": "agent-5e57022f-ccb1-4c1b-b93c-26974df47b4e",
-              "message_id": "06da3d71-c208-447a-84cf-ecd7b6eaa10b",
-              "processed_at": "b3328562-0209-4a73-bff0-89faf1fbc606",
-              "total_tokens": 1315,
-              "prompt_tokens": 1269,
-              "completion_tokens": 46,
+              "agent_id": "agent-a59ecc03-a4bf-463a-8c21-8efc6d469b4c",
+              "message_id": "461ea902-1e67-4fad-831c-54550d11d54d",
+              "processed_at": "c36df42d-1877-4521-aada-bc77358d2982",
+              "total_tokens": 1366,
+              "prompt_tokens": 1295,
+              "completion_tokens": 71,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -211,12 +181,11 @@
         "evaluations": [
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 5.8475,
-            "score": 0.5,
-            "annotations": "Score: 0.5  \nReasoning: Ambas as respostas chegam ao valor correto (4), mas a resposta gerada pela IA inclui uma frase desnecessária, impactando na concisão.",
+            "duration_seconds": 7.2609,
+            "score": 0.0,
+            "annotations": "Score: 0.0  \nReasoning: A resposta gerada pela IA contém informações redundantes e desnecessárias que desviam da simplicidade e precisão da resposta ideal.",
             "has_error": false,
-            "error_message": null,
-            "turn_type": "one"
+            "error_message": null
           }
         ],
         "has_error": false,
@@ -228,16 +197,15 @@
         "evaluations": [
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 4.6901,
+            "duration_seconds": 6.0035,
             "score": null,
             "annotations": "Erro na avaliação conversational_reasoning para tarefa unified_conv_2: Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'.",
             "has_error": true,
-            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'.",
-            "turn_type": "multiple"
+            "error_message": "Dados multi-turn não disponíveis para a tarefa 'unified_conv_2'."
           }
         ],
         "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-0cc4706b-b203-4843-b4a9-60b602e58655', message_id='82050f90-242e-4977-ab3e-d1b7f5468c3d']"
+        "error_message": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [agent_id='agent-d58d9481-dc47-4479-a4dd-1aa881c3a9bb', message_id='1448af5e-bd75-44a8-ba3c-d36b6a046e27']"
       }
     }
   ]

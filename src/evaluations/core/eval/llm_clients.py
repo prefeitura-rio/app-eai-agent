@@ -63,7 +63,7 @@ class EAIConversationManager:
             raise EAIClientError(f"Erro inesperado ao inicializar o agente: {e}") from e
 
     async def send_message(
-        self, message: str, timeout: int = 5, polling_interval: int = 2
+        self, message: str, timeout: int = 180, polling_interval: int = 2
     ) -> AgentResponse:
         """
         Envia uma mensagem para o agente existente e retorna a resposta com o

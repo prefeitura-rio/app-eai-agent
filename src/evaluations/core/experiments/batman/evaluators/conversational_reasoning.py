@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 from src.evaluations.core.eval import (
-    BaseEvaluator,
     EvaluationTask,
     EvaluationResult,
     MultiTurnEvaluationInput,
+    BaseMultipleTurnEvaluator,
 )
 
 
-class ConversationalReasoningEvaluator(BaseEvaluator):
+class ConversationalReasoningEvaluator(BaseMultipleTurnEvaluator):
     """
     Avalia o raciocínio do agente com base na transcrição completa de uma conversa.
     """
 
     name = "conversational_reasoning"
-    turn_type = "multiple"
 
     PROMPT_TEMPLATE = """
 Você é um Juiz de IA. Sua tarefa é fornecer um julgamento final sobre o **RACIOCÍNIO** de um agente com base em uma conversa.

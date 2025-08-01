@@ -55,7 +55,7 @@ Com base no seu roteiro e no histórico, decida sua próxima ação:
         last_response = AgentResponse(message=None, reasoning_trace=[])
 
         for turn in range(15):  # Limite de turnos para evitar loops infinitos
-            turn_context_string = f"multi-turn[{turn + 1}]"
+            turn_context_string = f"multi[{turn + 1}]"
             with logger.contextualize(turn_type=turn_context_string):
 
                 agent_res = await agent_manager.send_message(current_message)

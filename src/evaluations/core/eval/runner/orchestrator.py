@@ -12,6 +12,8 @@ from src.evaluations.core.eval.dataloader import DataLoader
 from src.evaluations.core.eval.evaluators.base import (
     BaseEvaluator,
     BaseConversationEvaluator,
+    BaseOneTurnEvaluator,
+    BaseMultipleTurnEvaluator,
 )
 from src.evaluations.core.eval.runner.response_manager import ResponseManager
 from src.evaluations.core.eval.runner.task_processor import TaskProcessor
@@ -70,10 +72,14 @@ class AsyncExperimentRunner:
         for evaluator in self.evaluators:
             if isinstance(evaluator, BaseConversationEvaluator):
                 categories["conversation"].append(evaluator)
-            elif evaluator.turn_type == "one":
+            elif isinstance(evaluator, BaseOneTurnEvaluator):
                 categories["one_turn"].append(evaluator)
-            elif evaluator.turn_type == "multiple":
+            elif isinstance(evaluator, BaseMultipleTurnEvaluator):
                 categories["multi_turn"].append(evaluator)
+            else:
+                raise ValueError(
+                    f"Tipo de avaliador não suportado: {type(evaluator).__name__}"
+                )
         return categories
 
     def _validate_evaluators(self) -> None:
@@ -87,7 +93,7 @@ class AsyncExperimentRunner:
             and not self._evaluator_cache["conversation"]
         ):
             raise ValueError(
-                "Avaliadores 'multiple' requerem um avaliador 'conversation'."
+                "Avaliadores 'multi' requerem um avaliador 'conversation'."
             )
 
     def _generate_experiment_id(self) -> int:
