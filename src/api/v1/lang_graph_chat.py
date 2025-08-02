@@ -47,7 +47,7 @@ async def chat_endpoint(request: ChatRequest):
     """
     # O endpoint é async para não bloquear o event loop, mas a chamada subjacente
     # ao LangGraph é síncrona.
-    response = run_chatbot(
+    response = await run_chatbot(
         user_id=request.user_id,
         message=request.prompt,
         agent_config=request.agent_config.dict(),

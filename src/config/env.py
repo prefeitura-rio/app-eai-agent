@@ -70,3 +70,6 @@ USE_LOCAL_API = (
 
 EAI_GATEWAY_API_URL = getenv_or_action("EAI_GATEWAY_API_URL")
 EAI_GATEWAY_API_TOKEN = getenv_or_action("EAI_GATEWAY_API_TOKEN")
+
+MCP_SERVER_URL = getenv_or_action("MCP_SERVER_URL", action="ignore")
+MCP_API_TOKEN = getenv_or_action("MCP_API_TOKEN", action="ignore")

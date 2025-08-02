@@ -1,6 +1,7 @@
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.language_models.chat_models import BaseChatModel
-from typing import Literal, Optional
+from langchain_core.tools import BaseTool
+from typing import Literal, Optional, List
 
 # --- Embedding Service ---
 
@@ -41,6 +42,7 @@ class ChatModelFactory:
         provider: Provider,
         model_name: Optional[str] = None,
         temperature: Optional[float] = 0.7,
+        tools=None,
     ) -> BaseChatModel:
         """
         Cria e retorna uma instância de um modelo de chat com base no provedor.
@@ -49,6 +51,7 @@ class ChatModelFactory:
             provider: O provedor do modelo (ex: "google").
             model_name: O nome específico do modelo.
             temperature: A temperatura para a geração do modelo.
+            tools: Uma lista de ferramentas para vincular ao modelo.
 
         Returns:
             Uma instância de um modelo de chat que herda de BaseChatModel.
@@ -57,11 +60,15 @@ class ChatModelFactory:
             ValueError: Se o provedor não for suportado.
         """
         if provider == "google":
-            if not model_name:
-                model_name = "gemini-2.5-flash-lite"
-            if not temperature:
-                temperature = 0.7
-            return ChatGoogleGenerativeAI(model=model_name, temperature=temperature)
+            model_name = model_name or "gemini-2.5-pro-lite"
+            temperature = temperature if temperature is not None else 0.7
+
+            model = ChatGoogleGenerativeAI(model=model_name, temperature=temperature)
+
+            if tools:
+                model = model.bind_tools(tools)
+
+            return model
         # Futuramente, outros provedores podem ser adicionados aqui.
         # elif provider == "openai":
         #     return ChatOpenAI(model=model_name, temperature=temperature)
