@@ -83,6 +83,53 @@ async def get_mcp_tools():
 
 
 
+
+
+
+
+
+
+
+-----
+
+def run_conversation_turn(user_id: str, session_id: str, user_input: str):
+    config = {"configurable": {"thread_id": session_id}}
+    
+    # We must add user_id to the state for the tools to use
+    initial_state = AgentState(
+        user_id=user_id,
+        session_id=session_id,
+        messages=[HumanMessage(content=user_input)],
+        # Other fields will be populated by the graph
+    )
+    
+    for event in graph.stream(initial_state, config=config):
+        print(event) # Stream out the events for real-time feedback
+        
+    final_state = graph.get_state(config)
+    return final_state.messages[-1].content
+
+# --- Example Usage ---
+USER_ID = "user-001"
+SESSION_ID = "session-alpha-123"
+
+print("--- First Interaction ---")
+response = run_conversation_turn(USER_ID, SESSION_ID, "Hi, my name is David. I'm interested in data analytics.")
+print(f"AI: {response}")
+
+print("\n--- Second Interaction (Same Session) ---")
+response = run_conversation_turn(USER_ID, SESSION_ID, "What was the topic I was interested in?")
+print(f"AI: {response}") # The agent should use STM to answer this.
+
+# --- Start a NEW session for the same user ---
+NEW_SESSION_ID = "session-beta-456"
+
+print("\n--- Third Interaction (New Session) ---")
+response = run_conversation_turn(USER_ID, NEW_SESSION_ID, "Do you remember my name?")
+print(f"AI: {response}") # The agent has no STM, but should use LTM to recall the name "David".
+
+
+
 ----
 
 
@@ -2312,3 +2359,133 @@ Session management is key to distinguishing between STM and LTM.
     2.  The STM retrieval query (`...WHERE session_id = ?...`) will return no results, correctly indicating that there is no recent history for *this specific session*.
     3.  The LTM retrieval, which is based only on `user_id`, will proceed as usual, providing the agent with relevant historical context from all previous sessions.
     4.  This flow ensures that STM is effectively "cleared" for each new session while LTM remains persistent, fulfilling the core memory architecture requirement.
+
+
+
+
+-----
+
+Great, I’ll generate a complete `planing.md` that outlines the architecture and implementation plan for a LangGraph-based conversational agent using Google Generative AI, PostgreSQL with PgVector, and external tool access. It will include a custom schema, initialization logic, LangGraph node descriptions, memory flow, and Python code snippets where helpful.
+
+I’ll let you know once the document is ready for your review.
+
+
+# LangGraph Conversational Agent Architecture
+
+## Database Schema
+
+We use a Cloud SQL PostgreSQL database with the `pgvector` extension.  We define tables to store both conversation history and embeddings.  For example, one can use a `messages` table with columns:
+
+* `user_id` (text): identifies the user (for long-term memory)
+* `session_id` (text): identifies the conversation thread (for short-term history)
+* `timestamp` (timestamp): message time
+* `role` (text): “user” or “assistant”
+* `content` (text): the message text
+* `embedding` (vector): the PgVector embedding of the message content.
+
+The `pgvector` column enables semantic similarity search.  For instance, LangMem’s PostgreSQL memory design uses a `store` table for raw text and a `store_vectors` table for embeddings.  Likewise, LangChain’s PGVector vectorstore uses a table with a vector column.  We ensure an index on the `embedding` column for fast nearest-neighbor search.
+
+## Initialization of Components
+
+1. **LLM (ChatGoogleGenerativeAI):** Configure LangChain’s `ChatGoogleGenerativeAI` with the Google API key and model (e.g. `"gemini-1.5-pro"`). For example:
+
+   ```python
+   from langchain_google_genai import ChatGoogleGenerativeAI
+   llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
+   ```
+2. **Embeddings (GoogleGenerativeAIEmbeddings):** Initialize `GoogleGenerativeAIEmbeddings` with a Google embedding model (e.g. `"models/gemini-embedding-001"`). This produces high-dimensional vectors for text:
+
+   ```python
+   from langchain_google_genai import GoogleGenerativeAIEmbeddings
+   embed_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+   ```
+3. **Vector Store (PGVector):** Install `langchain-postgres` and enable the `pgvector` extension in Postgres.  Create a vector store for long-term memory, e.g.:
+
+   ```python
+   from langchain_postgres import PGVector
+   vector_store = PGVector(
+       embeddings=embed_model,
+       collection_name="memory",
+       connection="postgresql+psycopg://<user>:<pass>@<host>:5432/<db>?sslmode=disable"
+   )
+   ```
+
+   As shown in examples, PGVector (LangChain’s Postgres integration) provides “a robust solution for storing and querying documents with embeddings”.
+
+## LangGraph State & Nodes
+
+We define a LangGraph state to hold the conversation and memories.  The state schema (e.g. a `TypedDict`) includes fields such as:
+
+* `user_id` (str) – the user identity (for LTM)
+* `session_id` (str) – the conversation ID (thread)
+* `messages` (List of chat messages) – the conversation history in order
+* `short_term_memories` (List\[str]) – the recent messages fetched for context
+* `long_term_memories` (List\[str]) – the semantic memories fetched.
+
+Core graph nodes include:
+
+* **RetrieveMemory:** A node that queries the database for short-term and long-term context. It fetches the last `short_term_limit` messages for the current `session_id` (chronological chat history) and also runs a semantic similarity search (using the embeddings) to retrieve the top `long_term_limit` past messages for this `user_id`. The results update `short_term_memories` and `long_term_memories` in the state.
+* **AgentDecision:** A node that invokes the ChatGoogleGenerativeAI model. It constructs the prompt using the system message, the retrieved STM/LTM context, and the new user query. The LLM can either produce a final response or instruct to use a tool.
+* **ToolExecution:** A node that, if chosen by the agent, executes an external tool (MCP or LTM search). We wrap MCP tools and the LTM-search tool (see below) so they fit LangChain’s tool interface.
+
+We add these nodes to the `StateGraph`. For example, in LangChain’s memory agent tutorial, the builder sets up nodes and edges like:
+
+```python
+builder.add_node(load_memories)
+builder.add_node(agent)
+builder.add_node("tools", ToolNode(tools))
+builder.add_edge(START, "load_memories")
+builder.add_edge("load_memories", "agent")
+builder.add_conditional_edges("agent", route_tools, ["tools", END])
+builder.add_edge("tools", "agent")
+```
+
+This defines a loop: start→RetrieveMemory→AgentDecision, then conditionally back to ToolExecution or end.
+
+## Memory Management Logic
+
+At each user turn, we automatically retrieve both STM and LTM before calling the model.  The flow is:
+
+* **Short-Term Memory (STM) Retrieval:** Query the `messages` table for the current `session_id` and select the most recent `short_term_limit` messages. These are the immediate conversation history (thread-scoped).  We include these in the prompt so the agent “remembers previous interactions within a single thread”.
+* **Long-Term Memory (LTM) Retrieval:** Compute an embedding for the new user input (or full recent context) using `GoogleGenerativeAIEmbeddings`. Then query the PGVector store for the top `long_term_limit` stored messages (filtering by `user_id`). This semantic search finds relevant facts from *across all sessions*. LangGraph notes that long-term memories “can be recalled at any time and in any thread”. We add these recalled memory strings into the LLM context (e.g. as part of the system prompt) so the agent is “grounded” by them.
+* **Updating Memories:** When the agent or user provides new significant information, we can encode and store it in the DB. For example, a tool like `save_memory` can embed a new user statement and `INSERT` it into the table (or use a LangChain store). This ensures LTM grows over time.
+
+By limiting to `short_term_limit` and `long_term_limit`, we control the context size. LangGraph’s docs note that long conversations are challenging for LLMs, so trimming old messages and using semantic summaries (LTM) helps efficiency.
+
+## Tool Integration
+
+We integrate external tools as follows:
+
+* **MCP Tools:** Use the `langchain_mcp_adapters` library to convert MCP (Model Context Protocol) tools into LangChain tools. We initialize `MultiServerMCPClient` with our MCP server URL and auth headers (as in the snippet below), then call `get_tools()`. For example:
+
+  ```python
+  client = MultiServerMCPClient({
+      "rio_mcp": {
+          "transport": "streamable_http",
+          "url": env.MCP_SERVER_URL,
+          "headers": {"Authorization": f"Bearer {env.MCP_API_TOKEN}"}
+      }
+  })
+  tools = await client.get_tools()
+  ```
+
+  This retrieves the available tools which we add to the agent.  LangChain’s docs confirm that MCP adapters “convert MCP tools into LangChain tools that can be used with LangGraph agents”.
+* **LTM Retrieval Tool:** In addition to automatic LTM loading, we provide an explicit “memory search” tool. This tool, when called, takes a natural-language query, embeds it, and runs a semantic search on the PGVector store (filtering by `user_id`). This is analogous to the `search_recall_memories` tool in LangChain’s long-term memory agent example. For instance:
+
+  ```python
+  @tool
+  def search_ltm(query: str, user_id: str) -> List[str]:
+      # embed and query vector store
+      results = vector_store.similarity_search(query, k=long_term_limit, filter=lambda doc: doc.metadata["user_id"] == user_id)
+      return [doc.page_content for doc in results]
+  ```
+
+  The agent can choose to invoke this tool for in-depth memory search on demand.
+
+These tools are included in the LangGraph using a `ToolNode` as shown above.  When the agent calls a tool (MCP or memory), the graph transitions to the ToolExecution node, runs it, then returns to the agent node with the result.
+
+## Session Handling
+
+We use `user_id` and `session_id` (LangGraph “thread\_id”) to manage identity and conversation state. Each new `session_id` (thread) begins with empty short-term memory. As LangGraph explains, STM is “thread-scoped” and begins fresh for each thread. In practice, when we detect a new session ID, we clear the `messages` history for STM. In contrast, long-term memory is scoped to the `user_id` and persists across sessions. Thus on a session restart, we reset the chronological context but still retrieve relevant long-term facts for the same user. This ensures the agent forgets nothing useful about the user between conversations, while keeping each session’s chat history isolated.
+
+**Sources:** We draw on LangChain and LangGraph documentation for memory and vector store usage to inform this design.
