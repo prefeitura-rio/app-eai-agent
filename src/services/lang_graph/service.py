@@ -61,8 +61,8 @@ def load_and_prepare_context_node(state: ConversationState, config: dict):
     )
     history_context = "\n".join(
         [
-            f"{i//2 + 1}. {history_mems[i]['content_type'].capitalize()}: {history_mems[i]['content']}\n{i//2 + 1}. Eai: {history_mems[i+1]['content']}"
-            for i in range(0, len(history_mems), 2)
+            f"{i+1}. {mem['content_type'].capitalize()}: {mem['content']}\n{i+1}. Eai: {mem['content']}"
+            for i, mem in enumerate(history_mems)
         ]
     )
 

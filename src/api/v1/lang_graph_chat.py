@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
+from src.core.security.dependencies import validar_token
 
 from src.services.lang_graph.service import run_chatbot
 
-router = APIRouter(tags=["LangGraph ChatBot"])
+router = APIRouter(tags=["LangGraph ChatBot"], dependencies=[Depends(validar_token)])
 
 
 class AgentConfig(BaseModel):
