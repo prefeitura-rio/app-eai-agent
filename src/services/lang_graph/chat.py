@@ -16,7 +16,7 @@ class InteractiveChat:
 
     def __init__(self):
         self.chatbot_service = LangGraphChatbotService()
-        self.user_id = "test_chat"
+        self.user_id = str(uuid.uuid4())
         self.thread_id = str(uuid.uuid4())
         self.temperature = 0.7
         self.system_prompt = (

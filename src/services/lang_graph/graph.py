@@ -241,24 +241,17 @@ def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
         return state
 
 
-def inject_user_id(ai_msg, user_id: str, limit: int = 20, min_relevance: float = 0.6):
-    """Injeta user_id e outros parâmetros nos tool_calls."""
-    tool_calls = []
-    for tool_call in ai_msg.tool_calls:
-        tool_call_copy = deepcopy(tool_call)
-        tool_call_copy["args"]["user_id"] = user_id
+# ===== VERSÃO SIMPLIFICADA COM TOOLNODE =====
 
-        # Aplicar limit e min_relevance para get_memory_tool
-        if tool_call_copy["name"] == "get_memory_tool":
-            tool_call_copy["args"]["limit"] = limit
-            tool_call_copy["args"]["min_relevance"] = min_relevance
-
-        tool_calls.append(tool_call_copy)
-    return tool_calls
+# Criar ToolNode configurado com tratamento de erros personalizado
+tool_node = ToolNode(
+    TOOLS,
+    handle_tool_errors="Desculpe, ocorreu um erro ao executar a ferramenta. Tente novamente com diferentes parâmetros.",
+)
 
 
-def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
-    """Nó para execução de ferramentas."""
+def tool_execution_simplified(state: CustomMessagesState) -> CustomMessagesState:
+    """Versão simplificada usando ToolNode do LangGraph."""
     try:
         messages = state.get("messages", [])
         if not messages:
@@ -279,71 +272,138 @@ def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
             logger.info("Nenhum tool call encontrado, pulando execução")
             return state
 
-        # Obter parâmetros do contexto
+        tools_to_execute = []
+        for i, tool_call in enumerate(tool_calls):
+            tool_name = tool_call.get("name", "unknown")
+            tool_args = tool_call.get("args", {})
+            tool_id = tool_call.get("id", f"call_{i}")
+
+            # Log com informações detalhadas (sem expor dados sensíveis)
+            safe_args = {k: v for k, v in tool_args.items() if k not in ["user_id"]}
+            logger.info(f"Ferramenta #{i+1}: {tool_name}")
+            logger.info(f"  - ID: {tool_id}")
+            logger.info(f"  - Argumentos: {safe_args}")
+
+            tools_to_execute.append(
+                {"name": tool_name, "id": tool_id, "args": safe_args}
+            )
+
+        # INJEÇÃO AUTOMÁTICA DE PARÂMETROS
+        # O ToolNode vai automaticamente injetar os parâmetros via RunnableConfig
         config = state.get("config")
-        user_id = config.user_id
-        limit = config.memory_limit if config else 20
-        min_relevance = config.memory_min_relevance if config else 0.6
 
-        logger.info(f"Executando ferramentas para user_id: {user_id}")
+        # Criar RunnableConfig com os parâmetros que serão injetados
+        runnable_config = {
+            "configurable": {
+                "user_id": config.user_id,
+                "memory_limit": config.memory_limit,
+                "memory_min_relevance": config.memory_min_relevance,
+            }
+        }
 
-        # INJEÇÃO AUTOMÁTICA VIA LANGCHAIN
-        # Usar o padrão oficial do LangChain para injeção
-        injected_tool_calls = inject_user_id(
-            last_message, user_id, limit, min_relevance
+        logger.info(
+            f"Executando {len(tools_to_execute)} ferramenta(s) para user_id: {config.user_id}"
         )
 
-        tool_outputs = state.get("tool_outputs", [])
+        # Executar ToolNode - ele cuida de tudo automaticamente!
+        result = tool_node.invoke(state, config=runnable_config)
 
-        for tool_call in injected_tool_calls:
-            try:
-                tool_name = tool_call.get("name")
-                tool_args = tool_call.get("args", {})
+        # ToolNode retorna o estado atualizado com ToolMessages
+        # Adicionar as mensagens de ferramenta ao estado
+        if "messages" in result:
+            tool_messages = result["messages"]
+            state["messages"].extend(tool_messages)
 
-                logger.info(f"Executando ferramenta: {tool_name} com args: {tool_args}")
+            # Log detalhado dos resultados
+            logger.info("=== RESULTADOS DAS FERRAMENTAS ===")
 
-                # Encontrar a ferramenta correspondente
-                tool_func = None
-                for tool in TOOLS:
-                    if tool.name == tool_name:
-                        tool_func = tool
-                        break
+            # Criar ToolOutput para compatibilidade (opcional)
+            tool_outputs = []
+            for i, msg in enumerate(tool_messages):
+                tool_name = getattr(msg, "name", f"tool_{i}")
+                tool_call_id = getattr(msg, "tool_call_id", f"call_{i}")
+                is_error = hasattr(msg, "status") and msg.status == "error"
 
-                if tool_func:
-                    # Executar a ferramenta (argumentos já injetados)
-                    result = tool_func.invoke(tool_args)
-                    logger.info(
-                        f"Ferramenta {tool_name} executada com sucesso: {result.get('success', False)}"
+                # Função para converter enums e objetos problemáticos
+                def safe_serialize(obj):
+                    if isinstance(obj, dict):
+                        return {k: safe_serialize(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [safe_serialize(item) for item in obj]
+                    elif hasattr(obj, "value"):  # É um enum
+                        return obj.value
+                    elif hasattr(obj, "__dict__") and not isinstance(
+                        obj, (str, int, float, bool)
+                    ):
+                        try:
+                            return str(obj)
+                        except:
+                            return repr(obj)
+                    else:
+                        return obj
+
+                if is_error:
+                    logger.error(
+                        f"Ferramenta {tool_name} (ID: {tool_call_id}) - ERRO: {msg.content}"
                     )
-
-                    # Criar ToolOutput
                     tool_output = ToolOutput(
-                        tool_name=tool_name,
-                        success=result.get("success", False),
-                        data=result,
+                        tool_name=tool_name, success=False, data={"error": msg.content}
                     )
-                    tool_outputs.append(tool_output)
                 else:
-                    logger.error(f"Ferramenta {tool_name} não encontrada")
-                    tool_output = ToolOutput(
-                        tool_name=tool_name,
-                        success=False,
-                        data={"error": f"Ferramenta {tool_name} não encontrada"},
+                    # Log do sucesso (truncar conteúdo longo)
+                    content_preview = (
+                        str(msg.content)[:200] + "..."
+                        if len(str(msg.content)) > 200
+                        else str(msg.content)
                     )
-                    tool_outputs.append(tool_output)
+                    logger.info(
+                        f"Ferramenta {tool_name} (ID: {tool_call_id}) - SUCESSO: {content_preview}"
+                    )
+                    try:
+                        # Tentar fazer parse do JSON se for string
+                        import json
 
-            except Exception as e:
-                logger.error(f"Erro ao executar ferramenta {tool_name}: {e}")
-                tool_output = ToolOutput(
-                    tool_name=tool_name,
-                    success=False,
-                    data={"error": f"Erro interno: {str(e)}"},
-                )
+                        if isinstance(
+                            msg.content, str
+                        ) and msg.content.strip().startswith("{"):
+                            parsed_content = json.loads(msg.content)
+                            safe_content = safe_serialize(parsed_content)
+                        else:
+                            safe_content = safe_serialize(msg.content)
+                    except:
+                        safe_content = str(msg.content)
+
+                    tool_output = ToolOutput(
+                        tool_name=tool_name, success=True, data={"result": safe_content}
+                    )
+
                 tool_outputs.append(tool_output)
 
-        # Atualizar estado com tool outputs
-        state["tool_outputs"] = tool_outputs
+            # Log resumo final
+            successful_tools = [t for t in tool_outputs if t.success]
+            failed_tools = [t for t in tool_outputs if not t.success]
 
+            logger.info(f"=== RESUMO DE EXECUÇÃO ===")
+            logger.info(f"Total de ferramentas: {len(tool_outputs)}")
+            logger.info(f"Sucessos: {len(successful_tools)}")
+            logger.info(f"Falhas: {len(failed_tools)}")
+
+            if successful_tools:
+                success_names = [t.tool_name for t in successful_tools]
+                logger.info(
+                    f"Ferramentas executadas com sucesso: {', '.join(success_names)}"
+                )
+
+            if failed_tools:
+                fail_names = [t.tool_name for t in failed_tools]
+                logger.warning(f"Ferramentas que falharam: {', '.join(fail_names)}")
+
+            state["tool_outputs"] = tool_outputs
+
+        return state
+
+    except Exception as e:
+        logger.error(f"Erro na execução de ferramentas: {e}")
         return state
 
     except Exception as e:
@@ -363,16 +423,13 @@ def final_response(state: CustomMessagesState) -> CustomMessagesState:
             state["current_step"] = "complete"
             return state
 
-        # Pegar a última mensagem do assistente
-        last_assistant_message = None
-        for msg in reversed(messages):
-            if isinstance(msg, AIMessage):
-                last_assistant_message = msg
-                break
+        # Verificar se há ToolMessages nas mensagens
+        has_tool_messages = any(
+            hasattr(msg, "__class__") and "ToolMessage" in str(type(msg))
+            for msg in messages
+        )
 
-        if not last_assistant_message or not getattr(
-            last_assistant_message, "tool_calls", []
-        ):
+        if not has_tool_messages:
             state["current_step"] = "complete"
             return state
 
@@ -384,25 +441,8 @@ def final_response(state: CustomMessagesState) -> CustomMessagesState:
         # Preparar mensagens incluindo os resultados das ferramentas
         langchain_messages = [SystemMessage(content=system_prompt)]
 
-        # Adicionar histórico de mensagens
+        # Adicionar histórico completo de mensagens (já inclui ToolMessages)
         langchain_messages.extend(messages)
-
-        # Adicionar ToolMessages com os resultados das ferramentas
-        from langchain_core.messages import ToolMessage
-
-        for i, tool_output in enumerate(tool_outputs):
-            if tool_output.success:
-                # Encontrar o tool_call correspondente
-                tool_calls = getattr(last_assistant_message, "tool_calls", [])
-                if i < len(tool_calls):
-                    tool_call = tool_calls[i]
-                    # Usar tool_call_id como string
-                    tool_call_id = str(tool_call.get("id", f"tool_call_{i}"))
-                    tool_message = ToolMessage(
-                        content=f"Ferramenta executada com sucesso: {tool_output.data}",
-                        tool_call_id=tool_call_id,
-                    )
-                    langchain_messages.append(tool_message)
 
         # Obter modelo de chat
         chat_model = llm_config.get_chat_model(temperature=config.temperature)
@@ -445,7 +485,8 @@ def create_graph() -> StateGraph:
         # Adicionar nós
         workflow.add_node("proactive_memory_retrieval", proactive_memory_retrieval)
         workflow.add_node("agent_reasoning", agent_reasoning)
-        workflow.add_node("tool_execution", tool_execution)
+        # Usar a versão simplificada com ToolNode
+        workflow.add_node("tool_execution", tool_execution_simplified)
         workflow.add_node("final_response", final_response)
 
         # Adicionar arestas (fluxo com execução de ferramentas)

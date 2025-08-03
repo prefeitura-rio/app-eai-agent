@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 import logging
-from langchain_core.tools import tool, InjectedToolArg
-from typing_extensions import Annotated
+from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig
 from src.services.lang_graph.models import (
     MemoryType,
     MemoryTypeConfig,
@@ -21,9 +21,7 @@ def get_memory_tool(
     memory_type: str,
     query: Optional[str] = None,
     mode: str = "semantic",
-    user_id: Annotated[str, InjectedToolArg] = None,
-    limit: Annotated[int, InjectedToolArg] = None,
-    min_relevance: Annotated[float, InjectedToolArg] = None,
+    config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta sempre que o usuário pedir informações sobre si mesmo,
@@ -40,11 +38,21 @@ def get_memory_tool(
         memory_type: Tipo de memória para filtrar (user_profile, preference, goal, constraint, critical_info)
         query: Texto para busca semântica (obrigatório se mode="semantic")
         mode: "semantic" para busca por similaridade ou "chronological" para ordem cronológica
+        config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
+        # Extrair parâmetros injetados da configuração
+        configurable = config.get("configurable", {}) if config else {}
+        user_id = configurable.get("user_id")
+        limit = configurable.get("memory_limit", 20)
+        min_relevance = configurable.get("memory_min_relevance", 0.6)
+
+        if not user_id:
+            return {"success": False, "error": "user_id não fornecido na configuração"}
+
         # Validar parâmetros
         if mode not in ["semantic", "chronological"]:
             return {
@@ -72,6 +80,11 @@ def get_memory_tool(
                     "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
                 }
 
+        logger.info(f"=== GET_MEMORY_TOOL EXECUTADA ===")
+        logger.info(
+            f"Parâmetros: user_id={user_id}, memory_type={memory_type}, mode={mode}, query='{query}', limit={limit}, min_relevance={min_relevance}"
+        )
+
         # Chamar memory manager
         result = memory_manager.get_memory(
             user_id=user_id,
@@ -83,12 +96,26 @@ def get_memory_tool(
         )
 
         if result.success:
+            logger.info(
+                f"get_memory_tool - SUCESSO: Encontradas {len(result.memories)} memórias"
+            )
+
+            # Serializar corretamente os enums
+            memories_data = []
+            for memory in result.memories:
+                memory_dict = memory.model_dump()
+                # Converter enum para string se necessário
+                if hasattr(memory_dict.get("memory_type"), "value"):
+                    memory_dict["memory_type"] = memory_dict["memory_type"].value
+                memories_data.append(memory_dict)
+
             return {
                 "success": True,
-                "memories": [memory.model_dump() for memory in result.memories],
+                "memories": memories_data,
                 "count": len(result.memories),
             }
         else:
+            logger.warning(f"get_memory_tool - FALHA: {result.error_message}")
             return {"success": False, "error": result.error_message}
 
     except Exception as e:
@@ -100,7 +127,7 @@ def get_memory_tool(
 def save_memory_tool(
     content: str,
     memory_type: str,
-    user_id: Annotated[str, InjectedToolArg] = None,
+    config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta sempre que o usuário fornecer informações pessoais,
@@ -116,11 +143,19 @@ def save_memory_tool(
     Args:
         content: Conteúdo da memória a ser salva
         memory_type: Tipo de memória (user_profile, preference, goal, constraint, critical_info)
+        config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
+        # Extrair parâmetros injetados da configuração
+        configurable = config.get("configurable", {}) if config else {}
+        user_id = configurable.get("user_id")
+
+        if not user_id:
+            return {"success": False, "error": "user_id não fornecido na configuração"}
+
         # Validar memory_type
         try:
             memory_type_enum = MemoryType(memory_type)
@@ -132,6 +167,14 @@ def save_memory_tool(
                 "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
             }
 
+        logger.info(f"=== SAVE_MEMORY_TOOL EXECUTADA ===")
+        logger.info(f"Parâmetros: user_id={user_id}, memory_type={memory_type}")
+        logger.info(
+            f"Conteúdo: {content[:100]}..."
+            if len(content) > 100
+            else f"Conteúdo: {content}"
+        )
+
         # Chamar memory manager
         result = memory_manager.save_memory(
             user_id=user_id,
@@ -140,12 +183,17 @@ def save_memory_tool(
         )
 
         if result.success:
+            logger.info(
+                f"save_memory_tool - SUCESSO: Memória salva com ID {result.memory_id}"
+            )
+
             return {
                 "success": True,
                 "memory_id": result.memory_id,
                 "message": "Memória salva com sucesso",
             }
         else:
+            logger.warning(f"save_memory_tool - FALHA: {result.error_message}")
             return {"success": False, "error": result.error_message}
 
     except Exception as e:
@@ -157,7 +205,7 @@ def save_memory_tool(
 def update_memory_tool(
     memory_id: str,
     new_content: str,
-    user_id: Annotated[str, InjectedToolArg] = None,
+    config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser atualizar ou corrigir
@@ -175,11 +223,27 @@ def update_memory_tool(
     Args:
         memory_id: ID da memória a ser atualizada
         new_content: Novo conteúdo da memória
+        config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
+        # Extrair parâmetros injetados da configuração
+        configurable = config.get("configurable", {}) if config else {}
+        user_id = configurable.get("user_id")
+
+        if not user_id:
+            return {"success": False, "error": "user_id não fornecido na configuração"}
+
+        logger.info(f"=== UPDATE_MEMORY_TOOL EXECUTADA ===")
+        logger.info(f"Parâmetros: user_id={user_id}, memory_id={memory_id}")
+        logger.info(
+            f"Novo conteúdo: {new_content[:100]}..."
+            if len(new_content) > 100
+            else f"Novo conteúdo: {new_content}"
+        )
+
         # Chamar memory manager
         result = memory_manager.update_memory(
             user_id=user_id,
@@ -188,11 +252,13 @@ def update_memory_tool(
         )
 
         if result.success:
+            logger.info(f"update_memory_tool - SUCESSO: Memória {memory_id} atualizada")
             return {
                 "success": True,
                 "message": "Memória atualizada com sucesso",
             }
         else:
+            logger.warning(f"update_memory_tool - FALHA: {result.error_message}")
             return {"success": False, "error": result.error_message}
 
     except Exception as e:
@@ -203,7 +269,7 @@ def update_memory_tool(
 @tool
 def delete_memory_tool(
     memory_id: str,
-    user_id: Annotated[str, InjectedToolArg] = None,
+    config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser remover ou deletar
@@ -220,11 +286,22 @@ def delete_memory_tool(
 
     Args:
         memory_id: ID da memória a ser deletada
+        config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
+        # Extrair parâmetros injetados da configuração
+        configurable = config.get("configurable", {}) if config else {}
+        user_id = configurable.get("user_id")
+
+        if not user_id:
+            return {"success": False, "error": "user_id não fornecido na configuração"}
+
+        logger.info(f"=== DELETE_MEMORY_TOOL EXECUTADA ===")
+        logger.info(f"Parâmetros: user_id={user_id}, memory_id={memory_id}")
+
         # Chamar memory manager
         result = memory_manager.delete_memory(
             user_id=user_id,
@@ -232,11 +309,13 @@ def delete_memory_tool(
         )
 
         if result.success:
+            logger.info(f"delete_memory_tool - SUCESSO: Memória {memory_id} deletada")
             return {
                 "success": True,
                 "message": "Memória deletada com sucesso",
             }
         else:
+            logger.warning(f"delete_memory_tool - FALHA: {result.error_message}")
             return {"success": False, "error": result.error_message}
 
     except Exception as e:
