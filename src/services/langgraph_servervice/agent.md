@@ -1,4 +1,4 @@
-### Plano de Elaboração de Chatbot (V1 Focada em Custo-Benefício e Flexibilidade)
+### Plano de Elaboração de Chatbot
 
 **Objetivo:** Criar um chatbot com memória de longo prazo persistente, onde a gestão dessa memória é uma habilidade intrínseca do agente conversacional. Prioridade em custos e simplicidade para a V1, permitindo que o agente decida *quando* e *o que* buscar e memorizar.
 
