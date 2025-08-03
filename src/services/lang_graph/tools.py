@@ -3,6 +3,7 @@ import logging
 from langchain_core.tools import tool
 from src.services.lang_graph.models import (
     MemoryType,
+    MemoryTypeConfig,
     MemoryCreateRequest,
     MemoryUpdateRequest,
     MemoryDeleteRequest,
@@ -16,17 +17,31 @@ logger = logging.getLogger(__name__)
 
 @tool
 def get_memory_tool(
-    mode: str = "semantic",
+    user_id: str,
+    limit: int,
+    min_relevance: float,
+    memory_type: str,
     query: Optional[str] = None,
-    memory_type: Optional[str] = None,
+    mode: str = "semantic",
 ) -> Dict[str, Any]:
     """
-    Recupera memórias do usuário.
+    OBRIGATÓRIO: Use esta ferramenta sempre que o usuário pedir informações sobre si mesmo,
+    perguntar sobre dados salvos anteriormente, ou quando você precisar buscar contexto
+    para personalizar sua resposta.
+
+    SITUAÇÕES DE USO OBRIGATÓRIO:
+    - Usuário pergunta: "qual é o meu nome?", "quais são minhas preferências?", "lembra de mim?"
+    - Usuário pede: "busque minhas informações", "mostre o que você sabe sobre mim"
+    - Você precisa personalizar resposta baseada em dados do usuário
+    - Usuário menciona algo que pode estar salvo (ex: "minha alergia", "minha profissão")
 
     Args:
-        mode: "semantic" para busca por similaridade ou "chronological" para ordem cronológica
+        user_id: ID do usuário (injetado automaticamente)
+        limit: Limite de resultados (injetado automaticamente)
+        min_relevance: Relevância mínima (injetado automaticamente)
+        memory_type: Tipo de memória para filtrar (user_profile, preference, goal, constraint, critical_info)
         query: Texto para busca semântica (obrigatório se mode="semantic")
-        memory_type: Tipo de memória para filtrar (opcional)
+        mode: "semantic" para busca por similaridade ou "chronological" para ordem cronológica
 
     Returns:
         Dicionário com resultado da operação
@@ -39,11 +54,12 @@ def get_memory_tool(
                 "error": f"Mode inválido: {mode}. Use 'semantic' ou 'chronological'",
             }
 
+        # Se mode é semantic mas não há query, usar chronological
         if mode == "semantic" and not query:
-            return {
-                "success": False,
-                "error": "Query é obrigatória para busca semântica",
-            }
+            mode = "chronological"
+            logger.info(
+                "Modo alterado para 'chronological' pois não há query para busca semântica"
+            )
 
         # Converter memory_type se fornecido
         memory_type_enum = None
@@ -51,22 +67,21 @@ def get_memory_tool(
             try:
                 memory_type_enum = MemoryType(memory_type)
             except ValueError:
+                # Obter lista de tipos válidos do enum
+                valid_types = [t.value for t in MemoryType]
                 return {
                     "success": False,
-                    "error": f"Memory type inválido: {memory_type}",
+                    "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
                 }
-
-        # PARÂMETROS SENSÍVEIS APLICADOS AUTOMATICAMENTE PELO SISTEMA
-        # user_id, limit, min_relevance são injetados pelo grafo
 
         # Chamar memory manager
         result = memory_manager.get_memory(
-            user_id="test_user_from_tool",  # Será sobrescrito pelo sistema
+            user_id=user_id,
             mode=mode,
             query=query,
             memory_type=memory_type_enum,
-            limit=20,  # Será sobrescrito pelo sistema
-            min_relevance=0.6,  # Será sobrescrito pelo sistema
+            limit=limit,
+            min_relevance=min_relevance,
         )
 
         if result.success:
@@ -84,13 +99,27 @@ def get_memory_tool(
 
 
 @tool
-def save_memory_tool(content: str, memory_type: str) -> Dict[str, Any]:
+def save_memory_tool(user_id: str, content: str, memory_type: str) -> Dict[str, Any]:
     """
-    Salva uma nova memória.
+    OBRIGATÓRIO: Use esta ferramenta sempre que o usuário fornecer informações pessoais,
+    preferências, objetivos, restrições ou informações críticas que devem ser lembradas.
+
+    SITUAÇÕES DE USO OBRIGATÓRIO:
+    - Usuário diz: "meu nome é João", "tenho 30 anos", "sou engenheiro"
+    - Usuário menciona: "gosto de programar", "tenho alergia a frutos do mar"
+    - Usuário informa: "quero aprender Python", "não posso comer glúten"
+    - Usuário compartilha: "tenho um agendamento importante", "minha senha é..."
+    - Qualquer informação pessoal que o usuário compartilha
 
     Args:
-        content: Conteúdo da memória
-        memory_type: Tipo da memória (user_profile, preference, goal, constraint, critical_info)
+        user_id: ID do usuário (injetado automaticamente)
+        content: Conteúdo da memória (informação a ser salva)
+        memory_type: Tipo da memória - OBRIGATÓRIO escolher um dos seguintes:
+            - user_profile: Dados pessoais (nome, idade, profissão, etc.)
+            - preference: Preferências e gostos
+            - goal: Objetivos e metas
+            - constraint: Restrições e limitações
+            - critical_info: Informações críticas (senhas, agendamentos, etc.)
 
     Returns:
         Dicionário com resultado da operação
@@ -100,14 +129,16 @@ def save_memory_tool(content: str, memory_type: str) -> Dict[str, Any]:
         try:
             memory_type_enum = MemoryType(memory_type)
         except ValueError:
-            return {"success": False, "error": f"Memory type inválido: {memory_type}"}
-
-        # PARÂMETROS SENSÍVEIS APLICADOS AUTOMATICAMENTE PELO SISTEMA
-        # user_id é injetado pelo grafo
+            # Obter lista de tipos válidos do enum
+            valid_types = [t.value for t in MemoryType]
+            return {
+                "success": False,
+                "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
+            }
 
         # Chamar memory manager diretamente
         result = memory_manager.save_memory(
-            user_id="test_user_from_tool",  # Será sobrescrito pelo sistema
+            user_id=user_id,
             content=content,
             memory_type=memory_type_enum,
         )
@@ -127,24 +158,34 @@ def save_memory_tool(content: str, memory_type: str) -> Dict[str, Any]:
 
 
 @tool
-def update_memory_tool(memory_id: str, new_content: str) -> Dict[str, Any]:
+def update_memory_tool(
+    memory_id: str, new_content: str, user_id: str
+) -> Dict[str, Any]:
     """
-    Atualiza uma memória existente.
+    OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser atualizar ou corrigir
+    informações que já foram salvas anteriormente.
+
+    SITUAÇÕES DE USO OBRIGATÓRIO:
+    - Usuário diz: "atualize minha idade para 31 anos"
+    - Usuário pede: "corrija minha profissão para 'desenvolvedor'"
+    - Usuário informa: "mude minha preferência de Java para Python"
+    - Usuário quer atualizar qualquer informação já salva
+
+    IMPORTANTE: Você precisa ter o memory_id correto. Se não tiver, use get_memory_tool
+    primeiro para buscar a memória e obter o ID correto.
 
     Args:
-        memory_id: ID da memória a ser atualizada
+        memory_id: ID da memória a ser atualizada (obtido via get_memory_tool)
         new_content: Novo conteúdo da memória
+        user_id: ID do usuário (injetado automaticamente)
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
-        # PARÂMETROS SENSÍVEIS APLICADOS AUTOMATICAMENTE PELO SISTEMA
-        # user_id é injetado pelo grafo
-
         # Chamar memory manager diretamente
         result = memory_manager.update_memory(
-            user_id="test_user_from_tool",  # Será sobrescrito pelo sistema
+            user_id=user_id,
             memory_id=memory_id,
             new_content=new_content,
         )
@@ -160,23 +201,31 @@ def update_memory_tool(memory_id: str, new_content: str) -> Dict[str, Any]:
 
 
 @tool
-def delete_memory_tool(memory_id: str) -> Dict[str, Any]:
+def delete_memory_tool(memory_id: str, user_id: str) -> Dict[str, Any]:
     """
-    Deleta uma memória.
+    OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser remover ou deletar
+    informações que foram salvas anteriormente.
+
+    SITUAÇÕES DE USO OBRIGATÓRIO:
+    - Usuário diz: "delete a informação sobre minha alergia"
+    - Usuário pede: "remova a memória sobre minha idade antiga"
+    - Usuário quer: "apague essa informação que não é mais válida"
+    - Usuário solicita deletar qualquer informação salva
+
+    IMPORTANTE: Você precisa ter o memory_id correto. Se não tiver, use get_memory_tool
+    primeiro para buscar a memória e obter o ID correto.
 
     Args:
-        memory_id: ID da memória a ser deletada
+        memory_id: ID da memória a ser deletada (obtido via get_memory_tool)
+        user_id: ID do usuário (injetado automaticamente)
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
-        # PARÂMETROS SENSÍVEIS APLICADOS AUTOMATICAMENTE PELO SISTEMA
-        # user_id é injetado pelo grafo
-
         # Chamar memory manager diretamente
         result = memory_manager.delete_memory(
-            user_id="test_user_from_tool",  # Será sobrescrito pelo sistema
+            user_id=user_id,
             memory_id=memory_id,
         )
 

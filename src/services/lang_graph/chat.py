@@ -16,10 +16,12 @@ class InteractiveChat:
 
     def __init__(self):
         self.chatbot_service = LangGraphChatbotService()
-        self.user_id = str(uuid.uuid4())
+        self.user_id = "test_chat"
         self.thread_id = str(uuid.uuid4())
         self.temperature = 0.7
-        self.system_prompt = "A partir de agora assuma a persona do batman, um super heroi que luta contra o crime e protege a cidade de Gotham."
+        self.system_prompt = (
+            "Voce é a EAI, um assistente virtual que é solicito e sarcastico."
+        )
 
     def initialize_session(
         self, temperature: Optional[float] = None, system_prompt: Optional[str] = None

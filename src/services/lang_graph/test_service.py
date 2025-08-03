@@ -34,6 +34,9 @@ from src.services.lang_graph.tests.test_short_term_memory import test_short_term
 from src.services.lang_graph.tests.test_conversation_context import (
     test_conversation_context,
 )
+from src.services.lang_graph.tests.test_tool_response import test_tool_response
+from src.services.lang_graph.tests.test_all_tools import test_all_tools
+from src.services.lang_graph.tests.test_user_id_injection import test_user_id_injection
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +56,9 @@ AVAILABLE_TESTS = {
     "system_prompt": test_system_prompt_injection,
     "short_term_memory": test_short_term_memory,
     "conversation_context": test_conversation_context,
+    "tool_response": test_tool_response,
+    "all_tools": test_all_tools,
+    "user_id_injection": test_user_id_injection,
 }
 
 # Categorias de testes
@@ -68,6 +74,9 @@ TEST_CATEGORIES = {
         "system_prompt",
         "short_term_memory",
         "conversation_context",
+        "tool_response",
+        "all_tools",
+        "user_id_injection",
     ],
     "all": list(AVAILABLE_TESTS.keys()),
 }

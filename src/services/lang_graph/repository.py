@@ -92,7 +92,7 @@ class MemoryRepository:
                     )
 
                 # Adicionar filtro de relevância usando cosine_distance
-                similarity_threshold = min_relevance
+                similarity_threshold = 1 - min_relevance  # Converter para distância
                 query_obj = query_obj.filter(
                     LongTermMemory.embedding.cosine_distance(query_embedding_list)
                     < similarity_threshold

@@ -43,30 +43,63 @@ def create_system_prompt(
 
     # Adicionar instruções das ferramentas (SEM expor parâmetros sensíveis)
     tools_instructions = """
-**Ferramentas Disponíveis:**
-* **get_memory_tool:** Recupera memórias por similaridade semântica ou ordem cronológica
-  - Parâmetros: mode (semantic/chronological), query (para busca semântica), memory_type (opcional)
-  - Use esta ferramenta para buscar informações relevantes sobre o usuário
-* **save_memory_tool:** Salva uma nova memória
-  - Parâmetros: content, memory_type
-* **update_memory_tool:** Atualiza uma memória existente
-  - Parâmetros: memory_id, new_content
-* **delete_memory_tool:** Deleta uma memória
-  - Parâmetros: memory_id
+**FERRAMENTAS DISPONÍVEIS - USO OBRIGATÓRIO:**
+
+**1. get_memory_tool - OBRIGATÓRIO usar quando:**
+   - Usuário pergunta sobre si mesmo: "qual é o meu nome?", "lembra de mim?"
+   - Usuário pede informações salvas: "busque minhas informações", "o que você sabe sobre mim?"
+   - Você precisa personalizar resposta baseada em dados do usuário
+   - Usuário menciona algo que pode estar salvo: "minha alergia", "minha profissão"
+   - Qualquer pergunta sobre dados pessoais do usuário
+
+**2. save_memory_tool - OBRIGATÓRIO usar quando:**
+   - Usuário fornece informações pessoais: "meu nome é João", "tenho 30 anos"
+   - Usuário menciona preferências: "gosto de programar", "tenho alergia a frutos do mar"
+   - Usuário informa objetivos: "quero aprender Python", "não posso comer glúten"
+   - Usuário compartilha informações críticas: "tenho um agendamento", "minha senha é..."
+   - QUALQUER informação pessoal que o usuário compartilha deve ser salva
+
+**3. update_memory_tool - OBRIGATÓRIO usar quando:**
+   - Usuário quer atualizar informações: "atualize minha idade para 31 anos"
+   - Usuário pede correções: "corrija minha profissão para 'desenvolvedor'"
+   - Usuário quer mudar dados: "mude minha preferência de Java para Python"
+   - IMPORTANTE: Use get_memory_tool primeiro para obter o memory_id correto
+
+**4. delete_memory_tool - OBRIGATÓRIO usar quando:**
+   - Usuário quer remover informações: "delete a informação sobre minha alergia"
+   - Usuário pede para apagar dados: "remova a memória sobre minha idade antiga"
+   - Usuário quer deletar informações: "apague essa informação que não é mais válida"
+   - IMPORTANTE: Use get_memory_tool primeiro para obter o memory_id correto
+
+**REGRAS OBRIGATÓRIAS:**
+1. **SEMPRE use as ferramentas quando apropriado** - não ignore informações que devem ser salvas
+2. **Para get_memory_tool:** Use sempre que precisar buscar informações do usuário
+3. **Para save_memory_tool:** Use SEMPRE que o usuário compartilhar informações pessoais
+4. **Para update_memory_tool:** Use quando o usuário quiser atualizar dados existentes
+5. **Para delete_memory_tool:** Use quando o usuário quiser remover dados
+6. **NUNCA ignore informações pessoais** - se o usuário compartilha algo sobre si, SALVE
+7. **Use get_memory_tool primeiro** antes de update ou delete para obter memory_id correto
+
+**EXEMPLOS DE USO OBRIGATÓRIO:**
+- Usuário diz "meu nome é Pedro" → OBRIGATÓRIO usar save_memory_tool
+- Usuário pergunta "qual é o meu nome?" → OBRIGATÓRIO usar get_memory_tool
+- Usuário diz "atualize minha idade" → OBRIGATÓRIO usar get_memory_tool + update_memory_tool
+- Usuário diz "delete minha alergia" → OBRIGATÓRIO usar get_memory_tool + delete_memory_tool
+
+**TIPOS DE MEMÓRIA DISPONÍVEIS:**
+- user_profile: Dados pessoais (nome, idade, profissão, etc.)
+- preference: Preferências e gostos
+- goal: Objetivos e metas  
+- constraint: Restrições e limitações
+- critical_info: Informações críticas (senhas, agendamentos, etc.)
 
 **Diretrizes Importantes:**
-1. **Use o Contexto da Conversa:** Você tem acesso ao histórico completo da conversa atual. Use essas informações para responder de forma contextualizada.
-2. **Combine Memórias:** Use tanto o contexto da conversa quanto as memórias de longo prazo para fornecer respostas completas.
-3. **Pense Passo a Passo:** Antes de responder, considere se buscar na memória pode enriquecer sua resposta
-4. **Seja Proativo:** Se o usuário fornecer uma informação nova e reutilizável, salve-a
-5. **Mantenha a Qualidade:** Se notar que uma memória está errada, atualize-a. Se for irrelevante, delete-a
-6. **Use Memórias Relevantes:** Utilize as memórias recuperadas para personalizar sua resposta
-7. **Busque Informações Úteis:** Use as ferramentas para encontrar informações que ajudem a responder melhor
-
-**Exemplo de Uso:**
-- Se o usuário perguntar "qual foi minha primeira mensagem?", use o contexto da conversa
-- Se o usuário perguntar "qual é o meu nome?", use as memórias de longo prazo
-- Se o usuário disser algo novo sobre si, salve na memória de longo prazo
+1. **Use o Contexto da Conversa:** Você tem acesso ao histórico completo da conversa atual
+2. **Combine Memórias:** Use tanto o contexto da conversa quanto as memórias de longo prazo
+3. **Seja Proativo:** SEMPRE salve informações pessoais que o usuário compartilha
+4. **Mantenha a Qualidade:** Atualize memórias erradas, delete irrelevantes
+5. **Use Memórias Relevantes:** Utilize as memórias recuperadas para personalizar respostas
+6. **OBRIGATÓRIO:** Use as ferramentas sempre que apropriado - não ignore informações importantes
 """
 
     # Adicionar contexto das memórias recuperadas
@@ -222,7 +255,13 @@ def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
 
         # Obter user_id do contexto
         config = state.get("config")
-        user_id = config.user_id if config else "test_user_from_tool"
+        user_id = config.user_id
+
+        # Log para debug
+        logger.info(f"Config encontrada: {config is not None}")
+        if config:
+            logger.info(f"User ID do config: {config.user_id}")
+        logger.info(f"User ID final: {user_id}")
 
         # Obter parâmetros de configuração (APLICADOS AUTOMATICAMENTE)
         limit = config.memory_limit if config else 20
@@ -236,8 +275,8 @@ def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
                 tool_args = tool_call.get("args", {})
 
                 # APLICAR PARÂMETROS SENSÍVEIS AUTOMATICAMENTE (sem exposição ao agente)
-                if "user_id" not in tool_args:
-                    tool_args["user_id"] = user_id
+
+                tool_args["user_id"] = user_id
 
                 # Aplicar limit e min_relevance automaticamente para get_memory_tool
                 if tool_name == "get_memory_tool":
@@ -292,16 +331,85 @@ def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
 
 
 def final_response(state: CustomMessagesState) -> CustomMessagesState:
-    """Nó final para preparar a resposta."""
+    """Nó final para preparar a resposta após execução de ferramentas."""
     try:
-        # Aqui você pode adicionar lógica adicional para processar a resposta final
-        # Por exemplo, formatar a resposta, adicionar metadados, etc.
+        messages = state.get("messages", [])
+        tool_outputs = state.get("tool_outputs", [])
+        config = state.get("config")
+
+        # Se não há tool outputs, não precisamos gerar nova resposta
+        if not tool_outputs:
+            state["current_step"] = "complete"
+            return state
+
+        # Pegar a última mensagem do assistente
+        last_assistant_message = None
+        for msg in reversed(messages):
+            if isinstance(msg, AIMessage):
+                last_assistant_message = msg
+                break
+
+        if not last_assistant_message or not getattr(
+            last_assistant_message, "tool_calls", []
+        ):
+            state["current_step"] = "complete"
+            return state
+
+        # Criar system prompt para resposta final
+        system_prompt = create_system_prompt(
+            config, state.get("retrieved_memories", [])
+        )
+
+        # Preparar mensagens incluindo os resultados das ferramentas
+        langchain_messages = [SystemMessage(content=system_prompt)]
+
+        # Adicionar histórico de mensagens
+        langchain_messages.extend(messages)
+
+        # Adicionar ToolMessages com os resultados das ferramentas
+        from langchain_core.messages import ToolMessage
+
+        for i, tool_output in enumerate(tool_outputs):
+            if tool_output.success:
+                # Encontrar o tool_call correspondente
+                tool_calls = getattr(last_assistant_message, "tool_calls", [])
+                if i < len(tool_calls):
+                    tool_call = tool_calls[i]
+                    tool_message = ToolMessage(
+                        content=f"Ferramenta executada com sucesso: {tool_output.data}",
+                        tool_call_id=tool_call.get("id", f"tool_call_{i}"),
+                    )
+                    langchain_messages.append(tool_message)
+
+        # Obter modelo de chat
+        chat_model = llm_config.get_chat_model(temperature=config.temperature)
+
+        # Executar o modelo para gerar resposta final
+        try:
+            response = chat_model.invoke(langchain_messages)
+            logger.info(f"Resposta final gerada: {response.content[:100]}...")
+
+            # Adicionar resposta final ao estado
+            state["messages"].append(response)
+        except Exception as e:
+            logger.error(f"Erro ao gerar resposta final: {e}")
+            # Adicionar mensagem de erro
+            error_message = AIMessage(
+                content="Desculpe, ocorreu um erro ao processar a resposta final. Tente novamente."
+            )
+            state["messages"].append(error_message)
 
         state["current_step"] = "complete"
+
         return state
 
     except Exception as e:
         logger.error(f"Erro na resposta final: {e}")
+        # Adicionar mensagem de erro
+        error_message = AIMessage(
+            content="Desculpe, ocorreu um erro ao processar a resposta final. Tente novamente."
+        )
+        state["messages"].append(error_message)
         return state
 
 
