@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Dict, Any, List, Optional
 import logging
 from langchain_core.tools import tool
@@ -13,14 +14,70 @@ from src.services.lang_graph.models import (
 )
 from src.services.lang_graph.memory import memory_manager
 
+
+from src.config import env
+from langchain_mcp_adapters.client import MultiServerMCPClient
+import asyncio
+
 logger = logging.getLogger(__name__)
+
+
+async def get_mcp_tools():
+    """
+    Inicializa o cliente MCP e busca as ferramentas disponíveis de forma assíncrona.
+    """
+    client = MultiServerMCPClient(
+        {
+            "rio_mcp": {
+                "transport": "streamable_http",
+                "url": env.MCP_SERVER_URL,
+                "headers": {
+                    "Authorization": f"Bearer {env.MCP_API_TOKEN}",
+                },
+            },
+        }
+    )
+    tools = await client.get_tools()
+    return tools
+
+
+def safe_serialize_memory(memory_data: dict) -> dict:
+    """Serializa dados de memória de forma segura."""
+    try:
+        # Clonar para não modificar original
+        safe_data = deepcopy(memory_data)
+
+        # Tratar memory_type
+        memory_type = safe_data.get("memory_type")
+        if memory_type is not None:
+            if hasattr(memory_type, "value"):
+                safe_data["memory_type"] = memory_type.value
+            elif isinstance(memory_type, int):
+                # Se é int, converter usando enum
+                try:
+                    safe_data["memory_type"] = MemoryType(memory_type).value
+                except ValueError:
+                    safe_data["memory_type"] = str(memory_type)
+            else:
+                safe_data["memory_type"] = str(memory_type)
+
+        # Tratar datetime
+        creation_datetime = safe_data.get("creation_datetime")
+        if creation_datetime and hasattr(creation_datetime, "isoformat"):
+            safe_data["creation_datetime"] = creation_datetime.isoformat()
+
+        return safe_data
+
+    except Exception as e:
+        logger.error(f"Erro ao serializar memória: {e}")
+        return {"error": "Erro de serialização"}
 
 
 @tool
 def get_memory_tool(
     memory_type: str,
-    query: Optional[str] = None,
-    mode: str = "semantic",
+    query: str,
+    # mode: str = "semantic",
     config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """
@@ -36,8 +93,7 @@ def get_memory_tool(
 
     Args:
         memory_type: Tipo de memória para filtrar (user_profile, preference, goal, constraint, critical_info)
-        query: Texto para busca semântica (obrigatório se mode="semantic")
-        mode: "semantic" para busca por similaridade ou "chronological" para ordem cronológica
+        query: Texto para busca semântica (obrigatório!!)
         config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
@@ -52,20 +108,6 @@ def get_memory_tool(
 
         if not user_id:
             return {"success": False, "error": "user_id não fornecido na configuração"}
-
-        # Validar parâmetros
-        if mode not in ["semantic", "chronological"]:
-            return {
-                "success": False,
-                "error": f"Mode inválido: {mode}. Use 'semantic' ou 'chronological'",
-            }
-
-        # Se mode é semantic mas não há query, usar chronological
-        if mode == "semantic" and not query:
-            mode = "chronological"
-            logger.info(
-                "Modo alterado para 'chronological' pois não há query para busca semântica"
-            )
 
         # Converter memory_type se fornecido
         memory_type_enum = None
@@ -82,13 +124,12 @@ def get_memory_tool(
 
         logger.info(f"=== GET_MEMORY_TOOL EXECUTADA ===")
         logger.info(
-            f"Parâmetros: user_id={user_id}, memory_type={memory_type}, mode={mode}, query='{query}', limit={limit}, min_relevance={min_relevance}"
+            f"Parâmetros: user_id={user_id}, memory_type={memory_type}, query='{query}', limit={limit}, min_relevance={min_relevance}"
         )
 
         # Chamar memory manager
         result = memory_manager.get_memory(
             user_id=user_id,
-            mode=mode,
             query=query,
             memory_type=memory_type_enum,
             limit=limit,
@@ -100,14 +141,16 @@ def get_memory_tool(
                 f"get_memory_tool - SUCESSO: Encontradas {len(result.memories)} memórias"
             )
 
-            # Serializar corretamente os enums
+            # Usar em get_memory_tool:
             memories_data = []
             for memory in result.memories:
-                memory_dict = memory.model_dump()
-                # Converter enum para string se necessário
-                if hasattr(memory_dict.get("memory_type"), "value"):
-                    memory_dict["memory_type"] = memory_dict["memory_type"].value
-                memories_data.append(memory_dict)
+                try:
+                    memory_dict = memory.model_dump()
+                    safe_memory = safe_serialize_memory(memory_dict)
+                    memories_data.append(safe_memory)
+                except Exception as e:
+                    logger.error(f"Erro ao processar memória {memory.memory_id}: {e}")
+                    continue
 
             return {
                 "success": True,
@@ -324,4 +367,11 @@ def delete_memory_tool(
 
 
 # Lista de ferramentas disponíveis
-TOOLS = [get_memory_tool, save_memory_tool, update_memory_tool, delete_memory_tool]
+mcp_tools = asyncio.run(get_mcp_tools())
+TOOLS = [
+    get_memory_tool,
+    save_memory_tool,
+    update_memory_tool,
+    delete_memory_tool,
+    *mcp_tools,
+]

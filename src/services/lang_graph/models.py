@@ -69,7 +69,6 @@ class MemoryDeleteRequest(BaseModel):
 class MemorySearchRequest(BaseModel):
     """Modelo para busca de memórias."""
 
-    mode: str = Field(..., pattern="^(semantic|chronological)$")
     query: Optional[str] = None
     memory_type: Optional[MemoryType] = None
 
@@ -88,7 +87,7 @@ class SessionConfig(BaseModel):
     )
     memory_limit: int = 20
     memory_min_relevance: float = 0.6
-    enable_proactive_memory_retrieval: bool = True
+    enable_proactive_memory_retrieval: bool = False
     memory_retrieval_mode: str = "semantic"  # "semantic" ou "chronological"
     memory_types_config: MemoryTypeConfig = Field(default_factory=MemoryTypeConfig)
 

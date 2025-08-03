@@ -22,7 +22,6 @@ class MemoryManager:
     def get_memory(
         self,
         user_id: str,
-        mode: str,
         query: Optional[str] = None,
         memory_type: Optional[MemoryType] = None,
         limit: int = 20,
@@ -30,31 +29,20 @@ class MemoryManager:
     ) -> MemoryOperationResult:
         """Recupera memórias baseado no modo especificado."""
         try:
-            if mode == "semantic":
-                if not query:
-                    return MemoryOperationResult(
-                        success=False,
-                        error_message="Query é obrigatória para busca semântica",
-                    )
 
-                memories = self.repository.get_memories_semantic(
-                    user_id=user_id,
-                    query=query,
-                    memory_type=memory_type,
-                    limit=limit,
-                    min_relevance=min_relevance,
-                )
-
-            elif mode == "chronological":
-                memories = self.repository.get_memories_chronological(
-                    user_id=user_id, memory_type=memory_type, limit=limit
-                )
-
-            else:
+            if not query:
                 return MemoryOperationResult(
                     success=False,
-                    error_message=f"Modo '{mode}' não suportado. Use 'semantic' ou 'chronological'",
+                    error_message="Query é obrigatória!",
                 )
+
+            memories = self.repository.get_memories_semantic(
+                user_id=user_id,
+                query=query,
+                memory_type=memory_type,
+                limit=limit,
+                min_relevance=min_relevance,
+            )
 
             return MemoryOperationResult(success=True, memories=memories)
 
@@ -197,7 +185,6 @@ class MemoryManager:
         """Busca memórias usando um objeto de requisição."""
         return self.get_memory(
             user_id=user_id,
-            mode=search_request.mode,
             query=search_request.query,
             memory_type=search_request.memory_type,
         )

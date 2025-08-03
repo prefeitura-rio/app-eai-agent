@@ -54,6 +54,7 @@ class LangGraphChatbotService:
                     user_id=user_id,
                     chat_model="gemini-2.5-flash-lite",
                     temperature=temperature if temperature is not None else 0.7,
+                    enable_proactive_memory_retrieval=False,
                     **kwargs,
                 )
             else:
@@ -277,7 +278,7 @@ class LangGraphChatbotService:
 
             # Buscar memórias
             result = self.memory_manager.get_memory(
-                user_id=user_id, mode=mode, query=query, memory_type=memory_type_enum
+                user_id=user_id, query=query, memory_type=memory_type_enum
             )
 
             if result.success:

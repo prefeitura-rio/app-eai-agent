@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Dict, Any, List, Optional, TypedDict, Annotated
 import logging
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, END, START
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import MessagesState
 from langgraph.prebuilt import ToolNode
@@ -46,60 +46,13 @@ def create_system_prompt(
 
     # Adicionar instruções das ferramentas (SEM expor parâmetros sensíveis)
     tools_instructions = """
-**FERRAMENTAS DISPONÍVEIS - USO OBRIGATÓRIO:**
+VOCÊ TEM 4 FERRAMENTAS DE MEMÓRIA DISPONÍVEIS:
+1. get_memory_tool - buscar informações do usuário
+2. save_memory_tool - salvar novas informações  
+3. update_memory_tool - atualizar informações existentes
+4. delete_memory_tool - deletar informações
 
-**1. get_memory_tool - OBRIGATÓRIO usar quando:**
-   - Usuário pergunta sobre si mesmo: "qual é o meu nome?", "lembra de mim?"
-   - Usuário pede informações salvas: "busque minhas informações", "o que você sabe sobre mim?"
-   - Você precisa personalizar resposta baseada em dados do usuário
-   - Usuário menciona algo que pode estar salvo: "minha alergia", "minha profissão"
-   - Qualquer pergunta sobre dados pessoais do usuário
-   - **EFICIÊNCIA:** Use uma única chamada com query específica em vez de múltiplas chamadas
-   - **IMPORTANTE:** SEMPRE especifique o memory_type (user_profile, preference, goal, constraint, critical_info)
-
-**2. save_memory_tool - OBRIGATÓRIO usar quando:**
-   - Usuário fornece informações pessoais: "meu nome é João", "tenho 30 anos"
-   - Usuário menciona preferências: "gosto de programar", "tenho alergia a frutos do mar"
-   - Usuário informa objetivos: "quero aprender Python", "não posso comer glúten"
-   - Usuário compartilha informações críticas: "tenho um agendamento", "minha senha é..."
-   - QUALQUER informação pessoal que o usuário compartilha deve ser salva
-   - **EFICIÊNCIA:** Salve cada informação separadamente para melhor organização
-
-**3. update_memory_tool - OBRIGATÓRIO usar quando:**
-   - Usuário quer atualizar informações: "atualize minha idade para 31 anos"
-   - Usuário pede correções: "corrija minha profissão para 'desenvolvedor'"
-   - Usuário quer mudar dados: "mude minha preferência de Java para Python"
-   - IMPORTANTE: Use get_memory_tool primeiro para obter o memory_id correto
-
-**4. delete_memory_tool - OBRIGATÓRIO usar quando:**
-   - Usuário quer remover informações: "delete a informação sobre minha alergia"
-   - Usuário pede para apagar dados: "remova a memória sobre minha idade antiga"
-   - Usuário quer deletar informações: "apague essa informação que não é mais válida"
-   - IMPORTANTE: Use get_memory_tool primeiro para obter o memory_id correto
-
-**REGRAS OBRIGATÓRIAS:**
-1. **SEMPRE use as ferramentas quando apropriado** - não ignore informações que devem ser salvas
-2. **Para get_memory_tool:** Use sempre que precisar buscar informações do usuário
-3. **Para save_memory_tool:** Use SEMPRE que o usuário compartilhar informações pessoais
-4. **Para update_memory_tool:** Use quando o usuário quiser atualizar dados existentes
-5. **Para delete_memory_tool:** Use quando o usuário quiser remover dados
-6. **NUNCA ignore informações pessoais** - se o usuário compartilha algo sobre si, SALVE
-7. **Use get_memory_tool primeiro** antes de update ou delete para obter memory_id correto
-8. **SEJA EFICIENTE:** Use uma única operação quando possível, evite múltiplas chamadas desnecessárias
-9. **SEMPRE especifique memory_type** em get_memory_tool (user_profile, preference, goal, constraint, critical_info)
-
-**EXEMPLOS DE USO OBRIGATÓRIO:**
-- Usuário diz "meu nome é Pedro" → OBRIGATÓRIO usar save_memory_tool com memory_type="user_profile"
-- Usuário pergunta "qual é o meu nome?" → OBRIGATÓRIO usar get_memory_tool com memory_type="user_profile"
-- Usuário diz "atualize minha idade" → OBRIGATÓRIO usar get_memory_tool + update_memory_tool
-- Usuário diz "delete minha alergia" → OBRIGATÓRIO usar get_memory_tool + delete_memory_tool
-
-**TIPOS DE MEMÓRIA DISPONÍVEIS:**
-- user_profile: Dados pessoais (nome, idade, profissão, etc.)
-- preference: Preferências e gostos
-- goal: Objetivos e metas  
-- constraint: Restrições e limitações
-- critical_info: Informações críticas (senhas, agendamentos, etc.)
+USE SEMPRE que apropriado. Não ignore informações pessoais do usuário.
 
 **Diretrizes Importantes:**
 1. **Use o Contexto da Conversa:** Você tem acesso ao histórico completo da conversa atual
@@ -160,7 +113,6 @@ def proactive_memory_retrieval(state: CustomMessagesState) -> CustomMessagesStat
         # Buscar memórias relevantes
         result = memory_manager.get_memory(
             user_id=config.user_id,
-            mode=config.memory_retrieval_mode,  # Usar o parâmetro da config
             query=user_content,
             limit=config.memory_limit,
             min_relevance=config.memory_min_relevance,
@@ -223,6 +175,7 @@ def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
             logger.info(f"Ferramentas chamadas: {len(response.tool_calls)}")
             for tool_call in response.tool_calls:
                 logger.info(f"Ferramenta: {tool_call['name']}")
+            response.content = ""
 
         # Adicionar resposta ao estado (MessagesState gerencia automaticamente)
         state["messages"].append(response)
@@ -243,10 +196,43 @@ def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
 
 # ===== VERSÃO SIMPLIFICADA COM TOOLNODE =====
 
+
+def safe_serialize_memory(memory_data: dict) -> dict:
+    """Serializa dados de memória de forma segura."""
+    try:
+        # Clonar para não modificar original
+        safe_data = deepcopy(memory_data)
+
+        # Tratar memory_type
+        memory_type = safe_data.get("memory_type")
+        if memory_type is not None:
+            if hasattr(memory_type, "value"):
+                safe_data["memory_type"] = memory_type.value
+            elif isinstance(memory_type, int):
+                # Se é int, converter usando enum
+                try:
+                    safe_data["memory_type"] = MemoryType(memory_type).value
+                except ValueError:
+                    safe_data["memory_type"] = str(memory_type)
+            else:
+                safe_data["memory_type"] = str(memory_type)
+
+        # Tratar datetime
+        creation_datetime = safe_data.get("creation_datetime")
+        if creation_datetime and hasattr(creation_datetime, "isoformat"):
+            safe_data["creation_datetime"] = creation_datetime.isoformat()
+
+        return safe_data
+
+    except Exception as e:
+        logger.error(f"Erro ao serializar memória: {e}")
+        return {"error": "Erro de serialização"}
+
+
 # Criar ToolNode configurado com tratamento de erros personalizado
 tool_node = ToolNode(
     TOOLS,
-    handle_tool_errors="Desculpe, ocorreu um erro ao executar a ferramenta. Tente novamente com diferentes parâmetros.",
+    # handle_tool_errors="Desculpe, ocorreu um erro ao executar a ferramenta. Tente novamente com diferentes parâmetros.",
 )
 
 
@@ -476,6 +462,19 @@ def final_response(state: CustomMessagesState) -> CustomMessagesState:
         return state
 
 
+def should_use_tools(state: CustomMessagesState) -> str:
+    """Decide se deve executar ferramentas ou ir direto para resposta final."""
+    messages = state.get("messages", [])
+    if not messages:
+        return "final_response"
+
+    last_message = messages[-1]
+    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+        return "tool_execution"
+    else:
+        return "final_response"
+
+
 def create_graph() -> StateGraph:
     """Cria o grafo LangGraph com checkpointer para memória de curto prazo."""
     try:
@@ -484,15 +483,24 @@ def create_graph() -> StateGraph:
 
         # Adicionar nós
         workflow.add_node("proactive_memory_retrieval", proactive_memory_retrieval)
+
         workflow.add_node("agent_reasoning", agent_reasoning)
         # Usar a versão simplificada com ToolNode
         workflow.add_node("tool_execution", tool_execution_simplified)
         workflow.add_node("final_response", final_response)
 
         # Adicionar arestas (fluxo com execução de ferramentas)
+        workflow.add_edge(START, "proactive_memory_retrieval")
         workflow.add_edge("proactive_memory_retrieval", "agent_reasoning")
-        workflow.add_edge("agent_reasoning", "tool_execution")
-        workflow.add_edge("tool_execution", "final_response")
+        workflow.add_conditional_edges(
+            "agent_reasoning",
+            should_use_tools,
+            {"tool_execution": "tool_execution", "final_response": "final_response"},
+        )
+        workflow.add_edge("tool_execution", "agent_reasoning")
+
+        # workflow.add_edge("agent_reasoning", "tool_execution")
+        # workflow.add_edge("tool_execution", "final_response")
         workflow.add_edge("final_response", END)
 
         # Configurar ponto de entrada
