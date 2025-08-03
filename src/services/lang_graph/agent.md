@@ -1,3 +1,5 @@
+quero testar suas capacidades de usar ferramentas sequencialemnte, utilize o save_memory_tool pra salvar a informacao que tenho uma consulta no dentista semana que vem, depois utilize a tool get_memory_tool pra pegar essa informacao, em seguida faca o update pois a consulta é daqui duas semanas e finalmente use o delete_tool_memory para deletar a memoria pois a consulta foi cancelada
+
 ### Plano de Elaboração de Chatbot
 
 **Objetivo:** Criar um chatbot com memória de longo prazo persistente, onde a gestão dessa memória é uma habilidade intrínseca do agente conversacional. Prioridade em custos e simplicidade para a V1, permitindo que o agente decida *quando* e *o que* buscar e memorizar. Utilizar ChatGoogleGenerativeAI e GoogleGenerativeAIEmbeddings

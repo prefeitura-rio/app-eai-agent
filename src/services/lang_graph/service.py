@@ -97,7 +97,7 @@ class LangGraphChatbotService:
             logger.error(f"Erro ao inicializar sessão: {e}")
             return {"success": False, "error_message": str(e)}
 
-    def process_message(
+    async def process_message(
         self,
         user_id: str,
         thread_id: str,
@@ -139,7 +139,7 @@ class LangGraphChatbotService:
             # Executar o grafo com thread_id para manter memória de curto prazo
             config_dict = {"configurable": {"thread_id": thread_id}}
 
-            final_state = self.graph.invoke(initial_state, config=config_dict)
+            final_state = await self.graph.ainvoke(initial_state, config=config_dict)
 
             # Extrair resposta
             messages = final_state.get("messages", [])

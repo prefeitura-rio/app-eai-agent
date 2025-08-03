@@ -82,7 +82,7 @@ USE SEMPRE que apropriado. Não ignore informações pessoais do usuário.
     return base_prompt + memory_types_desc + tools_instructions + memories_context
 
 
-def proactive_memory_retrieval(state: CustomMessagesState) -> CustomMessagesState:
+async def proactive_memory_retrieval(state: CustomMessagesState) -> CustomMessagesState:
     """Nó para recuperação proativa de memórias."""
     try:
         # Verificar se temos as informações necessárias
@@ -133,7 +133,7 @@ def proactive_memory_retrieval(state: CustomMessagesState) -> CustomMessagesStat
         return state
 
 
-def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
+async def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
     """Nó principal do agente para raciocínio e decisão."""
     try:
         config = state.get("config")
@@ -167,7 +167,7 @@ def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
         )
 
         # Executar o modelo
-        response = model_with_tools.invoke(langchain_messages)
+        response = await model_with_tools.ainvoke(langchain_messages)
         logger.info(f"Resposta do modelo: {response.content[:100]}...")
 
         # Verificar se há tool calls na resposta
@@ -236,7 +236,7 @@ tool_node = ToolNode(
 )
 
 
-def tool_execution_simplified(state: CustomMessagesState) -> CustomMessagesState:
+async def tool_execution_simplified(state: CustomMessagesState) -> CustomMessagesState:
     """Versão simplificada usando ToolNode do LangGraph."""
     try:
         messages = state.get("messages", [])
@@ -292,7 +292,7 @@ def tool_execution_simplified(state: CustomMessagesState) -> CustomMessagesState
         )
 
         # Executar ToolNode - ele cuida de tudo automaticamente!
-        result = tool_node.invoke(state, config=runnable_config)
+        result = await tool_node.ainvoke(state, config=runnable_config)
 
         # ToolNode retorna o estado atualizado com ToolMessages
         # Adicionar as mensagens de ferramenta ao estado
@@ -397,7 +397,7 @@ def tool_execution_simplified(state: CustomMessagesState) -> CustomMessagesState
         return state
 
 
-def final_response(state: CustomMessagesState) -> CustomMessagesState:
+async def final_response(state: CustomMessagesState) -> CustomMessagesState:
     """Nó final para preparar a resposta após execução de ferramentas."""
     try:
         messages = state.get("messages", [])
@@ -435,7 +435,7 @@ def final_response(state: CustomMessagesState) -> CustomMessagesState:
 
         # Executar o modelo para gerar resposta final
         try:
-            response = chat_model.invoke(langchain_messages)
+            response = await chat_model.ainvoke(langchain_messages)
             logger.info(f"Resposta final gerada: {response.content[:100]}...")
 
             # Adicionar resposta final ao estado
@@ -462,17 +462,32 @@ def final_response(state: CustomMessagesState) -> CustomMessagesState:
         return state
 
 
-def should_use_tools(state: CustomMessagesState) -> str:
-    """Decide se deve executar ferramentas ou ir direto para resposta final."""
-    messages = state.get("messages", [])
-    if not messages:
-        return "final_response"
+# def should_use_tools(state: CustomMessagesState) -> str:
+#     """Decide se deve executar ferramentas ou ir direto para resposta final."""
+#     messages = state.get("messages", [])
+#     if not messages:
+#         return "final_response"
 
-    last_message = messages[-1]
+#     last_message = messages[-1]
+#     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+#         return "tool_execution"
+#     else:
+#         return "final_response"
+
+
+def should_use_tools(state: CustomMessagesState) -> str:
+    """
+    Decide se o fluxo deve continuar para a execução de ferramentas ou se deve terminar.
+    """
+    # Acessa a última mensagem adicionada ao estado, que é a resposta do agente.
+    last_message = state["messages"][-1]
+
+    # Se a mensagem tem chamadas de ferramentas, o fluxo deve ir para o nó de execução.
     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
         return "tool_execution"
+    # Se não há chamadas de ferramentas, o agente considera o trabalho concluído.
     else:
-        return "final_response"
+        return "end"
 
 
 def create_graph() -> StateGraph:
@@ -495,13 +510,15 @@ def create_graph() -> StateGraph:
         workflow.add_conditional_edges(
             "agent_reasoning",
             should_use_tools,
-            {"tool_execution": "tool_execution", "final_response": "final_response"},
+            {"tool_execution": "tool_execution", "end": END},
         )
-        workflow.add_edge("tool_execution", "agent_reasoning")
+        # workflow.add_edge("tool_execution", "agent_reasoning")
+        # workflow.add_edge("tool_execution", "final_response")
 
         # workflow.add_edge("agent_reasoning", "tool_execution")
-        # workflow.add_edge("tool_execution", "final_response")
-        workflow.add_edge("final_response", END)
+
+        workflow.add_edge("tool_execution", "agent_reasoning")
+        # workflow.add_edge("final_response", END)
 
         # Configurar ponto de entrada
         workflow.set_entry_point("proactive_memory_retrieval")

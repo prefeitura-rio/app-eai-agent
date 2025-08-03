@@ -52,10 +52,10 @@ class InteractiveChat:
             )
             return False
 
-    def send_message(self, message: str) -> str:
+    async def send_message(self, message: str) -> str:
         """Envia uma mensagem para o chatbot."""
         try:
-            response = self.chatbot_service.process_message(
+            response = await self.chatbot_service.process_message(
                 user_id=self.user_id,
                 thread_id=self.thread_id,
                 message=message,
@@ -108,7 +108,7 @@ class InteractiveChat:
         self.thread_id = str(uuid.uuid4())
         self.initialize_session()
 
-    def run(self):
+    async def run(self):
         """Executa o chat interativo."""
         print("🤖 Chatbot LangGraph - Chat Interativo")
         print("=" * 50)
@@ -138,7 +138,7 @@ class InteractiveChat:
 
                 # Enviar mensagem para o chatbot
                 print("🤖 Bot: ", end="", flush=True)
-                response = self.send_message(user_input)
+                response = await self.send_message(user_input)
                 print(response)
                 print()
 
@@ -193,17 +193,19 @@ class InteractiveChat:
             print("Digite /help para ver os comandos disponíveis")
 
 
-def main():
+async def main():
     """Função principal."""
     logging.basicConfig(level=logging.INFO)
 
     try:
         chat = InteractiveChat()
-        chat.run()
+        await chat.run()
     except Exception as e:
         print(f"❌ Erro fatal: {e}")
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+
+    asyncio.run(main())
