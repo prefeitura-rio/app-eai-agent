@@ -37,6 +37,7 @@ dependencies = [
     "langchain-postgres>=0.0.15",
     "psycopg-binary>=3.2.9",
     "langchain-mcp-adapters>=0.1.9",
+    "pgvector>=0.3.6",
 ]
 
 [tool.taskipy.tasks]

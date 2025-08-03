@@ -1,6 +1,19 @@
 ### Plano de Elaboração de Chatbot
 
-**Objetivo:** Criar um chatbot com memória de longo prazo persistente, onde a gestão dessa memória é uma habilidade intrínseca do agente conversacional. Prioridade em custos e simplicidade para a V1, permitindo que o agente decida *quando* e *o que* buscar e memorizar.
+**Objetivo:** Criar um chatbot com memória de longo prazo persistente, onde a gestão dessa memória é uma habilidade intrínseca do agente conversacional. Prioridade em custos e simplicidade para a V1, permitindo que o agente decida *quando* e *o que* buscar e memorizar. Utilizar ChatGoogleGenerativeAI e GoogleGenerativeAIEmbeddings
+
+
+src/services/lang_graph/
+├── __init__.py
+├── models.py         # Definições de todos os modelos Pydantic.
+├── database.py       # definicao das funcoes de banco de dados (Google Cloud SQL Postgres).
+├── repository.py     # Lógica de acesso e manipulação do banco de dados utilizando database.
+├── memory.py         # definicao da classe de gerenciamento de memoria.
+├── tools.py          # Implementação das ferramentas do agente (get, save, update, delete).
+├── llms.py           # definicao de modelos a serem utilizados
+├── graph.py          # Definição do estado, nós e montagem do grafo LangGraph.
+└── service.py        # Ponto de entrada para interagir com o chatbot.
+└── test_service.py   # Configuracao de um script que chama o service para testagem
 
 ---
 
