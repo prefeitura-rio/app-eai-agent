@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Optional
 import logging
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolArg
+from typing_extensions import Annotated
 from src.services.lang_graph.models import (
     MemoryType,
     MemoryTypeConfig,
@@ -17,12 +18,12 @@ logger = logging.getLogger(__name__)
 
 @tool
 def get_memory_tool(
-    user_id: str,
-    limit: int,
-    min_relevance: float,
     memory_type: str,
     query: Optional[str] = None,
     mode: str = "semantic",
+    user_id: Annotated[str, InjectedToolArg] = None,
+    limit: Annotated[int, InjectedToolArg] = None,
+    min_relevance: Annotated[float, InjectedToolArg] = None,
 ) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta sempre que o usuário pedir informações sobre si mesmo,
@@ -36,9 +37,6 @@ def get_memory_tool(
     - Usuário menciona algo que pode estar salvo (ex: "minha alergia", "minha profissão")
 
     Args:
-        user_id: ID do usuário (injetado automaticamente)
-        limit: Limite de resultados (injetado automaticamente)
-        min_relevance: Relevância mínima (injetado automaticamente)
         memory_type: Tipo de memória para filtrar (user_profile, preference, goal, constraint, critical_info)
         query: Texto para busca semântica (obrigatório se mode="semantic")
         mode: "semantic" para busca por similaridade ou "chronological" para ordem cronológica
@@ -99,27 +97,25 @@ def get_memory_tool(
 
 
 @tool
-def save_memory_tool(user_id: str, content: str, memory_type: str) -> Dict[str, Any]:
+def save_memory_tool(
+    content: str,
+    memory_type: str,
+    user_id: Annotated[str, InjectedToolArg] = None,
+) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta sempre que o usuário fornecer informações pessoais,
     preferências, objetivos, restrições ou informações críticas que devem ser lembradas.
 
     SITUAÇÕES DE USO OBRIGATÓRIO:
-    - Usuário diz: "meu nome é João", "tenho 30 anos", "sou engenheiro"
-    - Usuário menciona: "gosto de programar", "tenho alergia a frutos do mar"
-    - Usuário informa: "quero aprender Python", "não posso comer glúten"
-    - Usuário compartilha: "tenho um agendamento importante", "minha senha é..."
-    - Qualquer informação pessoal que o usuário compartilha
+    - Usuário fornece dados pessoais: "meu nome é João", "tenho 30 anos"
+    - Usuário menciona preferências: "gosto de programar", "tenho alergia a frutos do mar"
+    - Usuário informa objetivos: "quero aprender Python", "não posso comer glúten"
+    - Usuário compartilha informações críticas: "tenho um agendamento", "minha senha é..."
+    - QUALQUER informação pessoal que o usuário compartilha deve ser salva
 
     Args:
-        user_id: ID do usuário (injetado automaticamente)
-        content: Conteúdo da memória (informação a ser salva)
-        memory_type: Tipo da memória - OBRIGATÓRIO escolher um dos seguintes:
-            - user_profile: Dados pessoais (nome, idade, profissão, etc.)
-            - preference: Preferências e gostos
-            - goal: Objetivos e metas
-            - constraint: Restrições e limitações
-            - critical_info: Informações críticas (senhas, agendamentos, etc.)
+        content: Conteúdo da memória a ser salva
+        memory_type: Tipo de memória (user_profile, preference, goal, constraint, critical_info)
 
     Returns:
         Dicionário com resultado da operação
@@ -136,7 +132,7 @@ def save_memory_tool(user_id: str, content: str, memory_type: str) -> Dict[str, 
                 "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
             }
 
-        # Chamar memory manager diretamente
+        # Chamar memory manager
         result = memory_manager.save_memory(
             user_id=user_id,
             content=content,
@@ -159,31 +155,32 @@ def save_memory_tool(user_id: str, content: str, memory_type: str) -> Dict[str, 
 
 @tool
 def update_memory_tool(
-    memory_id: str, new_content: str, user_id: str
+    memory_id: str,
+    new_content: str,
+    user_id: Annotated[str, InjectedToolArg] = None,
 ) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser atualizar ou corrigir
     informações que já foram salvas anteriormente.
 
     SITUAÇÕES DE USO OBRIGATÓRIO:
-    - Usuário diz: "atualize minha idade para 31 anos"
-    - Usuário pede: "corrija minha profissão para 'desenvolvedor'"
-    - Usuário informa: "mude minha preferência de Java para Python"
+    - Usuário quer atualizar informações: "atualize minha idade para 31 anos"
+    - Usuário pede correções: "corrija minha profissão para 'desenvolvedor'"
+    - Usuário quer mudar dados: "mude minha preferência de Java para Python"
     - Usuário quer atualizar qualquer informação já salva
 
     IMPORTANTE: Você precisa ter o memory_id correto. Se não tiver, use get_memory_tool
     primeiro para buscar a memória e obter o ID correto.
 
     Args:
-        memory_id: ID da memória a ser atualizada (obtido via get_memory_tool)
+        memory_id: ID da memória a ser atualizada
         new_content: Novo conteúdo da memória
-        user_id: ID do usuário (injetado automaticamente)
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
-        # Chamar memory manager diretamente
+        # Chamar memory manager
         result = memory_manager.update_memory(
             user_id=user_id,
             memory_id=memory_id,
@@ -191,7 +188,10 @@ def update_memory_tool(
         )
 
         if result.success:
-            return {"success": True, "message": "Memória atualizada com sucesso"}
+            return {
+                "success": True,
+                "message": "Memória atualizada com sucesso",
+            }
         else:
             return {"success": False, "error": result.error_message}
 
@@ -201,36 +201,41 @@ def update_memory_tool(
 
 
 @tool
-def delete_memory_tool(memory_id: str, user_id: str) -> Dict[str, Any]:
+def delete_memory_tool(
+    memory_id: str,
+    user_id: Annotated[str, InjectedToolArg] = None,
+) -> Dict[str, Any]:
     """
     OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser remover ou deletar
     informações que foram salvas anteriormente.
 
     SITUAÇÕES DE USO OBRIGATÓRIO:
-    - Usuário diz: "delete a informação sobre minha alergia"
-    - Usuário pede: "remova a memória sobre minha idade antiga"
-    - Usuário quer: "apague essa informação que não é mais válida"
+    - Usuário quer remover informações: "delete a informação sobre minha alergia"
+    - Usuário pede para apagar dados: "remova a memória sobre minha idade antiga"
+    - Usuário quer deletar informações: "apague essa informação que não é mais válida"
     - Usuário solicita deletar qualquer informação salva
 
     IMPORTANTE: Você precisa ter o memory_id correto. Se não tiver, use get_memory_tool
     primeiro para buscar a memória e obter o ID correto.
 
     Args:
-        memory_id: ID da memória a ser deletada (obtido via get_memory_tool)
-        user_id: ID do usuário (injetado automaticamente)
+        memory_id: ID da memória a ser deletada
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
-        # Chamar memory manager diretamente
+        # Chamar memory manager
         result = memory_manager.delete_memory(
             user_id=user_id,
             memory_id=memory_id,
         )
 
         if result.success:
-            return {"success": True, "message": "Memória deletada com sucesso"}
+            return {
+                "success": True,
+                "message": "Memória deletada com sucesso",
+            }
         else:
             return {"success": False, "error": result.error_message}
 
@@ -240,9 +245,4 @@ def delete_memory_tool(memory_id: str, user_id: str) -> Dict[str, Any]:
 
 
 # Lista de ferramentas disponíveis
-TOOLS = [
-    get_memory_tool,
-    save_memory_tool,
-    update_memory_tool,
-    delete_memory_tool,
-]
+TOOLS = [get_memory_tool, save_memory_tool, update_memory_tool, delete_memory_tool]

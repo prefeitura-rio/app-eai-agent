@@ -1,9 +1,12 @@
+from copy import deepcopy
 from typing import Dict, Any, List, Optional, TypedDict, Annotated
 import logging
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import MessagesState
+from langgraph.prebuilt import ToolNode
+
 from langchain_core.tools import tool
 from src.services.lang_graph.models import (
     GraphState,
@@ -51,6 +54,8 @@ def create_system_prompt(
    - Você precisa personalizar resposta baseada em dados do usuário
    - Usuário menciona algo que pode estar salvo: "minha alergia", "minha profissão"
    - Qualquer pergunta sobre dados pessoais do usuário
+   - **EFICIÊNCIA:** Use uma única chamada com query específica em vez de múltiplas chamadas
+   - **IMPORTANTE:** SEMPRE especifique o memory_type (user_profile, preference, goal, constraint, critical_info)
 
 **2. save_memory_tool - OBRIGATÓRIO usar quando:**
    - Usuário fornece informações pessoais: "meu nome é João", "tenho 30 anos"
@@ -58,6 +63,7 @@ def create_system_prompt(
    - Usuário informa objetivos: "quero aprender Python", "não posso comer glúten"
    - Usuário compartilha informações críticas: "tenho um agendamento", "minha senha é..."
    - QUALQUER informação pessoal que o usuário compartilha deve ser salva
+   - **EFICIÊNCIA:** Salve cada informação separadamente para melhor organização
 
 **3. update_memory_tool - OBRIGATÓRIO usar quando:**
    - Usuário quer atualizar informações: "atualize minha idade para 31 anos"
@@ -79,10 +85,12 @@ def create_system_prompt(
 5. **Para delete_memory_tool:** Use quando o usuário quiser remover dados
 6. **NUNCA ignore informações pessoais** - se o usuário compartilha algo sobre si, SALVE
 7. **Use get_memory_tool primeiro** antes de update ou delete para obter memory_id correto
+8. **SEJA EFICIENTE:** Use uma única operação quando possível, evite múltiplas chamadas desnecessárias
+9. **SEMPRE especifique memory_type** em get_memory_tool (user_profile, preference, goal, constraint, critical_info)
 
 **EXEMPLOS DE USO OBRIGATÓRIO:**
-- Usuário diz "meu nome é Pedro" → OBRIGATÓRIO usar save_memory_tool
-- Usuário pergunta "qual é o meu nome?" → OBRIGATÓRIO usar get_memory_tool
+- Usuário diz "meu nome é Pedro" → OBRIGATÓRIO usar save_memory_tool com memory_type="user_profile"
+- Usuário pergunta "qual é o meu nome?" → OBRIGATÓRIO usar get_memory_tool com memory_type="user_profile"
 - Usuário diz "atualize minha idade" → OBRIGATÓRIO usar get_memory_tool + update_memory_tool
 - Usuário diz "delete minha alergia" → OBRIGATÓRIO usar get_memory_tool + delete_memory_tool
 
@@ -100,6 +108,8 @@ def create_system_prompt(
 4. **Mantenha a Qualidade:** Atualize memórias erradas, delete irrelevantes
 5. **Use Memórias Relevantes:** Utilize as memórias recuperadas para personalizar respostas
 6. **OBRIGATÓRIO:** Use as ferramentas sempre que apropriado - não ignore informações importantes
+7. **EFICIÊNCIA:** Faça operações únicas quando possível, evite chamadas desnecessárias
+8. **SEMPRE especifique memory_type** em get_memory_tool para evitar erros
 """
 
     # Adicionar contexto das memórias recuperadas
@@ -231,6 +241,22 @@ def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
         return state
 
 
+def inject_user_id(ai_msg, user_id: str, limit: int = 20, min_relevance: float = 0.6):
+    """Injeta user_id e outros parâmetros nos tool_calls."""
+    tool_calls = []
+    for tool_call in ai_msg.tool_calls:
+        tool_call_copy = deepcopy(tool_call)
+        tool_call_copy["args"]["user_id"] = user_id
+
+        # Aplicar limit e min_relevance para get_memory_tool
+        if tool_call_copy["name"] == "get_memory_tool":
+            tool_call_copy["args"]["limit"] = limit
+            tool_call_copy["args"]["min_relevance"] = min_relevance
+
+        tool_calls.append(tool_call_copy)
+    return tool_calls
+
+
 def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
     """Nó para execução de ferramentas."""
     try:
@@ -253,37 +279,26 @@ def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
             logger.info("Nenhum tool call encontrado, pulando execução")
             return state
 
-        # Obter user_id do contexto
+        # Obter parâmetros do contexto
         config = state.get("config")
         user_id = config.user_id
-
-        # Log para debug
-        logger.info(f"Config encontrada: {config is not None}")
-        if config:
-            logger.info(f"User ID do config: {config.user_id}")
-        logger.info(f"User ID final: {user_id}")
-
-        # Obter parâmetros de configuração (APLICADOS AUTOMATICAMENTE)
         limit = config.memory_limit if config else 20
         min_relevance = config.memory_min_relevance if config else 0.6
 
+        logger.info(f"Executando ferramentas para user_id: {user_id}")
+
+        # INJEÇÃO AUTOMÁTICA VIA LANGCHAIN
+        # Usar o padrão oficial do LangChain para injeção
+        injected_tool_calls = inject_user_id(
+            last_message, user_id, limit, min_relevance
+        )
+
         tool_outputs = state.get("tool_outputs", [])
 
-        for tool_call in tool_calls:
+        for tool_call in injected_tool_calls:
             try:
                 tool_name = tool_call.get("name")
                 tool_args = tool_call.get("args", {})
-
-                # APLICAR PARÂMETROS SENSÍVEIS AUTOMATICAMENTE (sem exposição ao agente)
-
-                tool_args["user_id"] = user_id
-
-                # Aplicar limit e min_relevance automaticamente para get_memory_tool
-                if tool_name == "get_memory_tool":
-                    if "limit" not in tool_args:
-                        tool_args["limit"] = limit
-                    if "min_relevance" not in tool_args:
-                        tool_args["min_relevance"] = min_relevance
 
                 logger.info(f"Executando ferramenta: {tool_name} com args: {tool_args}")
 
@@ -295,34 +310,40 @@ def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
                         break
 
                 if tool_func:
-                    # Executar a ferramenta
+                    # Executar a ferramenta (argumentos já injetados)
                     result = tool_func.invoke(tool_args)
+                    logger.info(
+                        f"Ferramenta {tool_name} executada com sucesso: {result.get('success', False)}"
+                    )
 
                     # Criar ToolOutput
                     tool_output = ToolOutput(
                         tool_name=tool_name,
                         success=result.get("success", False),
                         data=result,
-                        error_message=(
-                            result.get("error") if not result.get("success") else None
-                        ),
                     )
-
                     tool_outputs.append(tool_output)
-                    logger.info(
-                        f"Ferramenta {tool_name} executada com sucesso: {result.get('success')}"
-                    )
                 else:
                     logger.error(f"Ferramenta {tool_name} não encontrada")
+                    tool_output = ToolOutput(
+                        tool_name=tool_name,
+                        success=False,
+                        data={"error": f"Ferramenta {tool_name} não encontrada"},
+                    )
+                    tool_outputs.append(tool_output)
 
             except Exception as e:
                 logger.error(f"Erro ao executar ferramenta {tool_name}: {e}")
                 tool_output = ToolOutput(
-                    tool_name=tool_name, success=False, data={}, error_message=str(e)
+                    tool_name=tool_name,
+                    success=False,
+                    data={"error": f"Erro interno: {str(e)}"},
                 )
                 tool_outputs.append(tool_output)
 
+        # Atualizar estado com tool outputs
         state["tool_outputs"] = tool_outputs
+
         return state
 
     except Exception as e:
@@ -375,9 +396,11 @@ def final_response(state: CustomMessagesState) -> CustomMessagesState:
                 tool_calls = getattr(last_assistant_message, "tool_calls", [])
                 if i < len(tool_calls):
                     tool_call = tool_calls[i]
+                    # Usar tool_call_id como string
+                    tool_call_id = str(tool_call.get("id", f"tool_call_{i}"))
                     tool_message = ToolMessage(
                         content=f"Ferramenta executada com sucesso: {tool_output.data}",
-                        tool_call_id=tool_call.get("id", f"tool_call_{i}"),
+                        tool_call_id=tool_call_id,
                     )
                     langchain_messages.append(tool_message)
 
