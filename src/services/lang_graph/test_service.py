@@ -26,6 +26,14 @@ from src.services.lang_graph.tests.test_isolation import test_memory_isolation
 from src.services.lang_graph.tests.test_configuration import (
     test_configuration_parameters,
 )
+from src.services.lang_graph.tests.test_temperature import test_temperature_control
+from src.services.lang_graph.tests.test_system_prompt import (
+    test_system_prompt_injection,
+)
+from src.services.lang_graph.tests.test_short_term_memory import test_short_term_memory
+from src.services.lang_graph.tests.test_conversation_context import (
+    test_conversation_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +49,26 @@ AVAILABLE_TESTS = {
     "context": test_context_tools,
     "isolation": test_memory_isolation,
     "config": test_configuration_parameters,
+    "temperature": test_temperature_control,
+    "system_prompt": test_system_prompt_injection,
+    "short_term_memory": test_short_term_memory,
+    "conversation_context": test_conversation_context,
 }
 
-# Testes por categoria
+# Categorias de testes
 TEST_CATEGORIES = {
     "core": ["database", "memory", "conversation", "session"],
-    "features": ["tools", "persistence", "context", "isolation"],
+    "features": [
+        "tools",
+        "persistence",
+        "context",
+        "isolation",
+        "config",
+        "temperature",
+        "system_prompt",
+        "short_term_memory",
+        "conversation_context",
+    ],
     "all": list(AVAILABLE_TESTS.keys()),
 }
 

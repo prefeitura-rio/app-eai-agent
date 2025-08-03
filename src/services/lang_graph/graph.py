@@ -2,6 +2,8 @@ from typing import Dict, Any, List, Optional, TypedDict, Annotated
 import logging
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph import MessagesState
 from langchain_core.tools import tool
 from src.services.lang_graph.models import (
     GraphState,
@@ -17,10 +19,9 @@ from src.services.lang_graph.memory import memory_manager
 logger = logging.getLogger(__name__)
 
 
-class AgentState(TypedDict):
-    """Estado do agente no grafo LangGraph."""
+class CustomMessagesState(MessagesState):
+    """Estado customizado que estende MessagesState para incluir configurações."""
 
-    messages: Annotated[List[Dict[str, Any]], "Histórico de mensagens"]
     retrieved_memories: Annotated[List[MemoryResponse], "Memórias recuperadas"]
     tool_outputs: Annotated[List[ToolOutput], "Saídas das ferramentas"]
     config: Annotated[SessionConfig, "Configuração da sessão"]
@@ -53,12 +54,19 @@ def create_system_prompt(
 * **delete_memory_tool:** Deleta uma memória
   - Parâmetros: memory_id
 
-**Diretrizes:**
-1. **Pense Passo a Passo:** Antes de responder, considere se buscar na memória pode enriquecer sua resposta
-2. **Seja Proativo:** Se o usuário fornecer uma informação nova e reutilizável, salve-a
-3. **Mantenha a Qualidade:** Se notar que uma memória está errada, atualize-a. Se for irrelevante, delete-a
-4. **Use Memórias Relevantes:** Utilize as memórias recuperadas para personalizar sua resposta
-5. **Busque Informações Úteis:** Use as ferramentas para encontrar informações que ajudem a responder melhor
+**Diretrizes Importantes:**
+1. **Use o Contexto da Conversa:** Você tem acesso ao histórico completo da conversa atual. Use essas informações para responder de forma contextualizada.
+2. **Combine Memórias:** Use tanto o contexto da conversa quanto as memórias de longo prazo para fornecer respostas completas.
+3. **Pense Passo a Passo:** Antes de responder, considere se buscar na memória pode enriquecer sua resposta
+4. **Seja Proativo:** Se o usuário fornecer uma informação nova e reutilizável, salve-a
+5. **Mantenha a Qualidade:** Se notar que uma memória está errada, atualize-a. Se for irrelevante, delete-a
+6. **Use Memórias Relevantes:** Utilize as memórias recuperadas para personalizar sua resposta
+7. **Busque Informações Úteis:** Use as ferramentas para encontrar informações que ajudem a responder melhor
+
+**Exemplo de Uso:**
+- Se o usuário perguntar "qual foi minha primeira mensagem?", use o contexto da conversa
+- Se o usuário perguntar "qual é o meu nome?", use as memórias de longo prazo
+- Se o usuário disser algo novo sobre si, salve na memória de longo prazo
 """
 
     # Adicionar contexto das memórias recuperadas
@@ -78,7 +86,7 @@ def create_system_prompt(
     return base_prompt + memory_types_desc + tools_instructions + memories_context
 
 
-def proactive_memory_retrieval(state: AgentState) -> AgentState:
+def proactive_memory_retrieval(state: CustomMessagesState) -> CustomMessagesState:
     """Nó para recuperação proativa de memórias."""
     try:
         # Verificar se temos as informações necessárias
@@ -99,17 +107,17 @@ def proactive_memory_retrieval(state: AgentState) -> AgentState:
             return state
 
         last_message = messages[-1]
-        if last_message.get("role") != "user":
+        if not isinstance(last_message, HumanMessage):
             return state
 
-        user_content = last_message.get("content", "")
+        user_content = last_message.content
         if not user_content.strip():
             return state
 
         # Buscar memórias relevantes
         result = memory_manager.get_memory(
             user_id=config.user_id,
-            mode="semantic",
+            mode=config.memory_retrieval_mode,  # Usar o parâmetro da config
             query=user_content,
             limit=config.memory_limit,
             min_relevance=config.memory_min_relevance,
@@ -130,7 +138,7 @@ def proactive_memory_retrieval(state: AgentState) -> AgentState:
         return state
 
 
-def agent_reasoning(state: AgentState) -> AgentState:
+def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
     """Nó principal do agente para raciocínio e decisão."""
     try:
         config = state.get("config")
@@ -150,19 +158,18 @@ def agent_reasoning(state: AgentState) -> AgentState:
         # Preparar mensagens para o LLM
         langchain_messages = [SystemMessage(content=system_prompt)]
 
-        # Adicionar histórico de mensagens
-        for msg in messages:
-            if msg.get("role") == "user":
-                langchain_messages.append(HumanMessage(content=msg.get("content", "")))
-            elif msg.get("role") == "assistant":
-                langchain_messages.append(AIMessage(content=msg.get("content", "")))
+        # Adicionar histórico de mensagens (já está no formato correto)
+        # O MessagesState mantém automaticamente o histórico da conversa
+        langchain_messages.extend(messages)
 
         # Obter modelo de chat com ferramentas
-        chat_model = llm_config.get_chat_model()
+        chat_model = llm_config.get_chat_model(temperature=config.temperature)
 
         # Configurar modelo com ferramentas
         model_with_tools = chat_model.bind_tools(TOOLS)
-        logger.info(f"Modelo configurado com {len(TOOLS)} ferramentas")
+        logger.info(
+            f"Modelo configurado com {len(TOOLS)} ferramentas e temperatura {config.temperature}"
+        )
 
         # Executar o modelo
         response = model_with_tools.invoke(langchain_messages)
@@ -174,17 +181,9 @@ def agent_reasoning(state: AgentState) -> AgentState:
             for tool_call in response.tool_calls:
                 logger.info(f"Ferramenta: {tool_call['name']}")
 
-        # Adicionar resposta ao estado
-        messages.append(
-            {
-                "role": "assistant",
-                "content": response.content,
-                "tool_calls": getattr(response, "tool_calls", []),
-                "timestamp": "2024-01-01T00:00:00Z",  # Será atualizado pelo serviço
-            }
-        )
+        # Adicionar resposta ao estado (MessagesState gerencia automaticamente)
+        state["messages"].append(response)
 
-        state["messages"] = messages
         state["current_step"] = "agent_reasoning_complete"
 
         return state
@@ -192,19 +191,14 @@ def agent_reasoning(state: AgentState) -> AgentState:
     except Exception as e:
         logger.error(f"Erro no raciocínio do agente: {e}")
         # Adicionar mensagem de erro
-        messages = state.get("messages", [])
-        messages.append(
-            {
-                "role": "assistant",
-                "content": "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.",
-                "timestamp": "2024-01-01T00:00:00Z",
-            }
+        error_message = AIMessage(
+            content="Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente."
         )
-        state["messages"] = messages
+        state["messages"].append(error_message)
         return state
 
 
-def tool_execution(state: AgentState) -> AgentState:
+def tool_execution(state: CustomMessagesState) -> CustomMessagesState:
     """Nó para execução de ferramentas."""
     try:
         messages = state.get("messages", [])
@@ -213,12 +207,12 @@ def tool_execution(state: AgentState) -> AgentState:
             return state
 
         last_message = messages[-1]
-        if last_message.get("role") != "assistant":
+        if not isinstance(last_message, AIMessage):
             logger.info("Última mensagem não é do assistente")
             return state
 
         # Verificar se a resposta tem tool calls
-        tool_calls = last_message.get("tool_calls", [])
+        tool_calls = getattr(last_message, "tool_calls", [])
         logger.info(f"Tool calls encontrados: {len(tool_calls)}")
 
         # Se não há tool calls, retornar estado inalterado
@@ -297,7 +291,7 @@ def tool_execution(state: AgentState) -> AgentState:
         return state
 
 
-def final_response(state: AgentState) -> AgentState:
+def final_response(state: CustomMessagesState) -> CustomMessagesState:
     """Nó final para preparar a resposta."""
     try:
         # Aqui você pode adicionar lógica adicional para processar a resposta final
@@ -312,10 +306,10 @@ def final_response(state: AgentState) -> AgentState:
 
 
 def create_graph() -> StateGraph:
-    """Cria o grafo LangGraph."""
+    """Cria o grafo LangGraph com checkpointer para memória de curto prazo."""
     try:
-        # Criar o grafo
-        workflow = StateGraph(AgentState)
+        # Criar o grafo usando CustomMessagesState
+        workflow = StateGraph(CustomMessagesState)
 
         # Adicionar nós
         workflow.add_node("proactive_memory_retrieval", proactive_memory_retrieval)
@@ -332,7 +326,10 @@ def create_graph() -> StateGraph:
         # Configurar ponto de entrada
         workflow.set_entry_point("proactive_memory_retrieval")
 
-        return workflow.compile()
+        # Criar checkpointer para memória de curto prazo
+        checkpointer = InMemorySaver()
+
+        return workflow.compile(checkpointer=checkpointer)
 
     except Exception as e:
         logger.error(f"Erro ao criar grafo: {e}")

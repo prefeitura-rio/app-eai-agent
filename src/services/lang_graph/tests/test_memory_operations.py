@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 def test_memory_operations():
-    """Testa operações básicas de memória."""
+    """
+    Testes de operações de memória.
+    """
     print("📋 Executando: Operações de Memória")
     print("----------------------------------------")
 
@@ -21,23 +23,9 @@ def test_memory_operations():
     repository = MemoryRepository()
 
     try:
-        # Limpar tabela antes dos testes
-        print("🧹 Limpando tabela antes dos testes...")
-        session = repository.db_manager.get_session()
-        try:
-            session.execute(
-                text('DROP TABLE IF EXISTS "public"."long_term_memory" CASCADE;')
-            )
-            session.commit()
-            print("  ✅ Tabela dropada com sucesso")
-        except Exception as e:
-            print(f"  ⚠️ Erro ao dropar tabela: {e}")
-        finally:
-            session.close()
-
-        # Recriar tabelas
+        # Recriar tabelas (sem drop, já que busca semântica está funcionando)
         repository.db_manager.create_tables()
-        print("  ✅ Tabelas recriadas")
+        print("  ✅ Tabelas verificadas")
 
         print("🧠 Testando operações de memória...")
 
@@ -55,7 +43,9 @@ def test_memory_operations():
         memories = repository.get_memories_semantic(
             user_id=test_user_id,
             query="café",
+            memory_type=MemoryType.PREFERENCE,
             limit=5,
+            min_relevance=0.6,
         )
         print(f"  ✅ Encontradas {len(memories)} memórias semânticas")
         if memories:
@@ -67,6 +57,7 @@ def test_memory_operations():
         print("  📅 Testando busca cronológica...")
         memories = repository.get_memories_chronological(
             user_id=test_user_id,
+            memory_type=MemoryType.PREFERENCE,
             limit=5,
         )
         print(f"  ✅ Encontradas {len(memories)} memórias cronológicas")

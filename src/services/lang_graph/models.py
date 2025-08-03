@@ -80,10 +80,16 @@ class SessionConfig(BaseModel):
     thread_id: str
     user_id: str
     chat_model: str = "gemini-2.5-flash-lite"
-    system_prompt: str = "Você é um assistente útil e amigável com memória de longo prazo."
+    system_prompt: str = (
+        "Você é um assistente útil e amigável com memória de longo prazo."
+    )
+    temperature: float = (
+        0.7  # Controle de criatividade (0.0 = determinístico, 1.0 = muito criativo)
+    )
     memory_limit: int = 20
     memory_min_relevance: float = 0.6
     enable_proactive_memory_retrieval: bool = True
+    memory_retrieval_mode: str = "semantic"  # "semantic" ou "chronological"
     memory_types_config: MemoryTypeConfig = Field(default_factory=MemoryTypeConfig)
 
 

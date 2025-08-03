@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Optional
 import logging
 from datetime import datetime
 import uuid
+from langchain_core.messages import HumanMessage, AIMessage
 from src.services.lang_graph.models import (
     SessionConfig,
     GraphState,
@@ -9,7 +10,7 @@ from src.services.lang_graph.models import (
     ChatResponse,
     MemoryResponse,
 )
-from src.services.lang_graph.graph import graph, AgentState
+from src.services.lang_graph.graph import graph, CustomMessagesState
 from src.services.lang_graph.database import db_manager
 from src.services.lang_graph.memory import memory_manager
 
@@ -23,6 +24,7 @@ class LangGraphChatbotService:
         self.graph = graph
         self.db_manager = db_manager
         self.memory_manager = memory_manager
+        self.sessions = {}  # Armazenar configurações de sessão
         self._initialize_database()
 
     def _initialize_database(self):
@@ -36,7 +38,12 @@ class LangGraphChatbotService:
             raise
 
     def initialize_session(
-        self, user_id: str, thread_id: str, config: Optional[SessionConfig] = None
+        self,
+        user_id: str,
+        thread_id: str,
+        config: Optional[SessionConfig] = None,
+        temperature: Optional[float] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         """Inicializa uma nova sessão de conversa."""
         try:
@@ -46,14 +53,28 @@ class LangGraphChatbotService:
                     thread_id=thread_id,
                     user_id=user_id,
                     chat_model="gemini-2.5-flash-lite",
+                    temperature=temperature if temperature is not None else 0.7,
+                    **kwargs,
                 )
+            else:
+                # Atualizar temperatura se fornecida
+                if temperature is not None:
+                    config.temperature = temperature
+                # Atualizar outros parâmetros se fornecidos
+                for key, value in kwargs.items():
+                    if hasattr(config, key):
+                        setattr(config, key, value)
 
             # Validar configuração
             if not config.user_id or not config.thread_id:
                 raise ValueError("user_id e thread_id são obrigatórios")
 
+            # Armazenar configuração da sessão
+            session_key = f"{user_id}:{thread_id}"
+            self.sessions[session_key] = config
+
             # Criar estado inicial
-            initial_state = AgentState(
+            initial_state = CustomMessagesState(
                 messages=[],
                 retrieved_memories=[],
                 tool_outputs=[],
@@ -61,7 +82,9 @@ class LangGraphChatbotService:
                 current_step="start",
             )
 
-            logger.info(f"Sessão inicializada para usuário {config.user_id}")
+            logger.info(
+                f"Sessão inicializada para usuário {config.user_id} com temperatura {config.temperature}"
+            )
             return {
                 "success": True,
                 "session_id": config.thread_id,
@@ -86,42 +109,52 @@ class LangGraphChatbotService:
             if not user_id or not thread_id or not message:
                 raise ValueError("user_id, thread_id e message são obrigatórios")
 
-            # Usar configuração fornecida ou criar padrão
+            # Usar configuração da sessão armazenada ou fornecida
+            session_key = f"{user_id}:{thread_id}"
             if not config:
+                config = self.sessions.get(session_key)
+
+            if not config:
+                # Criar configuração padrão se não existir
                 config = SessionConfig(
                     thread_id=thread_id,
                     user_id=user_id,
-                    chat_model="gemini-2.0-flash-exp",
+                    chat_model="gemini-2.5-flash-lite",
+                    temperature=0.7,
                 )
+                # Armazenar para uso futuro
+                self.sessions[session_key] = config
 
-            # Criar estado inicial
-            initial_state = AgentState(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": message,
-                        "timestamp": datetime.utcnow().isoformat(),
-                    }
-                ],
+            # Criar estado inicial apenas com a nova mensagem do usuário
+            # O checkpointer do LangGraph manterá o histórico anterior automaticamente
+            initial_state = CustomMessagesState(
+                messages=[HumanMessage(content=message)],
                 retrieved_memories=[],
                 tool_outputs=[],
                 config=config,
                 current_step="start",
             )
 
-            # Executar o grafo
-            final_state = self.graph.invoke(initial_state)
+            # Executar o grafo com thread_id para manter memória de curto prazo
+            config_dict = {"configurable": {"thread_id": thread_id}}
+
+            final_state = self.graph.invoke(initial_state, config=config_dict)
 
             # Extrair resposta
             messages = final_state.get("messages", [])
-            assistant_messages = [
-                msg for msg in messages if msg.get("role") == "assistant"
-            ]
+            assistant_messages = [msg for msg in messages if isinstance(msg, AIMessage)]
 
             if not assistant_messages:
                 response_content = "Desculpe, não consegui processar sua mensagem."
             else:
-                response_content = assistant_messages[-1].get("content", "")
+                raw_content = assistant_messages[-1].content
+
+                # Lidar com respostas que podem ser listas (do Gemini)
+                if isinstance(raw_content, list):
+                    # Se for uma lista, juntar os elementos
+                    response_content = " ".join(str(item) for item in raw_content)
+                else:
+                    response_content = str(raw_content)
 
             # Extrair memórias usadas
             retrieved_memories = final_state.get("retrieved_memories", [])
