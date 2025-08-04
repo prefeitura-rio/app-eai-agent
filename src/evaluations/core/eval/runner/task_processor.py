@@ -258,7 +258,7 @@ class TaskProcessor:
     ) -> EvaluationResult:
         if not multi_turn_output:
             raise ValueError(
-                f"a coluna/chave obrigatória 'multi_turn_transcript' não foi encontrada nos dados pré-computados para a tarefa '{task.id}'."
+                f"Transcript não foi nao encontrado para a tarefa '{task.id}'."
             )
         multi_turn_evaluation_input = MultiTurnEvaluationInput(
             conversation_history="\n".join(multi_turn_output.conversation_history),
@@ -275,7 +275,5 @@ class TaskProcessor:
         one_turn_response: AgentResponse,
     ) -> EvaluationResult:
         if one_turn_response.message is None:
-            raise ValueError(
-                f"a coluna/chave obrigatória 'one_turn_agent_message' não foi encontrada nos dados pré-computados para a tarefa '{task.id}'."
-            )
+            raise ValueError(f"Menssagem não encontrada para a tarefa '{task.id}'.")
         return await evaluator.evaluate(agent_response=one_turn_response, task=task)

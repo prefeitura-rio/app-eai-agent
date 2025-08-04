@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, validator
 from typing import List, Dict, Any, Optional, Union
 
 
@@ -25,7 +25,7 @@ class EvaluationTask(BaseModel):
     dados necessários do dataset estejam presentes e tipados.
     """
 
-    id: str
+    id: Union[str]  # Aceita tanto string quanto int
     prompt: str
 
     # Permite que outras colunas de metadados existam sem quebrar o modelo
@@ -67,7 +67,7 @@ class EvaluationResult(BaseModel):
     consistência nos resultados.
     """
 
-    score: Optional[float] = None
+    score: Optional[Union[float, bool]] = None
     annotations: str
     has_error: bool = False
     error_message: Optional[str] = None
@@ -116,10 +116,12 @@ class PrecomputedResponseModel(BaseModel):
     one_turn_reasoning_trace: Optional[List[ReasoningStep]] = None
     multi_turn_transcript: Optional[List[ConversationTurn]] = None
 
-    @model_validator(mode="after")
-    def check_at_least_one_response_present(self) -> "PrecomputedResponseModel":
-        if not self.one_turn_agent_message and not self.multi_turn_transcript:
+    @validator("one_turn_agent_message", "multi_turn_transcript", always=True)
+    def check_at_least_one_response_present(cls, v, values):
+        one_turn = values.get("one_turn_agent_message")
+        multi_turn = values.get("multi_turn_transcript")
+        if not one_turn and not multi_turn:
             raise ValueError(
                 "Cada resposta pré-computada deve ter pelo menos 'one_turn_agent_message' ou 'multi_turn_transcript'."
             )
-        return self
+        return v

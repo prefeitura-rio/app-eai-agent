@@ -138,10 +138,11 @@ class DataLoader:
         df_renamed = self.df.rename(
             columns={self.prompt_col: "prompt", self.id_col: "id"}
         )
+        df_renamed["id"] = df_renamed["id"].astype(str)
+
         for _, row in df_renamed.iterrows():
             try:
                 task = EvaluationTask(**row.to_dict())
                 yield task
             except Exception as e:
-                # logger.warning(f"Pulando linha com ID {row.get(self.id_col, 'N/A')} devido a erro de validação: {e}")
                 continue
