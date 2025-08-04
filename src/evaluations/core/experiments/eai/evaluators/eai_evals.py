@@ -10,29 +10,6 @@
 # #     )
 
 
-# # @eval_method(name="activate_search", turns="one")
-# # async def activate_search(
-# #     self, agent_response: Dict[str, Any], task: Dict[str, Any]
-# # ) -> Tuple[bool, str]:
-# #     """Avalia se a busca foi ativada corretamente."""
-# #     grouped = agent_response.get("output", "").get("grouped", {})
-# #     tool_msgs = grouped.get("tool_return_messages", [])
-
-# #     SEARCH_TOOL_NAMES = [
-# #         # "public_services_grounded_search",
-# #         "google_search",
-# #         "equipments_instructions",
-# #         "equipments_by_address",
-# #     ]
-
-# #     activated = {
-# #         msg.get("name") for msg in tool_msgs if msg.get("name") in SEARCH_TOOL_NAMES
-# #     }
-# #     explanation = f"Activated tools: {list(activated)}"
-
-# #     return len(activated) > 0, explanation
-
-
 # GOLDEN_EQUIPMENT_PROMPT = """
 # Você é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa atual é a seguinte: dado um histórico de conversas entre um chatbot e um cidadão, você deve avaliar três critérios:
 

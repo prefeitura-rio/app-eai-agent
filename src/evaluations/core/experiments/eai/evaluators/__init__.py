@@ -18,10 +18,15 @@ from src.evaluations.core.experiments.eai.evaluators.clarity import (
     ClarityEvaluator
 )
 
+from src.evaluations.core.experiments.eai.evaluators.activate_search import (
+    ActivateSearchEvaluator
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator", 
     "GoldenLinkInToolCallingEvaluator",
     "AnswerCompletenessEvaluator",
     "AnswerAddressingEvaluator",
     "ClarityEvaluator",
+    "ActivateSearchEvaluator"
 ]

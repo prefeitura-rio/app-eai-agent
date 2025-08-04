@@ -23,6 +23,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     # AnswerCompletenessEvaluator,
     # AnswerAddressingEvaluator,
     # ClarityEvaluator,
+    # ActivateSearchEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
@@ -75,6 +76,7 @@ async def run_experiment():
         # AnswerCompletenessEvaluator(judge_client),
         # AnswerAddressingEvaluator(judge_client),
         # ClarityEvaluator(judge_client),
+        # ActivateSearchEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {evaluator_names}")
