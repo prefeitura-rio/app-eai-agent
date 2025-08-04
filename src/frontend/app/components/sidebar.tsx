@@ -29,7 +29,6 @@ const mainNavigation: NavItem[] = [
   { name: 'Experimentos V0', href: '/experiments_v0', icon: FlaskConical },
   { name: 'Experimentos', href: '/experiments', icon: FlaskConical },
   { name: 'Chat EAI', href: '/chat', icon: MessageSquare },
-  { name: 'Chat LangGraph', href: '/chat_langgraph', icon: MessageSquare },
   { name: 'Configurações EAI', href: '/eai_settings', icon: Bot },
 ];
 

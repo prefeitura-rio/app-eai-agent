@@ -10,7 +10,6 @@ import { FileCode, Download, Bot } from 'lucide-react';
 import JsonViewerModal from '@/app/components/JsonViewerModal';
 import DownloadLlmJsonModal, { LlmJsonFilters } from './DownloadLlmJsonModal';
 import RunDetails from './RunDetails';
-import Metadata from './Metadata';
 import SummaryMetrics from './SummaryMetrics';
 import DetailsPlaceholder from './DetailsPlaceholder';
 import Filters from './Filters';
