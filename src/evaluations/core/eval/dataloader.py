@@ -138,7 +138,7 @@ class DataLoader:
         e validada pelo Pydantic.
         """
         # Mapeia a coluna de prompt especificada para o nome de campo 'prompt' esperado pelo schema
-        df_renamed = self.df.rename(
+        df_renamed = self.df[self.essential_cols].rename(
             columns={self.prompt_col: "prompt", self.id_col: "id"}
         )
         df_renamed["id"] = df_renamed["id"].astype(str)

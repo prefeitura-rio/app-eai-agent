@@ -27,7 +27,7 @@ class GoldenLinkInAnswerEvaluator(BaseOneTurnEvaluator):
         """
         try:
             message = agent_response.message
-            golden_field = task.get("golden_links_list")
+            golden_field = task.golden_links_list
             golden_links = parse_golden_links(golden_field)
 
             answer_links = extract_links_from_text(message)
