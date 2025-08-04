@@ -168,7 +168,7 @@ async def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
             logger.info(f"Ferramentas chamadas: {len(response.tool_calls)}")
             for tool_call in response.tool_calls:
                 logger.info(f"Ferramenta: {tool_call['name']}")
-            response.content = ""
+            # response.content = ""
 
         # Adicionar resposta ao estado (MessagesState gerencia automaticamente)
         state["messages"].append(response)

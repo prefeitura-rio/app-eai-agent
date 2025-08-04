@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, validator
 from datetime import datetime
 import uuid
 from langgraph.graph import MessagesState
+from src.services.lang_graph import prompts
 
 
 class MemoryType(str, Enum):
@@ -222,7 +223,7 @@ class SessionConfig(BaseModel):
         default="gemini-2.5-flash-lite", description="Modelo de chat a ser usado"
     )
     system_prompt: str = Field(
-        default="Você é um assistente útil e amigável com memória de longo prazo.",
+        default=prompts.SYSTEM_PROMPT_DEFAULT,
         description="Prompt do sistema",
     )
     temperature: float = Field(

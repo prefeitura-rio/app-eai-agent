@@ -18,7 +18,6 @@ from src.services.lang_graph.tests.session import (
     test_session_management,
 )
 from src.services.lang_graph.tests.errors import test_error_handling
-from src.services.lang_graph.tests.tools import test_agent_memory_tools
 from src.services.lang_graph.tests.persistence import (
     test_memory_persistence_conversation,
 )
@@ -36,7 +35,8 @@ from src.services.lang_graph.tests.conversation_context import (
     test_conversation_context,
 )
 from src.services.lang_graph.tests.tool_response import test_tool_response
-from src.services.lang_graph.tests.all_tools import test_all_tools
+from src.services.lang_graph.tests.all_memory_tools import test_all_memory_tools
+from src.services.lang_graph.tests.all_mcp_tools import test_all_mcp_tools
 from src.services.lang_graph.tests.user_id_injection import test_user_id_injection
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,6 @@ AVAILABLE_TESTS = {
     "conversation": test_chatbot_conversation,
     "session": test_session_management,
     "errors": test_error_handling,
-    "tools": test_agent_memory_tools,
     "persistence": test_memory_persistence_conversation,
     "context": test_context_tools,
     "isolation": test_memory_isolation,
@@ -58,7 +57,8 @@ AVAILABLE_TESTS = {
     "short_term_memory": test_short_term_memory,
     "conversation_context": test_conversation_context,
     "tool_response": test_tool_response,
-    "all_tools": test_all_tools,
+    "all_memory_tools": test_all_memory_tools,
+    "all_mcp_tools": test_all_mcp_tools,
     "user_id_injection": test_user_id_injection,
 }
 
@@ -66,7 +66,6 @@ AVAILABLE_TESTS = {
 TEST_CATEGORIES = {
     "core": ["database", "memory", "conversation", "session"],
     "features": [
-        "tools",
         "persistence",
         "context",
         "isolation",
@@ -76,7 +75,8 @@ TEST_CATEGORIES = {
         "short_term_memory",
         "conversation_context",
         "tool_response",
-        "all_tools",
+        "all_memory_tools",
+        "all_mcp_tools",
         "user_id_injection",
     ],
     "all": list(AVAILABLE_TESTS.keys()),

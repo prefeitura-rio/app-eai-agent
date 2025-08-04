@@ -20,9 +20,9 @@ class InteractiveChat:
         self.user_id = str(uuid.uuid4())
         self.thread_id = str(uuid.uuid4())
         self.temperature = 0.7
-        self.system_prompt = (
-            "Voce é a EAI, um assistente virtual que é solicito e proativo!"
-        )
+        # self.system_prompt = (
+        #     "Voce é a EAI, um assistente virtual que é solicito e proativo!"
+        # )
 
     def initialize_session(
         self, temperature: Optional[float] = None, system_prompt: Optional[str] = None
@@ -37,7 +37,7 @@ class InteractiveChat:
             user_id=self.user_id,
             thread_id=self.thread_id,
             temperature=self.temperature,
-            system_prompt=self.system_prompt,
+            # system_prompt=self.system_prompt,
         )
 
         if session_result.get("success"):
@@ -45,7 +45,7 @@ class InteractiveChat:
                 f"✅ Sessão inicializada (User ID: {self.user_id}..., Thread ID: {self.thread_id}...)"
             )
             logger.info(f"🌡️ Temperatura: {self.temperature}")
-            logger.info(f"📝 System Prompt: {self.system_prompt[:100]}...")
+            # logger.info(f"📝 System Prompt: {self.system_prompt[:100]}...")
             return True
         else:
             logger.info(

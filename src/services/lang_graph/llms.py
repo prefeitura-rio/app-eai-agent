@@ -38,6 +38,10 @@ class LLMConfig:
             top_p=self.top_p,
             top_k=self.top_k,
             google_api_key=env.GEMINI_API_KEY,
+            # Configuração de retry mais robusta
+            max_retries=3,
+            retry_delay=2,
+            timeout=30,
         )
 
     def get_embedding_model(

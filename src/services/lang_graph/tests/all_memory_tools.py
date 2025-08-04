@@ -3,16 +3,16 @@ from src.services.lang_graph.service import LangGraphChatbotService
 from src.utils.log import logger
 
 
-async def test_all_tools():
-    """Testa se o agente consegue usar todas as ferramentas disponíveis."""
-    logger.info("🔧 Testando uso de todas as ferramentas...")
+async def test_all_memory_tools():
+    """Testa se o agente consegue usar todas as ferramentas de memória disponíveis."""
+    logger.info("🔧 Testando uso de todas as ferramentas de memória...")
 
     try:
         # Inicializar serviço
         chatbot_service = LangGraphChatbotService()
 
         # Usar user_id único para garantir que não há memórias pré-existentes
-        user_id = f"test_all_tools_user_{uuid.uuid4()}"
+        user_id = f"test_all_memory_tools_user_{uuid.uuid4()}"
 
         logger.info(f"  👤 User ID: {user_id}")
 
@@ -120,10 +120,12 @@ async def test_all_tools():
         tools_attempted = save_tool_used and get_tool_attempted
 
         if all_responses_valid and tools_attempted:
-            logger.info("  ✅ Agente tenta usar as ferramentas disponíveis!")
+            logger.info("  ✅ Agente tenta usar as ferramentas de memória disponíveis!")
             return True
         else:
-            logger.info("  ❌ Agente não tenta usar as ferramentas disponíveis")
+            logger.info(
+                "  ❌ Agente não tenta usar as ferramentas de memória disponíveis"
+            )
             return False
 
     except Exception as e:
@@ -136,4 +138,4 @@ async def test_all_tools():
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(test_all_tools())
+    asyncio.run(test_all_memory_tools())
