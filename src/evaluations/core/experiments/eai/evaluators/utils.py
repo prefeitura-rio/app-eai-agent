@@ -54,21 +54,18 @@ def match_golden_link(answer_links, golden_links):
     """
     overall_count = 0
     for answer_link in answer_links:
-        url = _norm_url(answer_link.get("url"))
-        url = None if url == "" else url
-        answer_link["url"] = url
-
+        url = _norm_url(answer_link)
         count = 0
         golden_found = None
         for golden_link in golden_links:
-            if str(url) in _norm_url(golden_link):
-                answer_link["has_golden_link"] = True
+            if url in _norm_url(golden_link):
+                answer_link["golden_link"] = True
                 count += 1
                 overall_count += 1
                 golden_found = _norm_url(golden_link)
 
         answer_link["golden_link"] = golden_found
-        answer_link["has_golden_link"] = True if count > 0 else False
+        answer_link["golden_link"] = True if count > 0 else False
 
     answer_links = [
         {

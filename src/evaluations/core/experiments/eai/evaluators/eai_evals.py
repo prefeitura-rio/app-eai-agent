@@ -9,16 +9,7 @@
 # #         transcript=agent_response,
 # #     )
 
-# # @eval_method(name="answer_completeness", turns="one")
-# # async def answer_completeness(
-# #     self, agent_response: Dict[str, Any], task: Dict[str, Any]
-# # ) -> Dict[str, Any]:
-# #     """Avalia a completude da resposta de uma única resposta."""
-# #     return await self._get_llm_judgement(
-# #         prompt_judges.ANSWER_COMPLETENESS_PROMPT,
-# #         output=agent_response.get("output", ""),
-# #         task=task,
-# #     )
+
 
 # # @eval_method(name="answer_addressing", turns="one")
 # # async def answer_addressing(
@@ -64,68 +55,6 @@
 
 # #     return len(activated) > 0, explanation
 
-# # @eval_method(name="golden_link_in_tool_calling", turns="one")
-# # async def golden_link_in_tool_calling(
-# #     self, agent_response: Dict[str, Any], task: Dict[str, Any]
-# # ) -> Tuple[bool, Dict[str, Any]]:
-# #     """Avalia se o link correto foi chamado na ferramenta."""
-# #     golden_field = agent_response.get("metadata", {}).get("golden_links_list", "")
-# #     golden_links = parse_golden_links(golden_field)
-
-# #     answer_links = agent_response.get("agent_output").get(
-# #         "fontes"
-# #     ) or get_answer_links(output=agent_response)
-
-# #     if agent_response.get("agent_output", {}).get("resposta_gpt"):
-# #         answer_links = [
-# #             {"uri": link, "url": link} for link in ast.literal_eval(answer_links)
-# #         ]
-
-# #     if not answer_links or not golden_links:
-# #         return False, {
-# #             "reason": "No links found in the answer or no golden links provided"
-# #         }
-
-# #     answer_links, count = match_golden_link(
-# #         answer_links=answer_links, golden_links=golden_links
-# #     )
-
-# #     explanation = {
-# #         "golden_links": golden_links,
-# #         "answer_links": answer_links,
-# #         "number_of_matches": count,
-# #     }
-
-# #     return count > 0, explanation
-
-
-# ANSWER_COMPLETENESS_PROMPT = """
-# In this task, you will evaluate how well a model's response captures the core topics and essential concepts present in an ideal (gold standard) response.
-
-# The evaluation is based on content coverage, not stylistic similarity or phrasing.
-# Focus on whether the model response includes the *key points* that matter most. Minor omissions or differences in wording should not count agains the response if the main substance is captured.
-
-# Assign one of the following labels:
-# - "equivalent": The model's response captures all or most important concepts from the ideal response. Minor missing details are acceptable if the main points are clearly conveyed.
-# - "different": The model's response misses most key ideas or diverges substantially in meaning.
-
-# Your response must be a single word: "equivalent" or "different", with no other text.
-
-# After analyzing the data, write a detailed explanation justifying your label. Your explanation should:
-# - Briefly list the key topics or concepts from the ideal response.
-# - If any of the important key topics is missing, list it and explain what it is and how that impacts understanding.
-
-# [BEGIN DATA]
-# Query: {query}
-# Model Response: {model_response}
-# Ideal Response: {ideal_response}
-# [END DATA]
-
-# Please analyze the data carefully and then provide:
-
-# explanation: Your reasoning step by step, comparing the model response to the ideal response, and mentioning what (if anything) was missing.
-# label: "equivalent" or "different"
-# """
 
 # ANSWER_ADDRESSING_PROMPT = """
 # In this task, you will evaluate whether the model's response directly and sufficiently answers the user's question or addresses their underlying need. Often, a user's query, especially if phrased as a complaint or a question about a problem (e.g., "is it normal for X not to work?"), implies a request for a solution or a next step. An effective answer addresses this implicit need.
