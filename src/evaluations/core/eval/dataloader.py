@@ -24,6 +24,7 @@ class DataLoader:
         dataset_description: str,
         metadata_cols: Optional[List[str]] = None,
         upload_to_bq: bool = True,
+        number_rows: Optional[int] = None,
     ):
         """
         Inicializa o DataLoader.
@@ -32,6 +33,7 @@ class DataLoader:
             source (Union[str, pd.DataFrame]): A fonte dos dados.
             id_col (str): Nome da coluna de ID único.
             prompt_col (str): Nome da coluna de prompt.
+            number_rows (Optional[int]): Número de linhas a serem carregadas.
             dataset_name (str): Nome do dataset.
             dataset_description (str): Descrição do dataset.
             metadata_cols (List[str], optional): Colunas de metadados adicionais.
@@ -40,12 +42,13 @@ class DataLoader:
         self.id_col = id_col
         self.prompt_col = prompt_col
         self.metadata_cols = metadata_cols if metadata_cols else []
+        self.number_rows = number_rows
         self.essential_cols = sorted(
             list(set([id_col, prompt_col] + self.metadata_cols))
         )
 
         if isinstance(source, pd.DataFrame):
-            self.df = source
+            self.df = source.head(self.number_rows)
         elif isinstance(source, str):
             if "docs.google.com/spreadsheets" in source:
                 self.df = self._load_from_gsheet(source)
@@ -96,7 +99,7 @@ class DataLoader:
 
     def _load_from_file(self, file_path: str) -> pd.DataFrame:
         try:
-            return pd.read_csv(file_path)
+            return pd.read_csv(file_path).head(self.number_rows)
         except FileNotFoundError:
             raise FileNotFoundError(f"Arquivo não encontrado em: {file_path}")
         except Exception as e:
@@ -117,7 +120,7 @@ class DataLoader:
             )
 
             csv_export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
-            return pd.read_csv(csv_export_url)
+            return pd.read_csv(csv_export_url).head(self.number_rows)
         except Exception as e:
             raise Exception(f"Erro ao carregar dados do Google Sheets: {e}")
 

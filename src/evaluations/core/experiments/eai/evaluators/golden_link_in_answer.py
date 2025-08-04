@@ -33,10 +33,10 @@ class GoldenLinkInAnswerEvaluator(BaseOneTurnEvaluator):
             answer_links = extract_links_from_text(message)
 
             if not answer_links or not golden_links:
-                score = False
+                score = 0
                 annotations = "No links found in the answer or no golden links provided"
             else:
-                score = True
+                score = 1
                 annotations = "Golden links found in the answer"
 
             has_error = False

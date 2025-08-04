@@ -67,8 +67,8 @@ class EvaluationResult(BaseModel):
     consistência nos resultados.
     """
 
-    score: Optional[Union[float, bool]] = None
-    annotations: str
+    score: Optional[Union[float, int]] = None
+    annotations: Optional[Union[str, Dict[str, Any]]] = None
     has_error: bool = False
     error_message: Optional[str] = None
 

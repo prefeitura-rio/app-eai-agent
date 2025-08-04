@@ -3,6 +3,32 @@ import re
 from typing import List, Dict, Any
 import json
 from urllib.parse import urlparse, unquote, parse_qsl, urlencode
+from src.utils.log import logger
+from src.services.letta.agents.agentic_search_agent import (
+    _get_system_prompt_from_api,
+    _update_system_prompt_from_api,
+)
+
+
+async def get_system_prompt_version(system_prompt: str):
+    result = await _get_system_prompt_from_api(agent_type="agentic_search")
+    current_api_system_prompt_clean = (
+        result["prompt"].replace(" ", "").replace("\n", "")
+    )
+    system_prompt_clean = system_prompt.replace(" ", "").replace("\n", "")
+    if current_api_system_prompt_clean == system_prompt_clean:
+        logger.info(
+            f"Same system prompt detected. Returning version: {result['version']}"
+        )
+        return result["version"]
+    else:
+        response = await _update_system_prompt_from_api(
+            agent_type="agentic_search", new_system_prompt=system_prompt
+        )
+        logger.info(
+            f"Different system prompt detected. Returning version: {result['version']}"
+        )
+        return response["version"]
 
 
 def parse_golden_links(links: str) -> List[str]:

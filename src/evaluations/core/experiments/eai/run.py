@@ -35,6 +35,7 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",
+        number_rows=10,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
         dataset_name="Golden Dataset Completo",
@@ -52,7 +53,7 @@ async def run_experiment():
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system=SYSTEM_PROMPT,
-        tools=["google_search"],
+        tools=[],
         user_number=f"eval_test_eai_{uuid.uuid4()}",
         name="Test EVAL EAI",
         tags=["eval_eai"],
