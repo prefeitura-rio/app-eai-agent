@@ -44,7 +44,7 @@ async def test_all_mcp_tools():
         response3 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_3,
-            message="Quem é o presidente atual de Tuvalu?",
+            message="Quem é o atual primeiro ministro de Tuvalu?",
         )
         logger.info(f"    🤖 Resposta 3: {response3.message[:200]}...")
         logger.info(f"    🔧 Ferramentas usadas: {response3.tools_called}")
@@ -92,6 +92,9 @@ async def test_all_mcp_tools():
         # Verificar se a resposta sobre Tuvalu contém "Feleti Teo"
         tuvalu_response_contains_feleti = "Feleti Teo" in response3.message
 
+        # Verificar se o resultado da calculadora contém o valor esperado (87)
+        calculator_result_contains_87 = "87" in response1.message
+
         logger.info(f"    📊 Respostas válidas: {all_responses_valid}")
         logger.info(f"    📊 Ferramentas usadas: {sorted(all_tools_used)}")
         logger.info(f"    📊 Ferramentas MCP esperadas: {sorted(expected_mcp_tools)}")
@@ -101,6 +104,9 @@ async def test_all_mcp_tools():
         logger.info(f"    📊 Equipments tool usada: {equipments_tool_used}")
         logger.info(
             f"    📊 Resposta Tuvalu contém 'Feleti Teo': {tuvalu_response_contains_feleti}"
+        )
+        logger.info(
+            f"    📊 Resultado calculadora contém '87': {calculator_result_contains_87}"
         )
 
         # Resultado final - verificar se o agente usou as ferramentas MCP corretamente
@@ -119,6 +125,10 @@ async def test_all_mcp_tools():
                 logger.info(
                     "  ⚠️ Resposta sobre Tuvalu pode não conter informação esperada"
                 )
+            if calculator_result_contains_87:
+                logger.info("  ✅ Resultado da calculadora está correto!")
+            else:
+                logger.info("  ⚠️ Resultado da calculadora pode estar incorreto")
             return True
         else:
             logger.info("  ❌ Agente não usa as ferramentas MCP corretamente")

@@ -12,7 +12,7 @@ class LLMConfig:
         genai.configure(api_key=env.GEMINI_API_KEY)
 
         # Modelos
-        self.chat_model_name = "gemini-2.5-flash-lite"
+        self.chat_model_name = "gemini-2.5-pro"
         self.embedding_model_name = "models/text-embedding-004"
 
         # Parâmetros do chat model

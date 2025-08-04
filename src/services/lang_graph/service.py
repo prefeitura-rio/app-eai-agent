@@ -14,6 +14,17 @@ from src.services.lang_graph.graph import graph
 from src.services.lang_graph.database import db_manager
 from src.services.lang_graph.memory import memory_manager
 from src.utils.log import logger
+from langchain_core.messages import BaseMessage
+
+
+def parse_message(message) -> str:
+    """
+    Parse a mensagem do Gemini para uma string legível.
+    """
+    final_messages = []
+    for msg in message.get("messages", []):
+        final_messages.append(msg.model_dump())
+    return final_messages
 
 
 class LangGraphChatbotService:
@@ -160,7 +171,8 @@ class LangGraphChatbotService:
                 memories_used=retrieved_memories,
                 tools_called=tools_called,
                 conversation_id=thread_id,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now().isoformat(),
+                raw_content=parse_message(final_state),
             )
 
             logger.info(f"Mensagem processada com sucesso para usuário {user_id}")
@@ -174,7 +186,7 @@ class LangGraphChatbotService:
                 memories_used=[],
                 tools_called=[],
                 conversation_id=thread_id,
-                timestamp=datetime.utcnow(),
+                raw_content=parse_message(final_state),
             )
             return error_response
 

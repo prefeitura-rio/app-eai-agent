@@ -347,8 +347,11 @@ class ChatResponse(BaseModel):
         default_factory=list, description="Ferramentas chamadas"
     )
     conversation_id: str = Field(..., description="ID da conversa")
-    timestamp: datetime = Field(
+    timestamp: str = Field(
         default_factory=datetime.utcnow, description="Timestamp da resposta"
+    )
+    raw_content: List[Dict[str, Any]] = Field(
+        default_factory=list, description="Conteúdo bruto da resposta"
     )
 
     class Config:
