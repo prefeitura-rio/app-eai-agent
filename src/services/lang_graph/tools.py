@@ -77,7 +77,6 @@ def safe_serialize_memory(memory_data: dict) -> dict:
 def get_memory_tool(
     memory_type: str,
     query: str,
-    # mode: str = "semantic",
     config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """

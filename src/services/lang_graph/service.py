@@ -257,7 +257,6 @@ class LangGraphChatbotService:
     def get_memories_directly(
         self,
         user_id: str,
-        mode: str = "semantic",
         query: Optional[str] = None,
         memory_type: Optional[str] = None,
     ) -> Dict[str, Any]:
