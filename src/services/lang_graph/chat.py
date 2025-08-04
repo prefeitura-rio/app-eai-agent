@@ -138,10 +138,9 @@ class InteractiveChat:
                     continue
 
                 # Enviar mensagem para o chatbot
-                logger.info("🤖 Bot: ", end="", flush=True)
                 response = await self.send_message(user_input)
-                logger.info(response)
-                logger.info()
+                logger.info(f"🤖 Bot: {response}")
+                logger.info("")
 
             except KeyboardInterrupt:
                 logger.info("\n\n👋 Saindo do chat...")

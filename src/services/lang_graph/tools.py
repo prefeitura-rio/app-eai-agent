@@ -1,16 +1,10 @@
 from copy import deepcopy
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import logging
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from src.services.lang_graph.models import (
     MemoryType,
-    MemoryTypeConfig,
-    MemoryCreateRequest,
-    MemoryUpdateRequest,
-    MemoryDeleteRequest,
-    MemorySearchRequest,
-    ToolOutput,
     GetMemoryToolInput,
     SaveMemoryToolInput,
     UpdateMemoryToolInput,
@@ -19,7 +13,6 @@ from src.services.lang_graph.models import (
     SaveMemoryToolOutput,
     UpdateMemoryToolOutput,
     DeleteMemoryToolOutput,
-    ToolSuccessResponse,
     ToolErrorResponse,
 )
 from src.services.lang_graph.memory import memory_manager
@@ -35,19 +28,23 @@ async def get_mcp_tools():
     """
     Inicializa o cliente MCP e busca as ferramentas disponíveis de forma assíncrona.
     """
-    client = MultiServerMCPClient(
-        {
-            "rio_mcp": {
-                "transport": "streamable_http",
-                "url": env.MCP_SERVER_URL,
-                "headers": {
-                    "Authorization": f"Bearer {env.MCP_API_TOKEN}",
+    try:
+        client = MultiServerMCPClient(
+            {
+                "rio_mcp": {
+                    "transport": "streamable_http",
+                    "url": env.MCP_SERVER_URL,
+                    "headers": {
+                        "Authorization": f"Bearer {env.MCP_API_TOKEN}",
+                    },
                 },
-            },
-        }
-    )
-    tools = await client.get_tools()
-    return tools
+            }
+        )
+        tools = await client.get_tools()
+        return tools
+    except Exception as e:
+        logger.error(f"Erro ao carregar ferramentas MCP: {e}")
+        return []
 
 
 def safe_serialize_memory(memory_data: dict) -> dict:
@@ -285,27 +282,42 @@ def update_memory_tool(
     config: RunnableConfig = None,
 ) -> Dict[str, Any]:
     """
-    OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser atualizar ou corrigir
-    informações que já foram salvas anteriormente.
+    OBRIGATÓRIO: Use esta ferramenta quando o usuário quiser atualizar ou modificar
+    informações que foram salvas anteriormente.
 
     SITUAÇÕES DE USO OBRIGATÓRIO:
     - Usuário quer atualizar informações: "atualize minha idade para 31 anos"
-    - Usuário pede correções: "corrija minha profissão para 'desenvolvedor'"
-    - Usuário quer mudar dados: "mude minha preferência de Java para Python"
-    - Usuário quer atualizar qualquer informação já salva
+    - Usuário pede para modificar dados: "mude minha profissão para engenheiro"
+    - Usuário quer corrigir informações: "corrija minha alergia para frutos do mar"
+    - Usuário solicita atualizar qualquer informação salva
 
-    IMPORTANTE: Você precisa ter o memory_id correto. Se não tiver, use get_memory_tool
-    primeiro para buscar a memória e obter o ID correto.
+    IMPORTANTE: Você precisa ter o memory_id correto (UUID). Se não tiver, use get_memory_tool
+    primeiro para buscar a memória e obter o ID correto. NUNCA use memory_type como memory_id!
 
     Args:
-        memory_id: ID da memória a ser atualizada
-        new_content: Novo conteúdo da memória
+        memory_id: ID da memória a ser atualizada (deve ser UUID)
+        new_content: Novo conteúdo para a memória
         config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
+        # Validar se memory_id parece ser um UUID válido
+        import re
+
+        uuid_pattern = re.compile(
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            re.IGNORECASE,
+        )
+
+        if not uuid_pattern.match(memory_id):
+            error_response = UpdateMemoryToolOutput(
+                success=False,
+                error=f"memory_id inválido: '{memory_id}'. Deve ser um UUID válido. Use get_memory_tool primeiro para obter o ID correto.",
+            )
+            return error_response.model_dump()
+
         # Validar input usando o modelo
         input_data = UpdateMemoryToolInput(memory_id=memory_id, new_content=new_content)
 
@@ -369,17 +381,32 @@ def delete_memory_tool(
     - Usuário quer deletar informações: "apague essa informação que não é mais válida"
     - Usuário solicita deletar qualquer informação salva
 
-    IMPORTANTE: Você precisa ter o memory_id correto. Se não tiver, use get_memory_tool
-    primeiro para buscar a memória e obter o ID correto.
+    IMPORTANTE: Você precisa ter o memory_id correto (UUID). Se não tiver, use get_memory_tool
+    primeiro para buscar a memória e obter o ID correto. NUNCA use memory_type como memory_id!
 
     Args:
-        memory_id: ID da memória a ser deletada
+        memory_id: ID da memória a ser deletada (deve ser UUID)
         config: Configuração injetada automaticamente pelo LangGraph
 
     Returns:
         Dicionário com resultado da operação
     """
     try:
+        # Validar se memory_id parece ser um UUID válido
+        import re
+
+        uuid_pattern = re.compile(
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            re.IGNORECASE,
+        )
+
+        if not uuid_pattern.match(memory_id):
+            error_response = DeleteMemoryToolOutput(
+                success=False,
+                error=f"memory_id inválido: '{memory_id}'. Deve ser um UUID válido. Use get_memory_tool primeiro para obter o ID correto.",
+            )
+            return error_response.model_dump()
+
         # Validar input usando o modelo
         input_data = DeleteMemoryToolInput(memory_id=memory_id)
 

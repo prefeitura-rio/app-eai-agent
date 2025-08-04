@@ -53,6 +53,9 @@ USE SEMPRE que apropriado. Não ignore informações pessoais do usuário.
 6. **OBRIGATÓRIO:** Use as ferramentas sempre que apropriado - não ignore informações importantes
 7. **EFICIÊNCIA:** Faça operações únicas quando possível, evite chamadas desnecessárias
 8. **SEMPRE especifique memory_type** em get_memory_tool para evitar erros
+9. **IMPORTANTE:** Para update_memory_tool e delete_memory_tool, você PRECISA do memory_id (UUID). 
+   Se não tiver o ID correto, use get_memory_tool primeiro para buscar a memória e obter o ID.
+   NUNCA use memory_type como memory_id - isso causará erro!
 """
 
     # Adicionar contexto das memórias recuperadas
@@ -158,7 +161,7 @@ async def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
 
         # Executar o modelo
         response = await model_with_tools.ainvoke(langchain_messages)
-        logger.info(f"Resposta do modelo: {response.content[:100]}...")
+        # logger.info(f"Resposta do modelo: {response.content[:100]}...")
 
         # Verificar se há tool calls na resposta
         if hasattr(response, "tool_calls") and response.tool_calls:
@@ -373,84 +376,6 @@ async def tool_execution_simplified(state: CustomMessagesState) -> CustomMessage
         return state
 
 
-async def final_response(state: CustomMessagesState) -> CustomMessagesState:
-    """Nó final para preparar a resposta após execução de ferramentas."""
-    try:
-        messages = state.get("messages", [])
-        tool_outputs = state.get("tool_outputs", [])
-        config = state.get("config")
-
-        # Se não há tool outputs, não precisamos gerar nova resposta
-        if not tool_outputs:
-            state["current_step"] = "complete"
-            return state
-
-        # Verificar se há ToolMessages nas mensagens
-        has_tool_messages = any(
-            hasattr(msg, "__class__") and "ToolMessage" in str(type(msg))
-            for msg in messages
-        )
-
-        if not has_tool_messages:
-            state["current_step"] = "complete"
-            return state
-
-        # Criar system prompt para resposta final
-        system_prompt = create_system_prompt(
-            config, state.get("retrieved_memories", [])
-        )
-
-        # Preparar mensagens incluindo os resultados das ferramentas
-        langchain_messages = [SystemMessage(content=system_prompt)]
-
-        # Adicionar histórico completo de mensagens (já inclui ToolMessages)
-        langchain_messages.extend(messages)
-
-        # Obter modelo de chat
-        chat_model = llm_config.get_chat_model(temperature=config.temperature)
-
-        # Executar o modelo para gerar resposta final
-        try:
-            response = await chat_model.ainvoke(langchain_messages)
-            logger.info(f"Resposta final gerada: {response.content[:100]}...")
-
-            # Adicionar resposta final ao estado
-            state["messages"].append(response)
-        except Exception as e:
-            logger.error(f"Erro ao gerar resposta final: {e}")
-            # Adicionar mensagem de erro
-            error_message = AIMessage(
-                content="Desculpe, ocorreu um erro ao processar a resposta final. Tente novamente."
-            )
-            state["messages"].append(error_message)
-
-        state["current_step"] = "complete"
-
-        return state
-
-    except Exception as e:
-        logger.error(f"Erro na resposta final: {e}")
-        # Adicionar mensagem de erro
-        error_message = AIMessage(
-            content="Desculpe, ocorreu um erro ao processar a resposta final. Tente novamente."
-        )
-        state["messages"].append(error_message)
-        return state
-
-
-# def should_use_tools(state: CustomMessagesState) -> str:
-#     """Decide se deve executar ferramentas ou ir direto para resposta final."""
-#     messages = state.get("messages", [])
-#     if not messages:
-#         return "final_response"
-
-#     last_message = messages[-1]
-#     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-#         return "tool_execution"
-#     else:
-#         return "final_response"
-
-
 def should_use_tools(state: CustomMessagesState) -> str:
     """
     Decide se o fluxo deve continuar para a execução de ferramentas ou se deve terminar.
@@ -474,13 +399,10 @@ def create_graph() -> StateGraph:
 
         # Adicionar nós
         workflow.add_node("proactive_memory_retrieval", proactive_memory_retrieval)
-
         workflow.add_node("agent_reasoning", agent_reasoning)
-        # Usar a versão simplificada com ToolNode
         workflow.add_node("tool_execution", tool_execution_simplified)
-        workflow.add_node("final_response", final_response)
 
-        # Adicionar arestas (fluxo com execução de ferramentas)
+        # Adicionar edges
         workflow.add_edge(START, "proactive_memory_retrieval")
         workflow.add_edge("proactive_memory_retrieval", "agent_reasoning")
         workflow.add_conditional_edges(
@@ -488,13 +410,7 @@ def create_graph() -> StateGraph:
             should_use_tools,
             {"tool_execution": "tool_execution", "end": END},
         )
-        # workflow.add_edge("tool_execution", "agent_reasoning")
-        # workflow.add_edge("tool_execution", "final_response")
-
-        # workflow.add_edge("agent_reasoning", "tool_execution")
-
         workflow.add_edge("tool_execution", "agent_reasoning")
-        # workflow.add_edge("final_response", END)
 
         # Configurar ponto de entrada
         workflow.set_entry_point("proactive_memory_retrieval")
