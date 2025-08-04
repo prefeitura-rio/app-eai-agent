@@ -1,6 +1,6 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 import logging
-from src.services.lang_graph.repository import memory_repository
+from src.services.lang_graph.repository import MemoryRepository
 from src.services.lang_graph.models import (
     MemoryResponse,
     MemoryType,
@@ -9,15 +9,14 @@ from src.services.lang_graph.models import (
     MemoryCreateRequest,
     MemoryUpdateRequest,
 )
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class MemoryManager:
     """Gerenciador de memória que integra com o repositório."""
 
     def __init__(self):
-        self.repository = memory_repository
+        self.repository = MemoryRepository()
 
     def get_memory(
         self,
@@ -27,62 +26,54 @@ class MemoryManager:
         limit: int = 20,
         min_relevance: float = 0.6,
     ) -> MemoryOperationResult:
-        """Recupera memórias baseado no modo especificado."""
+        """Busca memórias do usuário."""
         try:
-
-            if not query:
-                return MemoryOperationResult(
-                    success=False,
-                    error_message="Query é obrigatória!",
+            if query:
+                # Busca semântica
+                memories = self.repository.get_memories_semantic(
+                    user_id=user_id,
+                    query=query,
+                    limit=limit,
+                    min_relevance=min_relevance,
+                )
+            else:
+                # Busca cronológica
+                memories = self.repository.get_memories_chronological(
+                    user_id=user_id,
+                    memory_type=memory_type,
+                    limit=limit,
                 )
 
-            memories = self.repository.get_memories_semantic(
-                user_id=user_id,
-                query=query,
-                memory_type=memory_type,
-                limit=limit,
-                min_relevance=min_relevance,
+            return MemoryOperationResult(
+                success=True,
+                memories=memories,
             )
-
-            return MemoryOperationResult(success=True, memories=memories)
 
         except Exception as e:
             logger.error(f"Erro ao recuperar memórias: {e}")
-            return MemoryOperationResult(success=False, error_message=str(e))
+            return MemoryOperationResult(
+                success=False,
+                error_message=str(e),
+            )
 
     def save_memory(
         self, user_id: str, content: str, memory_type: MemoryType
     ) -> MemoryOperationResult:
         """Salva uma nova memória."""
         try:
-            # Validar entrada
-            if not content.strip():
-                return MemoryOperationResult(
-                    success=False,
-                    error_message="Conteúdo da memória não pode estar vazio",
-                )
-
-            # Criar memória no repositório
-            memory_id = self.repository.create_memory(
-                user_id=user_id, content=content.strip(), memory_type=memory_type
+            result = self.repository.create_memory(
+                user_id=user_id,
+                content=content,
+                memory_type=memory_type,
             )
-
-            if memory_id:
-                return MemoryOperationResult(
-                    success=True,
-                    memory_id=memory_id,
-                    content=content,
-                    memory_type=memory_type,
-                )
-            else:
-                return MemoryOperationResult(
-                    success=False,
-                    error_message="Falha ao criar memória no banco de dados",
-                )
+            return result
 
         except Exception as e:
             logger.error(f"Erro ao salvar memória: {e}")
-            return MemoryOperationResult(success=False, error_message=str(e))
+            return MemoryOperationResult(
+                success=False,
+                error_message=str(e),
+            )
 
     def update_memory(
         self, user_id: str, memory_id: str, new_content: str

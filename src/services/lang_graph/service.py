@@ -13,8 +13,7 @@ from src.services.lang_graph.models import (
 from src.services.lang_graph.graph import graph
 from src.services.lang_graph.database import db_manager
 from src.services.lang_graph.memory import memory_manager
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class LangGraphChatbotService:
@@ -180,11 +179,15 @@ class LangGraphChatbotService:
 
         except Exception as e:
             logger.error(f"Erro ao processar mensagem: {e}")
-            return ChatResponse(
+            # Retornar resposta de erro
+            error_response = ChatResponse(
                 message="Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.",
+                memories_used=[],
+                tools_called=[],
                 conversation_id=thread_id,
                 timestamp=datetime.utcnow(),
             )
+            return error_response
 
     def get_conversation_history(
         self, user_id: str, thread_id: str, limit: int = 50

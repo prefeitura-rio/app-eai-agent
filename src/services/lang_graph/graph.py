@@ -18,8 +18,7 @@ from src.services.lang_graph.models import (
 from src.services.lang_graph.llms import llm_config
 from src.services.lang_graph.tools import TOOLS
 from src.services.lang_graph.memory import memory_manager
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 def create_system_prompt(
@@ -177,11 +176,6 @@ async def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
 
     except Exception as e:
         logger.error(f"Erro no raciocínio do agente: {e}")
-        # Adicionar mensagem de erro
-        error_message = AIMessage(
-            content="Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente."
-        )
-        state["messages"].append(error_message)
         return state
 
 
@@ -320,9 +314,7 @@ async def tool_execution_simplified(state: CustomMessagesState) -> CustomMessage
                         return obj
 
                 if is_error:
-                    logger.error(
-                        f"Ferramenta {tool_name} (ID: {tool_call_id}) - ERRO: {msg.content}"
-                    )
+                    logger.error(f"Ferramenta {tool_name} - Erro: {msg.content}")
                     tool_output = ToolOutput(
                         tool_name=tool_name, success=False, data={"error": msg.content}
                     )
@@ -333,9 +325,7 @@ async def tool_execution_simplified(state: CustomMessagesState) -> CustomMessage
                         if len(str(msg.content)) > 200
                         else str(msg.content)
                     )
-                    logger.info(
-                        f"Ferramenta {tool_name} (ID: {tool_call_id}) - SUCESSO: {content_preview}"
-                    )
+                    logger.info(f"Ferramenta {tool_name} - Sucesso: {content_preview}")
                     try:
                         # Tentar fazer parse do JSON se for string
                         import json
@@ -360,10 +350,9 @@ async def tool_execution_simplified(state: CustomMessagesState) -> CustomMessage
             successful_tools = [t for t in tool_outputs if t.success]
             failed_tools = [t for t in tool_outputs if not t.success]
 
-            logger.info(f"=== RESUMO DE EXECUÇÃO ===")
-            logger.info(f"Total de ferramentas: {len(tool_outputs)}")
-            logger.info(f"Sucessos: {len(successful_tools)}")
-            logger.info(f"Falhas: {len(failed_tools)}")
+            logger.info(
+                f"Execução de ferramentas - Total: {len(tool_outputs)}, Sucessos: {len(successful_tools)}, Falhas: {len(failed_tools)}"
+            )
 
             if successful_tools:
                 success_names = [t.tool_name for t in successful_tools]
@@ -377,10 +366,6 @@ async def tool_execution_simplified(state: CustomMessagesState) -> CustomMessage
 
             state["tool_outputs"] = tool_outputs
 
-        return state
-
-    except Exception as e:
-        logger.error(f"Erro na execução de ferramentas: {e}")
         return state
 
     except Exception as e:

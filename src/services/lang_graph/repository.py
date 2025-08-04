@@ -1,19 +1,17 @@
 from typing import List, Optional, Dict, Any
-import logging
 from datetime import datetime
-import numpy as np
+import uuid
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from src.services.lang_graph.database import db_manager, LongTermMemory
 from src.services.lang_graph.models import (
     MemoryResponse,
     MemoryType,
-    MemoryCreateRequest,
-    MemoryUpdateRequest,
+    MemoryOperationResult,
 )
 from src.services.lang_graph.llms import llm_config
-
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class MemoryRepository:
@@ -23,9 +21,16 @@ class MemoryRepository:
         self.db_manager = db_manager
         self.llm_config = llm_config
 
+        # Inicializar o banco de dados automaticamente
+        try:
+            self.db_manager.initialize_engine()
+            self.db_manager.create_tables()
+        except Exception as e:
+            logger.warning(f"Erro ao inicializar banco de dados: {e}")
+
     def create_memory(
         self, user_id: str, content: str, memory_type: MemoryType
-    ) -> Optional[str]:
+    ) -> MemoryOperationResult:
         try:
             # Gerar embedding
             embedding = self.llm_config.generate_embedding(content)
@@ -45,13 +50,18 @@ class MemoryRepository:
                 session.commit()
                 session.refresh(memory)
                 logger.info(f"Memória criada com sucesso: {memory.memory_id}")
-                return str(memory.memory_id)
+                return MemoryOperationResult(
+                    success=True,
+                    memory_id=str(memory.memory_id),
+                    content=content,
+                    memory_type=memory_type,
+                )
             finally:
                 session.close()
 
         except Exception as e:
             logger.error(f"Erro ao criar memória: {e}")
-            raise
+            return MemoryOperationResult(success=False, error_message=str(e))
 
     def get_memories_semantic(
         self,
@@ -75,7 +85,6 @@ class MemoryRepository:
             try:
                 # Usar SQLAlchemy ORM com pgvector conforme documentação
                 from sqlalchemy import select
-                from src.services.lang_graph.database import LongTermMemory
 
                 # Construir query base usando a sintaxe correta do pgvector
                 query_obj = session.query(
@@ -187,7 +196,7 @@ class MemoryRepository:
 
         except Exception as e:
             logger.error(f"Erro ao buscar memórias cronológicas: {e}")
-            raise
+            return []
 
     def update_memory(self, memory_id: str, user_id: str, new_content: str) -> bool:
         try:

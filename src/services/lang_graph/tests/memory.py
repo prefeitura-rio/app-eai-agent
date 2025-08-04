@@ -23,21 +23,20 @@ async def test_memory_operations():
     repository = MemoryRepository()
 
     try:
-        # Inicializar engine e recriar tabelas
-        repository.db_manager.initialize_engine()
-        repository.db_manager.create_tables()
-        print("  ✅ Tabelas verificadas")
-
         print("🧠 Testando operações de memória...")
 
         # Teste 1: Salvar memória
         print("  📝 Testando salvamento de memória...")
-        memory_id = repository.create_memory(
+        result = repository.create_memory(
             user_id=test_user_id,
             content="O usuário gosta de café com leite",
             memory_type=MemoryType.PREFERENCE,
         )
-        print(f"  ✅ Memória salva com ID: {memory_id}")
+        if result.success:
+            print(f"  ✅ Memória salva com ID: {result.memory_id}")
+        else:
+            print(f"  ❌ Erro ao salvar memória: {result.error_message}")
+            return False
 
         # Teste 2: Busca semântica
         print("  🔍 Testando busca semântica...")

@@ -23,13 +23,12 @@ from src.services.lang_graph.models import (
     ToolErrorResponse,
 )
 from src.services.lang_graph.memory import memory_manager
+from src.utils.log import logger
 
 
 from src.config import env
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio
-
-logger = logging.getLogger(__name__)
 
 
 async def get_mcp_tools():
@@ -138,9 +137,8 @@ def get_memory_tool(
                 )
                 return error_response.model_dump()
 
-        logger.info(f"=== GET_MEMORY_TOOL EXECUTADA ===")
         logger.info(
-            f"Parâmetros: user_id={user_id}, memory_type={input_data.memory_type}, query='{input_data.query}', limit={limit}, min_relevance={min_relevance}"
+            f"get_memory_tool - Parâmetros: user_id={user_id}, memory_type={input_data.memory_type}, query='{input_data.query}'"
         )
 
         # Chamar memory manager
@@ -154,7 +152,7 @@ def get_memory_tool(
 
         if result.success:
             logger.info(
-                f"get_memory_tool - SUCESSO: Encontradas {len(result.memories)} memórias"
+                f"get_memory_tool - Sucesso: {len(result.memories)} memórias encontradas"
             )
 
             # Usar em get_memory_tool:
@@ -176,7 +174,7 @@ def get_memory_tool(
             )
             return success_response.model_dump()
         else:
-            logger.warning(f"get_memory_tool - FALHA: {result.error_message}")
+            logger.warning(f"get_memory_tool - Falha: {result.error_message}")
             error_response = GetMemoryToolOutput(
                 success=False,
                 error=result.error_message or "Erro desconhecido ao buscar memórias",
@@ -184,7 +182,7 @@ def get_memory_tool(
             return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro inesperado em get_memory_tool: {e}")
+        logger.error(f"get_memory_tool - Erro inesperado: {e}")
         error_response = GetMemoryToolOutput(
             success=False, error=f"Erro inesperado: {str(e)}"
         )
@@ -242,14 +240,8 @@ def save_memory_tool(
             )
             return error_response.model_dump()
 
-        logger.info(f"=== SAVE_MEMORY_TOOL EXECUTADA ===")
         logger.info(
-            f"Parâmetros: user_id={user_id}, memory_type={input_data.memory_type}"
-        )
-        logger.info(
-            f"Conteúdo: {input_data.content[:100]}..."
-            if len(input_data.content) > 100
-            else f"Conteúdo: {input_data.content}"
+            f"save_memory_tool - Parâmetros: user_id={user_id}, memory_type={input_data.memory_type}"
         )
 
         # Chamar memory manager
@@ -261,7 +253,7 @@ def save_memory_tool(
 
         if result.success:
             logger.info(
-                f"save_memory_tool - SUCESSO: Memória salva com ID {result.memory_id}"
+                f"save_memory_tool - Sucesso: Memória salva com ID {result.memory_id}"
             )
 
             success_response = SaveMemoryToolOutput(
@@ -271,7 +263,7 @@ def save_memory_tool(
             )
             return success_response.model_dump()
         else:
-            logger.warning(f"save_memory_tool - FALHA: {result.error_message}")
+            logger.warning(f"save_memory_tool - Falha: {result.error_message}")
             error_response = SaveMemoryToolOutput(
                 success=False,
                 error=result.error_message or "Erro desconhecido ao salvar memória",
@@ -279,7 +271,7 @@ def save_memory_tool(
             return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro inesperado em save_memory_tool: {e}")
+        logger.error(f"save_memory_tool - Erro inesperado: {e}")
         error_response = SaveMemoryToolOutput(
             success=False, error=f"Erro inesperado: {str(e)}"
         )
@@ -327,12 +319,8 @@ def update_memory_tool(
             )
             return error_response.model_dump()
 
-        logger.info(f"=== UPDATE_MEMORY_TOOL EXECUTADA ===")
-        logger.info(f"Parâmetros: user_id={user_id}, memory_id={input_data.memory_id}")
         logger.info(
-            f"Novo conteúdo: {input_data.new_content[:100]}..."
-            if len(input_data.new_content) > 100
-            else f"Novo conteúdo: {input_data.new_content}"
+            f"update_memory_tool - Parâmetros: user_id={user_id}, memory_id={input_data.memory_id}"
         )
 
         # Chamar memory manager
@@ -344,14 +332,14 @@ def update_memory_tool(
 
         if result.success:
             logger.info(
-                f"update_memory_tool - SUCESSO: Memória {input_data.memory_id} atualizada"
+                f"update_memory_tool - Sucesso: Memória {input_data.memory_id} atualizada"
             )
             success_response = UpdateMemoryToolOutput(
                 success=True, message="Memória atualizada com sucesso"
             )
             return success_response.model_dump()
         else:
-            logger.warning(f"update_memory_tool - FALHA: {result.error_message}")
+            logger.warning(f"update_memory_tool - Falha: {result.error_message}")
             error_response = UpdateMemoryToolOutput(
                 success=False,
                 error=result.error_message or "Erro desconhecido ao atualizar memória",
@@ -359,7 +347,7 @@ def update_memory_tool(
             return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro inesperado em update_memory_tool: {e}")
+        logger.error(f"update_memory_tool - Erro inesperado: {e}")
         error_response = UpdateMemoryToolOutput(
             success=False, error=f"Erro inesperado: {str(e)}"
         )
@@ -405,8 +393,9 @@ def delete_memory_tool(
             )
             return error_response.model_dump()
 
-        logger.info(f"=== DELETE_MEMORY_TOOL EXECUTADA ===")
-        logger.info(f"Parâmetros: user_id={user_id}, memory_id={input_data.memory_id}")
+        logger.info(
+            f"delete_memory_tool - Parâmetros: user_id={user_id}, memory_id={input_data.memory_id}"
+        )
 
         # Chamar memory manager
         result = memory_manager.delete_memory(
@@ -416,14 +405,14 @@ def delete_memory_tool(
 
         if result.success:
             logger.info(
-                f"delete_memory_tool - SUCESSO: Memória {input_data.memory_id} deletada"
+                f"delete_memory_tool - Sucesso: Memória {input_data.memory_id} deletada"
             )
             success_response = DeleteMemoryToolOutput(
                 success=True, message="Memória deletada com sucesso"
             )
             return success_response.model_dump()
         else:
-            logger.warning(f"delete_memory_tool - FALHA: {result.error_message}")
+            logger.warning(f"delete_memory_tool - Falha: {result.error_message}")
             error_response = DeleteMemoryToolOutput(
                 success=False,
                 error=result.error_message or "Erro desconhecido ao deletar memória",
@@ -431,7 +420,7 @@ def delete_memory_tool(
             return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro inesperado em delete_memory_tool: {e}")
+        logger.error(f"delete_memory_tool - Erro inesperado: {e}")
         error_response = DeleteMemoryToolOutput(
             success=False, error=f"Erro inesperado: {str(e)}"
         )

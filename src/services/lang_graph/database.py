@@ -1,13 +1,16 @@
 from typing import Optional
 import logging
-from sqlalchemy import create_engine, Column, String, Text, DateTime, func, text
+from sqlalchemy import create_engine, Column, String, DateTime, Float, Text, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
+from datetime import datetime
+import uuid
 from src.config import env
+from src.utils.log import logger
 
-logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -34,37 +37,30 @@ class DatabaseManager:
     def __init__(self):
         self.engine = None
         self.SessionLocal = None
+        self.database_url = env.PG_URI
 
     def initialize_engine(self):
         """Inicializa o engine SQLAlchemy."""
         try:
-            # Usar PG_URI diretamente
-            self.engine = create_engine(env.PG_URI, pool_pre_ping=True)
-
-            # Criar session factory
+            self.engine = create_engine(self.database_url, pool_pre_ping=True)
             self.SessionLocal = sessionmaker(
                 autocommit=False, autoflush=False, bind=self.engine
             )
-
             logger.info("Engine SQLAlchemy inicializado com sucesso")
-
         except Exception as e:
-            logger.error(f"Erro ao inicializar engine SQLAlchemy: {e}")
+            logger.error(f"Erro ao inicializar engine: {e}")
             raise
 
     def create_tables(self):
         """Cria as tabelas no banco de dados."""
         try:
-            # Criar tabelas
-            Base.metadata.create_all(bind=self.engine)
-
             # Criar extensão pgvector se não existir
             with self.engine.connect() as conn:
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
                 conn.commit()
 
+            Base.metadata.create_all(bind=self.engine)
             logger.info("Tabelas criadas com sucesso via SQLAlchemy")
-
         except Exception as e:
             logger.error(f"Erro ao criar tabelas: {e}")
             raise
