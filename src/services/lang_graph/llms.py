@@ -17,7 +17,7 @@ class LLMConfig:
 
         # Parâmetros do chat model
         self.temperature = 0.7
-        self.max_tokens = 4096
+        self.max_tokens = 100_000
         self.top_p = 0.9
         self.top_k = 40
 
@@ -37,7 +37,6 @@ class LLMConfig:
             max_output_tokens=self.max_tokens,
             top_p=self.top_p,
             top_k=self.top_k,
-            convert_system_message_to_human=True,
             google_api_key=env.GEMINI_API_KEY,
         )
 

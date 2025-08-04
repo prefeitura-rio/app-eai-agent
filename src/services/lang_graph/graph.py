@@ -184,39 +184,6 @@ async def agent_reasoning(state: CustomMessagesState) -> CustomMessagesState:
 
 # ===== VERSÃO SIMPLIFICADA COM TOOLNODE =====
 
-
-def safe_serialize_memory(memory_data: dict) -> dict:
-    """Serializa dados de memória de forma segura."""
-    try:
-        # Clonar para não modificar original
-        safe_data = deepcopy(memory_data)
-
-        # Tratar memory_type
-        memory_type = safe_data.get("memory_type")
-        if memory_type is not None:
-            if hasattr(memory_type, "value"):
-                safe_data["memory_type"] = memory_type.value
-            elif isinstance(memory_type, int):
-                # Se é int, converter usando enum
-                try:
-                    safe_data["memory_type"] = MemoryType(memory_type).value
-                except ValueError:
-                    safe_data["memory_type"] = str(memory_type)
-            else:
-                safe_data["memory_type"] = str(memory_type)
-
-        # Tratar datetime
-        creation_datetime = safe_data.get("creation_datetime")
-        if creation_datetime and hasattr(creation_datetime, "isoformat"):
-            safe_data["creation_datetime"] = creation_datetime.isoformat()
-
-        return safe_data
-
-    except Exception as e:
-        logger.error(f"Erro ao serializar memória: {e}")
-        return {"error": "Erro de serialização"}
-
-
 # Criar ToolNode configurado com tratamento de erros personalizado
 tool_node = ToolNode(
     TOOLS,
