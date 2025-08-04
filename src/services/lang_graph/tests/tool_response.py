@@ -5,7 +5,7 @@ from src.services.lang_graph.service import LangGraphChatbotService
 logger = logging.getLogger(__name__)
 
 
-def test_tool_response():
+async def test_tool_response():
     """Testa se o agente responde após executar ferramentas."""
     print("🔧 Testando resposta após execução de ferramentas...")
 
@@ -22,7 +22,7 @@ def test_tool_response():
 
         # Teste 1: Salvar informações do usuário (save_memory_tool)
         print("  📝 Teste 1: Salvando informações do usuário...")
-        response1 = chatbot_service.process_message(
+        response1 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Meu nome é João Silva, tenho 28 anos e sou engenheiro de software. Eu gosto de programar em Python e JavaScript, e tenho alergia a amendoim.",
@@ -32,7 +32,7 @@ def test_tool_response():
 
         # Teste 2: Buscar informações específicas (get_memory_tool)
         print("  📝 Teste 2: Buscando informações do usuário...")
-        response2 = chatbot_service.process_message(
+        response2 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Qual é o meu nome e idade?",
@@ -42,7 +42,7 @@ def test_tool_response():
 
         # Teste 3: Buscar preferências (get_memory_tool)
         print("  📝 Teste 3: Buscando preferências...")
-        response3 = chatbot_service.process_message(
+        response3 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Quais são minhas preferências de programação?",
@@ -52,7 +52,7 @@ def test_tool_response():
 
         # Teste 4: Buscar restrições (get_memory_tool)
         print("  📝 Teste 4: Buscando restrições...")
-        response4 = chatbot_service.process_message(
+        response4 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Tenho alguma alergia ou restrição?",
@@ -62,7 +62,7 @@ def test_tool_response():
 
         # Teste 5: Salvar nova informação (save_memory_tool)
         print("  📝 Teste 5: Salvando nova informação...")
-        response5 = chatbot_service.process_message(
+        response5 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Eu também gosto de programar em Rust e tenho experiência com Docker.",
@@ -72,7 +72,7 @@ def test_tool_response():
 
         # Teste 6: Buscar todas as informações (get_memory_tool)
         print("  📝 Teste 6: Buscando todas as informações...")
-        response6 = chatbot_service.process_message(
+        response6 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Quais são todas as minhas informações?",
@@ -82,7 +82,7 @@ def test_tool_response():
 
         # Teste 7: Buscar informações profissionais (get_memory_tool)
         print("  📝 Teste 7: Buscando informações profissionais...")
-        response7 = chatbot_service.process_message(
+        response7 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="O que você sabe sobre mim como profissional?",
@@ -92,7 +92,7 @@ def test_tool_response():
 
         # Teste 8: Buscar tecnologias (get_memory_tool)
         print("  📝 Teste 8: Buscando tecnologias...")
-        response8 = chatbot_service.process_message(
+        response8 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Quais tecnologias eu uso?",
@@ -102,7 +102,7 @@ def test_tool_response():
 
         # Teste 9: Buscar restrições novamente (get_memory_tool)
         print("  📝 Teste 9: Buscando restrições novamente...")
-        response9 = chatbot_service.process_message(
+        response9 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Lembre-se da minha alergia.",
@@ -112,7 +112,7 @@ def test_tool_response():
 
         # Teste 10: Contexto da conversa (sem ferramentas)
         print("  📝 Teste 10: Usando contexto da conversa...")
-        response10 = chatbot_service.process_message(
+        response10 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Qual foi a primeira coisa que eu disse sobre mim nesta conversa?",
@@ -168,4 +168,6 @@ def test_tool_response():
 
 
 if __name__ == "__main__":
-    test_tool_response()
+    import asyncio
+
+    asyncio.run(test_tool_response())

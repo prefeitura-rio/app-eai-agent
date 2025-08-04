@@ -5,7 +5,7 @@ from src.services.lang_graph.service import LangGraphChatbotService
 logger = logging.getLogger(__name__)
 
 
-def test_all_tools():
+async def test_all_tools():
     """Testa se o agente consegue usar todas as ferramentas disponíveis."""
     print("🔧 Testando uso de todas as ferramentas...")
 
@@ -21,7 +21,7 @@ def test_all_tools():
         # Teste 1: Salvar informações (save_memory_tool)
         print("  📝 Teste 1: Salvando informações...")
         thread_id_1 = str(uuid.uuid4())
-        response1 = chatbot_service.process_message(
+        response1 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_1,
             message="Meu nome é Pedro Silva, tenho 30 anos e sou engenheiro. Eu gosto de programar em Java e tenho alergia a frutos do mar.",
@@ -30,12 +30,12 @@ def test_all_tools():
         print(f"    🔧 Ferramentas usadas: {response1.tools_called}")
 
         # Mensagens aleatórias na thread 1
-        chatbot_service.process_message(
+        await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_1,
             message="Como está o tempo hoje?",
         )
-        chatbot_service.process_message(
+        await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_1,
             message="Que dia é hoje?",
@@ -44,7 +44,7 @@ def test_all_tools():
         # Teste 2: Buscar informações (get_memory_tool) - nova thread
         print("  📝 Teste 2: Buscando informações...")
         thread_id_2 = str(uuid.uuid4())
-        response2 = chatbot_service.process_message(
+        response2 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_2,
             message="O que você sabe sobre mim?",
@@ -55,7 +55,7 @@ def test_all_tools():
         # Teste 3: Atualizar informações (update_memory_tool) - nova thread
         print("  📝 Teste 3: Atualizando informações...")
         thread_id_3 = str(uuid.uuid4())
-        response3 = chatbot_service.process_message(
+        response3 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_3,
             message="Atualize minha idade para 31 anos.",
@@ -66,7 +66,7 @@ def test_all_tools():
         # Teste 4: Deletar informações (delete_memory_tool) - nova thread
         print("  📝 Teste 4: Deletando informações...")
         thread_id_4 = str(uuid.uuid4())
-        response4 = chatbot_service.process_message(
+        response4 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_4,
             message="Delete a informação sobre minha alergia.",
@@ -77,7 +77,7 @@ def test_all_tools():
         # Teste 5: Verificar resultado final (get_memory_tool) - nova thread
         print("  📝 Teste 5: Verificando resultado final...")
         thread_id_5 = str(uuid.uuid4())
-        response5 = chatbot_service.process_message(
+        response5 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id_5,
             message="Quais são minhas informações atuais?",
@@ -136,4 +136,6 @@ def test_all_tools():
 
 
 if __name__ == "__main__":
-    test_all_tools()
+    import asyncio
+
+    asyncio.run(test_all_tools())

@@ -7,7 +7,7 @@ import uuid
 from src.services.lang_graph.service import LangGraphChatbotService
 
 
-def test_temperature_control():
+async def test_temperature_control():
     """
     Testa o controle de temperatura do chatbot.
     """
@@ -32,7 +32,7 @@ def test_temperature_control():
             return False
 
         # Enviar mensagem
-        response_low = chatbot_service.process_message(
+        response_low = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Conte uma história curta sobre um gato.",
@@ -58,7 +58,7 @@ def test_temperature_control():
             return False
 
         # Enviar a mesma mensagem
-        response_high = chatbot_service.process_message(
+        response_high = await chatbot_service.process_message(
             user_id=user_id_high,
             thread_id=thread_id_high,
             message="Conte uma história curta sobre um gato.",
@@ -84,7 +84,7 @@ def test_temperature_control():
             return False
 
         # Enviar a mesma mensagem
-        response_default = chatbot_service.process_message(
+        response_default = await chatbot_service.process_message(
             user_id=user_id_default,
             thread_id=thread_id_default,
             message="Conte uma história curta sobre um gato.",
@@ -115,5 +115,7 @@ def test_temperature_control():
 
 
 if __name__ == "__main__":
+    import asyncio
+
     logging.basicConfig(level=logging.INFO)
-    test_temperature_control()
+    asyncio.run(test_temperature_control())

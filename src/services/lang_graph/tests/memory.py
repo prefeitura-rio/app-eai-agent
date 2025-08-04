@@ -11,7 +11,7 @@ from sqlalchemy import text
 logger = logging.getLogger(__name__)
 
 
-def test_memory_operations():
+async def test_memory_operations():
     """
     Testes de operações de memória.
     """
@@ -23,7 +23,8 @@ def test_memory_operations():
     repository = MemoryRepository()
 
     try:
-        # Recriar tabelas (sem drop, já que busca semântica está funcionando)
+        # Inicializar engine e recriar tabelas
+        repository.db_manager.initialize_engine()
         repository.db_manager.create_tables()
         print("  ✅ Tabelas verificadas")
 
@@ -71,5 +72,7 @@ def test_memory_operations():
 
 
 if __name__ == "__main__":
+    import asyncio
+
     logging.basicConfig(level=logging.INFO)
-    test_memory_operations()
+    asyncio.run(test_memory_operations())

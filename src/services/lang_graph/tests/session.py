@@ -9,7 +9,7 @@ from src.services.lang_graph.service import LangGraphChatbotService
 logger = logging.getLogger(__name__)
 
 
-def test_session_management():
+async def test_session_management():
     """Testa gerenciamento de sessões."""
     print("📋 Executando: Gerenciamento de Sessões")
     print("----------------------------------------")
@@ -24,13 +24,22 @@ def test_session_management():
 
         # Teste 1: Inicialização de sessão
         print("  🚀 Testando inicialização de sessão...")
-        session_id = chatbot_service.initialize_session(
+        session_result = chatbot_service.initialize_session(
             user_id=test_user_id,
             thread_id=test_thread_id,
         )
-        print(f"  ✅ Sessão inicializada: {session_id}")
+        print(f"  ✅ Sessão inicializada: {session_result}")
 
-        # Teste 2: Limpeza de memórias
+        # Teste 2: Processar mensagem para testar a sessão
+        print("  💬 Testando processamento de mensagem com sessão...")
+        response = await chatbot_service.process_message(
+            user_id=test_user_id,
+            thread_id=test_thread_id,
+            message="Olá, esta é uma mensagem de teste",
+        )
+        print(f"  🤖 Resposta: {response.message}")
+
+        # Teste 3: Limpeza de memórias
         print("  🧹 Testando limpeza de memórias...")
         result = chatbot_service.clear_memory(test_user_id)
         if result.get("success"):
@@ -49,5 +58,7 @@ def test_session_management():
 
 
 if __name__ == "__main__":
+    import asyncio
+
     logging.basicConfig(level=logging.INFO)
-    test_session_management()
+    asyncio.run(test_session_management())

@@ -5,7 +5,7 @@ from src.services.lang_graph.service import LangGraphChatbotService
 logger = logging.getLogger(__name__)
 
 
-def test_user_id_injection():
+async def test_user_id_injection():
     """Testa se o user_id está sendo injetado corretamente nas ferramentas."""
     print("🔍 Testando injeção de user_id...")
 
@@ -22,7 +22,7 @@ def test_user_id_injection():
 
         # Teste 1: Salvar informação
         print("  📝 Teste 1: Salvando informação...")
-        response1 = chatbot_service.process_message(
+        response1 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Use a ferramenta save_memory_tool para salvar: Meu nome é João Silva.",
@@ -32,7 +32,7 @@ def test_user_id_injection():
 
         # Teste 2: Buscar informações
         print("  📝 Teste 2: Buscando informações...")
-        response2 = chatbot_service.process_message(
+        response2 = await chatbot_service.process_message(
             user_id=user_id,
             thread_id=thread_id,
             message="Use a ferramenta get_memory_tool para buscar minhas informações.",
@@ -73,4 +73,6 @@ def test_user_id_injection():
 
 
 if __name__ == "__main__":
-    test_user_id_injection()
+    import asyncio
+
+    asyncio.run(test_user_id_injection())

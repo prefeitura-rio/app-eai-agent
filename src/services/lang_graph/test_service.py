@@ -5,38 +5,39 @@ Permite executar testes específicos ou todos os testes.
 """
 import logging
 import sys
-from typing import List, Dict, Callable
+import asyncio
+from typing import List, Dict, Callable, Awaitable
 
 # Importar todos os testes
-from src.services.lang_graph.tests.test_database import test_database_connection
-from src.services.lang_graph.tests.test_memory_operations import test_memory_operations
-from src.services.lang_graph.tests.test_chatbot_conversation import (
+from src.services.lang_graph.tests.database import test_database_connection
+from src.services.lang_graph.tests.memory import test_memory_operations
+from src.services.lang_graph.tests.conversation import (
     test_chatbot_conversation,
 )
-from src.services.lang_graph.tests.test_session_management import (
+from src.services.lang_graph.tests.session import (
     test_session_management,
 )
-from src.services.lang_graph.tests.test_error_handling import test_error_handling
-from src.services.lang_graph.tests.test_agent_tools import test_agent_memory_tools
-from src.services.lang_graph.tests.test_memory_persistence import (
+from src.services.lang_graph.tests.errors import test_error_handling
+from src.services.lang_graph.tests.tools import test_agent_memory_tools
+from src.services.lang_graph.tests.persistence import (
     test_memory_persistence_conversation,
 )
-from src.services.lang_graph.tests.test_context_tools import test_context_tools
-from src.services.lang_graph.tests.test_isolation import test_memory_isolation
-from src.services.lang_graph.tests.test_configuration import (
+from src.services.lang_graph.tests.context import test_context_tools
+from src.services.lang_graph.tests.isolation import test_memory_isolation
+from src.services.lang_graph.tests.config import (
     test_configuration_parameters,
 )
-from src.services.lang_graph.tests.test_temperature import test_temperature_control
-from src.services.lang_graph.tests.test_system_prompt import (
+from src.services.lang_graph.tests.temperature import test_temperature_control
+from src.services.lang_graph.tests.system_prompt import (
     test_system_prompt_injection,
 )
-from src.services.lang_graph.tests.test_short_term_memory import test_short_term_memory
-from src.services.lang_graph.tests.test_conversation_context import (
+from src.services.lang_graph.tests.short_term_memory import test_short_term_memory
+from src.services.lang_graph.tests.conversation_context import (
     test_conversation_context,
 )
-from src.services.lang_graph.tests.test_tool_response import test_tool_response
-from src.services.lang_graph.tests.test_all_tools import test_all_tools
-from src.services.lang_graph.tests.test_user_id_injection import test_user_id_injection
+from src.services.lang_graph.tests.tool_response import test_tool_response
+from src.services.lang_graph.tests.all_tools import test_all_tools
+from src.services.lang_graph.tests.user_id_injection import test_user_id_injection
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ def print_available_tests():
     print("  • Listar: python test_service.py --list")
 
 
-def run_specific_test(test_name: str) -> bool:
+async def run_specific_test(test_name: str) -> bool:
     """Executa um teste específico."""
     if test_name not in AVAILABLE_TESTS:
         print(f"❌ Teste '{test_name}' não encontrado!")
@@ -114,7 +115,14 @@ def run_specific_test(test_name: str) -> bool:
     print("=" * 50)
 
     try:
-        result = AVAILABLE_TESTS[test_name]()
+        test_func = AVAILABLE_TESTS[test_name]
+
+        # Verificar se o teste é async ou sync
+        if asyncio.iscoroutinefunction(test_func):
+            result = await test_func()
+        else:
+            result = test_func()
+
         if result:
             print(f"✅ Teste '{test_name}' PASS")
         else:
@@ -125,7 +133,7 @@ def run_specific_test(test_name: str) -> bool:
         return False
 
 
-def run_category_tests(category: str) -> Dict[str, bool]:
+async def run_category_tests(category: str) -> Dict[str, bool]:
     """Executa todos os testes de uma categoria."""
     if category not in TEST_CATEGORIES:
         print(f"❌ Categoria '{category}' não encontrada!")
@@ -139,13 +147,13 @@ def run_category_tests(category: str) -> Dict[str, bool]:
     print("=" * 50)
 
     for test_name in test_names:
-        results[test_name] = run_specific_test(test_name)
+        results[test_name] = await run_specific_test(test_name)
         print()  # Linha em branco entre testes
 
     return results
 
 
-def run_all_tests() -> Dict[str, bool]:
+async def run_all_tests() -> Dict[str, bool]:
     """Executa todos os testes."""
     print("🚀 Iniciando testes do chatbot com memória de longo prazo...")
     print("=" * 60)
@@ -153,7 +161,7 @@ def run_all_tests() -> Dict[str, bool]:
     results = {}
 
     for test_name in AVAILABLE_TESTS.keys():
-        results[test_name] = run_specific_test(test_name)
+        results[test_name] = await run_specific_test(test_name)
         print()  # Linha em branco entre testes
 
     return results
@@ -185,7 +193,7 @@ def print_results(results: Dict[str, bool]):
         print(f"⚠️ {total - passed} teste(s) falharam. Verifique os erros acima.")
 
 
-def main():
+async def main():
     """Função principal."""
     logging.basicConfig(level=logging.INFO)
 
@@ -201,13 +209,13 @@ def main():
         return
 
     if test_arg == "all":
-        results = run_all_tests()
+        results = await run_all_tests()
         print_results(results)
     elif test_arg in TEST_CATEGORIES:
-        results = run_category_tests(test_arg)
+        results = await run_category_tests(test_arg)
         print_results(results)
     elif test_arg in AVAILABLE_TESTS:
-        result = run_specific_test(test_arg)
+        result = await run_specific_test(test_arg)
         print(f"\n📊 Resultado: {'✅ PASS' if result else '❌ FAIL'}")
     else:
         print(f"❌ Argumento '{test_arg}' não reconhecido!")
@@ -215,4 +223,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
