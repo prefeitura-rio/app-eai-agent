@@ -25,7 +25,7 @@ class LangGraphChatbotService:
         self.db_manager = db_manager
         self.memory_manager = memory_manager
         self.sessions = {}  # Armazenar configurações de sessão
-        self._initialize_database()
+        # self._initialize_database()
 
     def _initialize_database(self):
         """Inicializa o banco de dados."""
