@@ -32,15 +32,29 @@ class LongTermMemory(Base):
 
 
 class DatabaseManager:
-    """Gerenciador de conexão com o banco de dados."""
+    """Gerenciador de conexão com o banco de dados usando Singleton pattern."""
+
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(DatabaseManager, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
-        self.engine = None
-        self.SessionLocal = None
-        self.database_url = env.PG_URI
+        if not self._initialized:
+            self.engine = None
+            self.SessionLocal = None
+            self.database_url = env.PG_URI
+            self._initialized = True
 
     def initialize_engine(self):
-        """Inicializa o engine SQLAlchemy."""
+        """Inicializa o engine SQLAlchemy apenas uma vez."""
+        if self.engine is not None:
+            logger.debug("Engine já inicializado, pulando inicialização")
+            return
+
         try:
             self.engine = create_engine(self.database_url, pool_pre_ping=True)
             self.SessionLocal = sessionmaker(
@@ -52,7 +66,10 @@ class DatabaseManager:
             raise
 
     def create_tables(self):
-        """Cria as tabelas no banco de dados."""
+        """Cria as tabelas no banco de dados apenas uma vez."""
+        if self.engine is None:
+            self.initialize_engine()
+
         try:
             # Criar extensão pgvector se não existir
             with self.engine.connect() as conn:
@@ -67,10 +84,10 @@ class DatabaseManager:
 
     def get_session(self):
         """Retorna uma sessão do banco de dados."""
-        if not self.SessionLocal:
-            raise RuntimeError(
-                "DatabaseManager não foi inicializado. Chame initialize_engine() primeiro."
-            )
+        if self.SessionLocal is None:
+            self.initialize_engine()
+            self.create_tables()
+
         return self.SessionLocal()
 
     def close(self):
@@ -80,5 +97,5 @@ class DatabaseManager:
             logger.info("Engine SQLAlchemy fechado")
 
 
-# Instância global
+# Instância global única
 db_manager = DatabaseManager()

@@ -24,17 +24,6 @@ class LangGraphChatbotService:
         self.db_manager = db_manager
         self.memory_manager = memory_manager
         self.sessions = {}  # Armazenar configurações de sessão
-        # self._initialize_database()
-
-    def _initialize_database(self):
-        """Inicializa o banco de dados."""
-        try:
-            self.db_manager.initialize_engine()
-            self.db_manager.create_tables()
-            logger.info("Banco de dados inicializado com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao inicializar banco de dados: {e}")
-            raise
 
     def initialize_session(
         self,

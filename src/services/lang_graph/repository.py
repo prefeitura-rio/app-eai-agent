@@ -21,13 +21,6 @@ class MemoryRepository:
         self.db_manager = db_manager
         self.llm_config = llm_config
 
-        # Inicializar o banco de dados automaticamente
-        try:
-            self.db_manager.initialize_engine()
-            self.db_manager.create_tables()
-        except Exception as e:
-            logger.warning(f"Erro ao inicializar banco de dados: {e}")
-
     def create_memory(
         self, user_id: str, content: str, memory_type: MemoryType
     ) -> MemoryOperationResult:
