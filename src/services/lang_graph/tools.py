@@ -11,6 +11,16 @@ from src.services.lang_graph.models import (
     MemoryDeleteRequest,
     MemorySearchRequest,
     ToolOutput,
+    GetMemoryToolInput,
+    SaveMemoryToolInput,
+    UpdateMemoryToolInput,
+    DeleteMemoryToolInput,
+    GetMemoryToolOutput,
+    SaveMemoryToolOutput,
+    UpdateMemoryToolOutput,
+    DeleteMemoryToolOutput,
+    ToolSuccessResponse,
+    ToolErrorResponse,
 )
 from src.services.lang_graph.memory import memory_manager
 
@@ -99,6 +109,9 @@ def get_memory_tool(
         Dicionário com resultado da operação
     """
     try:
+        # Validar input usando o modelo
+        input_data = GetMemoryToolInput(memory_type=memory_type, query=query)
+
         # Extrair parâmetros injetados da configuração
         configurable = config.get("configurable", {}) if config else {}
         user_id = configurable.get("user_id")
@@ -106,30 +119,34 @@ def get_memory_tool(
         min_relevance = configurable.get("memory_min_relevance", 0.6)
 
         if not user_id:
-            return {"success": False, "error": "user_id não fornecido na configuração"}
+            error_response = ToolErrorResponse(
+                success=False, error="user_id não fornecido na configuração"
+            )
+            return error_response.model_dump()
 
         # Converter memory_type se fornecido
         memory_type_enum = None
-        if memory_type:
+        if input_data.memory_type:
             try:
-                memory_type_enum = MemoryType(memory_type)
+                memory_type_enum = MemoryType(input_data.memory_type)
             except ValueError:
                 # Obter lista de tipos válidos do enum
                 valid_types = [t.value for t in MemoryType]
-                return {
-                    "success": False,
-                    "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
-                }
+                error_response = ToolErrorResponse(
+                    success=False,
+                    error=f"Tipo de memória '{input_data.memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
+                )
+                return error_response.model_dump()
 
         logger.info(f"=== GET_MEMORY_TOOL EXECUTADA ===")
         logger.info(
-            f"Parâmetros: user_id={user_id}, memory_type={memory_type}, query='{query}', limit={limit}, min_relevance={min_relevance}"
+            f"Parâmetros: user_id={user_id}, memory_type={input_data.memory_type}, query='{input_data.query}', limit={limit}, min_relevance={min_relevance}"
         )
 
         # Chamar memory manager
         result = memory_manager.get_memory(
             user_id=user_id,
-            query=query,
+            query=input_data.query,
             memory_type=memory_type_enum,
             limit=limit,
             min_relevance=min_relevance,
@@ -151,18 +168,27 @@ def get_memory_tool(
                     logger.error(f"Erro ao processar memória {memory.memory_id}: {e}")
                     continue
 
-            return {
-                "success": True,
-                "memories": memories_data,
-                "count": len(result.memories),
-            }
+            success_response = GetMemoryToolOutput(
+                success=True,
+                memories=result.memories,
+                count=len(result.memories),
+                message=f"Encontradas {len(result.memories)} memórias",
+            )
+            return success_response.model_dump()
         else:
             logger.warning(f"get_memory_tool - FALHA: {result.error_message}")
-            return {"success": False, "error": result.error_message}
+            error_response = GetMemoryToolOutput(
+                success=False,
+                error=result.error_message or "Erro desconhecido ao buscar memórias",
+            )
+            return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro na ferramenta get_memory: {e}")
-        return {"success": False, "error": f"Erro interno: {str(e)}"}
+        logger.error(f"Erro inesperado em get_memory_tool: {e}")
+        error_response = GetMemoryToolOutput(
+            success=False, error=f"Erro inesperado: {str(e)}"
+        )
+        return error_response.model_dump()
 
 
 @tool
@@ -191,36 +217,45 @@ def save_memory_tool(
         Dicionário com resultado da operação
     """
     try:
+        # Validar input usando o modelo
+        input_data = SaveMemoryToolInput(content=content, memory_type=memory_type)
+
         # Extrair parâmetros injetados da configuração
         configurable = config.get("configurable", {}) if config else {}
         user_id = configurable.get("user_id")
 
         if not user_id:
-            return {"success": False, "error": "user_id não fornecido na configuração"}
+            error_response = ToolErrorResponse(
+                success=False, error="user_id não fornecido na configuração"
+            )
+            return error_response.model_dump()
 
         # Validar memory_type
         try:
-            memory_type_enum = MemoryType(memory_type)
+            memory_type_enum = MemoryType(input_data.memory_type)
         except ValueError:
             # Obter lista de tipos válidos do enum
             valid_types = [t.value for t in MemoryType]
-            return {
-                "success": False,
-                "error": f"Tipo de memória '{memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
-            }
+            error_response = ToolErrorResponse(
+                success=False,
+                error=f"Tipo de memória '{input_data.memory_type}' é inválido. Tente novamente com um dos tipos existentes: {', '.join(valid_types)}",
+            )
+            return error_response.model_dump()
 
         logger.info(f"=== SAVE_MEMORY_TOOL EXECUTADA ===")
-        logger.info(f"Parâmetros: user_id={user_id}, memory_type={memory_type}")
         logger.info(
-            f"Conteúdo: {content[:100]}..."
-            if len(content) > 100
-            else f"Conteúdo: {content}"
+            f"Parâmetros: user_id={user_id}, memory_type={input_data.memory_type}"
+        )
+        logger.info(
+            f"Conteúdo: {input_data.content[:100]}..."
+            if len(input_data.content) > 100
+            else f"Conteúdo: {input_data.content}"
         )
 
         # Chamar memory manager
         result = memory_manager.save_memory(
             user_id=user_id,
-            content=content,
+            content=input_data.content,
             memory_type=memory_type_enum,
         )
 
@@ -229,18 +264,26 @@ def save_memory_tool(
                 f"save_memory_tool - SUCESSO: Memória salva com ID {result.memory_id}"
             )
 
-            return {
-                "success": True,
-                "memory_id": result.memory_id,
-                "message": "Memória salva com sucesso",
-            }
+            success_response = SaveMemoryToolOutput(
+                success=True,
+                memory_id=result.memory_id,
+                message="Memória salva com sucesso",
+            )
+            return success_response.model_dump()
         else:
             logger.warning(f"save_memory_tool - FALHA: {result.error_message}")
-            return {"success": False, "error": result.error_message}
+            error_response = SaveMemoryToolOutput(
+                success=False,
+                error=result.error_message or "Erro desconhecido ao salvar memória",
+            )
+            return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro na ferramenta save_memory: {e}")
-        return {"success": False, "error": f"Erro interno: {str(e)}"}
+        logger.error(f"Erro inesperado em save_memory_tool: {e}")
+        error_response = SaveMemoryToolOutput(
+            success=False, error=f"Erro inesperado: {str(e)}"
+        )
+        return error_response.model_dump()
 
 
 @tool
@@ -271,41 +314,56 @@ def update_memory_tool(
         Dicionário com resultado da operação
     """
     try:
+        # Validar input usando o modelo
+        input_data = UpdateMemoryToolInput(memory_id=memory_id, new_content=new_content)
+
         # Extrair parâmetros injetados da configuração
         configurable = config.get("configurable", {}) if config else {}
         user_id = configurable.get("user_id")
 
         if not user_id:
-            return {"success": False, "error": "user_id não fornecido na configuração"}
+            error_response = ToolErrorResponse(
+                success=False, error="user_id não fornecido na configuração"
+            )
+            return error_response.model_dump()
 
         logger.info(f"=== UPDATE_MEMORY_TOOL EXECUTADA ===")
-        logger.info(f"Parâmetros: user_id={user_id}, memory_id={memory_id}")
+        logger.info(f"Parâmetros: user_id={user_id}, memory_id={input_data.memory_id}")
         logger.info(
-            f"Novo conteúdo: {new_content[:100]}..."
-            if len(new_content) > 100
-            else f"Novo conteúdo: {new_content}"
+            f"Novo conteúdo: {input_data.new_content[:100]}..."
+            if len(input_data.new_content) > 100
+            else f"Novo conteúdo: {input_data.new_content}"
         )
 
         # Chamar memory manager
         result = memory_manager.update_memory(
             user_id=user_id,
-            memory_id=memory_id,
-            new_content=new_content,
+            memory_id=input_data.memory_id,
+            new_content=input_data.new_content,
         )
 
         if result.success:
-            logger.info(f"update_memory_tool - SUCESSO: Memória {memory_id} atualizada")
-            return {
-                "success": True,
-                "message": "Memória atualizada com sucesso",
-            }
+            logger.info(
+                f"update_memory_tool - SUCESSO: Memória {input_data.memory_id} atualizada"
+            )
+            success_response = UpdateMemoryToolOutput(
+                success=True, message="Memória atualizada com sucesso"
+            )
+            return success_response.model_dump()
         else:
             logger.warning(f"update_memory_tool - FALHA: {result.error_message}")
-            return {"success": False, "error": result.error_message}
+            error_response = UpdateMemoryToolOutput(
+                success=False,
+                error=result.error_message or "Erro desconhecido ao atualizar memória",
+            )
+            return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro na ferramenta update_memory: {e}")
-        return {"success": False, "error": f"Erro interno: {str(e)}"}
+        logger.error(f"Erro inesperado em update_memory_tool: {e}")
+        error_response = UpdateMemoryToolOutput(
+            success=False, error=f"Erro inesperado: {str(e)}"
+        )
+        return error_response.model_dump()
 
 
 @tool
@@ -334,35 +392,50 @@ def delete_memory_tool(
         Dicionário com resultado da operação
     """
     try:
+        # Validar input usando o modelo
+        input_data = DeleteMemoryToolInput(memory_id=memory_id)
+
         # Extrair parâmetros injetados da configuração
         configurable = config.get("configurable", {}) if config else {}
         user_id = configurable.get("user_id")
 
         if not user_id:
-            return {"success": False, "error": "user_id não fornecido na configuração"}
+            error_response = ToolErrorResponse(
+                success=False, error="user_id não fornecido na configuração"
+            )
+            return error_response.model_dump()
 
         logger.info(f"=== DELETE_MEMORY_TOOL EXECUTADA ===")
-        logger.info(f"Parâmetros: user_id={user_id}, memory_id={memory_id}")
+        logger.info(f"Parâmetros: user_id={user_id}, memory_id={input_data.memory_id}")
 
         # Chamar memory manager
         result = memory_manager.delete_memory(
             user_id=user_id,
-            memory_id=memory_id,
+            memory_id=input_data.memory_id,
         )
 
         if result.success:
-            logger.info(f"delete_memory_tool - SUCESSO: Memória {memory_id} deletada")
-            return {
-                "success": True,
-                "message": "Memória deletada com sucesso",
-            }
+            logger.info(
+                f"delete_memory_tool - SUCESSO: Memória {input_data.memory_id} deletada"
+            )
+            success_response = DeleteMemoryToolOutput(
+                success=True, message="Memória deletada com sucesso"
+            )
+            return success_response.model_dump()
         else:
             logger.warning(f"delete_memory_tool - FALHA: {result.error_message}")
-            return {"success": False, "error": result.error_message}
+            error_response = DeleteMemoryToolOutput(
+                success=False,
+                error=result.error_message or "Erro desconhecido ao deletar memória",
+            )
+            return error_response.model_dump()
 
     except Exception as e:
-        logger.error(f"Erro na ferramenta delete_memory: {e}")
-        return {"success": False, "error": f"Erro interno: {str(e)}"}
+        logger.error(f"Erro inesperado em delete_memory_tool: {e}")
+        error_response = DeleteMemoryToolOutput(
+            success=False, error=f"Erro inesperado: {str(e)}"
+        )
+        return error_response.model_dump()
 
 
 # Lista de ferramentas disponíveis

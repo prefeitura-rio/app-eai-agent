@@ -9,7 +9,7 @@ from langgraph.prebuilt import ToolNode
 
 from langchain_core.tools import tool
 from src.services.lang_graph.models import (
-    GraphState,
+    CustomMessagesState,
     SessionConfig,
     MemoryResponse,
     ToolOutput,
@@ -20,15 +20,6 @@ from src.services.lang_graph.tools import TOOLS
 from src.services.lang_graph.memory import memory_manager
 
 logger = logging.getLogger(__name__)
-
-
-class CustomMessagesState(MessagesState):
-    """Estado customizado que estende MessagesState para incluir configurações."""
-
-    retrieved_memories: Annotated[List[MemoryResponse], "Memórias recuperadas"]
-    tool_outputs: Annotated[List[ToolOutput], "Saídas das ferramentas"]
-    config: Annotated[SessionConfig, "Configuração da sessão"]
-    current_step: Annotated[str, "Passo atual no fluxo"]
 
 
 def create_system_prompt(

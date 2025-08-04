@@ -5,12 +5,12 @@ import uuid
 from langchain_core.messages import HumanMessage, AIMessage
 from src.services.lang_graph.models import (
     SessionConfig,
-    GraphState,
+    CustomMessagesState,
     ChatMessage,
     ChatResponse,
     MemoryResponse,
 )
-from src.services.lang_graph.graph import graph, CustomMessagesState
+from src.services.lang_graph.graph import graph
 from src.services.lang_graph.database import db_manager
 from src.services.lang_graph.memory import memory_manager
 
