@@ -21,6 +21,8 @@ from src.evaluations.core.experiments.eai.evaluators import (
     # GoldenLinkInAnswerEvaluator,
     GoldenLinkInToolCallingEvaluator,
     # AnswerCompletenessEvaluator,
+    # AnswerAddressingEvaluator,
+    # ClarityEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
@@ -70,7 +72,9 @@ async def run_experiment():
     evaluators_to_run = [
         # GoldenLinkInAnswerEvaluator(judge_client),
         GoldenLinkInToolCallingEvaluator(judge_client),
-        # AnswerCompletenessEvaluator(judge_client)
+        # AnswerCompletenessEvaluator(judge_client),
+        # AnswerAddressingEvaluator(judge_client),
+        # ClarityEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {evaluator_names}")

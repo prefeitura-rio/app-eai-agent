@@ -10,8 +10,18 @@ from src.evaluations.core.experiments.eai.evaluators.answer_completeness import 
     AnswerCompletenessEvaluator
 )
 
+from src.evaluations.core.experiments.eai.evaluators.answer_addressing import (
+    AnswerAddressingEvaluator
+)
+
+from src.evaluations.core.experiments.eai.evaluators.clarity import (
+    ClarityEvaluator
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator", 
     "GoldenLinkInToolCallingEvaluator",
-    "AnswerCompletenessEvaluator"
+    "AnswerCompletenessEvaluator",
+    "AnswerAddressingEvaluator",
+    "ClarityEvaluator",
 ]
