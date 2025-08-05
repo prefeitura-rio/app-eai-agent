@@ -60,7 +60,7 @@ async def run_experiment():
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system=SYSTEM_PROMPT,
-        tools=[],
+        tools=["google_search", "equipments_instructions", "equipments_by_address"],
         user_number=f"eval_test_eai_{uuid.uuid4()}",
         name="Test EVAL EAI",
         tags=["eval_eai"],
@@ -73,13 +73,14 @@ async def run_experiment():
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
-        # GoldenLinkInAnswerEvaluator(judge_client),
-        # GoldenLinkInToolCallingEvaluator(judge_client),
-        # AnswerCompletenessEvaluator(judge_client),
-        # AnswerAddressingEvaluator(judge_client),
-        # ClarityEvaluator(judge_client),
-        # ActivateSearchEvaluator(judge_client),
+        GoldenLinkInAnswerEvaluator(judge_client),
+        GoldenLinkInToolCallingEvaluator(judge_client),
+        AnswerCompletenessEvaluator(judge_client),
+        AnswerAddressingEvaluator(judge_client),
+        ClarityEvaluator(judge_client),
+        ActivateSearchEvaluator(judge_client),
         # GoldenEquipmentEvaluator(judge_client),
+        WhatsAppFormatEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {evaluator_names}")
