@@ -28,7 +28,7 @@ class GoldenLinkInToolCallingEvaluator(BaseOneTurnEvaluator):
             golden_links = parse_golden_links(task.golden_links_list)
             answer_links = self._extract_links_from_trace(agent_response)
 
-            if not golden_links or not answer_links:
+            if not answer_links or not golden_links:
                 return EvaluationResult(
                     score=0,
                     annotations="No links found in the answer or no golden links provided",
