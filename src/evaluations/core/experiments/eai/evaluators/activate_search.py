@@ -41,7 +41,7 @@ class ActivateSearchEvaluator(BaseOneTurnEvaluator):
                     if tool_call and tool_call.get("name") in SEARCH_TOOL_NAMES:
                         activated_tools.add(tool_call.get("name"))
 
-            explanation = f"Activated tools: {activated_tools}"
+            explanation = f"Activated tools: {list(activated_tools)}"
             score = len(activated_tools) > 0
             annotations = explanation
             has_error = False

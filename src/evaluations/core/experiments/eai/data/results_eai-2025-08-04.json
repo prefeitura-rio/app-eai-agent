@@ -2,13 +2,13 @@
   "dataset_name": "Golden Dataset Completo",
   "dataset_description": "Dataset de avaliacao de servicos",
   "dataset_id": 3877543868252703848,
-  "experiment_id": 5820388431056371382,
+  "experiment_id": 4854260907296253532,
   "experiment_name": "eai-2025-08-04",
   "experiment_description": "Test",
-  "experiment_timestamp": "2025-08-04T20:56:00.696516+00:00",
+  "experiment_timestamp": "2025-08-05T15:41:40.616777+00:00",
   "experiment_metadata": {
     "agent_config": {
-      "user_number": "eval_test_eai_1c075455-72ca-48ef-9f7f-5927317a78fa",
+      "user_number": "eval_test_eai_62f7e5b1-ac38-4199-87e1-6bcef4741bac",
       "agent_type": "memgpt_v2_agent",
       "name": "Test EVAL EAI",
       "tags": [
@@ -28,29 +28,23 @@
     "judges_prompts": {}
   },
   "execution_summary": {
-    "total_duration_seconds": 237.03,
-    "average_task_duration_seconds": 115.17,
-    "average_metric_duration_seconds": 77.88
+    "total_duration_seconds": 26.28,
+    "average_task_duration_seconds": 7.45,
+    "average_metric_duration_seconds": 7.45
   },
   "error_summary": {
-    "total_failed_runs": 3,
-    "errors_per_metric": {
-      "golden_link_in_tool_calling": 3
-    },
-    "failed_run_ids": [
-      "1",
-      "5",
-      "8"
-    ]
+    "total_failed_runs": 0,
+    "errors_per_metric": {},
+    "failed_run_ids": []
   },
   "aggregate_metrics": [
     {
-      "metric_name": "golden_link_in_tool_calling",
+      "metric_name": "activate_search",
       "total_runs": 10,
-      "successful_runs": 7,
-      "success_rate_percentage": 70.0,
-      "failed_runs": 3,
-      "failure_rate_percentage": 30.0,
+      "successful_runs": 10,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
       "score_statistics": {
         "average": 0.0,
         "median": 0.0,
@@ -59,16 +53,16 @@
         "std_dev": 0.0
       },
       "duration_statistics_seconds": {
-        "average": 77.8792,
-        "median": 82.3537,
-        "min": 0.0,
-        "max": 163.7429,
-        "std_dev": 64.6773
+        "average": 7.4495,
+        "median": 6.0067,
+        "min": 3.8051,
+        "max": 26.2763,
+        "std_dev": 6.6919
       },
       "score_distribution": [
         {
           "value": 0.0,
-          "count": 7,
+          "count": 10,
           "percentage": 100.0
         }
       ]
@@ -76,7 +70,7 @@
   ],
   "runs": [
     {
-      "duration_seconds": 69.0113,
+      "duration_seconds": 6.1986,
       "task_data": {
         "id": "1",
         "prompt": "po, conheço uma pessoa que recebe bolsa familia mas nem precisa, tem carro, casa boa... como que eu faço pra denunciar isso? é sacanagem com quem precisa de vdd",
@@ -84,20 +78,44 @@
         "golden_links_list": "[\"https://www.gov.br/mds/pt-br/canais_atendimento/ouvidoria/registro-de-manifestacao\", \"https://www.gov.br/mds/pt-br/canais_atendimento/ouvidoria/canal-de-denuncias\"]"
       },
       "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": null,
-        "evaluations": [
+        "agent_message": "Olá! Entendo sua preocupação com a distribuição justa dos benefícios sociais. Para denunciar um possível uso indevido do Bolsa Família, você pode procurar os seguintes canais oficiais:\n\n1.  **Telefone 1746:** A Central de Atendimento da Prefeitura do Rio recebe denúncias sobre diversos serviços municipais, incluindo programas sociais. Ligue para **1746**.\n2.  **Ouvidoria Municipal:** Você pode registrar sua denúncia através do portal da Ouvidoria, onde geralmente há um formulário específico para isso. Procure por \"Ouvidoria Rio de Janeiro\" em seu navegador.\n3.  **Ministério da Cidadania (agora parte do Ministério do Desenvolvimento e Assistência Social, Família e Combate à Fome):** Como o Bolsa Família é um programa federal, a denúncia também pode ser feita diretamente aos órgãos federais. Você pode procurar pelo site oficial do Ministério e verificar os canais de ouvidoria ou denúncia.\n\nAo fazer a denúncia, tente fornecer o máximo de informações possível, como o nome completo da pessoa, endereço (se souber), e os motivos que o levam a crer que o benefício está sendo usado indevidamente. Essas informações ajudarão os órgãos responsáveis a investigar o caso.",
+        "agent_reasoning_trace": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Menssagem não encontrada para a tarefa '1'.",
-            "has_error": true,
-            "error_message": "Menssagem não encontrada para a tarefa '1'."
+            "message_type": "reasoning_message",
+            "content": "The user is asking how to report potential misuse of the Bolsa Família benefit. This falls under general information about government services. I should use google_search to find the official channels for reporting such issues in Rio de Janeiro and for the Bolsa Família program itself. I will prioritize official government websites (.gov.br, prefeitura.rio, 1746.rio). I will then compile the information into a clear, step-by-step response for the user, including contact numbers and relevant websites."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Olá! Entendo sua preocupação com a distribuição justa dos benefícios sociais. Para denunciar um possível uso indevido do Bolsa Família, você pode procurar os seguintes canais oficiais:\n\n1.  **Telefone 1746:** A Central de Atendimento da Prefeitura do Rio recebe denúncias sobre diversos serviços municipais, incluindo programas sociais. Ligue para **1746**.\n2.  **Ouvidoria Municipal:** Você pode registrar sua denúncia através do portal da Ouvidoria, onde geralmente há um formulário específico para isso. Procure por \"Ouvidoria Rio de Janeiro\" em seu navegador.\n3.  **Ministério da Cidadania (agora parte do Ministério do Desenvolvimento e Assistência Social, Família e Combate à Fome):** Como o Bolsa Família é um programa federal, a denúncia também pode ser feita diretamente aos órgãos federais. Você pode procurar pelo site oficial do Ministério e verificar os canais de ouvidoria ou denúncia.\n\nAo fazer a denúncia, tente fornecer o máximo de informações possível, como o nome completo da pessoa, endereço (se souber), e os motivos que o levam a crer que o benefício está sendo usado indevidamente. Essas informações ajudarão os órgãos responsáveis a investigar o caso."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "Test EVAL EAI",
+              "agent_id": "agent-3bd7bce2-445a-4355-ad9d-931bb7fa1f23",
+              "message_id": "440bb2ae-f6f0-41bd-a38c-4c1b83911393",
+              "processed_at": "b49124e5-3640-4137-92a7-9132a5b6e6e7",
+              "total_tokens": 5135,
+              "prompt_tokens": 4738,
+              "completion_tokens": 397,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta one-turn: API Error creating agent: {{\"detail\":\"status_code: 500, body: {{'detail': ''}}\"}} [status_code=500]"
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 6.1948,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
+            "has_error": false,
+            "error_message": null
+          }
+        ],
+        "has_error": false,
+        "error_message": null
       },
       "multi_turn_analysis": {
         "final_agent_message": null,
@@ -108,7 +126,7 @@
       }
     },
     {
-      "duration_seconds": 163.7488,
+      "duration_seconds": 26.2798,
       "task_data": {
         "id": "2",
         "prompt": "qual o valor da passagem de onibus agora? aumentou?",
@@ -116,26 +134,26 @@
         "golden_links_list": "[\"https://carioca.rio/servicos/valores-das-tarifas-de-onibus-e-integracoes\"]"
       },
       "one_turn_analysis": {
-        "agent_message": "A tarifa básica do transporte público municipal em Salvador é de R$ 4,90. Para mais informações sobre tarifas e integrações, consulte o site da Prefeitura de Salvador ou do órgão gestor de transporte.",
+        "agent_message": "Olá! Para informações sobre o valor da passagem de ônibus e possíveis reajustes, recomendo que consulte diretamente os canais oficiais da Prefeitura do Rio de Janeiro ou o órgão responsável pelo transporte público na cidade. Geralmente, essas informações são divulgadas em seus sites ou centrais de atendimento.",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "The user is asking about bus fare in Rio de Janeiro. I need to find the current bus fare and if it has increased. I will use google_search to find this information on official Rio de Janeiro government websites. Since the user is asking about Rio de Janeiro, I must provide information relevant to Rio de Janeiro, not Salvador. The previous response was an example of how to respond, not an actual response to the user's query."
+            "content": "The user is asking about the current bus fare and if it has increased. This information is likely to change and requires checking official, up-to-date sources. I should direct the user to the appropriate channels. I will use the send_message tool to provide this guidance."
           },
           {
             "message_type": "assistant_message",
-            "content": "A tarifa básica do transporte público municipal em Salvador é de R$ 4,90. Para mais informações sobre tarifas e integrações, consulte o site da Prefeitura de Salvador ou do órgão gestor de transporte."
+            "content": "Olá! Para informações sobre o valor da passagem de ônibus e possíveis reajustes, recomendo que consulte diretamente os canais oficiais da Prefeitura do Rio de Janeiro ou o órgão responsável pelo transporte público na cidade. Geralmente, essas informações são divulgadas em seus sites ou centrais de atendimento."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-be05fc73-3738-4b14-bae7-3a53deaaad5c",
-              "message_id": "c4586862-8e64-4211-b5d9-78512ba65a0d",
-              "processed_at": "d2151621-e221-402b-9333-4e9b3fac7c55",
-              "total_tokens": 4880,
-              "prompt_tokens": 4732,
-              "completion_tokens": 148,
+              "agent_id": "agent-48ff5eb2-71c3-4c49-98ae-2d12e1a39273",
+              "message_id": "b3ba9fa0-607a-4f0f-80c7-56728befcccd",
+              "processed_at": "2896f220-d85a-488b-8296-75797683ed4a",
+              "total_tokens": 4843,
+              "prompt_tokens": 4712,
+              "completion_tokens": 131,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -144,10 +162,10 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 163.7411,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 26.2763,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }
@@ -164,7 +182,7 @@
       }
     },
     {
-      "duration_seconds": 52.2493,
+      "duration_seconds": 6.008,
       "task_data": {
         "id": "3",
         "prompt": "bom dia, meu tio faleceu e a gente n tem como pagar o enterro... tem algum auxilio da prefeitura pra isso? como faço pra pedir?",
@@ -172,26 +190,26 @@
         "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10822836882587-Informa%C3%A7%C3%B5es-sobre-o-aux%C3%ADlio-funeral\", \"https://www.1746.rio/hc/pt-br/articles/10835283338139-Informa%C3%A7%C3%B5es-sobre-os-procedimentos-para-sepultamento\"]"
       },
       "one_turn_analysis": {
-        "agent_message": "Olá! Sinto muito pela sua perda. A Prefeitura do Rio oferece o Serviço de Assistência Funeral (SAF) para famílias de baixa renda que não têm condições de arcar com os custos de um funeral. Para solicitar, você precisará comparecer a um dos postos de atendimento do Serviço Social da Secretaria Municipal de Assistência Social (SMAS) com os seguintes documentos:",
+        "agent_message": "Olá! Lamento pela sua perda. Para verificar a possibilidade de auxílio funeral da Prefeitura do Rio de Janeiro, você pode entrar em contato com a Central de Atendimento 1746 ou verificar diretamente no site oficial da Prefeitura, buscando por \"auxílio funeral\" ou \"benefícios sociais\". Geralmente, esses auxílios são direcionados a famílias de baixa renda e exigem comprovação.",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "O usuário está buscando informações sobre auxílio funeral da prefeitura devido ao falecimento de um familiar. De acordo com a persona e missão, devo fornecer informações precisas e acionáveis baseadas em fontes oficiais. A primeira ação é usar google_search para encontrar informações sobre o Serviço de Assistência Funeral (SAF) da Prefeitura do Rio de Janeiro e os procedimentos para solicitação. Em seguida, extrairei os detalhes necessários como documentos, locais e como solicitar."
+            "content": "The user is asking for information about funeral assistance from the city of Rio de Janeiro due to their uncle's passing and their inability to afford the funeral. I need to find out what services the city offers for this situation and how to apply. I will use google search to find official information on funeral assistance provided by the Prefeitura do Rio de Janeiro. I will look for terms like 'auxílio funeral prefeitura rio de janeiro', 'benefício funeral baixa renda rj', 'ajuda enterro prefeitura rj'. The goal is to provide clear, actionable steps and information about eligibility and required documents, citing official sources."
           },
           {
             "message_type": "assistant_message",
-            "content": "Olá! Sinto muito pela sua perda. A Prefeitura do Rio oferece o Serviço de Assistência Funeral (SAF) para famílias de baixa renda que não têm condições de arcar com os custos de um funeral. Para solicitar, você precisará comparecer a um dos postos de atendimento do Serviço Social da Secretaria Municipal de Assistência Social (SMAS) com os seguintes documentos:"
+            "content": "Olá! Lamento pela sua perda. Para verificar a possibilidade de auxílio funeral da Prefeitura do Rio de Janeiro, você pode entrar em contato com a Central de Atendimento 1746 ou verificar diretamente no site oficial da Prefeitura, buscando por \"auxílio funeral\" ou \"benefícios sociais\". Geralmente, esses auxílios são direcionados a famílias de baixa renda e exigem comprovação."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-1890c683-9024-4195-a30c-b5630f8eab68",
-              "message_id": "f0ac723e-75b3-4737-a5d0-8b5c031fc17f",
-              "processed_at": "99267812-7f38-4e4f-a53a-8eaca1bf942a",
-              "total_tokens": 4938,
-              "prompt_tokens": 4752,
-              "completion_tokens": 186,
+              "agent_id": "agent-e450b779-6eea-4f07-87aa-60cab5cb58b2",
+              "message_id": "0cd7a5d9-412a-4f7a-8807-04ed0fc5d71e",
+              "processed_at": "2447b732-e8ac-4a05-891c-5fdb87246640",
+              "total_tokens": 4959,
+              "prompt_tokens": 4732,
+              "completion_tokens": 227,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -200,10 +218,10 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 52.2436,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 6.0052,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }
@@ -220,7 +238,7 @@
       }
     },
     {
-      "duration_seconds": 135.5563,
+      "duration_seconds": 6.012,
       "task_data": {
         "id": "4",
         "prompt": "minha vizinha ta sofrendo violencia do marido, ela precisa de ajuda pra sair de casa e conversar com alguem. onde ela pode ir? tem algum lugar que acolhe mulher com filho?",
@@ -228,26 +246,26 @@
         "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10822522127899-Informa%C3%A7%C3%B5es-sobre-o-abrigo-sigiloso-Casa-Viva-Mulher-Cora-Coralina\"]"
       },
       "one_turn_analysis": {
-        "agent_message": "Olá! Sinto muito que sua vizinha esteja passando por essa situação. Existem locais especializados que podem oferecer acolhimento e apoio a mulheres em situação de violência doméstica, inclusive com filhos. O principal canal para buscar ajuda é a **Central de Atendimento à Mulher em Situação de Violência – Ligue 180**. Eles podem orientar sobre os locais mais próximos e os procedimentos. Além disso, a Prefeitura do Rio conta com a Rede de Equipamentos de Proteção Social Especializada para Mulheres em Situação de Violência, que inclui Centros de Referência de Atendimento à Mulher (RIAM) e Casas de Abrigamento. Para encontrar o mais próximo, recomendo que ela ou você liguem para o **180** ou procurem por \"Centro de Referência da Mulher\" ou \"Casa de Abrigamento\" nos canais oficiais da Prefeitura do Rio, como o Portal 1746 (www.1746.rio). Esses locais oferecem acolhimento, apoio psicológico, social e jurídico, e as casas de abrigamento garantem moradia segura para a mulher e seus filhos. É importante que ela procure ajuda o quanto antes.",
+        "agent_message": "Olá! Lamento saber que sua vizinha está passando por essa situação. Para mulheres em situação de violência doméstica e seus filhos, a Prefeitura do Rio oferece acolhimento e apoio. Ela pode buscar ajuda no **Centro de Referência da Mulher (CRM)** mais próximo ou no **Casa Abrigo**, que são locais especializados em acolher mulheres e crianças em risco. Para encontrar o local mais adequado e os contatos, recomendo que ela ou você liguem para a **Central 1746** ou acessem o portal **1746.rio**. Lá vocês encontrarão os endereços e horários de funcionamento, além de outras informações sobre os serviços oferecidos. Ela não está sozinha e há ajuda disponível.",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "The user is asking for help for a neighbor experiencing domestic violence. I need to provide information on resources available in Rio de Janeiro for women and children in such situations. I will use the send_message tool to provide this information, focusing on official channels like the Ligue 180 and Prefeitura do Rio's services."
+            "content": "The user is asking for resources for a woman experiencing domestic violence. I need to provide information about places in Rio de Janeiro that offer help and shelter, specifically mentioning options for women with children. I should direct the user to official city resources like the 1746 hotline or the 1746.rio portal to find the most accurate and up-to-date information on shelters and support centers. I will use the send_message tool to provide this information clearly and empathetically."
           },
           {
             "message_type": "assistant_message",
-            "content": "Olá! Sinto muito que sua vizinha esteja passando por essa situação. Existem locais especializados que podem oferecer acolhimento e apoio a mulheres em situação de violência doméstica, inclusive com filhos. O principal canal para buscar ajuda é a **Central de Atendimento à Mulher em Situação de Violência – Ligue 180**. Eles podem orientar sobre os locais mais próximos e os procedimentos. Além disso, a Prefeitura do Rio conta com a Rede de Equipamentos de Proteção Social Especializada para Mulheres em Situação de Violência, que inclui Centros de Referência de Atendimento à Mulher (RIAM) e Casas de Abrigamento. Para encontrar o mais próximo, recomendo que ela ou você liguem para o **180** ou procurem por \"Centro de Referência da Mulher\" ou \"Casa de Abrigamento\" nos canais oficiais da Prefeitura do Rio, como o Portal 1746 (www.1746.rio). Esses locais oferecem acolhimento, apoio psicológico, social e jurídico, e as casas de abrigamento garantem moradia segura para a mulher e seus filhos. É importante que ela procure ajuda o quanto antes."
+            "content": "Olá! Lamento saber que sua vizinha está passando por essa situação. Para mulheres em situação de violência doméstica e seus filhos, a Prefeitura do Rio oferece acolhimento e apoio. Ela pode buscar ajuda no **Centro de Referência da Mulher (CRM)** mais próximo ou no **Casa Abrigo**, que são locais especializados em acolher mulheres e crianças em risco. Para encontrar o local mais adequado e os contatos, recomendo que ela ou você liguem para a **Central 1746** ou acessem o portal **1746.rio**. Lá vocês encontrarão os endereços e horários de funcionamento, além de outras informações sobre os serviços oferecidos. Ela não está sozinha e há ajuda disponível."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-deb5063d-f7a1-4272-af68-9a41ba0e8043",
-              "message_id": "85dc4f9e-1eb3-4fbe-a55b-1d14c66844e5",
-              "processed_at": "8e1b78f7-984c-44b2-829f-713de6a835bc",
-              "total_tokens": 5089,
-              "prompt_tokens": 4759,
-              "completion_tokens": 330,
+              "agent_id": "agent-3ce37610-8357-46a1-a2c2-67e26819c3ab",
+              "message_id": "b599fdeb-c945-4d4a-821e-0ddadb40f4f8",
+              "processed_at": "375c5147-a1a2-4942-a7fb-50b11c3fb282",
+              "total_tokens": 5005,
+              "prompt_tokens": 4739,
+              "completion_tokens": 266,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -256,10 +274,10 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 135.5487,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 6.006,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }
@@ -276,7 +294,7 @@
       }
     },
     {
-      "duration_seconds": 66.7918,
+      "duration_seconds": 6.1988,
       "task_data": {
         "id": "5",
         "prompt": "oi, me falaram de um cartao mulher carioca, uma ajuda pra mulher que precisa. como funciona? quem pode pedir?",
@@ -284,20 +302,44 @@
         "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10822502048923-Informa%C3%A7%C3%B5es-sobre-o-Cart%C3%A3o-Mulher-Carioca\"]"
       },
       "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": null,
-        "evaluations": [
+        "agent_message": "Olá! O Cartão Mulher Carioca é um benefício da Prefeitura do Rio de Janeiro voltado para mulheres em situação de vulnerabilidade social. O objetivo é oferecer um apoio financeiro mensal para auxiliar no sustento e garantir acesso a programas sociais.",
+        "agent_reasoning_trace": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Menssagem não encontrada para a tarefa '5'.",
-            "has_error": true,
-            "error_message": "Menssagem não encontrada para a tarefa '5'."
+            "message_type": "reasoning_message",
+            "content": "User is asking for information about the Cartão Mulher Carioca. I need to find out how it works and who is eligible. I will use google search for this."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Olá! O Cartão Mulher Carioca é um benefício da Prefeitura do Rio de Janeiro voltado para mulheres em situação de vulnerabilidade social. O objetivo é oferecer um apoio financeiro mensal para auxiliar no sustento e garantir acesso a programas sociais."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "Test EVAL EAI",
+              "agent_id": "agent-152a710b-72a9-4f3e-a2d1-1010c369ccc4",
+              "message_id": "92a01ec0-8666-45a5-ba28-9640628906bb",
+              "processed_at": "f2bef128-d16f-4528-abb3-5417a780484c",
+              "total_tokens": 4828,
+              "prompt_tokens": 4726,
+              "completion_tokens": 102,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta one-turn: API Error creating agent: {{\"detail\":\"status_code: 500, body: {{'detail': ''}}\"}} [status_code=500]"
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 6.1981,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
+            "has_error": false,
+            "error_message": null
+          }
+        ],
+        "has_error": false,
+        "error_message": null
       },
       "multi_turn_analysis": {
         "final_agent_message": null,
@@ -308,7 +350,7 @@
       }
     },
     {
-      "duration_seconds": 163.7491,
+      "duration_seconds": 6.0125,
       "task_data": {
         "id": "6",
         "prompt": "oi, queria saber como funciona o auxílio brasil. quem tem direito? ainda existe esse auxilio?",
@@ -316,26 +358,26 @@
         "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10245041321371-Informa%C3%A7%C3%B5es-sobre-o-Programa-Bolsa-Fam%C3%ADlia\", \"https://carioca.rio/servicos/informacoes-sobre-o-pagamento-do-programa-bolsa-familia/\"]"
       },
       "one_turn_analysis": {
-        "agent_message": "Olá! O programa Auxílio Brasil foi substituído pelo Bolsa Família em 2023. Se você busca informações sobre o programa atual, posso te ajudar com isso.",
+        "agent_message": "Olá! O Auxílio Brasil foi substituído pelo Novo Bolsa Família. Você gostaria de saber como funciona o Novo Bolsa Família?",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "The user is asking about \"Auxílio Brasil\", which has been replaced by \"Bolsa Família\". I should inform the user about this change and offer to provide information about the current program."
+            "content": "The user is asking about 'Auxílio Brasil'. This program was replaced by 'Novo Bolsa Família'. I should inform the user about this change and ask if they want to know about the new program."
           },
           {
             "message_type": "assistant_message",
-            "content": "Olá! O programa Auxílio Brasil foi substituído pelo Bolsa Família em 2023. Se você busca informações sobre o programa atual, posso te ajudar com isso."
+            "content": "Olá! O Auxílio Brasil foi substituído pelo Novo Bolsa Família. Você gostaria de saber como funciona o Novo Bolsa Família?"
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-137923b6-20c3-400b-8a76-80431d0f3006",
-              "message_id": "10a1e18e-8d6a-4f21-a249-8a6fe2bc5fa7",
-              "processed_at": "67b90318-e4dd-4023-a96f-3447604b2a63",
-              "total_tokens": 4832,
-              "prompt_tokens": 4740,
-              "completion_tokens": 92,
+              "agent_id": "agent-a6ca0a70-0be5-440f-ad1e-b6fe434bcecd",
+              "message_id": "9801728b-8df7-445b-a24d-8f89ea8987df",
+              "processed_at": "e29bdc4b-79b1-42ac-b40c-f04681644876",
+              "total_tokens": 4806,
+              "prompt_tokens": 4720,
+              "completion_tokens": 86,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -344,10 +386,10 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 163.7429,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 6.0092,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }
@@ -364,7 +406,7 @@
       }
     },
     {
-      "duration_seconds": 98.8148,
+      "duration_seconds": 3.8084,
       "task_data": {
         "id": "7",
         "prompt": "e ai, blz? to querendo saber daquele auxilio do gas. como q eu sei se tenho direito? tem q se inscrever?",
@@ -372,26 +414,26 @@
         "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10245015233819-Informa%C3%A7%C3%B5es-sobre-o-Programa-Aux%C3%ADlio-G%C3%A1s-dos-Brasileiros\"]"
       },
       "one_turn_analysis": {
-        "agent_message": "Olá! Para verificar seu direito ao Auxílio Gás e entender o processo de inscrição, preciso buscar as informações mais recentes e oficiais da Prefeitura do Rio de Janeiro. Um momento enquanto consulto os dados.",
+        "agent_message": "Olá! Para verificar seu direito ao Auxílio Gás e entender como se inscrever, preciso confirmar alguns dados com você. Você poderia me informar seu CPF ou NIS (Número de Identificação Social)? Assim, posso consultar as informações oficiais e te orientar da melhor forma.",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "The user is asking about the \"Auxílio Gás\" program and how to check eligibility and apply. I need to use google_search to find official information from the Prefeitura do Rio de Janeiro or related government sites. My response should be in Portuguese, as the user's query is in Portuguese. I will search for terms like 'Auxílio Gás Rio de Janeiro elegibilidade inscrição' and prioritize official domains like carioca.rio, prefeitura.rio, or gov.br. After finding the information, I will present it clearly, detailing what the aid is, who is eligible, the application process, required documents, and any relevant contact information or links, following the persona's guidelines."
+            "content": "The user is asking about the 'Auxílio Gás' program and how to check eligibility and apply. I need to ask for their CPF or NIS to check eligibility based on official sources. I will use the send_message tool to ask for this information."
           },
           {
             "message_type": "assistant_message",
-            "content": "Olá! Para verificar seu direito ao Auxílio Gás e entender o processo de inscrição, preciso buscar as informações mais recentes e oficiais da Prefeitura do Rio de Janeiro. Um momento enquanto consulto os dados."
+            "content": "Olá! Para verificar seu direito ao Auxílio Gás e entender como se inscrever, preciso confirmar alguns dados com você. Você poderia me informar seu CPF ou NIS (Número de Identificação Social)? Assim, posso consultar as informações oficiais e te orientar da melhor forma."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-c6277eff-c66c-4789-acb0-5082fa38f4bc",
-              "message_id": "45f078b1-4946-4c9c-aed8-6696127af447",
-              "processed_at": "9f5f8457-3c4c-4be9-9d89-bf610d2320aa",
-              "total_tokens": 4949,
-              "prompt_tokens": 4750,
-              "completion_tokens": 199,
+              "agent_id": "agent-877827e4-c43a-4272-ae4f-8a74b3c635a4",
+              "message_id": "e0a2a5d7-91a4-4fea-a61a-f88e08c6736e",
+              "processed_at": "d1c61a14-f2f9-481f-8909-ac174817922a",
+              "total_tokens": 4853,
+              "prompt_tokens": 4730,
+              "completion_tokens": 123,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -400,10 +442,10 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 98.8082,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 3.8051,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }
@@ -420,7 +462,7 @@
       }
     },
     {
-      "duration_seconds": 237.0198,
+      "duration_seconds": 6.0124,
       "task_data": {
         "id": "8",
         "prompt": "meu filho tem autismo, queria saber se tem algum programa da prefeitura que ajuda, com terapia ou algum auxilio.",
@@ -428,58 +470,26 @@
         "golden_links_list": "[\"https://prefeitura.rio/saude/prefeitura-inaugura-centro-especializado-para-pessoas-com-autismo/\"]"
       },
       "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": null,
-        "evaluations": [
-          {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Menssagem não encontrada para a tarefa '8'.",
-            "has_error": true,
-            "error_message": "Menssagem não encontrada para a tarefa '8'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-2e508916-179d-4f7b-aaf3-f8e9e7b26c2d', message_id='5dbcd986-e0ff-4bf8-b85b-cd3123bc86a1']"
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      }
-    },
-    {
-      "duration_seconds": 71.2465,
-      "task_data": {
-        "id": "9",
-        "prompt": "ola, sou da venezuela e cheguei no rio a pouco tempo. preciso de ajuda com documentos e trabalho. vcs tem algum lugar que ajuda imigrante?",
-        "golden_answer": "Olá, seja bem-vindo! 👋\n \n Para regularizar documentos e buscar emprego, a Prefeitura oferece:\n \n *CRAI-Rio*\n \n * Atendimento social e jurídico para obter *CPF, residência, CTPS digital* e outros documentos.\n * Cursos de português e inclusão digital, além de orientação para trabalho.\n * Endereço: Rua Bento Ribeiro, 86 – Gamboa (Centro).\n * Seg–sex, 9h-18h.\n  Link: https://prefeitura.rio/cidadania/prefeitura-inaugura-centro-de-referencia-e-atendimento-para-imigrantes-no-rio/\n \n *SMTE – Secretaria Municipal de Trabalho e Renda*\n \n * Publica, toda semana, centenas de vagas em empresas parceiras; cadastro é gratuito.\n  Link: https://trabalho.prefeitura.rio/category/vagas/",
-        "golden_links_list": "[\"ola, sou da venezuela e cheguei no rio a pouco tempo. preciso de ajuda com documentos e trabalho. vcs tem algum lugar que ajuda imigrante?\"]"
-      },
-      "one_turn_analysis": {
-        "agent_message": "Olá! Bem-vindo(a) ao Rio de Janeiro. Para te ajudar com documentos e oportunidades de trabalho para imigrantes, o local mais indicado é o **Centro de Referência do Imigrante (CRI)**. Eles oferecem diversos serviços e orientações.",
+        "agent_message": "Olá! Entendo sua busca por apoio para seu filho com autismo. Para te ajudar a encontrar os programas e terapias oferecidos pela Prefeitura do Rio, preciso de algumas informações.",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "The user is asking for help with documents and work as an immigrant in Rio de Janeiro. The CRI is the most relevant service for this. I should inform the user about the CRI and provide its contact information and services, based on official sources if possible. I will use Google Search to find the official information about CRI."
+            "content": "The user is asking for information about city programs that help children with autism, specifically regarding therapy or financial assistance. I need to use google_search to find official information on this topic. I will search for \"programas prefeitura Rio autismo terapia auxílio\" to get relevant results."
           },
           {
             "message_type": "assistant_message",
-            "content": "Olá! Bem-vindo(a) ao Rio de Janeiro. Para te ajudar com documentos e oportunidades de trabalho para imigrantes, o local mais indicado é o **Centro de Referência do Imigrante (CRI)**. Eles oferecem diversos serviços e orientações."
+            "content": "Olá! Entendo sua busca por apoio para seu filho com autismo. Para te ajudar a encontrar os programas e terapias oferecidos pela Prefeitura do Rio, preciso de algumas informações."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-2129f9c8-a87d-407e-8ac2-57988f413d6b",
-              "message_id": "4c939ac5-b231-43f0-8a1f-18d0163de5f0",
-              "processed_at": "6254594d-8df1-49de-a5d8-553d969e9f78",
-              "total_tokens": 4888,
-              "prompt_tokens": 4753,
-              "completion_tokens": 135,
+              "agent_id": "agent-d6fa2550-fb7c-4093-aa19-5a86e4f0b9cd",
+              "message_id": "528d00a6-9190-4439-893e-33dcf63001c7",
+              "processed_at": "5ca2c2b8-78f7-499d-92fc-ad8be90edd1a",
+              "total_tokens": 4836,
+              "prompt_tokens": 4725,
+              "completion_tokens": 111,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -488,10 +498,10 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 71.2395,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 6.0073,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }
@@ -508,34 +518,34 @@
       }
     },
     {
-      "duration_seconds": 93.4727,
+      "duration_seconds": 3.9989,
       "task_data": {
-        "id": "10",
-        "prompt": "bom dia, queria saber onde tem restaurante popular aqui no centro do rio? aquele que a comida é baratinha.",
-        "golden_answer": "Bom dia! No Centro não há Restaurante Popular municipal, mas existe o *Restaurante do Povo Herbert de Souza* (Governo do Estado) na **Rua Barão de São Félix, s/nº (atrás da estação Central do Brasil/VLT)**.\n \n * Horário: 11h-15h (seg-sex)\n * *Preço:* R\\$ 1 (almoço; pessoas 60 + ou PcD não pagam)\n \n *Restaurantes Populares da Prefeitura* (R\\$ 0,50 café 6h-9h | R\\$ 2 almoço 10h-15h, seg-sex):\n \n * Bangu – Rua Francisco Real 1780\n * Bonsucesso – Av. Brasil 6357 (Ramos)\n * Campo Grande – Rua Campo Grande 880\n \n Links oficiais:\n https://carioca.rio/servicos/servico-de-alimentacao-a-precos-populares/\n https://www.rj.gov.br/emop/restaurante-povo-centro",
-        "golden_links_list": "[\"https://carioca.rio/servicos/servico-de-alimentacao-a-precos-populares/\", \"https://www.rj.gov.br/emop/restaurante-povo-centro\", \"https://www.brasildefato.com.br/2023/08/16/restaurante-popular-da-central-do-brasil-no-rio-e-reaberto-com-capacidade-para-600-lugares/\"]"
+        "id": "9",
+        "prompt": "ola, sou da venezuela e cheguei no rio a pouco tempo. preciso de ajuda com documentos e trabalho. vcs tem algum lugar que ajuda imigrante?",
+        "golden_answer": "Olá, seja bem-vindo! 👋\n \n Para regularizar documentos e buscar emprego, a Prefeitura oferece:\n \n *CRAI-Rio*\n \n * Atendimento social e jurídico para obter *CPF, residência, CTPS digital* e outros documentos.\n * Cursos de português e inclusão digital, além de orientação para trabalho.\n * Endereço: Rua Bento Ribeiro, 86 – Gamboa (Centro).\n * Seg–sex, 9h-18h.\n  Link: https://prefeitura.rio/cidadania/prefeitura-inaugura-centro-de-referencia-e-atendimento-para-imigrantes-no-rio/\n \n *SMTE – Secretaria Municipal de Trabalho e Renda*\n \n * Publica, toda semana, centenas de vagas em empresas parceiras; cadastro é gratuito.\n  Link: https://trabalho.prefeitura.rio/category/vagas/",
+        "golden_links_list": "[\"ola, sou da venezuela e cheguei no rio a pouco tempo. preciso de ajuda com documentos e trabalho. vcs tem algum lugar que ajuda imigrante?\"]"
       },
       "one_turn_analysis": {
-        "agent_message": "Bom dia! Com certeza posso te ajudar a encontrar um Restaurante Popular no Centro do Rio. Para te dar a informação mais precisa, preciso saber seu endereço completo, incluindo a rua e o número. Assim, consigo verificar qual o restaurante popular mais próximo de você.",
+        "agent_message": "Olá! Bem-vindo(a) ao Rio de Janeiro. Para te ajudar com documentos e trabalho, o local mais indicado é o Centro de Referência do Imigrante (CRI).",
         "agent_reasoning_trace": [
           {
             "message_type": "reasoning_message",
-            "content": "The user is asking for the location of a 'Restaurante Popular' in Centro, Rio de Janeiro. This indicates an intention to find a public facility. I should use the equipment search tools. First, I need to call `equipments_instructions` to get the correct category for 'Restaurante Popular'. Then, I will need to ask the user for their address to use `equipments_by_address`."
+            "content": "The user is asking for help with documents and work as an immigrant in Rio de Janeiro. I should provide information about a relevant service. The Centro de Referência do Imigrante (CRI) is the most appropriate service for this. I will inform the user about it and then search for more specific information regarding its services, location, and contact details using google_search."
           },
           {
             "message_type": "assistant_message",
-            "content": "Bom dia! Com certeza posso te ajudar a encontrar um Restaurante Popular no Centro do Rio. Para te dar a informação mais precisa, preciso saber seu endereço completo, incluindo a rua e o número. Assim, consigo verificar qual o restaurante popular mais próximo de você."
+            "content": "Olá! Bem-vindo(a) ao Rio de Janeiro. Para te ajudar com documentos e trabalho, o local mais indicado é o Centro de Referência do Imigrante (CRI)."
           },
           {
             "message_type": "usage_statistics",
             "content": {
               "agent_name": "Test EVAL EAI",
-              "agent_id": "agent-5d8285bb-ad3f-4631-a644-f27444cd2e00",
-              "message_id": "53ab372e-588f-48ff-b3fb-4eb27290186e",
-              "processed_at": "77ebf16b-4836-4e0c-8a2c-c17f1e4c78cb",
-              "total_tokens": 4900,
-              "prompt_tokens": 4743,
-              "completion_tokens": 157,
+              "agent_id": "agent-6befb82e-f0b2-415f-8f06-073567b77b54",
+              "message_id": "6cf3446a-548e-4f9a-be3e-dd0ec2a796c1",
+              "processed_at": "8b607ce5-271d-4fa0-8c29-77a61b34fb1a",
+              "total_tokens": 4865,
+              "prompt_tokens": 4733,
+              "completion_tokens": 132,
               "step_count": 1,
               "steps_messages": null,
               "run_ids": null
@@ -544,10 +554,66 @@
         ],
         "evaluations": [
           {
-            "metric_name": "golden_link_in_tool_calling",
-            "duration_seconds": 93.4679,
-            "score": 0,
-            "annotations": "No links found in the answer or no golden links provided",
+            "metric_name": "activate_search",
+            "duration_seconds": 3.9954,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
+            "has_error": false,
+            "error_message": null
+          }
+        ],
+        "has_error": false,
+        "error_message": null
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 4.0021,
+      "task_data": {
+        "id": "10",
+        "prompt": "bom dia, queria saber onde tem restaurante popular aqui no centro do rio? aquele que a comida é baratinha.",
+        "golden_answer": "Bom dia! No Centro não há Restaurante Popular municipal, mas existe o *Restaurante do Povo Herbert de Souza* (Governo do Estado) na **Rua Barão de São Félix, s/nº (atrás da estação Central do Brasil/VLT)**.\n \n * Horário: 11h-15h (seg-sex)\n * *Preço:* R\\$ 1 (almoço; pessoas 60 + ou PcD não pagam)\n \n *Restaurantes Populares da Prefeitura* (R\\$ 0,50 café 6h-9h | R\\$ 2 almoço 10h-15h, seg-sex):\n \n * Bangu – Rua Francisco Real 1780\n * Bonsucesso – Av. Brasil 6357 (Ramos)\n * Campo Grande – Rua Campo Grande 880\n \n Links oficiais:\n https://carioca.rio/servicos/servico-de-alimentacao-a-precos-populares/\n https://www.rj.gov.br/emop/restaurante-povo-centro",
+        "golden_links_list": "[\"https://carioca.rio/servicos/servico-de-alimentacao-a-precos-populares/\", \"https://www.rj.gov.br/emop/restaurante-povo-centro\", \"https://www.brasildefato.com.br/2023/08/16/restaurante-popular-da-central-do-brasil-no-rio-e-reaberto-com-capacidade-para-600-lugares/\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": "Bom dia! Para encontrar um Restaurante Popular, preciso saber seu endereço completo. Por favor, informe a rua, número e bairro onde você está no Centro do Rio.",
+        "agent_reasoning_trace": [
+          {
+            "message_type": "reasoning_message",
+            "content": "The user is asking for the location of a popular restaurant (Restaurante Popular) in Rio de Janeiro, specifically in the Centro area. This implies a need to find a public facility. According to the persona instructions, I need to use the equipment search tools for this. First, I must call `equipments_instructions` to get the valid categories. Then, I will need the user's address to call `equipments_by_address`. The user has not provided their full address yet, only the general area 'Centro do Rio'. Therefore, I need to ask for the specific address."
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Bom dia! Para encontrar um Restaurante Popular, preciso saber seu endereço completo. Por favor, informe a rua, número e bairro onde você está no Centro do Rio."
+          },
+          {
+            "message_type": "usage_statistics",
+            "content": {
+              "agent_name": "Test EVAL EAI",
+              "agent_id": "agent-9113ed70-d80c-4073-a89a-3040bf4b92c5",
+              "message_id": "8bca3cec-6254-482c-b135-6ca53f58dfae",
+              "processed_at": "1d51cc30-d811-4b8c-ac36-e3d12807711e",
+              "total_tokens": 4896,
+              "prompt_tokens": 4723,
+              "completion_tokens": 173,
+              "step_count": 1,
+              "steps_messages": null,
+              "run_ids": null
+            }
+          }
+        ],
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 3.9978,
+            "score": 0.0,
+            "annotations": "Activated tools: set()",
             "has_error": false,
             "error_message": null
           }

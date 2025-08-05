@@ -18,12 +18,13 @@ from src.utils.log import logger
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
-    # GoldenLinkInAnswerEvaluator,
+    GoldenLinkInAnswerEvaluator,
     GoldenLinkInToolCallingEvaluator,
-    # AnswerCompletenessEvaluator,
-    # AnswerAddressingEvaluator,
-    # ClarityEvaluator,
-    # ActivateSearchEvaluator,
+    AnswerCompletenessEvaluator,
+    AnswerAddressingEvaluator,
+    ClarityEvaluator,
+    ActivateSearchEvaluator,
+    GoldenEquipmentEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
@@ -72,11 +73,12 @@ async def run_experiment():
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
         # GoldenLinkInAnswerEvaluator(judge_client),
-        GoldenLinkInToolCallingEvaluator(judge_client),
+        # GoldenLinkInToolCallingEvaluator(judge_client),
         # AnswerCompletenessEvaluator(judge_client),
         # AnswerAddressingEvaluator(judge_client),
         # ClarityEvaluator(judge_client),
         # ActivateSearchEvaluator(judge_client),
+        # GoldenEquipmentEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {evaluator_names}")

@@ -15,75 +15,73 @@ class ClarityEvaluator(BaseOneTurnEvaluator):
 
     name = "clarity"
 
+# - 1.0 (excelente): A resposta é clara, acessível e traz orientações práticas e úteis
+# - 0.5 (boa): A resposta é parcialmente clara, mas tem pontos que dificultam o entendimento ou limitam a utilidade
+# - 0.0 (ruim): A resposta é confusa, usa linguagem complicada ou não traz orientação prática
+
     CLARITY_PROMPT = """
-In this task, you will evaluate if a response in Portuguese is clear and understandable for the common citizens of Rio de Janeiro seeking public services or information.
+Nesta tarefa, você irá avaliar se uma resposta em português é clara e compreensível para cidadãos comuns do Rio de Janeiro que buscam serviços públicos ou informações.
+Uma resposta clara deve ser fácil de entender por pessoas com diferentes níveis de escolaridade, evitando linguagem burocrática, sem perder a precisão ou a utilidade.
 
-A clear response for municipal services must be easily understood by citizens with varying education levels, avoiding bureaucratic language while remaining accurate and helpful.
+Critérios de avaliação da clareza para o cidadão:
 
-Evaluation criteria for citizen-friendly clarity:
+1. **Linguagem Simples**:
+   - Evita termos burocráticos ou jurídicos difíceis
+   - Usa português do dia a dia, acessível a quem tem escolaridade básica
+   - Explica termos técnicos quando for necessário usá-los
+   - Evita siglas e abreviações sem explicação
 
-1. **Simple Language**:
-   - Avoids complex bureaucratic terms ("juridiquês")
-   - Uses everyday Portuguese that a person with basic education can understand
-   - Explains technical terms when they must be used
-   - Avoids excessive use of acronyms without explanation
+2. **Direta e Prática**:
+   - Responde à dúvida do cidadão sem rodeios
+   - Oferece informações acionáveis (onde ir, o que levar, quando fazer)
+   - Foca no que a pessoa precisa saber para resolver seu problema
+   - Inclui endereços, telefones ou sites quando for relevante
 
-2. **Direct and Practical**:
-   - Answers the citizen's question without unnecessary detours
-   - Provides actionable information (where to go, what to bring, when to do it)
-   - Focuses on what the citizen needs to know to solve their problem
-   - Includes specific addresses, phone numbers, or websites when relevant
+3. **Bem Organizada**:
+   - A informação segue uma ordem lógica (do mais importante primeiro)
+   - Usa listas ou etapas simples ao explicar procedimentos
+   - Divide processos complexos em partes fáceis de entender
+   - Separa claramente tópicos ou exigências diferentes
 
-3. **Well-Organized**:
-   - Information is presented in logical order (most important first)
-   - Uses simple lists or steps when explaining procedures
-   - Breaks down complex processes into manageable parts
-   - Clear separation between different topics or requirements
+4. **Completa mas Concisa**:
+   - Traz todas as informações essenciais, sem exagerar nos detalhes
+   - Tem um tamanho apropriado para leitura no WhatsApp ou celular
+   - Evita repetições
+   - Não pressupõe que o cidadão já entenda processos do governo
 
-4. **Complete but Concise**:
-   - Includes all essential information without overwhelming details
-   - Appropriate length for WhatsApp or mobile reading
-   - Avoids repetition
-   - Doesn't assume prior knowledge of government processes
+Pontuações possíveis:
+- 1.0 (clara): A resposta é clara, acessível e traz orientações práticas e úteis
+- 0.0 (pouco clara): A resposta é confusa, usa linguagem complicada ou não traz orientação prática
 
-Labels:
-- "clear": The response is easily understood by common citizens and provides practical, actionable information
-- "unclear": The response uses complex language, is confusing, or fails to provide practical guidance
+Sua resposta deve conter **exatamente duas linhas**, com o seguinte formato:
+Score: <um valor float sendo 0.0 ou 1.0>
+Reasoning: <uma explicação curta e objetiva justificando sua nota>
 
-Analyze the response from the perspective of a common citizen seeking help with municipal services. Consider someone who may have limited formal education, may be unfamiliar with government processes, and needs practical information to resolve their issue.
+Analise a resposta com o olhar de um cidadão comum que está pedindo ajuda com serviços públicos. Considere alguém com pouca escolaridade formal, que não entende a linguagem do governo, e precisa de orientação direta para resolver seu problema.
 
-Write a detailed explanation evaluating:
-- Whether bureaucratic or complex terms are used without explanation
-- If the response provides clear, actionable steps
-- Whether the information is organized in a helpful way
-- If the length and detail level are appropriate
-- Any issues that might confuse or frustrate a citizen
+Para o `Reasoning`, considere:
+- A resposta usa linguagem burocrática ou complexa sem explicação?
+- Ela traz passos claros e acionáveis?
+- Está bem organizada e fácil de seguir?
+- O nível de detalhe e o tamanho são adequados?
+- Existe algo que possa confundir ou frustrar o cidadão?
 
-Provide specific examples from the response to support your assessment.
+# Exemplos de linguagem pouco clara vs. linguagem clara:
 
-# Examples of unclear vs clear language in Portuguese:
+pouco clara: "Dirija-se à repartição competente munido da documentação pertinente para protocolar sua solicitação"
+clara: "Vá à delegacia (Rua X, número Y) com RG, CPF e comprovante de residência"
 
-unclear: "Dirija-se à repartição competente munido da documentação pertinente para protocolar sua solicitação"
-clear: "Vá à delegacia (Rua X, número Y) com RG, CPF e comprovante de residência"
+pouco clara: "A emissão da certidão está condicionada à quitação dos débitos tributários"
+clara: "Para pegar a certidão, você precisa primeiro pagar todos os impostos em atraso"
 
-unclear: "A emissão da certidão está condicionada à quitação dos débitos tributários"
-clear: "Para pegar a certidão, você precisa primeiro pagar todos os impostos em atraso"
+pouco clara: "O requerente deve observar os prazos regimentais"
+clara: "Você tem 30 dias para entregar os documentos"
 
-unclear: "O requerente deve observar os prazos regimentais"
-clear: "Você tem 30 dias para entregar os documentos"
+pouco clara: "Proceda ao agendamento através dos canais oficiais"
+clara: "Marque seu atendimento pelo site www.exemplo.com"
 
-unclear: "Proceda ao agendamento através dos canais oficiais"
-clear: "Marque seu atendimento pelo site www.exemplo.com"
-
-[BEGIN DATA]
-Query: {query}
-Model Response: {model_response}
-[END DATA]
-
-Please analyze the data carefully and then provide:
-
-explanation: Your reasoning step by step, focusing on clarity, simplicity, and practical guidance for citizens.
-label: "clear" or "unclear"
+Pergunta: {task[prompt]}
+Resposta do Modelo: {agent_response[message]}
 """
 
     async def evaluate(

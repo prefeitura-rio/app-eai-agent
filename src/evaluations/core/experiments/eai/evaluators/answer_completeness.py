@@ -15,32 +15,31 @@ class AnswerCompletenessEvaluator(BaseOneTurnEvaluator):
 
     name = "answer_completeness"
 
+# - 1.0 (excelente): A resposta cobre todos ou quase todos os conceitos importantes da resposta ideal. Detalhes pequenos ausentes são aceitáveis se os pontos principais estiverem claros.
+# - 0.5 (bom): A resposta captura parcialmente os pontos centrais, mas perde informações importantes que comprometem o entendimento completo.
+# - 0.0 (ruim): A resposta ignora ou omite a maior parte das ideias principais, ou diverge muito em significado.
+
     ANSWER_COMPLETENESS_PROMPT = """
-In this task, you will evaluate how well a model's response captures the core topics and essential concepts present in an ideal (gold standard) response.
+Nesta tarefa, você irá avaliar o quanto a resposta de um modelo cobre os tópicos centrais e os conceitos essenciais presentes em uma resposta ideal.
 
-The evaluation is based on content coverage, not stylistic similarity or phrasing.
-Focus on whether the model response includes the *key points* that matter most. Minor omissions or differences in wording should not count agains the response if the main substance is captured.
+A avaliação deve ser feita com base na cobertura do conteúdo, não na similaridade de estilo ou na forma de redigir.
+Concentre-se em verificar se a resposta do modelo inclui os *pontos-chave* mais importantes. Omissões menores ou diferenças de linguagem não devem penalizar a resposta se a substância principal estiver presente.
 
-Assign one of the following labels:
-- "equivalent": The model's response captures all or most important concepts from the ideal response. Minor missing details are acceptable if the main points are clearly conveyed.
-- "different": The model's response misses most key ideas or diverges substantially in meaning.
+Atribua uma das seguintes pontuações:
+- 1.0 (equivalente): A resposta do modelo cobre todos ou a maioria dos conceitos da resposta ideal. Detalhes pequenos ausentes são aceitáveis se os pontos principais estiverem claros.
+- 0.0 (diferente): A resposta do modelo ignora ou omite a maior parte das ideias principais ou diverge muito em significado.
 
-Your response must be a single word: "equivalent" or "different", with no other text.
+Sua resposta deve conter **exatamente duas linhas**, com o seguinte formato:
+Score: <um valor float sendo 0.0 ou 1.0>
+Reasoning: <uma explicação curta e objetiva justificando sua nota>
 
-After analyzing the data, write a detailed explanation justifying your label. Your explanation should:
-- Briefly list the key topics or concepts from the ideal response.
-- If any of the important key topics is missing, list it and explain what it is and how that impacts understanding.
+Para o `Reasoning`, considere:
+- Quais são os conceitos ou tópicos essenciais presentes na resposta ideal?
+- Algum conceito importante foi omitido? Qual? O que ele representa? Como sua ausência afeta o entendimento?
 
-[BEGIN DATA]
-Query: {query}
-Model Response: {model_response}
-Ideal Response: {ideal_response}
-[END DATA]
-
-Please analyze the data carefully and then provide:
-
-explanation: Your reasoning step by step, comparing the model response to the ideal response, and mentioning what (if anything) was missing.
-label: "equivalent" or "different"
+Pergunta: {task[prompt]}
+Resposta do Modelo: {agent_response[message]}
+Resposta Ideal: {task[golden_answer]}
 """
 
     async def evaluate(

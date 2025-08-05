@@ -22,11 +22,16 @@ from src.evaluations.core.experiments.eai.evaluators.activate_search import (
     ActivateSearchEvaluator
 )
 
+from src.evaluations.core.experiments.eai.evaluators.golden_equipment import (
+    GoldenEquipmentEvaluator
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator", 
     "GoldenLinkInToolCallingEvaluator",
     "AnswerCompletenessEvaluator",
     "AnswerAddressingEvaluator",
     "ClarityEvaluator",
-    "ActivateSearchEvaluator"
+    "ActivateSearchEvaluator",
+    "GoldenEquipmentEvaluator",
 ]
