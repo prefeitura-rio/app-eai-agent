@@ -1,75 +1,83 @@
 # -*- coding: utf-8 -*-
-import json
-from typing import Dict, Any, Tuple
+from src.evaluations.core.eval import (
+    AgentResponse,
+    BaseOneTurnEvaluator,
+    EvaluationResult,
+    EvaluationTask,
+)
 from src.evaluations.core.experiments.eai.evaluators.utils import (
     parse_golden_links,
     match_golden_link,
-)
-from src.evaluations.core.eval import (
-    EvaluationTask,
-    AgentResponse,
-    EvaluationResult,
-    BaseOneTurnEvaluator,
 )
 
 
 class GoldenLinkInToolCallingEvaluator(BaseOneTurnEvaluator):
     """
-    Avalia se a resposta de um agente adere a uma persona pré-definida.
+    Avalia se a resposta do agente utiliza corretamente os
+    golden links durante chamadas de tools.
     """
 
     name = "golden_link_in_tool_calling"
 
     async def evaluate(
-        self, agent_response: AgentResponse, task: EvaluationTask
+        self, 
+        agent_response: AgentResponse, 
+        task: EvaluationTask
     ) -> EvaluationResult:
-        """
-        Executa a avaliação de aderência à persona usando o cliente juiz.
-        """
         try:
-            golden_field = task.golden_links_list
-            golden_links = parse_golden_links(golden_field)
+            golden_links = parse_golden_links(task.golden_links_list)
+            answer_links = self._extract_links_from_trace(agent_response)
 
-            answer_links = []
-            if agent_response.reasoning_trace:
-                for step in agent_response.reasoning_trace:
-                    if step.message_type == "tool_call_message":
-                        tool_call = step.content.get("tool_call", {})
-                        tools = ["google_search", "equipments_instructions", "equipments_by_address"]
-                        if tool_call.get("name") in tools:
-                            arguments = tool_call.get("arguments", "{}")
-                            try:
-                                parsed_args = json.loads(arguments)
-                            except (json.JSONDecodeError, TypeError):
-                                parsed_args = arguments
-                            
-                            if isinstance(parsed_args, dict):
-                                links = parsed_args.get("links", [])
-                                answer_links.extend(links)
+            if not golden_links or not answer_links:
+                return EvaluationResult(
+                    score=0,
+                    annotations="No links found in the answer or no golden links provided",
+                    has_error=False,
+                    error_message=None,
+                )
 
-            if not answer_links or not golden_links:
-                score = 0 
-                annotations = "No links found in the answer or no golden links provided"
-            else:
-                answer_links, overall_count = match_golden_link(answer_links, golden_links)
-                score = 1 if overall_count > 0 else 0
-                annotations = {
+            matched_links, match_count = match_golden_link(answer_links, golden_links)
+            score = 1 if match_count > 0 else 0
+
+            return EvaluationResult(
+                score=score,
+                annotations={
                     "golden_links": golden_links,
-                    "answer_links": answer_links,
-                    "number_of_matches": overall_count,
-                }
+                    "answer_links": matched_links,
+                    "number_of_matches": match_count,
+                },
+                has_error=False,
+                error_message=None,
+            )
 
-            has_error = False
-            error_message = None
         except Exception as e:
-            score = None
-            annotations = None
-            has_error = True
-            error_message = str(e)
+            return EvaluationResult(
+                score=None,
+                annotations=None,
+                has_error=True,
+                error_message=str(e),
+            )
+    
+    def _extract_links_from_trace(self, agent_response: AgentResponse) -> list[str]:
+        links = []
+        tools = ["google_search"]
 
-        return EvaluationResult(
-            score=score,
-            annotations=annotations,
-            has_error=has_error,
-            error_message=error_message,
-        )
+        if not agent_response or not agent_response.reasoning_trace:
+            return links
+        
+        for step in agent_response.reasoning_trace:
+            if step.message_type != "tool_return_message":
+                continue
+            
+            if step.content.get("name") not in tools:
+                continue
+
+            tool_call = step.content.get("tool_return", {})
+            sources = tool_call.get("sources", [])
+
+            for source in sources:
+                url = source.get("url")
+                if url:
+                    links.append(url) 
+        
+        return links
