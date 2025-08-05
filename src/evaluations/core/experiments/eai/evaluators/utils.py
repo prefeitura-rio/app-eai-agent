@@ -53,31 +53,26 @@ def match_golden_link(answer_links, golden_links):
     Match golden links in explanation links.
     """
     overall_count = 0
-    for answer_link in answer_links:
-        url = _norm_url(answer_link)
-        count = 0
-        golden_found = None
+    result = []
+
+    for answer_url in answer_links:
+        url_norm = _norm_url(answer_url)
+        matched_golden = None
+
         for golden_link in golden_links:
-            if url in _norm_url(golden_link):
-                answer_link["golden_link"] = True
-                count += 1
+            if url_norm in _norm_url(golden_link):
+                matched_golden = golden_link
                 overall_count += 1
-                golden_found = _norm_url(golden_link)
+                break
+        
+        result.append({
+            "url": answer_url,
+            "golden_link": matched_golden,
+            "has_golden_link": matched_golden is not None,
+        })
 
-        answer_link["golden_link"] = golden_found
-        answer_link["golden_link"] = True if count > 0 else False
-
-    answer_links = [
-        {
-            "has_golden_link": item.get("has_golden_link"),
-            "golden_link": item.get("golden_link"),
-            "url": item.get("url"),
-            "uri": item.get("uri"),
-        }
-        for item in answer_links
-    ]
-    reordered_data = sorted(answer_links, key=lambda item: item["golden_link"] is None)
-
+    reordered_data = sorted(result, key=lambda item: not item["has_golden_link"])
+    
     return reordered_data, overall_count
 
 
