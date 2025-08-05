@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
-from src.evaluations.core.eval import (
-    EvaluationTask,
-    EvaluationResult,
-)
+from src.evaluations.core.eval import EvaluationTask, EvaluationResult
 from src.evaluations.core.eval.evaluators.base import BaseOneTurnEvaluator
 from src.evaluations.core.eval.schemas import AgentResponse
 
 
 class WhatsAppFormatEvaluator(BaseOneTurnEvaluator):
     """
-    Avalia a capacidade de memória do agente com base na transcrição
-    completa de uma conversa.
+    Avalia se a resposta do agente está conforme as regras de formatação do WhatsApp.
     """
 
     name = "whatsapp_format"
@@ -54,11 +50,10 @@ Resposta do Modelo: {agent_response[message]}
 """
 
     async def evaluate(
-        self, agent_response: AgentResponse, task: EvaluationTask
+        self, 
+        agent_response: AgentResponse, 
+        task: EvaluationTask
     ) -> EvaluationResult:
-        """
-        Executa a avaliação de aderência à persona usando o cliente juiz.
-        """
         return await self._get_llm_judgement(
             prompt_template=self.WHATSAPP_FORMAT_PROMPT,
             task=task,

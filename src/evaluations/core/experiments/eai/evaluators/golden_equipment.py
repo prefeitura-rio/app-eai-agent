@@ -9,7 +9,8 @@ from src.evaluations.core.eval import (
 
 class GoldenEquipmentEvaluator(BaseMultipleTurnEvaluator):
     """
-    Avalia o raciocínio do agente com base na transcrição completa de uma conversa.
+    Avalia a ativação correta de ferramentas, identificação do equipamento correto e rapidez de resposta
+    com base na transcrição completa da conversa.
     """
 
     name = "golden_equipment"
@@ -129,11 +130,10 @@ rapidez_de_resposta: 3
 """
 
     async def evaluate(
-        self, agent_response: MultiTurnEvaluationInput, task: EvaluationTask
+        self, 
+        agent_response: MultiTurnEvaluationInput, 
+        task: EvaluationTask
     ) -> EvaluationResult:
-        """
-        Executa a avaliação de raciocínio conversacional usando o cliente juiz.
-        """
         return await self._get_llm_judgement(
             prompt_template=self.GOLDEN_EQUIPMENT_PROMPT,
             task=task,

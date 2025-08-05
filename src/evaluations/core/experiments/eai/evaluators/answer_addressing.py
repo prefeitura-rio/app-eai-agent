@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
-from src.evaluations.core.eval import (
-    EvaluationTask,
-    EvaluationResult,
-)
+from src.evaluations.core.eval import EvaluationTask, EvaluationResult
 from src.evaluations.core.eval.evaluators.base import BaseOneTurnEvaluator
 from src.evaluations.core.eval.schemas import AgentResponse
 
 
 class AnswerAddressingEvaluator(BaseOneTurnEvaluator):
     """
-    Avalia a capacidade de memória do agente com base na transcrição
-    completa de uma conversa.
+    Avalia se a resposta do modelo aborda diretamente o objetivo da pergunta
+    do usuário e oferece uma resposta útil, clara e prática.
     """
 
     name = "answer_addressing"
@@ -40,11 +37,10 @@ Resposta do Modelo: {agent_response[message]}
 """
 
     async def evaluate(
-        self, agent_response: AgentResponse, task: EvaluationTask
+        self, 
+        agent_response: AgentResponse, 
+        task: EvaluationTask
     ) -> EvaluationResult:
-        """
-        Executa a avaliação de aderência à persona usando o cliente juiz.
-        """
         return await self._get_llm_judgement(
             prompt_template=self.ANSWER_ADDRESSING_PROMPT,
             task=task,
