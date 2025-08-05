@@ -26,6 +26,10 @@ from src.evaluations.core.experiments.eai.evaluators.golden_equipment import (
     GoldenEquipmentEvaluator
 )
 
+from src.evaluations.core.experiments.eai.evaluators.whatsapp_format import (
+    WhatsAppFormatEvaluator
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator", 
     "GoldenLinkInToolCallingEvaluator",
@@ -34,4 +38,5 @@ __all__ = [
     "ClarityEvaluator",
     "ActivateSearchEvaluator",
     "GoldenEquipmentEvaluator",
+    "WhatsAppFormatEvaluator"
 ]

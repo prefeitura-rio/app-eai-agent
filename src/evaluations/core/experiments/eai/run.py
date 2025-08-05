@@ -25,6 +25,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ClarityEvaluator,
     ActivateSearchEvaluator,
     GoldenEquipmentEvaluator,
+    WhatsAppFormatEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
