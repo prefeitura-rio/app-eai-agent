@@ -52,7 +52,9 @@ class ResponseManager:
     #     finally:
     #         await agent_manager.close()
     @asynccontextmanager
-    async def _get_agent_manager(self) -> AsyncGenerator[str, None]:
+    async def _get_agent_manager(
+        self,
+    ) -> AsyncGenerator[Optional[EAIConversationManager], None]:
         """Context manager para obter o número de usuário."""
         if self.precomputed_responses:
             yield None
