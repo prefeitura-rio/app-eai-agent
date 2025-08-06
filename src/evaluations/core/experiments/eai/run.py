@@ -41,16 +41,24 @@ async def run_experiment():
     logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 
     loader = DataLoader(
-        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",
+        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=1216607284#gid=1216607284", # golden equipments
+        #source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785", # golden dataset
         number_rows=10,
         id_col="id",
-        prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Golden Dataset Completo",
+        prompt_col="context",
+        # prompt_col="mensagem_whatsapp_simulada",
+        dataset_name="Golden Equipment Test",
+        # dataset_name="Golden Dataset",
         dataset_description="Dataset de avaliacao de servicos",
         metadata_cols=[
-            "golden_links_list",
-            "golden_answer",
+            "golden_equipment",
+            "golden_equipment_type",
+            "extra_info",
         ],
+        # metadata_cols=[
+        #     "golden_links_list",
+        #     "golden_answer",
+        # ],
     )
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
@@ -73,14 +81,14 @@ async def run_experiment():
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
-        GoldenLinkInAnswerEvaluator(judge_client),
-        GoldenLinkInToolCallingEvaluator(judge_client),
-        AnswerCompletenessEvaluator(judge_client),
-        AnswerAddressingEvaluator(judge_client),
-        ClarityEvaluator(judge_client),
-        ActivateSearchEvaluator(judge_client),
-        # GoldenEquipmentEvaluator(judge_client),
-        WhatsAppFormatEvaluator(judge_client),
+        # GoldenLinkInAnswerEvaluator(judge_client),
+        # GoldenLinkInToolCallingEvaluator(judge_client),
+        # AnswerCompletenessEvaluator(judge_client),
+        # AnswerAddressingEvaluator(judge_client),
+        # ClarityEvaluator(judge_client),
+        # ActivateSearchEvaluator(judge_client),
+        GoldenEquipmentEvaluator(judge_client),
+        # WhatsAppFormatEvaluator(judge_client),
     ]
     evaluator_names = [e.name for e in evaluators_to_run]
     logger.info(f"✅ Suíte de avaliações configurada para rodar: {evaluator_names}")

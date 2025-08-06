@@ -10,6 +10,8 @@ from src.utils.log import logger
 from google.cloud.exceptions import GoogleCloudError
 from src.config import env
 from google.cloud.bigquery.table import Row
+import numpy as np
+import pandas as pd
 
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -127,6 +129,23 @@ def save_response_in_bq(
         raise Exception(json_data)
 
 
+def clean_json_field(obj):
+    """
+    Limpa campos JSON recursivamente: converte NaN para None,
+    converte numpy/pandas types e força serialização válida.
+    """
+    if isinstance(obj, float) and np.isnan(obj):
+        return None
+    elif isinstance(obj, (np.generic, pd.Timestamp)):
+        return obj.item() if hasattr(obj, "item") else str(obj)
+    elif isinstance(obj, dict):
+        return {k: clean_json_field(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_json_field(v) for v in obj]
+    else:
+        return obj
+
+
 def upload_experiment_to_bq(result_data: Dict[str, Any]):
     """
     Faz o upload do resultado do experimento para a tabela de experiments no BigQuery,
@@ -224,6 +243,20 @@ def upload_experiment_to_bq(result_data: Dict[str, Any]):
             ),
         )
 
+        json_fields = [
+            "experiment_metadata",
+            "execution_summary",
+            "error_summary",
+            "aggregate_metrics",
+            "runs",
+        ]
+
+        for field in json_fields:
+            if field in result_data:
+                result_data[field] = clean_json_field(result_data[field])
+
+        json_data = [result_data]
+
         job = client.load_table_from_json(
             json_data, table_full_name, job_config=job_config
         )
@@ -271,6 +304,18 @@ def upload_dataset_to_bq(dataset_config, filtered_df):
         logger.info(
             f"Fazendo upload do novo dataset {dataset_id} para o {table_full_name}..."
         )
+
+        def sanitize_for_bigquery(df: pd.DataFrame) -> pd.DataFrame:
+            def clean_value(x):
+                if pd.isna(x):
+                    return None
+                if isinstance(x, (np.integer, np.floating, np.bool_)):
+                    return x.item() 
+                return x
+            return df.applymap(clean_value)
+
+        filtered_df = sanitize_for_bigquery(filtered_df)
+
         row_to_insert = {
             "dataset_id": dataset_id,
             "dataset_name": dataset_config["dataset_name"],

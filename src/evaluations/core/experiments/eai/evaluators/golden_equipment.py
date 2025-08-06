@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
+from typing import List
 from src.evaluations.core.eval import (
     EvaluationTask,
     EvaluationResult,
     MultiTurnEvaluationInput,
-    BaseMultipleTurnEvaluator,
+    BaseConversationEvaluator,
 )
 
 
-class GoldenEquipmentEvaluator(BaseMultipleTurnEvaluator):
+class GoldenEquipmentEvaluator(BaseConversationEvaluator):
     """
     Avalia a ativação correta de ferramentas, identificação do equipamento correto e rapidez de resposta
     com base na transcrição completa da conversa.
@@ -18,8 +19,11 @@ class GoldenEquipmentEvaluator(BaseMultipleTurnEvaluator):
     GOLDEN_EQUIPMENT_PROMPT = """
 Você é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e atribuir notaas para três critérios:
 
-**Transcrição Completa da Conversa:**
-{agent_response[conversation_history]}
+
+**Objetivo da Tarefa:**
+{agent_response[prompt]}
+**Histórico da Conversa até agora:**
+{history}
 
 **Informações de Referência para Avaliação:**
 - equipamento_correto: {task[golden_equipment]}
@@ -129,13 +133,17 @@ equipamento_correto: 1
 rapidez_de_resposta: 3
 """
 
-    async def evaluate(
+    async def get_judge_prompt(
         self, 
-        agent_response: MultiTurnEvaluationInput, 
-        task: EvaluationTask
-    ) -> EvaluationResult:
-        return await self._get_llm_judgement(
-            prompt_template=self.GOLDEN_EQUIPMENT_PROMPT,
-            task=task,
-            agent_response=agent_response,
+        task: EvaluationTask, 
+        history: List[str]
+    ) -> str:
+        history_str = "\n".join(history)
+        task_dict = task.model_dump(exclude_none=True)
+
+        return self.GOLDEN_EQUIPMENT_PROMPT.format(
+            task=task_dict,
+            history=history_str,
+            stop_signal=self.stop_signal,
         )
+
