@@ -54,15 +54,15 @@ async def run_experiment():
     )
 
     # --- 2. Definição do Agente (Metadados do Experimento) ---
-    agent_config = CreateAgentRequest(
-        model="google_ai/gemini-2.5-flash-lite-preview-06-17",
-        system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
-        tools=[],
-        user_number="evaluation_user",
-        name="BatmanUnifiedAgent",
-        tags=["batman", "unified_test"],
-    )
-    logger.info(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
+    # agent_config = CreateAgentRequest(
+    #     model="google_ai/gemini-2.5-flash-lite-preview-06-17",
+    #     system="Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
+    #     tools=[],
+    #     user_number="evaluation_user",
+    #     name="BatmanUnifiedAgent",
+    #     tags=["batman", "unified_test"],
+    # )
+    # logger.info(f"✅ Agente a ser avaliado configurado: {agent_config.name}")
 
     # --- 3. Definição da Suíte de Avaliação ---
     judge_client = AzureOpenAIClient(model_name="gpt-4o")
@@ -87,7 +87,7 @@ async def run_experiment():
     }
 
     metadata = {
-        "agent_config": agent_config.model_dump(exclude_none=True),
+        # "agent_config": agent_config.model_dump(exclude_none=True),
         "judge_model": judge_client.model_name,
         "judges_prompts": judges_prompts,
     }
@@ -113,12 +113,13 @@ async def run_experiment():
         experiment_name="Batman_Unified_Eval_v3_Refactored",
         experiment_description="Avaliação com ConversationEvaluator plugável.",
         metadata=metadata,
-        agent_config=agent_config.model_dump(exclude_none=True),
+        # agent_config=agent_config.model_dump(exclude_none=True),
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
         # precomputed_responses=precomputed_responses_dict,
-        # upload_to_bq=False,
+        upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
+        provider="letta",
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):

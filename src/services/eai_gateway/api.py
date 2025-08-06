@@ -41,6 +41,12 @@ class AgentWebhookRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 
+class UserWebhookRequest(BaseModel):
+    user_number: str
+    message: str
+    provider: Optional[str] = "google_agent_engine"
+
+
 class AgentWebhookResponse(BaseModel):
     message_id: str
 
@@ -65,17 +71,20 @@ class EAIClientError(Exception):
         self,
         message: str,
         status_code: Optional[int] = None,
-        agent_id: Optional[str] = None,
+        user_number: Optional[str] = None,
         message_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ):
         self.message = message
         self.status_code = status_code
-        self.agent_id = agent_id
+        self.user_number = user_number
         self.message_id = message_id
 
         details = []
         if status_code:
             details.append(f"status_code={status_code}")
+        if user_number:
+            details.append(f"user_number='{user_number}'")
         if agent_id:
             details.append(f"agent_id='{agent_id}'")
         if message_id:
@@ -94,7 +103,7 @@ class EAIClientError(Exception):
 
 
 class EAIClient:
-    def __init__(self):
+    def __init__(self, provider: str = "google_agent_engine"):
         self.base_url = env.EAI_GATEWAY_API_URL
         headers = (
             {"Authorization": f"Bearer {env.EAI_GATEWAY_API_TOKEN}"}
@@ -104,6 +113,7 @@ class EAIClient:
         self._client = httpx.AsyncClient(
             base_url=self.base_url, headers=headers, timeout=120.0
         )
+        self.provider = provider
 
     async def create_agent(self, request: CreateAgentRequest) -> Dict[str, Any]:
         """Creates a new agent."""
@@ -145,6 +155,28 @@ class EAIClient:
                 agent_id=request.agent_id,
             ) from e
 
+    async def message_user_number(
+        self, request: UserWebhookRequest
+    ) -> AgentWebhookResponse:
+        """(Low-level) Sends a message to a specific user number."""
+        try:
+            response = await self._client.post(
+                "/api/v1/message/webhook/user", json=request.model_dump()
+            )
+            response.raise_for_status()
+            return AgentWebhookResponse(**response.json())
+        except httpx.HTTPStatusError as e:
+            raise EAIClientError(
+                message=f"API Error sending message: {e.response.text}",
+                status_code=e.response.status_code,
+                user_number=request.user_number,
+            ) from e
+        except Exception as e:
+            raise EAIClientError(
+                message=f"An unexpected error occurred while sending message: {e}",
+                user_number=request.user_number,
+            ) from e
+
     async def get_message_response(self, message_id: str) -> MessageResponse:
         """(Low-level) Polls for the response of a sent message."""
         try:
@@ -169,26 +201,41 @@ class EAIClient:
             ) from e
 
     async def send_message_and_get_response(
-        self, agent_id: str, message: str, timeout: int = 10, polling_interval: int = 2
+        self,
+        user_number: str,
+        message: str,
+        # agent_id: Optional[str] = None,
+        timeout: int = 180,
+        polling_interval: int = 2,
     ) -> MessageResponse:
         """
         High-level method to send a message and poll for the final response.
         """
-        send_req = AgentWebhookRequest(agent_id=agent_id, message=message)
-        send_resp = await self.send_message_to_agent(send_req)
+        # send_req = AgentWebhookRequest(agent_id=agent_id, message=message)
+        # send_resp = await self.send_message_to_agent(send_req)
+        send_req = UserWebhookRequest(
+            user_number=user_number, message=message, provider=self.provider
+        )
+        send_resp = await self.message_user_number(send_req)
         message_id = send_resp.message_id
-
+        # logger.info(
+        #     f"Message sent to user number ({self.provider}): {user_number} with message_id: {message_id}"
+        # )
         start_time = time.time()
         while time.time() - start_time < timeout:
             try:
                 response = await self.get_message_response(message_id)
+                logger.info(
+                    f"Pulling message response from ({self.provider}): {user_number} with message_id: {message_id}\nResponse: {response}"
+                )
+
                 if response.status == "completed":
                     return response
                 elif response.status == "failed":
                     raise EAIClientError(
                         message=f"API Error during polling: {response.status} | error: {response.error} | message: {response.message}",
                         status_code=200,
-                        agent_id=agent_id,
+                        user_number=user_number,
                         message_id=message_id,
                     )
             except EAIClientError as e:
@@ -197,7 +244,7 @@ class EAIClient:
                     raise EAIClientError(
                         message=f"API Error during polling: {e.message}",
                         status_code=e.status_code,
-                        agent_id=agent_id,
+                        user_number=user_number,
                         message_id=message_id,
                     ) from e
 
@@ -205,9 +252,22 @@ class EAIClient:
 
         raise EAIClientError(
             message="Timeout waiting for agent response.",
-            agent_id=agent_id,
+            user_number=user_number,
             message_id=message_id,
         )
 
     async def close(self):
         await self._client.aclose()
+
+
+async def main():
+    client = EAIClient()
+    response = await client.send_message_and_get_response(
+        user_number="123", message="Hello, how are you?", provider="letta"
+    )
+    print(response)
+
+
+if __name__ == "__main__":
+
+    asyncio.run(main())

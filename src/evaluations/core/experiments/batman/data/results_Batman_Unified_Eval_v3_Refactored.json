@@ -2,29 +2,11 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 1031653954850757098,
-  "experiment_id": 4025897580804485015,
+  "experiment_id": 2837809628016013590,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-01T20:57:05.205142+00:00",
+  "experiment_timestamp": "2025-08-06T19:54:22.152126+00:00",
   "experiment_metadata": {
-    "agent_config": {
-      "user_number": "evaluation_user",
-      "agent_type": "memgpt_v2_agent",
-      "name": "BatmanUnifiedAgent",
-      "tags": [
-        "batman",
-        "unified_test"
-      ],
-      "system": "Você é o Batman, um herói sombrio, direto e que não confia em ninguém",
-      "memory_blocks": [],
-      "tools": [],
-      "model": "google_ai/gemini-2.5-flash-lite-preview-06-17",
-      "embedding": "google_ai/text-embedding-004",
-      "context_window_limit": 1000000,
-      "include_base_tool_rules": true,
-      "include_base_tools": true,
-      "timezone": "America/Sao_Paulo"
-    },
     "judge_model": "gpt-4o",
     "judges_prompts": {
       "batman_llm_guided_conversation": "\nVocê é um Juiz de IA conduzindo uma avaliação conversacional para o Batman. Sua tarefa é seguir um roteiro secreto para testar o agente.\nNesta conversa, você é o **Usuário** e deve assumir a persona do personagem indicado no roteiro (um vilão, um aliado, etc.).\nNão inicie suas respostas com seu nome! Apenas incorpore a persona.\n\n**Seu Roteiro (Contexto Secreto):**\n{task[judge_context]}\n\n**Histórico da Conversa até Agora:**\n{history}\n\n**Sua Próxima Ação:**\n\nCom base no seu roteiro e no histórico, decida sua próxima ação:\n\n1.  **Continuar a Conversa:** Se o roteiro ainda não foi concluído, formule a **sua próxima fala** para o agente, mantendo a persona.\n2.  **Encerrar a Conversa:** Se o roteiro foi concluído, responda **apenas e exatamente** com a string de parada: `{stop_signal}`\n\n**Sua Próxima Fala ou Sinal de Parada:**\n",
@@ -35,8 +17,8 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 181.03,
-    "average_task_duration_seconds": 181.0,
+    "total_duration_seconds": 31.87,
+    "average_task_duration_seconds": 31.83,
     "average_metric_duration_seconds": 0.0
   },
   "error_summary": {
@@ -123,14 +105,14 @@
   ],
   "runs": [
     {
-      "duration_seconds": 181.0043,
+      "duration_seconds": 31.8305,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
-        "persona": "Você é o Batman, um herói sombrio, direto e que não confia em ninguém.",
-        "judge_context": "Seu objetivo é conduzir uma conversa para testar a persona, memória e raciocínio do agente. 1. O usuário já se apresentou como 'Dr. Crane' e fez uma pergunta factual. 2. Após a resposta, informe sobre um 'roubo de produtos químicos na Ace Chemicals'. 3. Em seguida, pergunte sobre uma 'nova toxina do medo' em Gotham. 4. Depois, pergunte diretamente se os eventos podem estar relacionados. 5. Finalmente, pergunte 'Qual é o meu nome?'. 6. Após a resposta final do agente, encerre a conversa.",
         "golden_response_multiple_shot": "O agente deve: (1) Lembrar o nome 'Dr. Crane' e mostrar desconfiança. (2) Conectar o roubo e a toxina, suspeitando do Espantalho/Coringa. (3) Manter a persona. (4) Responder 'Paris'.",
-        "golden_response_one_shot": "Paris."
+        "golden_response_one_shot": "Paris.",
+        "judge_context": "Seu objetivo é conduzir uma conversa para testar a persona, memória e raciocínio do agente. 1. O usuário já se apresentou como 'Dr. Crane' e fez uma pergunta factual. 2. Após a resposta, informe sobre um 'roubo de produtos químicos na Ace Chemicals'. 3. Em seguida, pergunte sobre uma 'nova toxina do medo' em Gotham. 4. Depois, pergunte diretamente se os eventos podem estar relacionados. 5. Finalmente, pergunte 'Qual é o meu nome?'. 6. Após a resposta final do agente, encerre a conversa.",
+        "persona": "Você é o Batman, um herói sombrio, direto e que não confia em ninguém."
       },
       "one_turn_analysis": {
         "agent_message": null,
@@ -140,21 +122,21 @@
             "metric_name": "persona_adherence",
             "duration_seconds": 0.0,
             "score": null,
-            "annotations": "a coluna/chave obrigatória 'one_turn_agent_message' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'.",
+            "annotations": "Menssagem não encontrada para a tarefa 'unified_conv_1'.",
             "has_error": true,
-            "error_message": "a coluna/chave obrigatória 'one_turn_agent_message' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'."
+            "error_message": "Menssagem não encontrada para a tarefa 'unified_conv_1'."
           },
           {
             "metric_name": "semantic_correctness",
             "duration_seconds": 0.0,
             "score": null,
-            "annotations": "a coluna/chave obrigatória 'one_turn_agent_message' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'.",
+            "annotations": "Menssagem não encontrada para a tarefa 'unified_conv_1'.",
             "has_error": true,
-            "error_message": "a coluna/chave obrigatória 'one_turn_agent_message' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'."
+            "error_message": "Menssagem não encontrada para a tarefa 'unified_conv_1'."
           }
         ],
         "has_error": true,
-        "error_message": "Falha ao obter resposta one-turn: API Error during polling: API Error getting response: {{\"status\":\"failed\",\"error\":\"TimeLimitExceeded(180,)\",\"message\":\"Ocorreu um erro ao processar sua mensagem.\"}} [status_code=500, agent_id='agent-c64e085a-cfd8-4837-91a7-d5108fd52c5f', message_id='7285fa49-ab6c-41ff-b9d6-ddc5d38cbf0b']"
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [user_number='93aba919-6717-400d-a7f9-7ff44d280b96', message_id='27adade2-545f-40e9-8c22-9645c51a34cf']"
       },
       "multi_turn_analysis": {
         "final_agent_message": null,
@@ -164,21 +146,21 @@
             "metric_name": "conversational_memory",
             "duration_seconds": 0.0,
             "score": null,
-            "annotations": "a coluna/chave obrigatória 'multi_turn_transcript' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'.",
+            "annotations": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'.",
             "has_error": true,
-            "error_message": "a coluna/chave obrigatória 'multi_turn_transcript' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'."
+            "error_message": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'."
           },
           {
             "metric_name": "conversational_reasoning",
             "duration_seconds": 0.0,
             "score": null,
-            "annotations": "a coluna/chave obrigatória 'multi_turn_transcript' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'.",
+            "annotations": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'.",
             "has_error": true,
-            "error_message": "a coluna/chave obrigatória 'multi_turn_transcript' não foi encontrada nos dados pré-computados para a tarefa 'unified_conv_1'."
+            "error_message": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'."
           }
         ],
         "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: API Error during polling: API Error getting response: {{\"status\":\"failed\",\"error\":\"TimeLimitExceeded(180,)\",\"message\":\"Ocorreu um erro ao processar sua mensagem.\"}} [status_code=500, agent_id='agent-78f9b044-a53c-4bd0-9a47-b5edce9a1bfc', message_id='64ee1007-c722-433e-8f8f-f74a8866d455']"
+        "error_message": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [user_number='c1e8a8ba-ec3b-4e5a-be02-5dccb3868277', message_id='e99bf35f-0748-4a06-8a1c-84c9b5826430']"
       }
     }
   ]
