@@ -116,7 +116,7 @@ async def run_experiment():
         # agent_config=agent_config.model_dump(exclude_none=True),
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
-        # precomputed_responses=precomputed_responses_dict,
+        precomputed_responses=precomputed_responses_dict,
         upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
         provider="letta",

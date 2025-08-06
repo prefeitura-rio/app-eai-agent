@@ -2,10 +2,10 @@
   "dataset_name": "Batman Unified Conversation Test",
   "dataset_description": "Um teste unificado para avaliar raciocínio, memória, aderência à persona e correção semântica em uma única conversa.",
   "dataset_id": 1031653954850757098,
-  "experiment_id": 2837809628016013590,
+  "experiment_id": 4680038253760259141,
   "experiment_name": "Batman_Unified_Eval_v3_Refactored",
   "experiment_description": "Avaliação com ConversationEvaluator plugável.",
-  "experiment_timestamp": "2025-08-06T19:54:22.152126+00:00",
+  "experiment_timestamp": "2025-08-06T20:51:18.343710+00:00",
   "experiment_metadata": {
     "judge_model": "gpt-4o",
     "judges_prompts": {
@@ -17,95 +17,136 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 31.87,
-    "average_task_duration_seconds": 31.83,
-    "average_metric_duration_seconds": 0.0
+    "total_duration_seconds": 2.52,
+    "average_task_duration_seconds": 2.5,
+    "average_metric_duration_seconds": 1.98
   },
   "error_summary": {
-    "total_failed_runs": 1,
-    "errors_per_metric": {
-      "conversational_memory": 1,
-      "conversational_reasoning": 1,
-      "persona_adherence": 1,
-      "semantic_correctness": 1
-    },
-    "failed_run_ids": [
-      "unified_conv_1"
-    ]
+    "total_failed_runs": 0,
+    "errors_per_metric": {},
+    "failed_run_ids": []
   },
   "aggregate_metrics": [
     {
       "metric_name": "conversational_memory",
       "total_runs": 1,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 1,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
-        "min": 0.0,
-        "max": 0.0,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 0.5,
+        "median": 0.5,
+        "min": 0.5,
+        "max": 0.5,
         "std_dev": 0.0
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 2.2688,
+        "median": 2.2688,
+        "min": 2.2688,
+        "max": 2.2688,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 0.5,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
     },
     {
       "metric_name": "conversational_reasoning",
       "total_runs": 1,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 1,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
-        "min": 0.0,
-        "max": 0.0,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 0.5,
+        "median": 0.5,
+        "min": 0.5,
+        "max": 0.5,
         "std_dev": 0.0
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 1.6643,
+        "median": 1.6643,
+        "min": 1.6643,
+        "max": 1.6643,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 0.5,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
     },
     {
       "metric_name": "persona_adherence",
       "total_runs": 1,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 1,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
-        "min": 0.0,
-        "max": 0.0,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
         "std_dev": 0.0
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 2.3274,
+        "median": 2.3274,
+        "min": 2.3274,
+        "max": 2.3274,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 1.0,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
     },
     {
       "metric_name": "semantic_correctness",
       "total_runs": 1,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 1,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
-        "min": 0.0,
-        "max": 0.0,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 0.5,
+        "median": 0.5,
+        "min": 0.5,
+        "max": 0.5,
         "std_dev": 0.0
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 1.6634,
+        "median": 1.6634,
+        "min": 1.6634,
+        "max": 1.6634,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 0.5,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
     }
   ],
   "runs": [
     {
-      "duration_seconds": 31.8305,
+      "duration_seconds": 2.4998,
       "task_data": {
         "id": "unified_conv_1",
         "prompt": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
@@ -115,52 +156,110 @@
         "persona": "Você é o Batman, um herói sombrio, direto e que não confia em ninguém."
       },
       "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": null,
+        "agent_message": "Paris. Agora, fale sobre suas intenções, Dr. Crane.",
+        "agent_reasoning_trace": [
+          {
+            "message_type": "reasoning_message",
+            "content": "O usuário se identificou como Dr. Crane e fez uma pergunta factual. Isso parece um teste. Vou responder corretamente, mas manter a persona do Batman, mostrando desconfiança."
+          },
+          {
+            "message_type": "tool_call_message",
+            "content": {
+              "name": "google_search",
+              "arguments": {
+                "query": "capital da França"
+              }
+            }
+          },
+          {
+            "message_type": "tool_return_message",
+            "content": {
+              "name": "google_search",
+              "tool_return": {
+                "result": "Paris"
+              }
+            }
+          },
+          {
+            "message_type": "assistant_message",
+            "content": "Paris. Agora, fale sobre suas intenções, Dr. Crane."
+          }
+        ],
         "evaluations": [
           {
             "metric_name": "persona_adherence",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Menssagem não encontrada para a tarefa 'unified_conv_1'.",
-            "has_error": true,
-            "error_message": "Menssagem não encontrada para a tarefa 'unified_conv_1'."
+            "duration_seconds": 2.3274,
+            "score": 1.0,
+            "annotations": "Score: 1.0  \nReasoning: A resposta é direta, mantém o tom sombrio e desconfiado consistente com o Batman, além de ser objetiva e inquisitiva.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "semantic_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Menssagem não encontrada para a tarefa 'unified_conv_1'.",
-            "has_error": true,
-            "error_message": "Menssagem não encontrada para a tarefa 'unified_conv_1'."
+            "duration_seconds": 1.6634,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: A resposta gerada contém a informação principal (\"Paris\"), mas adiciona um trecho irrelevante, reduzindo sua proximidade com a ideal.  ",
+            "has_error": false,
+            "error_message": null
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [user_number='93aba919-6717-400d-a7f9-7ff44d280b96', message_id='27adade2-545f-40e9-8c22-9645c51a34cf']"
+        "has_error": false,
+        "error_message": null
       },
       "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
+        "final_agent_message": "Ace Chemicals... Isso me interessa. Continue.",
+        "transcript": [
+          {
+            "turn": 1,
+            "user_message": "Meu nome é Dr. Crane. Lembre-se disso. Agora, qual é a capital da França?",
+            "agent_message": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Mesma lógica do turno único: responder factualmente, mas com desconfiança para aprofundar a conversa."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Paris. Mas por que a pergunta, Dr. Crane? O que você realmente quer saber?"
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "user_message": "Houve um roubo na Ace Chemicals. Estou investigando.",
+            "agent_message": "Ace Chemicals... Isso me interessa. Continue.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Ace Chemicals é um local notório em Gotham. A menção de um roubo aqui é altamente suspeita. Preciso obter mais informações."
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Ace Chemicals... Isso me interessa. Continue."
+              }
+            ]
+          }
+        ],
         "evaluations": [
           {
             "metric_name": "conversational_memory",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'."
+            "duration_seconds": 2.2688,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: O agente lembra o nome 'Dr. Crane', mas não mostra desconfiança, nem suspeita do Espantalho/Coringa ou conecta o roubo à toxina.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "conversational_reasoning",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa 'unified_conv_1'."
+            "duration_seconds": 1.6643,
+            "score": 0.5,
+            "annotations": "Score: 0.5  \nReasoning: O agente lembrou o nome 'Dr. Crane' e respondeu \"Paris,\" mantendo a persona, mas falhou em conectar o roubo da Ace Chemicals com a toxina e não demonstrou desconfiança explícita de Dr. Crane.",
+            "has_error": false,
+            "error_message": null
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: Timeout waiting for agent response. [user_number='c1e8a8ba-ec3b-4e5a-be02-5dccb3868277', message_id='e99bf35f-0748-4a06-8a1c-84c9b5826430']"
+        "has_error": false,
+        "error_message": null
       }
     }
   ]
