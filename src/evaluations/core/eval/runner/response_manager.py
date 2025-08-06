@@ -25,25 +25,41 @@ class ResponseManager:
 
     def __init__(
         self,
-        agent_config: Dict[str, Any],
+        # agent_config: Dict[str, Any],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         eai_client: EAIClient = EAIClient(),
     ):
-        self.agent_config = agent_config
+        # self.agent_config = agent_config
         self.precomputed_responses = precomputed_responses or {}
         self.eai_client = eai_client
 
+    # @asynccontextmanager
+    # async def _get_agent_manager(
+    #     self,
+    # ) -> AsyncGenerator[Optional[EAIConversationManager], None]:
+    #     """Context manager para gerenciar o ciclo de vida do agente."""
+    #     if self.precomputed_responses:
+    #         yield None
+    #         return
+
+    #     agent_manager = EAIConversationManager(
+    #         agent_config=CreateAgentRequest(**self.agent_config),
+    #         eai_client=self.eai_client,
+    #     )
+    #     try:
+    #         await agent_manager.initialize()
+    #         yield agent_manager
+    #     finally:
+    #         await agent_manager.close()
     @asynccontextmanager
     async def _get_agent_manager(
         self,
     ) -> AsyncGenerator[Optional[EAIConversationManager], None]:
-        """Context manager para gerenciar o ciclo de vida do agente."""
+        """Context manager para obter o número de usuário."""
         if self.precomputed_responses:
             yield None
             return
-
         agent_manager = EAIConversationManager(
-            agent_config=CreateAgentRequest(**self.agent_config),
             eai_client=self.eai_client,
         )
         try:
@@ -59,20 +75,24 @@ class ResponseManager:
         task_id = task.id
         if self.precomputed_responses:
             if task_id not in self.precomputed_responses:
-                logger.warning(f"A tarefa '{task_id}' nao existe nos dados em precomputed_responses")
+                logger.warning(
+                    f"A tarefa '{task_id}' nao existe nos dados em precomputed_responses"
+                )
                 return AgentResponse(message=None, reasoning_trace=[]), 0.0
 
             precomputed = self.precomputed_responses[task_id]
             if "one_turn_agent_message" in precomputed:
                 logger.debug(f"↪️ Usando one-turn pré-computado para {task_id}")
                 message = precomputed["one_turn_agent_message"]
-                
+
                 # Carrega o trace pré-computado se existir, senão cria um dummy
                 trace_data = precomputed.get("one_turn_reasoning_trace")
-                reasoning_trace = [ReasoningStep(**step) for step in trace_data] if trace_data else [
-                    ReasoningStep(message_type="precomputed", content=message)
-                ]
-                
+                reasoning_trace = (
+                    [ReasoningStep(**step) for step in trace_data]
+                    if trace_data
+                    else [ReasoningStep(message_type="precomputed", content=message)]
+                )
+
                 response = AgentResponse(
                     message=message,
                     reasoning_trace=reasoning_trace,
@@ -102,7 +122,9 @@ class ResponseManager:
         task_id = task.id
         if self.precomputed_responses:
             if task_id not in self.precomputed_responses:
-                logger.warning(f"A tarefa '{task_id}' nao existe nos dados em precomputed_responses")
+                logger.warning(
+                    f"A tarefa '{task_id}' nao existe nos dados em precomputed_responses"
+                )
                 return None
 
             precomputed = self.precomputed_responses[task_id]

@@ -49,23 +49,24 @@ class AsyncExperimentRunner:
         experiment_name: str,
         experiment_description: str,
         metadata: Dict[str, Any],
-        agent_config: Dict[str, Any],
+        # agent_config: Dict[str, Any],
         evaluators: List[BaseEvaluator],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         max_concurrency: int = 10,
         upload_to_bq: bool = True,
         output_dir: Union[str, Path] = "./data",
+        provider: str = "google_agent_engine",
     ):
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
         self.metadata = metadata
-        self.agent_config = agent_config
+        # self.agent_config = agent_config
         self.evaluators = evaluators
         self.precomputed_responses = precomputed_responses or {}
         self.semaphore = asyncio.Semaphore(max_concurrency)
         self.upload_to_bq = upload_to_bq
         self.output_dir = Path(output_dir)
-        self.eai_client = EAIClient()
+        self.eai_client = EAIClient(provider=provider)
 
         self._evaluator_cache = self._categorize_evaluators()
         self._validate_evaluators()
@@ -158,7 +159,7 @@ class AsyncExperimentRunner:
 
         # Inicializa os componentes
         response_manager = ResponseManager(
-            agent_config=self.agent_config,
+            # agent_config=self.agent_config,
             precomputed_responses=self.precomputed_responses,
             eai_client=self.eai_client,
         )

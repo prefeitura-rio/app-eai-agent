@@ -28,61 +28,75 @@ class EAIConversationManager:
 
     def __init__(
         self,
-        agent_config: CreateAgentRequest,
+        # agent_config: CreateAgentRequest,
         eai_client: EAIClient = EAIClient(),
     ):
+        self.user_number: str = None
         self.eai_client = eai_client
-        self.agent_config = agent_config
-        self.agent_id: str | None = None
+        # self.agent_config = agent_config
+        # self.agent_id: Optional[str] = None
 
+    # async def initialize(self):
+    #     """
+    #     Cria o agente UMA VEZ e armazena seu ID.
+    #     Deve ser chamado antes de enviar qualquer mensagem.
+    #     """
+    #     if self.agent_id:
+    #         return
+
+    #     try:
+    #         logger.info("Inicializando agente via API...")
+    #         create_resp = await self.eai_client.create_agent(self.agent_config)
+    #         self.agent_id = create_resp.get("agent_id")
+    #         if not self.agent_id:
+    #             # Se o agent_id não for retornado, mesmo com status 200.
+    #             raise EAIClientError(
+    #                 "Falha ao obter o agent_id na resposta da API, embora a chamada tenha sido bem-sucedida."
+    #             )
+    #         logger.info(f"Agente inicializado com sucesso. ID: {self.agent_id}")
+    #     except EAIClientError as e:
+    #         # Apenas loga e relança a exceção já contextualizada de api.py
+    #         logger.error(f"Erro de cliente EAI ao inicializar o agente: {e}")
+    #         raise
+    #     except Exception as e:
+    #         logger.error(f"Erro inesperado ao inicializar o agente: {e}", exc_info=True)
+    #         # Encapsula exceções inesperadas na nossa exceção customizada para consistência
+    #         raise EAIClientError(f"Erro inesperado ao inicializar o agente: {e}") from e
     async def initialize(self):
-        """
-        Cria o agente UMA VEZ e armazena seu ID.
-        Deve ser chamado antes de enviar qualquer mensagem.
-        """
-        if self.agent_id:
-            return
+        import uuid
 
-        try:
-            logger.info("Inicializando agente via API...")
-            create_resp = await self.eai_client.create_agent(self.agent_config)
-            self.agent_id = create_resp.get("agent_id")
-            if not self.agent_id:
-                # Se o agent_id não for retornado, mesmo com status 200.
-                raise EAIClientError(
-                    "Falha ao obter o agent_id na resposta da API, embora a chamada tenha sido bem-sucedida."
-                )
-            logger.info(f"Agente inicializado com sucesso. ID: {self.agent_id}")
-        except EAIClientError as e:
-            # Apenas loga e relança a exceção já contextualizada de api.py
-            logger.error(f"Erro de cliente EAI ao inicializar o agente: {e}")
-            raise
-        except Exception as e:
-            logger.error(f"Erro inesperado ao inicializar o agente: {e}", exc_info=True)
-            # Encapsula exceções inesperadas na nossa exceção customizada para consistência
-            raise EAIClientError(f"Erro inesperado ao inicializar o agente: {e}") from e
+        if self.user_number:
+            return
+        self.user_number = str(uuid.uuid4())
+        logger.info(f"User number inicializado com sucesso: {self.user_number}")
 
     async def send_message(
-        self, message: str, timeout: int = 180, polling_interval: int = 2
+        self,
+        message: str,
+        timeout: int = 30,
+        polling_interval: int = 2,
     ) -> AgentResponse:
         """
         Envia uma mensagem para o agente existente e retorna a resposta com o
         reasoning já parseado e as estatísticas de uso incluídas.
         """
-        if not self.agent_id:
-            raise RuntimeError(
-                "O gerenciador de conversa não foi inicializado. Chame initialize() primeiro."
-            )
+        # if not self.agent_id:
+        #     raise RuntimeError(
+        #         "O gerenciador de conversa não foi inicializado. Chame initialize() primeiro."
+        #     )
 
         try:
-            logger.info(f"Enviando mensagem para o agente {self.agent_id}...")
+            logger.info(
+                f"Enviando mensagem para o numero ({self.eai_client.provider}) {self.user_number}..."
+            )
             response = await self.eai_client.send_message_and_get_response(
-                agent_id=self.agent_id,
+                # agent_id=self.agent_id,
+                user_number=self.user_number,
                 message=message,
                 timeout=timeout,
                 polling_interval=polling_interval,
             )
-            logger.info(f"Resposta recebida do agente {self.agent_id}.")
+            logger.info(f"Resposta recebida do agente {self.user_number}.")
             response_dict = response.model_dump(exclude_none=True)
 
             if "data" in response_dict and "messages" in response_dict["data"]:
@@ -90,8 +104,8 @@ class EAIConversationManager:
                 usage_stats = response_dict["data"].get("usage", {})
                 usage_stats.update(
                     {
-                        "agent_id": response_dict["data"].get("agent_id"),
-                        "agent_name": self.agent_config.name,
+                        # "agent_id": response_dict["data"].get("agent_id"),
+                        # "agent_name": self.agent_config.name,
                         "message_id": response_dict.get("message_id"),
                         "processed_at": response_dict["data"].get("processed_at"),
                         "message_type": "usage_statistics",  # Garante que o parser identifique o tipo
@@ -133,15 +147,17 @@ class EAIConversationManager:
             # Encapsula exceções inesperadas na nossa exceção customizada
             raise EAIClientError(
                 message=f"Erro inesperado na comunicação com o agente: {e}",
-                agent_id=self.agent_id,
+                agent_id=self.user_number,
             ) from e
 
     async def close(self):
         """
         Encerra o agente ou limpa os recursos.
         """
-        logger.info(f"Encerrando conversa com o agente {self.agent_id}.")
-        self.agent_id = None
+        logger.info(
+            f"Encerrando conversa do user number ({self.eai_client.provider}): {self.user_number}."
+        )
+        self.user_number = None
         # No futuro, poderia chamar uma API para deletar o agente
 
 
