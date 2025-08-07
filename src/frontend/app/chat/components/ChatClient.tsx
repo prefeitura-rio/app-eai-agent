@@ -201,16 +201,71 @@ const copyToClipboard = async (text: string) => {
   }
 };
 
+// Função de retry com backoff exponencial
+const retryWithBackoff = async <T,>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000,
+  onRetry?: (attempt: number, delay: number) => void
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Se é o último tentativa, não espera
+      if (attempt === maxRetries) {
+        break;
+      }
+      
+      // Calcula delay com backoff exponencial
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`Tentativa ${attempt + 1} falhou. Tentando novamente em ${delay}ms...`);
+      
+      // Notifica sobre o retry se callback fornecido
+      if (onRetry) {
+        onRetry(attempt + 1, delay);
+      }
+      
+      // Espera antes da próxima tentativa
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+};
+
 export default function ChatClient() {
   const { token } = useAuth();
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Estado para controlar se o componente já foi montado no cliente
+  const [isMounted, setIsMounted] = useState(false);
+
   // Chat Parameters State
-  const [userNumber, setUserNumber] = useState(generateRandomNumber());
+  const [userNumber, setUserNumber] = useState('');
   const [isNumberFixed, setIsNumberFixed] = useState(false);
+  
+  // Inicializa os estados após a montagem no cliente
+  useEffect(() => {
+    setIsMounted(true);
+    
+    // Recupera o número do localStorage ou gera um novo
+    const savedNumber = localStorage.getItem('chat-user-number');
+    setUserNumber(savedNumber || generateRandomNumber());
+    
+    // Recupera o estado do cadeado do localStorage
+    const savedFixed = localStorage.getItem('chat-number-fixed') === 'true';
+    setIsNumberFixed(savedFixed);
+  }, []);
+  
   const [provider] = useState('google_agent_engine'); // Provider fixo, não editável
 
   useEffect(() => {
@@ -218,6 +273,20 @@ export default function ChatClient() {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Salva o número do usuário no localStorage quando mudar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-user-number', userNumber);
+    }
+  }, [userNumber]);
+
+  // Salva o estado do cadeado no localStorage quando mudar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-number-fixed', isNumberFixed.toString());
+    }
+  }, [isNumberFixed]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,7 +304,20 @@ export default function ChatClient() {
         provider: provider,
       };
 
-      const botResponseData = await sendChatMessage(payload, token);
+      // Usa retry com backoff exponencial para lidar com erros de conexão
+      const botResponseData = await retryWithBackoff(
+        () => sendChatMessage(payload, token),
+        3, // maxRetries
+        1000, // baseDelay (1 segundo)
+        (attempt, delay) => {
+          setIsRetrying(true);
+          toast.info(`Tentativa ${attempt} falhou. Tentando novamente em ${delay/1000}s...`);
+        }
+      );
+      
+      // Limpa o estado de retry se sucesso
+      setIsRetrying(false);
+      
       const assistantMessage = botResponseData.messages.find(m => m.message_type === 'assistant_message');
       
       const botMessage: DisplayMessage = { 
@@ -247,17 +329,36 @@ export default function ChatClient() {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-      const botErrorMessage: DisplayMessage = { sender: 'bot', content: `Error: ${errorMessage}` };
+      
+      // Verifica se é um erro de conexão para mostrar mensagem mais amigável
+      const isConnectionError = errorMessage.includes('connection is closed') || 
+                               errorMessage.includes('API Error') ||
+                               errorMessage.includes('400 Reasoning Engine Execution failed');
+      
+      const friendlyMessage = isConnectionError 
+        ? "Erro de conexão com o serviço. Tente novamente em alguns instantes."
+        : `Erro: ${errorMessage}`;
+      
+      const botErrorMessage: DisplayMessage = { sender: 'bot', content: friendlyMessage };
       setMessages(prev => [...prev, botErrorMessage]);
+      
+      // Mostra toast informativo para erros de conexão
+      if (isConnectionError) {
+        toast.error("Erro de conexão. Tentando novamente automaticamente...");
+      }
     } finally {
       setIsLoading(false);
+      setIsRetrying(false);
     }
   };
 
   const handleGenerateNumber = () => {
     if (!isNumberFixed) {
-      setUserNumber(generateRandomNumber());
+      const newNumber = generateRandomNumber();
+      setUserNumber(newNumber);
       toast.success("Novo número gerado!");
+    } else {
+      toast.error("Número está travado! Desbloqueie primeiro.");
     }
   };
 
@@ -353,7 +454,18 @@ export default function ChatClient() {
               disabled={isLoading}
             />
             <Button type="submit" size="icon" disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {isLoading ? (
+                isRetrying ? (
+                  <div className="flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span className="text-xs">Retry</span>
+                  </div>
+                ) : (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
               <span className="sr-only">Enviar</span>
             </Button>
           </form>
@@ -371,7 +483,7 @@ export default function ChatClient() {
             <div className="flex items-center space-x-2">
               <Input
                 id="user-number"
-                value={userNumber}
+                value={isMounted ? userNumber : ''}
                 onChange={(e) => !isNumberFixed && setUserNumber(e.target.value)}
                 disabled={isNumberFixed}
                 className="flex-1"
@@ -383,7 +495,7 @@ export default function ChatClient() {
                       variant="outline" 
                       size="icon" 
                       onClick={handleGenerateNumber}
-                      disabled={isNumberFixed}
+                      disabled={isNumberFixed || !isMounted}
                     >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
@@ -400,6 +512,7 @@ export default function ChatClient() {
                       variant="outline" 
                       size="icon" 
                       onClick={handleToggleFixNumber}
+                      disabled={!isMounted}
                     >
                       {isNumberFixed ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                     </Button>
@@ -416,6 +529,7 @@ export default function ChatClient() {
                       variant="outline" 
                       size="icon" 
                       onClick={handleCopyNumber}
+                      disabled={!isMounted}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
