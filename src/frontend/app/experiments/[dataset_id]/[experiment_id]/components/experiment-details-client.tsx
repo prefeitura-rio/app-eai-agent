@@ -108,11 +108,13 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
         onConfirm={handleDownloadCleanJson}
       />
       <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full">
-        <Card className="flex flex-col max-h-screen">
-          <CardHeader>
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex-shrink-0">
             <CardTitle>Runs ({filteredRuns.length})</CardTitle>
           </CardHeader>
-          <Filters runs={experimentData.runs} onFilterChange={handleFilterChange} />
+          <div className="flex-shrink-0">
+            <Filters runs={experimentData.runs} onFilterChange={handleFilterChange} />
+          </div>
           <CardContent className="flex-1 overflow-y-auto p-2">
               <div className="space-y-2">
                   {filteredRuns.map((run) => (
@@ -133,8 +135,8 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
           </CardContent>
         </Card>
 
-        <div className="overflow-y-auto pr-4 pb-6">
-          <div className="space-y-6">
+        <div className="h-full overflow-y-auto pr-4">
+          <div className="space-y-6 pb-6">
               <ExperimentSummary experimentData={experimentData} />
               <SummaryMetrics aggregateMetrics={experimentData.aggregate_metrics} />
               {selectedRun && <RunDetails run={selectedRun} />}

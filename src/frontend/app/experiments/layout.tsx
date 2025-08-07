@@ -9,13 +9,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { title, subtitle, pageActions } = useHeader();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-screen">
       <AppHeader
         title={title || 'Carregando...'}
         subtitle={subtitle}
         actions={pageActions}
       />
-      <main className="flex-1">
+      <main className="flex-1 overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
           {children}
         </div>
