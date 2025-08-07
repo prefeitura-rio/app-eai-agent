@@ -107,7 +107,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                         <span>Input do Usuário</span>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="pl-12">
+                <CardContent className="pl-12 prose-base-custom">
                     {renderMarkdown(run.task_data.prompt || "Prompt não disponível")}
                 </CardContent>
             </Card>

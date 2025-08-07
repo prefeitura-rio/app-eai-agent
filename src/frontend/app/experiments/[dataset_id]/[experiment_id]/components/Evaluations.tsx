@@ -67,7 +67,7 @@ export default function Evaluations({ evaluations }: EvaluationsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground p-4">Nenhuma avaliação para este modo.</p>
+                    <p className="text-base-custom text-muted-foreground p-4">Nenhuma avaliação para este modo.</p>
                 </CardContent>
             </Card>
         );

@@ -27,7 +27,7 @@ export default function Comparison({ content }: ComparisonProps) {
 
     return (
         <CardContent 
-            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
+            className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom" 
             dangerouslySetInnerHTML={{ __html: contentHtml }} 
         />
     );

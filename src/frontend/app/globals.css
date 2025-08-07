@@ -27,6 +27,13 @@
   --ring: hsl(222.2 84% 4.9%);
   --radius: 0.5rem;
   --radix-tooltip-open-delay: 100ms;
+  
+  /* Font Size Variables */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
 }
 
 .dark {
@@ -96,4 +103,38 @@ body {
 
 .prose a:hover {
     text-decoration: underline;
+}
+
+/* Custom Font Size Classes */
+.text-base-custom {
+    font-size: var(--font-size-base) !important;
+}
+
+.text-sm-custom {
+    font-size: var(--font-size-sm) !important;
+}
+
+.text-xs-custom {
+    font-size: var(--font-size-xs) !important;
+}
+
+.text-lg-custom {
+    font-size: var(--font-size-lg) !important;
+}
+
+.text-xl-custom {
+    font-size: var(--font-size-xl) !important;
+}
+
+/* Prose Custom Classes */
+.prose-base-custom {
+    font-size: var(--font-size-base) !important;
+}
+
+.prose-sm-custom {
+    font-size: var(--font-size-sm) !important;
+}
+
+.prose-lg-custom {
+    font-size: var(--font-size-lg) !important;
 }

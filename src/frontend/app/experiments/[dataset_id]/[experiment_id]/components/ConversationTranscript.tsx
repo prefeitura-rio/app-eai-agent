@@ -16,7 +16,7 @@ interface ConversationTranscriptProps {
 const renderMarkdown = (content: string) => {
     marked.use({ breaks: true });
     const html = DOMPurify.sanitize(marked.parse(content) as string);
-    return <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: html }} />;
+    return <div className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom" dangerouslySetInnerHTML={{ __html: html }} />;
 };
 
 export default function ConversationTranscript({ transcript, defaultExpanded = false }: ConversationTranscriptProps) {
