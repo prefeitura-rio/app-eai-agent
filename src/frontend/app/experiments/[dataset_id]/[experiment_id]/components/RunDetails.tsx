@@ -5,7 +5,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { ExperimentRun } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, CheckSquare, Network, Trophy, Bot, MessageSquare, AlertTriangle, Brain } from 'lucide-react';
+import { User, CheckSquare, Network, Trophy, Bot, MessageSquare, AlertTriangle, Brain, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -207,29 +207,39 @@ export default function RunDetails({ run }: RunDetailsProps) {
                         </CardContent>
                     </Card>
                     
-                    <Accordion type="single" collapsible className="w-full" defaultValue={undefined}>
-                        <AccordionItem value="reasoning" className="border-none">
-                            <AccordionTrigger className="hover:no-underline">
-                                <div className="flex items-center gap-3">
-                                    <Network className="h-5 w-5 text-primary" />
-                                    <span>Cadeia de Pensamento</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                {isOneTurn ? (
-                                    <ReasoningTimeline 
-                                        reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} 
-                                        defaultExpanded={true}
-                                    />
-                                ) : (
-                                    <ConversationTranscript 
-                                        transcript={run.multi_turn_analysis.transcript} 
-                                        defaultExpanded={true}
-                                    />
-                                )}
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3 text-lg">
+                                <Network className="h-5 w-5 text-primary" />
+                                <span>Cadeia de Pensamento</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Accordion type="single" collapsible className="w-full" defaultValue={undefined}>
+                                <AccordionItem value="reasoning" className="border-none">
+                                    <AccordionTrigger className="hover:no-underline">
+                                        <div className="flex items-center gap-3">
+                                            <Search className="h-4 w-4 text-blue-500" />
+                                            <span className="text-blue-500">Ver Cadeia de Pensamento</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        {isOneTurn ? (
+                                            <ReasoningTimeline 
+                                                reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} 
+                                                defaultExpanded={true}
+                                            />
+                                        ) : (
+                                            <ConversationTranscript 
+                                                transcript={run.multi_turn_analysis.transcript} 
+                                                defaultExpanded={true}
+                                            />
+                                        )}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        </CardContent>
+                    </Card>
                 </>
             )}
         </div>
