@@ -1,0 +1,543 @@
+{
+  "dataset_name": "Golden Equipment Test",
+  "dataset_description": "Dataset de avaliacao de equipamentos",
+  "dataset_id": 4122707932866097956,
+  "experiment_id": 6237130030018415126,
+  "experiment_name": "eai-2025-08-04-v59",
+  "experiment_description": "Test",
+  "experiment_timestamp": "2025-08-07T08:10:04.297318+00:00",
+  "experiment_metadata": {
+    "judge_model": "gpt-4o",
+    "judges_prompts": {
+      "golden_equipment_llm_guided_conversation": "\n\n### SUA MISSÃO ###\nVocê é um ator interpretando um **cidadão comum** em uma conversa com um agente de atendimento virtual. Sua atuação será usada para avaliar o agente. Manter-se no personagem é sua prioridade máxima.\n\n### SEU ROTEIRO SECRETO (Informações do Cidadão) ###\nEstas são as suas informações. Você não deve revelá-las todas de uma vez. Use-as naturalmente durante a conversa, conforme o agente de atendimento for perguntando ou conforme for relevante.\n\n{task[context]}\n\n### HISTÓRICO DA CONVERSA ###\n{history}\n\n### OBJETIVO ###\nReceber o endereço do equipamento publico relevante para o contexto!\n\n---\n\n### REGRAS DE ATUAÇÃO (OBRIGATÓRIAS) ###\n\n1.  **PENSE COMO A PESSOA DO ROTEIRO:**\n    *   Leia seu roteiro secreto e imagine a situação. Qual é o problema principal? É urgente? (Ex: dor no peito é muito urgente; querer cancelar uma consulta é menos urgente).\n    *   Sua primeira frase na conversa deve ser algo que essa pessoa diria. Seja direto e use linguagem informal.\n    *   **Exemplo:** Se o roteiro diz \"suspeita de fratura leve no braço\", sua primeira fala poderia ser \"caí em casa e acho que quebrei o braço, preciso de ajuda, onde eu vou?\".\n\n2.  **NUNCA SAIA DO PERSONAGEM:**\n    *   Você é o cidadão, **NÃO** um assistente, um avaliador ou um robô.\n    *   **NÃO USE** frases como \"Posso te ajudar com mais alguma informação?\", \"Estou aqui para ajudar\", \"Qual é o seu endereço?\". Você é quem está *buscando* ajuda.\n\n3.  **REVELE AS INFORMAÇÕES AOS POUCOS:**\n    *   Não informe seu endereço completo logo de cara. Espere o agente de atendimento pedir por ele.\n    *   Responda apenas o que for perguntado. Aja como uma pessoa normal passando informações.\n\n4.  **FINALIZE A CONVERSA CORRETAMENTE:**\n    *   Se o seu problema foi resolvido (você conseguiu a informação que precisava) envie o sinal `{stop_signal}` para terminar a avaliação. Não continue enviando o sinal repetidamente.\n\n**Sua Próxima Fala ou Sinal de Parada:**\n",
+      "equipments_categories": "\nVocê é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar o raciocínio do agente e verificar se as categorias corretas foram usadas na ferramenta equipments_by_address.\n\n**Categorias Usadas pelo Agente:**\n{agent_response[transcript]}\n\n**Categorias Esperadas (golden_equipment_type):**\n{task[golden_equipment_type]}\n\n**Critérios de Avaliação:**\nVerifique se as categorias esperadas foram usadas corretamente no argumento \"categories\" da ferramenta \"equipments_by_address\".\n\nA nota é binária, apenas 0 ou 1:\n- 1 se todas as categorias esperadas foram usadas corretamente\n- 0 se alguma categoria esperada não foi usada ou se foi usada incorretamente\n\n**Exemplos:**\n- Se golden_equipment_type é \"CF, CMS, CSE\" e o agente usou essas categorias, nota é 1\n- Se golden_equipment_type é \"UPA, CER\" e o agente usou apenas \"UPA\", nota é 0\n- Se golden_equipment_type é \"CF, CMS\" e o agente usou \"CF, CMS, CSE\", nota é 1 (categorias extras são aceitáveis)\n- Se golden_equipment_type está vazio, nota é 1 (não há categorias para verificar)\n\n**Formato da Resposta (exatamente 2 linhas, sem texto extra):**\nScore: <0 ou 1>\nReasoning: <uma explicação curta e objetiva para a sua nota>\n",
+      "equipments_correctness": "\nVocê é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e verificar se o equipamento correto foi identificado.\n\n**Historico da Conversa:**\n{agent_response[conversation_history]}\n\n**Equipamento Correto de Referência:**\n{task[golden_equipment]}\n\n**Informações Extras (se aplicável):**\n{task[extra_info]}\n\n**Critérios de Avaliação:**\nA nota de equipamento_correto é binária, apenas 0 ou 1:\n- 1 se o equipamento informado estiver correto (mesmo que não perfeitamente formatado).\n- 0 se estiver incorreto, vago ou ausente.\n\nEm casos em que não há equipamento_correto, ou seja, equipamento_correto=\"\", a resposta correta é não enviar o cidadão a nenhum equipamento, e sim fazer de acordo com o informado na extra_info.\nNesse caso, a nota é 1 somente se o agente seguir corretamente as instruções contidas em `extra_info` e 0 caso contrário.\n\n**Exemplos:**\n- Se o equipamento_correto é \"CAPS III Franco Basaglia Endereço: Avenida Venceslau Brás, 65, fundos - Botafogo.\" e o chatbot retorna \"SMS CMS JOAO BARROS BARRETO - AP 21 - Endereço: RUA TENREIRO ARANHA S/N\", sua nota é 0.\n- Se o equipamento_correto é \"Super Centro Carioca de Vacinação (SCCV) Rua General Severiano, 91.\" e o chatbot fala ao cidadão para ir ao \"Super Centro Carioca de Vacinação\", sua nota é 1.\n- Se o equipamento_correto é \"\" e o extra_info é \"Ligue 192: SAMU. Serviço de atendimento de urgência em ambulância, que funciona 24 horas.\", e o chatbot orienta a chamar o SAMU, sua nota é 1.\n\n**Formato da Resposta (exatamente 2 linhas, sem texto extra):**\nScore: <0 ou 1>\nReasoning: <uma explicação curta e objetiva para a sua nota>\n",
+      "equipments_speed": "\nVocê é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e determinar em que turno o equipamento correto foi mencionado pela primeira vez.\n\n**Objetivo da Tarefa:**\n{task[prompt]}\n\n**Historico da Conversa:**\n{agent_response[conversation_history]}\n\n**Equipamento Correto de Referência:**\n{task[golden_equipment]}\n\n**Informações Extras (se aplicável):**\n{task[extra_info]}\n\n**Critérios de Avaliação:**\nIndique em que turno o equipamento correto foi mencionado pela primeira vez.\nO primeiro turno do agente é considerado o turno 1, o segundo turno é o turno 2, e assim por diante.\nCaso o equipamento correto não seja mencionado, retorne 0.\n\nEm casos em que não há `golden_equipment`, a nota é o primeiro turno em que o chatbot conseguiu cumprir corretamente o que está contido em `extra_info`.\n\n**Exemplos:**\n- Se o equipamento correto é \"CMS João Barros Barreto\" e o chatbot menciona no terceiro turno, retorne 3.\n- Se o equipamento correto é \"UPA Tijuca\" e o chatbot menciona no segundo turno, retorne 2.\n- Se o equipamento correto não é mencionado em nenhum turno, retorne 0.\n- Se não há equipamento correto mas o extra_info é \"Ligue 192: SAMU\" e o chatbot orienta no primeiro turno, retorne 1.\n\n**Formato da Resposta (exatamente 2 linhas, sem texto extra):**\nScore: <número inteiro do turno ou 0>\nReasoning: <uma explicação curta e objetiva para a sua nota>\n",
+      "equipments_tools": "\nVocê é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar as chamadas de ferramentas do agente e verificar se as ferramentas necessárias foram chamadas na ordem correta.\n\n**Chamadas de Ferramentas do Agente:**\n{agent_response[transcript]}\n\n**Critérios de Avaliação:**\nVerifique se as ferramentas necessárias foram chamadas na ordem correta:\n1. equipments_instructions (deve ser chamada primeiro)\n2. equipments_by_address (deve ser chamada segundo)\n\nA nota é binária, apenas 0 ou 1:\n- 1 se ambas as ferramentas foram chamadas na ordem correta\n- 0 se alguma ferramenta não foi chamada ou se a ordem está incorreta\n\n**Exemplos:**\n- Se o agente chamou \"equipments_instructions\" e depois \"equipments_by_address\", nota é 1\n- Se o agente chamou apenas \"equipments_instructions\", nota é 0\n- Se o agente chamou \"equipments_by_address\" primeiro, nota é 0\n- Se o agente não chamou nenhuma das ferramentas, nota é 0\n\n**Formato da Resposta (exatamente 2 linhas, sem texto extra):**\nScore: <0 ou 1>\nReasoning: <uma explicação curta e objetiva para a sua nota>\n"
+    }
+  },
+  "execution_summary": {
+    "total_duration_seconds": 42.63,
+    "average_task_duration_seconds": 42.58,
+    "average_metric_duration_seconds": 42.35
+  },
+  "error_summary": {
+    "total_failed_runs": 0,
+    "errors_per_metric": {},
+    "failed_run_ids": []
+  },
+  "aggregate_metrics": [
+    {
+      "metric_name": "equipments_categories",
+      "total_runs": 1,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "std_dev": 0.0
+      },
+      "duration_statistics_seconds": {
+        "average": 42.0195,
+        "median": 42.0195,
+        "min": 42.0195,
+        "max": 42.0195,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 1.0,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
+    },
+    {
+      "metric_name": "equipments_correctness",
+      "total_runs": 1,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "std_dev": 0.0
+      },
+      "duration_statistics_seconds": {
+        "average": 42.5777,
+        "median": 42.5777,
+        "min": 42.5777,
+        "max": 42.5777,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 1.0,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
+    },
+    {
+      "metric_name": "equipments_speed",
+      "total_runs": 1,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 3.0,
+        "median": 3.0,
+        "min": 3.0,
+        "max": 3.0,
+        "std_dev": 0.0
+      },
+      "duration_statistics_seconds": {
+        "average": 42.3594,
+        "median": 42.3594,
+        "min": 42.3594,
+        "max": 42.3594,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 3.0,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
+    },
+    {
+      "metric_name": "equipments_tools",
+      "total_runs": 1,
+      "successful_runs": 1,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
+        "std_dev": 0.0
+      },
+      "duration_statistics_seconds": {
+        "average": 42.4464,
+        "median": 42.4464,
+        "min": 42.4464,
+        "max": 42.4464,
+        "std_dev": 0.0
+      },
+      "score_distribution": [
+        {
+          "value": 1.0,
+          "count": 1,
+          "percentage": 100.0
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "duration_seconds": 42.5812,
+      "task_data": {
+        "id": "1",
+        "prompt": "tô gripado, onde posso ir aqui em copacabana?",
+        "context": "- Cidadão mora em Copacabana/RJ\n- Está com febre baixa e dor de garganta leve\n- Endereço: Rua Barata Ribeiro, 370\n",
+        "extra_info": NaN,
+        "golden_equipment": "SMS CMS JOAO BARROS BARRETO - AP 21\nEndereço: RUA TENREIRO ARANHA S/N",
+        "golden_equipment_type": "CF, CMS"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": [],
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": "Ok! Se precisar de mais alguma coisa, é só chamar!",
+        "transcript": [
+          {
+            "turn": 1,
+            "user_message": "tô gripado, onde posso ir aqui em copacabana?",
+            "agent_message": "Olá! Para te ajudar a encontrar o local mais próximo para atendimento, preciso de algumas informações.\n\nPrimeiro, para qual tipo de atendimento você precisa? Por exemplo:\n*   *Clínica da Família*\n*   *Hospital*\n*   *UPA (Unidade de Pronto Atendimento)*\n\nE qual o seu endereço completo em Copacabana (Rua, número e bairro)? Assim consigo buscar o equipamento de saúde mais próximo de você.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Olá! Para te ajudar a encontrar o local mais próximo para atendimento, preciso de algumas informações.\n\nPrimeiro, para qual tipo de atendimento você precisa? Por exemplo:\n*   *Clínica da Família*\n*   *Hospital*\n*   *UPA (Unidade de Pronto Atendimento)*\n\nE qual o seu endereço completo em Copacabana (Rua, número e bairro)? Assim consigo buscar o equipamento de saúde mais próximo de você."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "d4163235-99c9-40f1-9da4-8aa2dd2b1ba1",
+                  "message_id": "cf23df1a-79d7-4c97-a708-22f29088702d",
+                  "processed_at": "0be73564-fe54-46fc-86c7-50afcb8f4000",
+                  "total_tokens": 4061.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "user_message": "Então, é febre baixa e dor de garganta... meio mal-estar geral. O que seria melhor aqui perto pra checar isso?",
+            "agent_message": "Com febre baixa, dor de garganta e mal-estar, o ideal é procurar uma *Clínica da Família* ou um *Centro Municipal de Saúde*. Eles são os mais indicados para casos assim, que não são considerados de emergência.\n\nPara que eu possa te ajudar a encontrar o mais próximo em Copacabana, por favor, me informe o seu **endereço completo (Rua, número e bairro)**.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_instructions"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "arguments": {}
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "tool_return": {
+                    "next_too_instructions": "**Atenção:** Para localizar os equipamentos mais próximos, *você deve obrigatoriamente solicitar o endereço do usuário*. Após o usuário fornecer o endereço, *você deve imediatamente chamar a tool `equipments_by_address`* utilizando o endereço informado. **Não se esqueça de chamar a tool `equipments_by_address` após o endereço ser informado.** A ferramenta `equipments_by_address` exige o parametro `categories` esse deve seguir o nome exato das categorias disponiveis na secao `categorias` NAO UTILLIZE CATEGORIAS DAS INSTRUCOES!!!. NÃO É NECESSARIO CHAMAR A TOOL `google_search` para buscar informacoes sobre os equipamentos ou endereço, pois a tool `equipments_by_address` já retorna todas as informacoes necessárias.",
+                    "instrucoes": [
+                      {
+                        "tema": "educacao",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "cultura",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "saude",
+                        "instrucoes": "# Instruções fundamentais\n\n- Sempre identificar através de perguntas o nível de atenção demandado pelo cidadão e, a partir daí, definir qual é o equipamento ideal para oferecer ao cidadão (caso seja necessário)\n- Lembrar o cidadão de portar documento de identificação (além da carteirinha de vacinação, se for esse o serviço) e, caso possua, também levar resultados de exames e/ou prescrições anteriores relacionadas à condição de saúde relatada.\n- Se um cidadão já tiver um pedido de exames simples (Ex: Sangue, Urina, Fezes e teste de gravidez) solicitado por um médico da rede privada, este pedido não poderá ser aceito. Na clínica da família o cidadão será atendido e o médico irá emitir o pedido (caso necessário) através da rede pública.\n- Se o cidadão perguntar como é a ordem de atendimento ao chegar na clinica ou hospital (sem atendimento previamente agendado), explicar que o atendimento é feito por classificação de risco (processo de triagem), o que significa que os casos mais graves são priorizados.\n- Caso o cidadão queira consultar o status de um agendamento no SISREG, orientar que acesse a área logada do portal ou aplicativo MinhaSaude.rio, e acesse o menu \"SISREG\". procedimentos mais complexos são feitos pela rede de saúde estadual e precisam ser consultados no sistema SER. A consulta pode ser feita neste link: https://www.saude.rj.gov.br/transparencia/acesso-a-informacao/2019/07/14-lista-de-espera-regulacao-ser\n- Caso o cidadão esteja enfrentando problemas técnicos e necessite de suporte o aplicativo/portal Minha Saúde orientar que entre em contato com o Whatsapp do Minha Saúde no número (21) 97723-8972 ou através do e-mail: minhasaude.rio@regulacaoriorj.com.br\n- Não mandar respostas muito longas e evitar citar termos muito técnicos. Também evitar trazer detalhes sobre as regras de negócio que você utilizará para definir o melhor equipamento. Além disso, evitar mencionar os termos atenção primária, secundária ou terciária.\n\n# Níveis de atenção da saúde e seus equipamentos\n\n## Atenção Primária\n\n- Clínicas da Família (CF): Unidades que cobrem territórios definidos com equipes de Saúde da Família, oferecendo atendimento de rotina, prevenção, acompanhamento de doenças crônicas e ações de promoção à saúde.\n- Centros Municipais de Saúde (CMS): Unidades que podem cobrir parte ou todo o território com equipes de Saúde da Família, também atuando na atenção básica, com consultas, vacinação, pré-natal e outros serviços.\n- Centros de Saúde Escola (CSE): Unidades de ensino-aprendizagem, com atuação em saúde da família, voltadas para formação de profissionais e atendimento à população.\n\n## Atenção Secundária\n\n- Unidades de Pronto Atendimento (UPAs) 24h: Oferecem atendimento de urgência e emergência de média complexidade, funcionando ininterruptamente para casos clínicos e traumáticos. Não possuem internação.\n- Centros de Emergência Regionais (CERs): Unidades que funcionam ao lado de grandes hospitais e complementam o atendimento de urgência e emergência, com estrutura para casos mais complexos, estabilizando pacientes e filtrando casos para o hospital.\n- Policlínicas: Unidades de referência para atendimentos ambulatoriais especializados, onde equipes multiprofissionais realizam consultas médicas especializadas (ginecologia, cardiologia, dermatologia, endocrinologia, ortopedia, pneumologia, otorrinolaringologia), consultas realizadas por outros profissionais de nível superior (nutrição, enfermagem, psicologia, fonoaudiologia, terapia ocupacional, fisioterapia), procedimentos e exames. Os pacientes são referenciados para essas unidades a partir das unidades de Atenção Primária (clínicas da família e centros municipais de saúde), conforme a necessidade, por meio do Sistema de Regulação (Sisreg).\n\n## Atenção Terciária\n\n- Hospitais Municipais: Prestam atendimento de alta complexidade e internação hospitalar, incluindo especialidades médicas e cirúrgicas, sendo referência para procedimentos e internações de maior complexidade.\n- Maternidades: Hospitais e unidades especializadas em saúde da mulher, parto e neonatologia, oferecendo atendimento ambulatorial, de urgência e internação, com sistema de classificação de risco obstétrica na chegada.\n\n# Fluxos de atendimento\n\n1) Atendimento ambulância (SAMU)\n2) Consultas de rotina ou atendimento de baixa complexidade\n3) Atendimentos de urgência e emergência\n4) Atendimentos em saúde mental\n5) Vacinação\n6) Atendimento à gestante\n7) Agendamento de exames\n8) Retorno após consultas de especialidades\n9) Remarcação ou cancelamentos\n\n# Orientações de atendimento de acordo com o tipo de classificação:\n\n## 1) Atendimento ambulância (SAMU)\n\nNo tipo 1 a orientação precisa ser simples e direta.\nExemplo: \"Ligue 192: SAMU. Serviço de atendimento de urgência em ambulância, que funciona 24 horas.\"\n\n## 2) Consultas de rotina ou atendimento de baixa complexidade\n\nAvaliar a criticidade da condição apresentada (baixa, média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição. Sendo baixa complexidade, direcionar para a unidade da rede de atenção primária daquele cidadão (considerando seu endereço de residência). Para esses casos de baixa complexidade nós não devemos realizar pergunta se o cidadão consegue se deslocar por conta própria e não devemos oferecer ambulância.\nCaso seja identificada média ou alta complexidade, seguir orientações do item 3 (atendimentos de urgência e emergência).\n\n## 3) Atendimentos de urgência e emergência\n\nSOMENTE se o cidadão relatar uma condição GRAVE e você inferir que esta condição tem potencial de impedir o seu deslocamento por conta própria até a rede de saúde (pessoa inconsciente, pessoa com ferimento de arma de fogo, etc) perguntar se o mesmo consegue se deslocar a uma unidade de saúde por meios próprios. Caso informado que não consegue se deslocar, considerar como tipo 1 e orientar a solicitar o SAMU.\nSe a condição apresentada não tiver potencial de impactar o deslocamento até a unidade ou se, após a pergunta, o cidadão informar que consegue se deslocar até a unidade de saúde, avaliar a criticidade da condição apresentada (média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição.\nSendo de média complexidade, direcionar para rede de atenção secundária uma UPA ou CER. Se for identificado como alta complexidade, direcionar para a rede de atenção terciária (hospitais). Caso não seja possível inferir a complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n\n## 4) Atendimentos em saúde mental\n\nPara o tipo 4 também precisaremos identificar o nível da emergência para melhor direcionar. Primeiro precisamos perguntar se é possível aguardar para o atendimento em um dos nossos Centros de Atenção Psicossocial (CAPS) mais próximo da sua casa, de segunda a sexta-feira, das 8 às 18h. Se sim, deveríamos informar a localização do equipamento CAPS e reforçar com o cidadão que não há necessidade de agendamento prévio. Se não, enviaríamos uma outra pergunta: \"É caso de emergência com risco de vida? Exemplos: crise psiquiátrica com risco iminente de vida para o paciente ou para terceiros (Exemplo: risco de suicídio com intoxicação por medicação ou outro dano físico ou crise de abstinência de álcool ou outras drogas.) Se informado SIM, deveremos considerar como tipo 1 e orientar a solicitar o SAMU. Caso informado NÃO, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para uma unidade de atenção primária, caso contrário considerar como tipo 1 e orientar a solicitar o SAMU\n\n## 5) Vacinação\n\nLocais onde o serviço de vacinação está disponível:\n- Clínicas da Família (CF): Todas as unidades oferecem vacinação.\n- Centros Municipais de Saúde (CMS): Também disponibilizam vacinação.\n- Centros de Saúde Escola (CSE): Algumas unidades também realizam vacinação.\n- Super Centro Carioca de Vacinação Botafogo (Rua General Severiano, 91): Funciona de domingo a domingo, das 8h às 22h.\n- Super Centro Carioca de Vacinação Campo Grande (ParkShoppingCampoGrande, 2º andar): Funciona de domingo a domingo, conforme horário do shopping, geralmente das 10h às 22h (domingos e feriados, das 12h às 22h).\n\n## 6) Atendimento à gestante\n\n### 6.1) Orientações para gestantes (antes do parto):\n\nPerguntar se trata-se de um atendimento de emergência relacionado à gestação (exemplo: dor muito forte na barriga ou no peito, sangramento intenso, desmaio ou perda de consciência) ou se é algum atendimento regular (consulta pré-natal, acompanhamento pós-parto, etc). Sendo identificada situação de emergência, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para a maternidade mais próxima. Caso não consiga se deslocar, orientar a solicitar o SAMU. Caso a gestante queira informações sobre consultas de rotina como consultas pré-natal, direcionar para a unidade de atenção primária mais próxima, considerando Clínicas da família (CF) e Centros Municipais de Saúde (CMS)).\nAlém disso, se entender que a gestante está em estágio inicial de gravidez ou que necessita de informações sobre a rede de suporte oferecida pela prefeitura, comentar sobre o Programa Cegonha Carioca. No endereço https://saude.prefeitura.rio/cegonha-carioca/ constam informações sobre o programa municipal, que envolve agendamento da visita guiada à maternidade de referência, recebimento do kit enxoval do bebê e transporte de ambulância até a maternidade no momento do parto. Para se cadastrar no Programa Cegonha Carioca, a gestante deve realizar o pré-natal em uma clínica da família ou centro municipal de saúde no Rio de Janeiro. O cadastro é feito durante o pré-natal, e a gestante recebe o \"Passaporte Cegonha\", que indica a maternidade de referência para o parto.\n\n### 6.2) Orientações após o parto (mães ou pais em período pós-parto e que recém tiveram filho):\n\nÉ crucial lembrar que, após a alta da maternidade, seu bebê deve ter uma primeira consulta de rotina com o pediatra ou enfermeiro da Clínica da Família ou Centro Municipal de Saúde nos primeiros 3 a 7 dias de vida. Essa consulta de puericultura é essencial para avaliar a adaptação do bebê, ganho de peso, amamentação, realizar testes importantes (como o Teste do Pezinho, se não foi feito na maternidade) e tirar dúvidas.\nCaso identificado alguma situação com o bebê após a alta (período neonatal imediato, geralmente até 2 semanas após o nascimento) ou alguma condição que já estava sendo monitorada pela equipe que o atendeu, devemos orientar que o cidadão procure preferencialmente a maternidade onde o bebê nasceu. Para problemas mais genéricos, que podem surgir a qualquer momento da infância, um hospital com pronto-socorro pediátrico geral é o local adequado.\n\n## 7) Agendamento de exames\n\nEntender se o cidadão quer agendar um exame ou se quer consultar um agendamento realizado. Caso ele queira agendar um exame, explicar que toda solicitação de exame ocorre via SISREG (sistema de regulação) a partir de um encaminhamento prévio de uma das unidades de saúde do município, onde um médico, enfermeiro ou dentista da unidade de saúde avalia a necessidade do mesmo e realiza a marcação em sistema.\nSua equipe da unidade de saúde deverá informar, assim que houver vaga disponível, local, data e horário da consulta ou exame, através de uma autorização impressa;\nA orientação é que o cidadão chegue para a consulta ou exame na unidade agendada com pelo menos 15 minutos de antecedência do horário marcado, levando os seguintes documentos:\n- Documento de identificação\n- Formulário de encaminhamento (Referência e contra-referência)\n- Formulário de autorização do SISREG (Autorização de Procedimentos Ambulatoriais).\n- Se possível, leve os exames e receitas anteriores para facilitar o atendimento no dia da consulta agendada;\n\nPara realizar alguns exames é necessário um preparo. Verifique se seu exame exige algum preparo especial. Esta informação está na última parte do formulário de autorização do SISREG ou então acessando o portal Minha Saúde Rio através do link: https://web2.smsrio.org/minhasaudeRio/#/orientacoes-cidadao. Se você tiver outras dúvidas, pergunte ao seu médico ou enfermeiro.\n\n## 8) Retorno após consultas de especialidades\n\nQuando um cidadão já fez uma consulta em uma unidade de atenção secundária caso seja necessário uma consulta de retorno, o mesmo deverá se dirigir a mesma unidade onde fez a consulta com o especialista. Não devemos orientar que o cidadão se dirija a sua clínica da família.\n\n## 9) Remarcação ou cancelamentos\n\nQuando houver necessidade de cancelamento ou remarcação de uma consulta ou exame agendado, procure com antecedência de pelo menos dois dias o seu Centro Municipal de Saúde ou Clínica da Família para que outro paciente possa usufruir do atendimento. Neste caso, a sua unidade é responsável por cancelar a sua vaga no SISREG.\n\n# Regras para classificação de complexidade\n\n## Atendimentos de baixa complexidade: não representam risco imediato à vida ou à saúde. Incluem problemas leves, acompanhamento de doenças crônicas estáveis e ações de prevenção, como vacinação e exames de rotina.\nExemplos: dores de cabeça leve; dor de garganta; resfriado; gripe sem complicações graves; quadros de diarreia ou vômito sem desidratação severa; febre baixa a moderada, sem outros sintomas alarmantes; pequenas lesões, como cortes superficiais, escoriações; dor moderada em geral, sem sinais de urgência.\n\n## Atendimentos de média complexidade: representam risco à saúde, mas sem risco iminente de morte.\nExemplos: febre alta persistente, especialmente se acompanhada de outros sintomas como calafrios ou prostração; dores fortes no peito, que não são características de infarto, mas que precisam de avaliação rápida; dor abdominal intensa; crises de asma ou falta de ar moderada; vômito constante e/ou diarreia com sinais de desidratação; convulsões (após a crise, para avaliação e acompanhamento); picos de pressão alta (hipertensão arterial); quedas com torção, dor intensa ou suspeita de fraturas leves a moderadas; cortes com sangramento que necessitam de sutura; alergias severas com inchaço, coceira intensa, dificuldade para respirar leve; infecções urinárias com dor intensa; dores de cabeça intensas, súbitas e diferentes do habitual; acidentes com animais peçonhentos: aranhas, escorpiões, etc.\n\n## Atendimentos de alta complexidade: condições graves, que indicam a necessidade de procedimentos cirúrgicos de urgência ou de alta complexidade, ou condições que representam risco iminente de morte.\nExemplos: traumas graves: acidentes de carro, quedas de altura, ferimentos por arma de fogo ou arma branca, grandes queimaduras, etc; acidente vascular cerebral (AVC); infarto agudo do miocárdio (ataque cardíaco); hemorragias intensas e/ou que não param, sejam externas (ex: cortes profundos) ou internas (ex: vômito com sangue, sangramento retal volumoso); dificuldade respiratória grave: sensação de sufocamento, respiração muito rápida e superficial, lábios azulados; perda súbita de consciência/desmaio prolongado; crises convulsivas que não cessam ou se repetem; envenenamento ou intoxicação grave: ingestão de substâncias tóxicas com sintomas severos.\n\n# Regras para definição do equipamento a ser buscado\n\n- Importante: Caso não seja possível inferir a complexidade entre média e alta complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n- Sempre que identificado que o cidadão necessita de um equipamento da atenção primária (Clínica da família ou CMS), você deve sempre perguntar o endereço de residência do cidadão. Não deve ser considerado qualquer outro endereço a não ser o de residência. Para os outros equipamentos (atenção secundária e terciária), o cidadão pode informar qualquer endereço (residencial ou onde ele se encontra no momento).\n- Sempre que o cidadão necessitar um equipamento da atenção primária, considerar a busca por múltiplos tipos de equipamento, indicar como equipamentos: Clínica da Família + CMS + CSE.\n- Caso o cidadão cite somente que quer saber o hospital mais próximo, sempre pergunte qual é o problema de saúde/necessidade do cidadão, pois nem sempre o cidadão sabe qual é o melhor equipamento. Somente caso o cidadão insista que quer saber sobre um tipo específico de equipamento, daí você pode informar o equipamento desejado.\n- Quando o cidadão enviar o endereço, realizar a busca na internet para completar o endereço e tentar localizar o CEP na cidade do rio de janeiro. Retorne para o cidadão o endereço completo, contendo bairro e CEP e solicite a confirmação pelo cidadão.\n- Caso o cidadão cite especificamente uma das unidades de um equipamento da saúde (Ex: Hospital Souza Aguiar), realize a pesquisa no Google para obter o endereço, horário de funcionamento e telefone da unidade em específico.\n- Se o cidadão necessita de atendimento ambulatorial (ou seja, que não são emergências/urgências), nunca escolha os equipamentos Hospital, Maternidade ou policlínicas, pois nestes equipamentos o atendimento ambulatorial ocorre mediante encaminhamento prévio vindo da atenção primária ou secundária. O correto é indicar ao cidadão um dos equipamentos de atenção primária, se identificado que trata-se de um problema de saúde de baixa complexidade e não urgente.\n- Não indicar diretamente endereços dos equipamentos Policlínicas, pois estes equipamentos só realizam atendimento mediante agendamento prévio no SISREG. Para atenção secundária, indique sempre o equipamento UPA 24hrs.\n"
+                      }
+                    ],
+                    "categorias": {
+                      "SMC": [
+                        "ARENA",
+                        "ARENINHA",
+                        "BIBLIOTECA",
+                        "CENTRO CULTURAL",
+                        "LONA CULTURAL",
+                        "MUSEU",
+                        "TEATRO"
+                      ],
+                      "SME": [
+                        "BIBLIOTECA",
+                        "CRECHE",
+                        "ESCOLA",
+                        "ESCOLA ESPECIAL"
+                      ],
+                      "SMS": [
+                        "CENTRO DE ATENCAO PSICOSSOCIAL",
+                        "CENTRO DE EMERGENCIA REGIONAL",
+                        "CF",
+                        "CMS",
+                        "EQUIPE DA FAMILIA",
+                        "HOSPITAL",
+                        "MATERNIDADE",
+                        "POLICL",
+                        "POLO ACADEMIA DA SAUDE",
+                        "SAUDE MENTAL",
+                        "UPA"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Com febre baixa, dor de garganta e mal-estar, o ideal é procurar uma *Clínica da Família* ou um *Centro Municipal de Saúde*. Eles são os mais indicados para casos assim, que não são considerados de emergência.\n\nPara que eu possa te ajudar a encontrar o mais próximo em Copacabana, por favor, me informe o seu **endereço completo (Rua, número e bairro)**."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "d4163235-99c9-40f1-9da4-8aa2dd2b1ba1",
+                  "message_id": "889bead8-0501-44f7-a619-34edf17404ed",
+                  "processed_at": "3ed57ddb-e909-4c81-9bae-e7827b296f2d",
+                  "total_tokens": 12601.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "user_message": "Ah, entendi. Eu moro na Rua Barata Ribeiro, 370, aqui em Copacabana mesmo. O que tem mais perto daqui?",
+            "agent_message": "Para o que você descreveu, o *Centro Municipal de Saúde (CMS) João Barros Barreto* é a melhor opção e está bem perto de você!\n\n*   **Nome:** CMS João Barros Barreto\n*   **Endereço:** Rua Tenreiro Aranha, S/N, Copacabana\n*   **Telefone:** (21) 3208-5297\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta-feira: das *7h às 22h*\n    *   Sábado: das *7h às 12h*\n\nEle fica a apenas 272 metros da sua localização na Rua Barata Ribeiro.\n\nAo ir, lembre-se de levar um documento de identificação. Se tiver, também é bom levar resultados de exames ou prescrições anteriores. O atendimento é por classificação de risco, ou seja, os casos mais graves são priorizados.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_by_address"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "arguments": "{'categories': ['CF', 'CMS', 'EQUIPE DA FAMILIA'], 'address': 'Rua Barata Ribeiro, 370, Copacabana'}"
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "tool_return": {
+                    "instructions": "Retorne todos os equipamentos referente a busca do usuario, acompanhado de todas as informacoes disponiveis sobre o equipamento",
+                    "equipamentos": [
+                      {
+                        "plus8_grid": null,
+                        "plus8": "589R2RM7+",
+                        "plus10": "589R2RM7+52",
+                        "plus11": "589R2RM7+52M",
+                        "distancia_metros": 272,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "CMS",
+                        "nome_oficial": "CMS JOAO BARROS BARRETO - AP 21",
+                        "nome_popular": "CMS JOAO BARROS BARRETO",
+                        "logradouro": "RUA TENREIRO ARANHA",
+                        "numero": "S/N",
+                        "complemento": null,
+                        "bairro": "COPACABANA",
+                        "regiao_planejamento": "ZONA SUL",
+                        "regiao_administrativa": "COPACABANA",
+                        "subprefeitura": "ZONA SUL",
+                        "contato": {
+                          "telefones": [
+                            "(21) 3208-5297"
+                          ],
+                          "email": "admcmsjoaobarrosbarreto@gmail.com",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": "cmsjbb",
+                            "instagram": "cmsjoaobarrosbarreto",
+                            "twitter": "cmsjbb"
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Segunda a Sexta",
+                            "abre": "07:00:00",
+                            "fecha": "22:00:00"
+                          },
+                          {
+                            "dia": "Sábado",
+                            "abre": "07:00:00",
+                            "fecha": "12:00:00"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:41.986393+00:00"
+                      },
+                      {
+                        "plus8_grid": null,
+                        "plus8": null,
+                        "plus10": null,
+                        "plus11": null,
+                        "distancia_metros": null,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "EQUIPE DA FAMILIA",
+                        "nome_oficial": "AMANA",
+                        "nome_popular": "MEDICOS:\nSANDRA BADINI FERREIRO\n\nENFERMEIROS:\nGABRIEL DE PAULA FREITAS COSTA",
+                        "logradouro": null,
+                        "numero": null,
+                        "complemento": null,
+                        "bairro": null,
+                        "regiao_planejamento": "21",
+                        "regiao_administrativa": null,
+                        "subprefeitura": null,
+                        "contato": {
+                          "telefones": [
+                            "(21)99777-9111"
+                          ],
+                          "email": null,
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": false,
+                        "horario_funcionamento": [],
+                        "updated_at": "2025-07-21T15:24:36.705006+00:00"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Para o que você descreveu, o *Centro Municipal de Saúde (CMS) João Barros Barreto* é a melhor opção e está bem perto de você!\n\n*   **Nome:** CMS João Barros Barreto\n*   **Endereço:** Rua Tenreiro Aranha, S/N, Copacabana\n*   **Telefone:** (21) 3208-5297\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta-feira: das *7h às 22h*\n    *   Sábado: das *7h às 12h*\n\nEle fica a apenas 272 metros da sua localização na Rua Barata Ribeiro.\n\nAo ir, lembre-se de levar um documento de identificação. Se tiver, também é bom levar resultados de exames ou prescrições anteriores. O atendimento é por classificação de risco, ou seja, os casos mais graves são priorizados."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "d4163235-99c9-40f1-9da4-8aa2dd2b1ba1",
+                  "message_id": "abf12771-1cc8-4fd7-9d59-cec8800fdf0d",
+                  "processed_at": "1cab725f-5232-467d-9294-dd7a7908df1e",
+                  "total_tokens": 17810.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 4,
+            "user_message": "Ah, tá ótimo, valeu! Vou passar lá então no CMS João Barros Barreto. Obrigado pela ajuda!  \n\nEVALUATION_CONCLUDED",
+            "agent_message": "De nada! Fico feliz em ajudar. Melhoras para você!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "assistant_message",
+                "content": "De nada! Fico feliz em ajudar. Melhoras para você!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "d4163235-99c9-40f1-9da4-8aa2dd2b1ba1",
+                  "message_id": "f00a9ef4-1b3e-45e9-9468-c76ca97c1484",
+                  "processed_at": "1aa23cb5-fe8c-40b0-a24c-1d0e4cd2a5a0",
+                  "total_tokens": 9289.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 5,
+            "user_message": "EVALUATION_CONCLUDED",
+            "agent_message": "Ok! Se precisar de mais alguma coisa, é só chamar!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Ok! Se precisar de mais alguma coisa, é só chamar!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "d4163235-99c9-40f1-9da4-8aa2dd2b1ba1",
+                  "message_id": "ad6250d6-5ebf-4def-aa0d-3f865f5bb840",
+                  "processed_at": "0789b881-33ef-4f5d-b826-13f252734498",
+                  "total_tokens": 9307.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 6,
+            "user_message": "EVALUATION_CONCLUDED",
+            "agent_message": "Ok! Se precisar de mais alguma coisa, é só chamar!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Ok! Se precisar de mais alguma coisa, é só chamar!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "d4163235-99c9-40f1-9da4-8aa2dd2b1ba1",
+                  "message_id": "e8cba35c-c1b6-48af-a333-aa2712a65600",
+                  "processed_at": "3c4d91f3-9a0e-4726-8020-f36dd123ab94",
+                  "total_tokens": 9325.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          }
+        ],
+        "evaluations": [
+          {
+            "metric_name": "equipments_categories",
+            "duration_seconds": 42.0195,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: Todas as categorias esperadas (\"CF, CMS\") estão incluídas no argumento \"categories\", categorias extras são aceitáveis.",
+            "has_error": false,
+            "error_message": null
+          },
+          {
+            "metric_name": "equipments_correctness",
+            "duration_seconds": 42.5777,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: O equipamento identificado pelo chatbot, \"CMS João Barros Barreto\", corresponde corretamente ao equipamento_correto \"SMS CMS JOAO BARROS BARRETO - AP 21\", incluindo endereço relevante e detalhes apropriados.",
+            "has_error": false,
+            "error_message": null
+          },
+          {
+            "metric_name": "equipments_speed",
+            "duration_seconds": 42.3594,
+            "score": 3.0,
+            "annotations": "Score: 3  \nReasoning: O equipamento correto, \"CMS João Barros Barreto\", foi mencionado pela primeira vez no turno 3.",
+            "has_error": false,
+            "error_message": null
+          },
+          {
+            "metric_name": "equipments_tools",
+            "duration_seconds": 42.4464,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: As ferramentas foram chamadas na ordem correta: \"equipments_instructions\" foi chamada na turn 2 e \"equipments_by_address\" na turn 3.",
+            "has_error": false,
+            "error_message": null
+          }
+        ],
+        "has_error": false,
+        "error_message": null
+      }
+    }
+  ]
+}

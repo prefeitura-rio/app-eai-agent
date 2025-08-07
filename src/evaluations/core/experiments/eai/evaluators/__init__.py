@@ -20,16 +20,28 @@ from src.evaluations.core.experiments.eai.evaluators.activate_search import (
     ActivateSearchEvaluator,
 )
 
-from src.evaluations.core.experiments.eai.evaluators.golden_equipments_conversation import (
-    GoldenEquipmentConversation,
-)
-
 from src.evaluations.core.experiments.eai.evaluators.whatsapp_format import (
     WhatsAppFormatEvaluator,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.golden_equipment_llm_guided_conv import (
     GoldenEquipmentLLMGuidedConversation,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.equipments_correctness import (
+    EquipmentsCorrectnessEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.equipments_speed import (
+    EquipmentsSpeedEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.equipments_tools import (
+    EquipmentsToolsEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.equipments_categories import (
+    EquipmentsCategoriesEvaluator,
 )
 
 __all__ = [
@@ -39,7 +51,10 @@ __all__ = [
     "AnswerAddressingEvaluator",
     "ClarityEvaluator",
     "ActivateSearchEvaluator",
-    "GoldenEquipmentConversation",
     "WhatsAppFormatEvaluator",
     "GoldenEquipmentLLMGuidedConversation",
+    "EquipmentsCorrectnessEvaluator",
+    "EquipmentsSpeedEvaluator",
+    "EquipmentsToolsEvaluator",
+    "EquipmentsCategoriesEvaluator",
 ]

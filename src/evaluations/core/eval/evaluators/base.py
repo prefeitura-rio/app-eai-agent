@@ -89,6 +89,7 @@ class BaseEvaluator(ABC):
             prompt = prompt_template.format(
                 task=task_dict, agent_response=response_dict
             )
+            # logger.info(f"🔍 Prompt: {prompt}")
             judgement_response = await self.judge_client.execute(prompt)
             score = _extract_evaluation_score(judgement_response)
             return EvaluationResult(score=score, annotations=judgement_response)

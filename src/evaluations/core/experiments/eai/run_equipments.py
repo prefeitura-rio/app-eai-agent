@@ -13,6 +13,10 @@ from src.utils.log import logger
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
     GoldenEquipmentLLMGuidedConversation,
+    EquipmentsCorrectnessEvaluator,
+    EquipmentsSpeedEvaluator,
+    EquipmentsToolsEvaluator,
+    EquipmentsCategoriesEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
@@ -29,16 +33,18 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=1216607284#gid=1216607284",  # golden equipments
-        number_rows=10,
+        number_rows=1,
         id_col="id",
-        prompt_col="context",
+        prompt_col="initial_message",
         dataset_name="Golden Equipment Test",
         dataset_description="Dataset de avaliacao de equipamentos",
         metadata_cols=[
+            "context",
             "golden_equipment",
             "golden_equipment_type",
             "extra_info",
         ],
+        upload_to_bq=False,
     )
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
@@ -51,6 +57,10 @@ async def run_experiment():
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
         GoldenEquipmentLLMGuidedConversation(judge_client),
+        EquipmentsCategoriesEvaluator(judge_client),
+        EquipmentsCorrectnessEvaluator(judge_client),
+        EquipmentsSpeedEvaluator(judge_client),
+        EquipmentsToolsEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -73,14 +83,14 @@ async def run_experiment():
     MAX_CONCURRENCY = 10
 
     runner = AsyncExperimentRunner(
-        experiment_name="eai-2025-08-04",
+        experiment_name="eai-2025-08-04-v59",
         experiment_description="Test",
         metadata=metadata,
         # agent_config=agent_config.model_dump(exclude_none=True),
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
         # precomputed_responses=precomputed_responses_dict,
-        # upload_to_bq=False,
+        upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
