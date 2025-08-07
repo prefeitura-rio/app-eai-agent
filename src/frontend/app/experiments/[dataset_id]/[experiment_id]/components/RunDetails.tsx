@@ -38,13 +38,36 @@ const ErrorDisplay = ({ message }: { message: string }) => (
 
 export default function RunDetails({ run }: RunDetailsProps) {
     // Determina o modo inicial baseado na disponibilidade dos dados
-    const hasOneTurnData = run.one_turn_analysis && 
-        !run.one_turn_analysis.has_error && 
-        run.one_turn_analysis.agent_message !== null;
-    const hasMultiTurnData = run.multi_turn_analysis && 
-        !run.multi_turn_analysis.has_error && 
-        run.multi_turn_analysis.final_agent_message !== null;
-    const initialViewMode = hasOneTurnData ? 'one_turn' : 'multi_turn';
+    const hasOneTurnData = useMemo(() => 
+        run.one_turn_analysis && 
+        run.one_turn_analysis.agent_message !== null,
+        [run.one_turn_analysis]
+    );
+    
+    const hasMultiTurnData = useMemo(() => 
+        run.multi_turn_analysis && 
+        run.multi_turn_analysis.final_agent_message !== null,
+        [run.multi_turn_analysis]
+    );
+    
+    const hasOneTurnError = useMemo(() => 
+        run.one_turn_analysis && run.one_turn_analysis.has_error,
+        [run.one_turn_analysis]
+    );
+    
+    const hasMultiTurnError = useMemo(() => 
+        run.multi_turn_analysis && run.multi_turn_analysis.has_error,
+        [run.multi_turn_analysis]
+    );
+    
+    const initialViewMode = useMemo(() => {
+        // Se há erro em multi_turn mas não em one_turn, começa com multi_turn
+        if (hasMultiTurnError && !hasOneTurnError && !hasOneTurnData) {
+            return 'multi_turn';
+        }
+        // Se há dados válidos em one_turn, começa com one_turn
+        return hasOneTurnData ? 'one_turn' : 'multi_turn';
+    }, [hasOneTurnData, hasMultiTurnError, hasOneTurnError]);
     
     const [viewMode, setViewMode] = useState<'one_turn' | 'multi_turn'>(initialViewMode);
     
@@ -79,19 +102,48 @@ export default function RunDetails({ run }: RunDetailsProps) {
         ? run.one_turn_analysis.agent_reasoning_trace 
         : [];
 
-    // Atualiza o viewMode se necessário
+    // Verifica se deve exibir erro para o modo atual
+    const shouldShowError = useMemo(() => {
+        if (isOneTurn) {
+            return hasOneTurnError || !hasOneTurnData;
+        } else {
+            return hasMultiTurnError || !hasMultiTurnData;
+        }
+    }, [isOneTurn, hasOneTurnError, hasOneTurnData, hasMultiTurnError, hasMultiTurnData]);
+
+    // Determina a mensagem de erro apropriada
+    const errorMessage = useMemo(() => {
+        // PRIORIDADE 1: Se há erro específico a nível de run na análise atual, use essa mensagem
+        if (analysis.has_error && analysis.error_message) {
+            return analysis.error_message;
+        }
+        
+        // PRIORIDADE 2: Se não há dados válidos para o modo atual
+        if (isOneTurn && !hasOneTurnData) {
+            return "Nenhuma resposta disponível para análise de turno único.";
+        }
+        
+        if (!isOneTurn && !hasMultiTurnData) {
+            return "Nenhuma resposta disponível para análise multi-turno.";
+        }
+        
+        // PRIORIDADE 3: Fallback genérico
+        return "Erro desconhecido na análise.";
+    }, [analysis.has_error, analysis.error_message, isOneTurn, hasOneTurnData, hasMultiTurnData]);
+
+    // Atualiza o viewMode se necessário - apenas quando os dados mudam
     React.useEffect(() => {
         if (!hasOneTurnData && viewMode === 'one_turn') {
             setViewMode('multi_turn');
         } else if (!hasMultiTurnData && viewMode === 'multi_turn') {
             setViewMode('one_turn');
         }
-    }, [hasOneTurnData, hasMultiTurnData, viewMode]);
+    }, [hasOneTurnData, hasMultiTurnData]); // Removido viewMode das dependências
 
     return (
         <div className="space-y-6">
-            {/* Mostra as abas apenas se ambos os modos têm dados */}
-            {(hasOneTurnData && hasMultiTurnData) && (
+            {/* Mostra as abas apenas se ambos os modos têm dados OU se há erros em ambos */}
+            {((hasOneTurnData && hasMultiTurnData) || (hasOneTurnError && hasMultiTurnError)) && (
                 <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'one_turn' | 'multi_turn')} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="one_turn">Análise de Turno Único</TabsTrigger>
@@ -112,8 +164,9 @@ export default function RunDetails({ run }: RunDetailsProps) {
                 </CardContent>
             </Card>
             
-            {analysis.has_error ? (
-                <ErrorDisplay message={analysis.error_message!} />
+            {/* Exibe erro se a análise atual tem erro ou não tem dados válidos */}
+            {shouldShowError ? (
+                <ErrorDisplay message={errorMessage} />
             ) : (
                 <>
                     <div className="grid md:grid-cols-2 gap-6">

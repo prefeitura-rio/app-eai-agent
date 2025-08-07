@@ -33,7 +33,7 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=1216607284#gid=1216607284",  # golden equipments
-        number_rows=3,
+        # number_rows=3,
         id_col="id",
         prompt_col="initial_message",
         dataset_name="Golden Equipment Test",

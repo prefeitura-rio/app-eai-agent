@@ -72,7 +72,7 @@ export default function Filters({ runs, onFilterChange }: FiltersProps) {
   const activeFilterCount = Object.values(selectedFilters).filter(value => value !== 'all' && value !== '').length;
 
   return (
-    <Accordion type="single" collapsible className="w-full border-b">
+    <Accordion type="single" collapsible className="w-full border-b flex-shrink-0">
         <AccordionItem value="item-1" className="border-b-0">
             <AccordionTrigger className="p-4 text-base font-semibold hover:no-underline">
                 <div className="flex items-center gap-2">

@@ -6,7 +6,7 @@ import { useHeader } from '@/app/contexts/HeaderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from "@/app/utils/utils";
 import { downloadFile } from '@/app/utils/csv';
-import { FileCode, Download, Bot } from 'lucide-react';
+import { FileCode, Download, Bot, AlertTriangle } from 'lucide-react';
 import JsonViewerModal from '@/app/components/JsonViewerModal';
 import DownloadLlmJsonModal, { LlmJsonFilters } from './DownloadLlmJsonModal';
 import RunDetails from './RunDetails';
@@ -95,6 +95,10 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
     }
   };
 
+  const hasRunError = (run: ExperimentRun) => {
+    return run.one_turn_analysis.has_error || run.multi_turn_analysis.has_error;
+  };
+
   return (
     <>
       <JsonViewerModal 
@@ -107,36 +111,45 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
         onOpenChange={setLlmModalOpen}
         onConfirm={handleDownloadCleanJson}
       />
-      <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full pb-6">
-        <Card className="flex flex-col h-full">
+      <div className="grid md:grid-cols-[300px_1fr] gap-6 h-[calc(100vh-200px)] max-h-screen">
+        <Card className="flex flex-col h-full overflow-hidden">
           <CardHeader className="flex-shrink-0">
             <CardTitle>Runs ({filteredRuns.length})</CardTitle>
           </CardHeader>
           <div className="flex-shrink-0">
             <Filters runs={experimentData.runs} onFilterChange={handleFilterChange} />
           </div>
-          <CardContent className="flex-1 overflow-y-auto p-2">
-              <div className="space-y-2 pb-4">
-                  {filteredRuns.map((run) => (
+          <CardContent className="flex-1 overflow-y-auto p-2 min-h-0">
+              <div className="space-y-2">
+                  {filteredRuns.map((run) => {
+                    const hasError = hasRunError(run);
+                    return (
                       <div
                           key={run.task_data.id}
                           onClick={() => setSelectedRunId(run.task_data.id)}
                           className={cn(
-                              "p-3 rounded-md cursor-pointer border transition-colors",
+                              "p-3 rounded-md cursor-pointer border transition-colors relative",
                               selectedRunId === run.task_data.id
                                   ? "bg-primary text-primary-foreground"
-                                  : "hover:bg-muted/50"
+                                  : "hover:bg-muted/50",
+                              hasError && "border-destructive/50"
                           )}
                       >
-                          <p className="font-semibold text-sm truncate">ID: {run.task_data.id}</p>
+                          <div className="flex items-center justify-between">
+                              <p className="font-semibold text-sm truncate">ID: {run.task_data.id}</p>
+                              {hasError && (
+                                  <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                              )}
+                          </div>
                       </div>
-                  ))}
+                    );
+                  })}
               </div>
           </CardContent>
         </Card>
 
-        <div className="h-full overflow-y-auto pr-4">
-          <div className="space-y-6 pb-6">
+        <div className="h-full overflow-y-auto max-h-full">
+          <div className="space-y-6 p-6">
               <ExperimentSummary experimentData={experimentData} />
               <SummaryMetrics aggregateMetrics={experimentData.aggregate_metrics} />
               {selectedRun && <RunDetails run={selectedRun} />}
