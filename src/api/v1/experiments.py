@@ -5,17 +5,38 @@ from typing import List, Dict, Any
 from datetime import datetime
 from src.core.security.dependencies import validar_token
 
-from src.utils.bigquery import get_bigquery_result
+from src.utils.bigquery import get_bigquery_result, get_bigquery_client
 from google.cloud.exceptions import GoogleCloudError
 from src.utils.log import logger
 
 # router = APIRouter(dependencies=[Depends(validar_token)], tags=["Experiments"])
-router = APIRouter(tags=["Experiments"])
+router = APIRouter(tags=["Experiments"], dependencies=[Depends(validar_token)])
 
 # --- Pydantic Response Models ---
 
 DATASET_TABLE = "rj-iplanrio.brutos_eai_logs.evaluations_datasets"
 EXPERIMENTS_TABLE = "rj-iplanrio.brutos_eai_logs.evaluations_experiments"
+
+
+def execute_bigquery_delete(query: str) -> bool:
+    """
+    Execute a DELETE operation in BigQuery.
+
+    Args:
+        query (str): The DELETE query to execute
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        bq_client = get_bigquery_client()
+        query_job = bq_client.query(query)
+        query_job.result()  # Wait for the query to complete
+        logger.info(f"Successfully executed DELETE query: {query}")
+        return True
+    except GoogleCloudError as e:
+        logger.error(f"BigQuery DELETE error: {e}")
+        return False
 
 
 class DatasetInfo(BaseModel):
@@ -59,6 +80,12 @@ class ExperimentDetails(BaseModel):
     error_summary: Dict[str, Any]
     aggregate_metrics: List[Dict[str, Any]]
     runs: List[Dict[str, Any]]
+
+
+class DeleteResponse(BaseModel):
+    success: bool
+    message: str
+    deleted_count: int = 0
 
 
 # --- API Endpoints ---
@@ -209,4 +236,115 @@ async def get_experiment_details(
         logger.error(f"BigQuery error fetching experiment {experiment_id}: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to retrieve data from BigQuery."
+        )
+
+
+@router.delete("/datasets/{dataset_id}", response_model=DeleteResponse)
+async def delete_dataset(dataset_id: str):
+    """
+    Deletes a dataset and all its associated experiments.
+
+    Args:
+        dataset_id (str): The ID of the dataset to delete
+
+    Returns:
+        DeleteResponse: Status of the deletion operation
+    """
+    logger.info(f"Attempting to delete dataset_id: {dataset_id}")
+
+    # First, delete all experiments associated with this dataset
+    experiments_delete_query = f"""
+        DELETE FROM `{EXPERIMENTS_TABLE}`
+        WHERE dataset_id = CAST({dataset_id} AS INT64)
+    """
+
+    # Then, delete the dataset itself
+    dataset_delete_query = f"""
+        DELETE FROM `{DATASET_TABLE}`
+        WHERE dataset_id = CAST({dataset_id} AS INT64)
+    """
+
+    try:
+        # Delete experiments first
+        experiments_deleted = execute_bigquery_delete(experiments_delete_query)
+        if not experiments_deleted:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to delete experiments associated with the dataset.",
+            )
+
+        # Delete the dataset
+        dataset_deleted = execute_bigquery_delete(dataset_delete_query)
+        if not dataset_deleted:
+            raise HTTPException(status_code=500, detail="Failed to delete the dataset.")
+
+        logger.info(
+            f"Successfully deleted dataset_id: {dataset_id} and all its experiments"
+        )
+        return DeleteResponse(
+            success=True,
+            message=f"Dataset {dataset_id} and all its experiments deleted successfully",
+            deleted_count=1,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error deleting dataset {dataset_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred while deleting the dataset.",
+        )
+
+
+@router.delete("/experiments/{experiment_id}", response_model=DeleteResponse)
+async def delete_experiment(
+    experiment_id: str,
+    dataset_id: str = Query(
+        ..., description="The ID of the dataset containing the experiment."
+    ),
+):
+    """
+    Deletes a specific experiment from the experiments table.
+
+    Args:
+        experiment_id (str): The ID of the experiment to delete
+        dataset_id (str): The ID of the dataset containing the experiment
+
+    Returns:
+        DeleteResponse: Status of the deletion operation
+    """
+    logger.info(
+        f"Attempting to delete experiment_id: {experiment_id} from dataset_id: {dataset_id}"
+    )
+
+    # Delete the specific experiment
+    experiment_delete_query = f"""
+        DELETE FROM `{EXPERIMENTS_TABLE}`
+        WHERE dataset_id = CAST({dataset_id} AS INT64) AND experiment_id = CAST({experiment_id} AS INT64)
+    """
+
+    try:
+        experiment_deleted = execute_bigquery_delete(experiment_delete_query)
+        if not experiment_deleted:
+            raise HTTPException(
+                status_code=500, detail="Failed to delete the experiment."
+            )
+
+        logger.info(
+            f"Successfully deleted experiment_id: {experiment_id} from dataset_id: {dataset_id}"
+        )
+        return DeleteResponse(
+            success=True,
+            message=f"Experiment {experiment_id} deleted successfully",
+            deleted_count=1,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error deleting experiment {experiment_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred while deleting the experiment.",
         )

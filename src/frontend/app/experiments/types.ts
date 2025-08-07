@@ -157,3 +157,11 @@ export interface ExperimentDetails {
     aggregate_metrics: AggregateMetric[];
     runs: ExperimentRun[];
 }
+
+// --- Delete Response Interface ---
+
+export interface DeleteResponse {
+    success: boolean;
+    message: string;
+    deleted_count: number;
+}

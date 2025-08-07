@@ -44,7 +44,7 @@ async def run_experiment():
         # number_rows=10,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Golden Dataset 10 samples",
+        dataset_name="Golden Dataset samples",
         dataset_description="Dataset de avaliacao de servicos",
         metadata_cols=[
             "golden_links_list",
@@ -88,7 +88,7 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 10
+    MAX_CONCURRENCY = 5
 
     runner = AsyncExperimentRunner(
         experiment_name="eai-2025-08-07-v59",
@@ -101,7 +101,7 @@ async def run_experiment():
         output_dir=EXPERIMENT_DATA_PATH,
         timeout=180,
         polling_interval=5,
-        rate_limit_requests_per_minute=10,
+        rate_limit_requests_per_minute=5,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
