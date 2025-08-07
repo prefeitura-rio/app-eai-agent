@@ -15,7 +15,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         subtitle={subtitle}
         actions={pageActions}
       />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
           {children}
         </div>

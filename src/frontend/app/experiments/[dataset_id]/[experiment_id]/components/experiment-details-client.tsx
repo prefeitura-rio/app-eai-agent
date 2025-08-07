@@ -107,8 +107,8 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
         onOpenChange={setLlmModalOpen}
         onConfirm={handleDownloadCleanJson}
       />
-      <div className="grid md:grid-cols-[300px_1fr] gap-6">
-        <Card className="flex flex-col h-screen">
+      <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full">
+        <Card className="flex flex-col max-h-screen">
           <CardHeader>
             <CardTitle>Runs ({filteredRuns.length})</CardTitle>
           </CardHeader>
