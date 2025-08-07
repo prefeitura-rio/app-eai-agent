@@ -25,7 +25,7 @@ interface DisplayMessage {
 }
 
 const JsonViewer = ({ data }: { data: object }) => (
-  <pre className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">
+  <pre className="p-2 bg-muted/50 rounded-md text-base whitespace-pre-wrap break-all font-mono">
     {JSON.stringify(data, null, 2)}
   </pre>
 );
@@ -35,7 +35,7 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
     const data = typeof toolReturn === 'string' ? JSON.parse(toolReturn) : toolReturn;
     
     if (typeof data !== 'object' || data === null) {
-      return <p className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
+      return <p className="p-2 bg-muted/50 rounded-md text-base whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
     }
 
     // Special handling for specific tools
@@ -63,22 +63,22 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
         <div className="space-y-2">
           {orderedEntries.map(([key, value]) => (
             <div key={key} className="space-y-1">
-              <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
+              <h5 className="font-medium text-base capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
               <div className="pl-4">
                 {key === 'sources' ? (
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="sources" className="border-none">
-                      <AccordionTrigger className="text-xs p-2 hover:no-underline">
+                      <AccordionTrigger className="text-base p-2 hover:no-underline">
                         Ver Fontes
                       </AccordionTrigger>
                       <AccordionContent>
                         {typeof value === 'string' ? (
                                                   <div
-                          className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                          className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap"
                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value, { breaks: true }) as string) }}
                         />
                         ) : (
-                          <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                          <pre className="text-base font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
                             {JSON.stringify(value, null, 2)}
                           </pre>
                         )}
@@ -87,11 +87,11 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
                   </Accordion>
                 ) : typeof value === 'string' ? (
                   <div
-                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                    className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value, { breaks: true }) as string) }}
                   />
                 ) : (
-                  <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                  <pre className="text-base font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
                     {JSON.stringify(value, null, 2)}
                   </pre>
                 )}
@@ -114,9 +114,9 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
         <div className="space-y-4">
           {toolReturnData.tema && (
             <div className="space-y-1">
-              <h5 className="font-medium text-sm capitalize text-muted-foreground">Tema</h5>
+              <h5 className="font-medium text-base capitalize text-muted-foreground">Tema</h5>
               <div className="pl-4">
-                <div className="text-sm font-medium text-foreground">
+                <div className="text-base font-medium text-foreground">
                   {toolReturnData.tema}
                 </div>
               </div>
@@ -124,20 +124,20 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
           )}
           {toolReturnData.instrucoes && Array.isArray(toolReturnData.instrucoes) && (
             <div className="space-y-1">
-              <h5 className="font-medium text-sm capitalize text-muted-foreground">Instruções</h5>
+              <h5 className="font-medium text-base capitalize text-muted-foreground">Instruções</h5>
               <div className="pl-4 space-y-3">
                 {toolReturnData.instrucoes.map((item: any, index: number) => (
                   <div key={index} className="border-l-2 border-primary/20 pl-3">
                     {/* Renderiza tema primeiro se existir */}
                     {item.tema && (
-                      <div className="text-xs text-muted-foreground mb-2">
+                      <div className="text-base text-muted-foreground mb-2">
                         <span className="font-medium">Tema:</span> {item.tema}
                       </div>
                     )}
                     {/* Renderiza instruções se existir */}
                     {item.instrucoes && typeof item.instrucoes === 'string' && (
                       <div
-                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                        className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(item.instrucoes, { breaks: true }) as string) }}
                       />
                     )}
@@ -154,10 +154,10 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
         <div className="space-y-2">
           {Object.entries(data).map(([key, value]) => (
             <div key={key}>
-              <p className="font-semibold text-xs capitalize">{key.replace(/_/g, ' ')}:</p>
+              <p className="font-semibold text-base capitalize">{key.replace(/_/g, ' ')}:</p>
               {key.toLowerCase().includes('text') || key.toLowerCase().includes('markdown') ? (
                 <div 
-                  className="prose prose-sm dark:prose-invert max-w-full"
+                  className="prose prose-base dark:prose-invert max-w-full"
                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(String(value)) as string) }}
                 />
               ) : (
@@ -170,7 +170,7 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
     }
   } catch {
     return (
-      <p className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">
+      <p className="p-2 bg-muted/50 rounded-md text-base whitespace-pre-wrap break-all font-mono">
         {String(toolReturn)}
       </p>
     );
@@ -385,7 +385,7 @@ export default function ChatClient() {
                   {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
                   <div className={`w-full max-w-[80%] rounded-lg ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                     <div 
-                      className="prose prose-sm dark:prose-invert p-4 whitespace-pre-wrap"
+                      className="prose prose-base dark:prose-invert p-4 whitespace-pre-wrap text-base"
                       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
                     />
                     {msg.sender === 'bot' && msg.fullResponse && (
@@ -406,10 +406,10 @@ export default function ChatClient() {
                                   <h4 className="font-semibold">{step.message_type.replace(/_/g, ' ')}</h4>
                                   {step.name && <Badge variant="secondary">{step.name}</Badge>}
                                 </div>
-                                {step.reasoning && <p className="italic text-muted-foreground text-xs pl-6">{step.reasoning}</p>}
+                                {step.reasoning && <p className="italic text-muted-foreground text-base pl-6">{step.reasoning}</p>}
                                 {step.tool_call && (
                                   <div>
-                                    <p className="font-semibold text-xs capitalize mb-2">Tool Call Arguments:</p>
+                                    <p className="font-semibold text-base capitalize mb-2">Tool Call Arguments:</p>
                                     <JsonViewer data={(() => {
                                       try {
                                         return typeof step.tool_call.arguments === 'string' 
