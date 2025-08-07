@@ -66,17 +66,9 @@ export default function RunDetails({ run }: RunDetailsProps) {
 
     const goldenResponse = run.task_data[selectedGoldenKey] as string || "";
 
-    const multiTurnReasoningTrace = useMemo(() => {
-        if (isOneTurn || !run.multi_turn_analysis.transcript) {
-            return [];
-        }
-        // No modo multi-turno, usamos o transcript diretamente
-        return run.multi_turn_analysis.transcript.flatMap(turn => turn.agent_reasoning_trace || []);
-    }, [isOneTurn, run.multi_turn_analysis.transcript]);
-
     const reasoningTrace = isOneTurn 
         ? run.one_turn_analysis.agent_reasoning_trace 
-        : multiTurnReasoningTrace;
+        : [];
 
     return (
         <div className="space-y-6">
@@ -170,7 +162,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                                 <SelectValue placeholder="Selecione a coluna..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {taskDataKeys.map(key => (
+                                                {taskDataKeys.map((key: string) => (
                                                     <SelectItem key={key} value={key}>{key}</SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -209,10 +201,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                         defaultExpanded={true}
                                     />
                                 ) : (
-                                    <ReasoningTimeline 
-                                        reasoningTrace={multiTurnReasoningTrace} 
-                                        defaultExpanded={true}
-                                    />
+                                    <ConversationTranscript transcript={run.multi_turn_analysis.transcript} />
                                 )}
                             </AccordionContent>
                         </AccordionItem>
