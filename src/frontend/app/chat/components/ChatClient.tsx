@@ -4,11 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, BarChart2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage } from '../services/api';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+
+// Configurar marked para processar quebras de linha
+marked.use({ breaks: true });
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -70,10 +73,10 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
                       </AccordionTrigger>
                       <AccordionContent>
                         {typeof value === 'string' ? (
-                          <div
-                            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
-                          />
+                                                  <div
+                          className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value, { breaks: true }) as string) }}
+                        />
                         ) : (
                           <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
                             {JSON.stringify(value, null, 2)}
@@ -85,7 +88,7 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
                 ) : typeof value === 'string' ? (
                   <div
                     className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value, { breaks: true }) as string) }}
                   />
                 ) : (
                   <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
@@ -135,7 +138,7 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
                     {item.instrucoes && typeof item.instrucoes === 'string' && (
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(item.instrucoes) as string) }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(item.instrucoes, { breaks: true }) as string) }}
                       />
                     )}
                   </div>
@@ -281,13 +284,19 @@ export default function ChatClient() {
                   {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
                   <div className={`w-full max-w-[80%] rounded-lg ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                     <div 
-                      className="prose prose-sm dark:prose-invert p-4"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(msg.content) as string) }}
+                      className="prose prose-sm dark:prose-invert p-4 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
                     />
                     {msg.sender === 'bot' && msg.fullResponse && (
-                      <Accordion type="single" collapsible className="w-full bg-background/50 rounded-b-lg">
-                        <AccordionItem value="item-1" className="border-x-0 border-b-0">
-                          <AccordionTrigger className="px-4 py-2 text-xs">Ver Detalhes</AccordionTrigger>
+                      <div className="mt-3 pt-3 border-t border-muted/30">
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="item-1" className="border-none">
+                            <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <span className="text-blue-600 dark:text-blue-400">Ver Detalhes</span>
+                              </div>
+                            </AccordionTrigger>
                           <AccordionContent className="p-4 space-y-4">
                             {msg.fullResponse.messages.filter(m => m.message_type !== 'assistant_message').map((step, stepIndex) => (
                               <div key={`${step.id}-${step.message_type}-${stepIndex}`} className="space-y-2">
@@ -324,7 +333,8 @@ export default function ChatClient() {
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
-                    )}
+                    </div>
+                  )}
                   </div>
                   {msg.sender === 'user' && <User className="h-6 w-6 flex-shrink-0" />}
                 </div>
