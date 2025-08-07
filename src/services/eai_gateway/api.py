@@ -9,30 +9,73 @@ from src.utils.log import logger
 
 # --- Rate Limiter ---
 
+import asyncio
+import time
+from typing import Optional
 
-class EAIRateLimiter:
+
+class GlobalEAIRateLimiter:
     """
-    Rate limiter simples para controlar requisições por minuto.
-    Garante que não exceda a quota do Google (60 req/min).
+    Rate limiter global compartilhado para controlar requisições por minuto.
+    Implementa token bucket: permite até X requisições por minuto, mesmo simultâneas.
     """
+
+    _instance: Optional["GlobalEAIRateLimiter"] = None
+    _lock = asyncio.Lock()
+
+    def __new__(cls, requests_per_minute: int = 60):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
 
     def __init__(self, requests_per_minute: int = 60):
+        # Sempre atualiza os parâmetros, mesmo se já foi inicializado
         self.requests_per_minute = requests_per_minute
-        self.min_interval = 60.0 / requests_per_minute  # segundos entre requisições
-        self.last_request_time = 0
+        self.tokens_per_second = requests_per_minute / 60.0  # tokens por segundo
+        if not self._initialized:
+            self.tokens = requests_per_minute  # tokens disponíveis
+            self.last_refill_time = time.time()
+            self._initialized = True
+        else:
+            self.tokens = requests_per_minute
+            self.last_refill_time = time.time()
+
+    def _refill_tokens(self):
+        """Recarrega tokens baseado no tempo decorrido."""
+        current_time = time.time()
+        time_passed = current_time - self.last_refill_time
+        tokens_to_add = time_passed * self.tokens_per_second
+        self.tokens = min(self.requests_per_minute, self.tokens + tokens_to_add)
 
     async def wait_if_needed(self):
-        """Aguarda o tempo necessário para respeitar o rate limit."""
-        current_time = time.time()
-        time_since_last = current_time - self.last_request_time
-        if time_since_last < self.min_interval:
-            wait_time = self.min_interval - time_since_last
-            logger.info(
-                f"Rate limit de {self.requests_per_minute} requisições por minuto atingido, "
-                f"aguardando {wait_time:.2f} segundos"
-            )
-            await asyncio.sleep(wait_time)
-        self.last_request_time = time.time()
+        """Aguarda se necessário para respeitar o rate limit global."""
+        async with self._lock:
+            self._refill_tokens()
+
+            # logger.debug(
+            #     f"Rate limiter check: tokens disponíveis = {self.tokens:.1f}, "
+            #     f"limite = {self.requests_per_minute} req/min"
+            # )
+
+            if self.tokens < 1:
+                # Calcula quanto tempo esperar para ter pelo menos 1 token
+                wait_time = (1 - self.tokens) / self.tokens_per_second
+                logger.info(
+                    f"Rate limit global de {self.requests_per_minute} requisições por minuto atingido, "
+                    f"aguardando {wait_time:.2f} segundos"
+                )
+                await asyncio.sleep(wait_time)
+                self._refill_tokens()  # Recarrega após esperar
+
+            self.tokens -= 1
+            # logger.debug(
+            #     f"Rate limiter: token consumido, restam {self.tokens:.1f} tokens"
+            # )
+
+
+# Alias para manter compatibilidade
+EAIRateLimiter = GlobalEAIRateLimiter
 
 
 # --- Pydantic Models for API Interaction ---
@@ -141,9 +184,7 @@ class EAIClient:
         self.base_url = env.EAI_GATEWAY_API_URL
         self.timeout = timeout
         self.polling_interval = polling_interval
-        self.rate_limit_requests_per_minute = EAIRateLimiter(
-            rate_limit_requests_per_minute
-        )
+        self.rate_limiter = GlobalEAIRateLimiter(rate_limit_requests_per_minute)
         headers = (
             {"Authorization": f"Bearer {env.EAI_GATEWAY_API_TOKEN}"}
             if env.EAI_GATEWAY_API_TOKEN
@@ -156,6 +197,8 @@ class EAIClient:
 
     async def create_agent(self, request: CreateAgentRequest) -> Dict[str, Any]:
         """Creates a new agent."""
+        logger.debug(f"create_agent chamado para user_number: {request.user_number}")
+        # Criação de agente não precisa de rate limiting pois não conta para quota do Google AI Platform
         try:
             response = await self._client.post(
                 "/api/v1/agent/create", json=request.model_dump()
@@ -176,6 +219,9 @@ class EAIClient:
         self, request: AgentWebhookRequest
     ) -> AgentWebhookResponse:
         """(Low-level) Sends a message to a specific agent."""
+        # Aplica rate limiting global antes de fazer a requisição
+        await self.rate_limiter.wait_if_needed()
+
         try:
             response = await self._client.post(
                 "/api/v1/message/webhook/agent", json=request.model_dump()
@@ -198,8 +244,8 @@ class EAIClient:
         self, request: UserWebhookRequest
     ) -> AgentWebhookResponse:
         """(Low-level) Sends a message to a specific user number."""
-        # Aplica rate limiting antes de fazer a requisição
-        await self.rate_limit_requests_per_minute.wait_if_needed()
+        # Aplica rate limiting global antes de fazer a requisição
+        await self.rate_limiter.wait_if_needed()
 
         try:
             response = await self._client.post(
@@ -221,6 +267,7 @@ class EAIClient:
 
     async def get_message_response(self, message_id: str) -> MessageResponse:
         """(Low-level) Polls for the response of a sent message."""
+        # Polling não precisa de rate limiting pois não conta para quota do Google AI Platform
         try:
             params = {"message_id": message_id}
             response = await self._client.get("/api/v1/message/response", params=params)

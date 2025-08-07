@@ -171,7 +171,7 @@ class AsyncExperimentRunner:
             eai_client=self.eai_client,
             timeout=self.eai_client.timeout,
             polling_interval=self.eai_client.polling_interval,
-            rate_limit_requests_per_minute=self.eai_client.rate_limit_requests_per_minute,
+            rate_limit_requests_per_minute=self.eai_client.rate_limiter.requests_per_minute,
         )
         task_processor = TaskProcessor(self._evaluator_cache, response_manager)
         result_analyzer = ResultAnalyzer()

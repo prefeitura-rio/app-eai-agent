@@ -1,11 +1,11 @@
 {
   "dataset_name": "Golden Equipment Test",
   "dataset_description": "Dataset de avaliacao de equipamentos",
-  "dataset_id": 2298299547860954533,
-  "experiment_id": 1306435175800757421,
+  "dataset_id": 6258251055903606747,
+  "experiment_id": 4075352396913340150,
   "experiment_name": "eai-2025-08-04-v59",
   "experiment_description": "Test",
-  "experiment_timestamp": "2025-08-07T18:43:16.660307+00:00",
+  "experiment_timestamp": "2025-08-07T19:34:55.042219+00:00",
   "experiment_metadata": {
     "judge_model": "gpt-4o",
     "judges_prompts": {
@@ -17,122 +17,156 @@
     }
   },
   "execution_summary": {
-    "total_duration_seconds": 0.07,
-    "average_task_duration_seconds": 0.04,
-    "average_metric_duration_seconds": 0.0
+    "total_duration_seconds": 46.62,
+    "average_task_duration_seconds": 31.74,
+    "average_metric_duration_seconds": 31.15
   },
   "error_summary": {
-    "total_failed_runs": 28,
-    "errors_per_metric": {
-      "equipments_categories": 28,
-      "equipments_correctness": 28,
-      "equipments_speed": 28,
-      "equipments_tools": 28
-    },
-    "failed_run_ids": [
-      "1",
-      "10",
-      "11",
-      "12",
-      "13",
-      "14",
-      "15",
-      "16",
-      "17",
-      "18",
-      "19",
-      "2",
-      "20",
-      "21",
-      "22",
-      "23",
-      "24",
-      "25",
-      "26",
-      "27",
-      "28",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9"
-    ]
+    "total_failed_runs": 0,
+    "errors_per_metric": {},
+    "failed_run_ids": []
   },
   "aggregate_metrics": [
     {
       "metric_name": "equipments_categories",
-      "total_runs": 28,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 28,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
+      "total_runs": 3,
+      "successful_runs": 3,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 0.6667,
+        "median": 1.0,
         "min": 0.0,
-        "max": 0.0,
-        "std_dev": 0.0
+        "max": 1.0,
+        "std_dev": 0.5774
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 30.655,
+        "median": 29.174,
+        "min": 17.6529,
+        "max": 45.1382,
+        "std_dev": 13.8024
+      },
+      "score_distribution": [
+        {
+          "value": 0.0,
+          "count": 1,
+          "percentage": 33.33
+        },
+        {
+          "value": 1.0,
+          "count": 2,
+          "percentage": 66.67
+        }
+      ]
     },
     {
       "metric_name": "equipments_correctness",
-      "total_runs": 28,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 28,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
+      "total_runs": 3,
+      "successful_runs": 3,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 0.6667,
+        "median": 1.0,
         "min": 0.0,
-        "max": 0.0001,
-        "std_dev": 0.0
+        "max": 1.0,
+        "std_dev": 0.5774
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 31.4844,
+        "median": 29.4959,
+        "min": 18.3577,
+        "max": 46.5997,
+        "std_dev": 14.2256
+      },
+      "score_distribution": [
+        {
+          "value": 0.0,
+          "count": 1,
+          "percentage": 33.33
+        },
+        {
+          "value": 1.0,
+          "count": 2,
+          "percentage": 66.67
+        }
+      ]
     },
     {
       "metric_name": "equipments_speed",
-      "total_runs": 28,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 28,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
+      "total_runs": 3,
+      "successful_runs": 3,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 2.0,
+        "median": 2.0,
         "min": 0.0,
-        "max": 0.0,
-        "std_dev": 0.0
+        "max": 4.0,
+        "std_dev": 2.0
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 31.3963,
+        "median": 29.7505,
+        "min": 18.8249,
+        "max": 45.6135,
+        "std_dev": 13.4699
+      },
+      "score_distribution": [
+        {
+          "value": 0.0,
+          "count": 1,
+          "percentage": 33.33
+        },
+        {
+          "value": 2.0,
+          "count": 1,
+          "percentage": 33.33
+        },
+        {
+          "value": 4.0,
+          "count": 1,
+          "percentage": 33.33
+        }
+      ]
     },
     {
       "metric_name": "equipments_tools",
-      "total_runs": 28,
-      "successful_runs": 0,
-      "success_rate_percentage": 0.0,
-      "failed_runs": 28,
-      "failure_rate_percentage": 100.0,
-      "score_statistics": null,
-      "duration_statistics_seconds": {
-        "average": 0.0,
-        "median": 0.0,
-        "min": 0.0,
-        "max": 0.0,
+      "total_runs": 3,
+      "successful_runs": 3,
+      "success_rate_percentage": 100.0,
+      "failed_runs": 0,
+      "failure_rate_percentage": 0.0,
+      "score_statistics": {
+        "average": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0,
         "std_dev": 0.0
       },
-      "score_distribution": []
+      "duration_statistics_seconds": {
+        "average": 31.0691,
+        "median": 29.4343,
+        "min": 18.1191,
+        "max": 45.6539,
+        "std_dev": 13.84
+      },
+      "score_distribution": [
+        {
+          "value": 1.0,
+          "count": 3,
+          "percentage": 100.0
+        }
+      ]
     }
   ],
   "runs": [
     {
-      "duration_seconds": 0.0352,
+      "duration_seconds": 29.7627,
       "task_data": {
         "id": "1",
         "prompt": "tô gripado, onde posso ir aqui em copacabana?",
@@ -149,48 +183,350 @@
         "error_message": null
       },
       "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
+        "final_agent_message": "De nada! Fico feliz em ter ajudado.\n\nQualquer outra dúvida, pode me chamar. Melhoras para você!",
+        "transcript": [
+          {
+            "turn": 1,
+            "user_message": "tô gripado, onde posso ir aqui em copacabana?",
+            "agent_message": "Olá! Para te ajudar a encontrar o local mais adequado para o seu atendimento, preciso saber o seu *endereço completo* (rua, número, bairro) em Copacabana.\n\nCom essa informação, consigo indicar a Clínica da Família ou Centro Municipal de Saúde mais próximo de você.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_instructions"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "arguments": {}
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "tool_return": {
+                    "next_too_instructions": "**Atenção:** Para localizar os equipamentos mais próximos, *você deve obrigatoriamente solicitar o endereço do usuário*. Após o usuário fornecer o endereço, *você deve imediatamente chamar a tool `equipments_by_address`* utilizando o endereço informado. **Não se esqueça de chamar a tool `equipments_by_address` após o endereço ser informado.** A ferramenta `equipments_by_address` exige o parametro `categories` esse deve seguir o nome exato das categorias disponiveis na secao `categorias` NAO UTILLIZE CATEGORIAS DAS INSTRUCOES!!!. NÃO É NECESSARIO CHAMAR A TOOL `google_search` para buscar informacoes sobre os equipamentos ou endereço, pois a tool `equipments_by_address` já retorna todas as informacoes necessárias.",
+                    "instrucoes": [
+                      {
+                        "tema": "educacao",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "cultura",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "saude",
+                        "instrucoes": "# Instruções fundamentais\n\n- Sempre identificar através de perguntas o nível de atenção demandado pelo cidadão e, a partir daí, definir qual é o equipamento ideal para oferecer ao cidadão (caso seja necessário)\n- Lembrar o cidadão de portar documento de identificação (além da carteirinha de vacinação, se for esse o serviço) e, caso possua, também levar resultados de exames e/ou prescrições anteriores relacionadas à condição de saúde relatada.\n- Se um cidadão já tiver um pedido de exames simples (Ex: Sangue, Urina, Fezes e teste de gravidez) solicitado por um médico da rede privada, este pedido não poderá ser aceito. Na clínica da família o cidadão será atendido e o médico irá emitir o pedido (caso necessário) através da rede pública.\n- Se o cidadão perguntar como é a ordem de atendimento ao chegar na clinica ou hospital (sem atendimento previamente agendado), explicar que o atendimento é feito por classificação de risco (processo de triagem), o que significa que os casos mais graves são priorizados.\n- Caso o cidadão queira consultar o status de um agendamento no SISREG, orientar que acesse a área logada do portal ou aplicativo MinhaSaude.rio, e acesse o menu \"SISREG\". procedimentos mais complexos são feitos pela rede de saúde estadual e precisam ser consultados no sistema SER. A consulta pode ser feita neste link: https://www.saude.rj.gov.br/transparencia/acesso-a-informacao/2019/07/14-lista-de-espera-regulacao-ser\n- Caso o cidadão esteja enfrentando problemas técnicos e necessite de suporte o aplicativo/portal Minha Saúde orientar que entre em contato com o Whatsapp do Minha Saúde no número (21) 97723-8972 ou através do e-mail: minhasaude.rio@regulacaoriorj.com.br\n- Não mandar respostas muito longas e evitar citar termos muito técnicos. Também evitar trazer detalhes sobre as regras de negócio que você utilizará para definir o melhor equipamento. Além disso, evitar mencionar os termos atenção primária, secundária ou terciária.\n\n# Níveis de atenção da saúde e seus equipamentos\n\n## Atenção Primária\n\n- Clínicas da Família (CF): Unidades que cobrem territórios definidos com equipes de Saúde da Família, oferecendo atendimento de rotina, prevenção, acompanhamento de doenças crônicas e ações de promoção à saúde.\n- Centros Municipais de Saúde (CMS): Unidades que podem cobrir parte ou todo o território com equipes de Saúde da Família, também atuando na atenção básica, com consultas, vacinação, pré-natal e outros serviços.\n- Centros de Saúde Escola (CSE): Unidades de ensino-aprendizagem, com atuação em saúde da família, voltadas para formação de profissionais e atendimento à população.\n\n## Atenção Secundária\n\n- Unidades de Pronto Atendimento (UPAs) 24h: Oferecem atendimento de urgência e emergência de média complexidade, funcionando ininterruptamente para casos clínicos e traumáticos. Não possuem internação.\n- Centros de Emergência Regionais (CERs): Unidades que funcionam ao lado de grandes hospitais e complementam o atendimento de urgência e emergência, com estrutura para casos mais complexos, estabilizando pacientes e filtrando casos para o hospital.\n- Policlínicas: Unidades de referência para atendimentos ambulatoriais especializados, onde equipes multiprofissionais realizam consultas médicas especializadas (ginecologia, cardiologia, dermatologia, endocrinologia, ortopedia, pneumologia, otorrinolaringologia), consultas realizadas por outros profissionais de nível superior (nutrição, enfermagem, psicologia, fonoaudiologia, terapia ocupacional, fisioterapia), procedimentos e exames. Os pacientes são referenciados para essas unidades a partir das unidades de Atenção Primária (clínicas da família e centros municipais de saúde), conforme a necessidade, por meio do Sistema de Regulação (Sisreg).\n\n## Atenção Terciária\n\n- Hospitais Municipais: Prestam atendimento de alta complexidade e internação hospitalar, incluindo especialidades médicas e cirúrgicas, sendo referência para procedimentos e internações de maior complexidade.\n- Maternidades: Hospitais e unidades especializadas em saúde da mulher, parto e neonatologia, oferecendo atendimento ambulatorial, de urgência e internação, com sistema de classificação de risco obstétrica na chegada.\n\n# Fluxos de atendimento\n\n1) Atendimento ambulância (SAMU)\n2) Consultas de rotina ou atendimento de baixa complexidade\n3) Atendimentos de urgência e emergência\n4) Atendimentos em saúde mental\n5) Vacinação\n6) Atendimento à gestante\n7) Agendamento de exames\n8) Retorno após consultas de especialidades\n9) Remarcação ou cancelamentos\n\n# Orientações de atendimento de acordo com o tipo de classificação:\n\n## 1) Atendimento ambulância (SAMU)\n\nNo tipo 1 a orientação precisa ser simples e direta.\nExemplo: \"Ligue 192: SAMU. Serviço de atendimento de urgência em ambulância, que funciona 24 horas.\"\n\n## 2) Consultas de rotina ou atendimento de baixa complexidade\n\nAvaliar a criticidade da condição apresentada (baixa, média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição. Sendo baixa complexidade, direcionar para a unidade da rede de atenção primária daquele cidadão (considerando seu endereço de residência). Para esses casos de baixa complexidade nós não devemos realizar pergunta se o cidadão consegue se deslocar por conta própria e não devemos oferecer ambulância.\nCaso seja identificada média ou alta complexidade, seguir orientações do item 3 (atendimentos de urgência e emergência).\n\n## 3) Atendimentos de urgência e emergência\n\nSOMENTE se o cidadão relatar uma condição GRAVE e você inferir que esta condição tem potencial de impedir o seu deslocamento por conta própria até a rede de saúde (pessoa inconsciente, pessoa com ferimento de arma de fogo, etc) perguntar se o mesmo consegue se deslocar a uma unidade de saúde por meios próprios. Caso informado que não consegue se deslocar, considerar como tipo 1 e orientar a solicitar o SAMU.\nSe a condição apresentada não tiver potencial de impactar o deslocamento até a unidade ou se, após a pergunta, o cidadão informar que consegue se deslocar até a unidade de saúde, avaliar a criticidade da condição apresentada (média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição.\nSendo de média complexidade, direcionar para rede de atenção secundária uma UPA ou CER. Se for identificado como alta complexidade, direcionar para a rede de atenção terciária (hospitais). Caso não seja possível inferir a complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n\n## 4) Atendimentos em saúde mental\n\nPara o tipo 4 também precisaremos identificar o nível da emergência para melhor direcionar. Primeiro precisamos perguntar se é possível aguardar para o atendimento em um dos nossos Centros de Atenção Psicossocial (CAPS) mais próximo da sua casa, de segunda a sexta-feira, das 8 às 18h. Se sim, deveríamos informar a localização do equipamento CAPS e reforçar com o cidadão que não há necessidade de agendamento prévio. Se não, enviaríamos uma outra pergunta: \"É caso de emergência com risco de vida? Exemplos: crise psiquiátrica com risco iminente de vida para o paciente ou para terceiros (Exemplo: risco de suicídio com intoxicação por medicação ou outro dano físico ou crise de abstinência de álcool ou outras drogas.) Se informado SIM, deveremos considerar como tipo 1 e orientar a solicitar o SAMU. Caso informado NÃO, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para uma unidade de atenção primária, caso contrário considerar como tipo 1 e orientar a solicitar o SAMU\n\n## 5) Vacinação\n\nLocais onde o serviço de vacinação está disponível:\n- Clínicas da Família (CF): Todas as unidades oferecem vacinação.\n- Centros Municipais de Saúde (CMS): Também disponibilizam vacinação.\n- Centros de Saúde Escola (CSE): Algumas unidades também realizam vacinação.\n- Super Centro Carioca de Vacinação Botafogo (Rua General Severiano, 91): Funciona de domingo a domingo, das 8h às 22h.\n- Super Centro Carioca de Vacinação Campo Grande (ParkShoppingCampoGrande, 2º andar): Funciona de domingo a domingo, conforme horário do shopping, geralmente das 10h às 22h (domingos e feriados, das 12h às 22h).\n\n## 6) Atendimento à gestante\n\n### 6.1) Orientações para gestantes (antes do parto):\n\nPerguntar se trata-se de um atendimento de emergência relacionado à gestação (exemplo: dor muito forte na barriga ou no peito, sangramento intenso, desmaio ou perda de consciência) ou se é algum atendimento regular (consulta pré-natal, acompanhamento pós-parto, etc). Sendo identificada situação de emergência, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para a maternidade mais próxima. Caso não consiga se deslocar, orientar a solicitar o SAMU. Caso a gestante queira informações sobre consultas de rotina como consultas pré-natal, direcionar para a unidade de atenção primária mais próxima, considerando Clínicas da família (CF) e Centros Municipais de Saúde (CMS)).\nAlém disso, se entender que a gestante está em estágio inicial de gravidez ou que necessita de informações sobre a rede de suporte oferecida pela prefeitura, comentar sobre o Programa Cegonha Carioca. No endereço https://saude.prefeitura.rio/cegonha-carioca/ constam informações sobre o programa municipal, que envolve agendamento da visita guiada à maternidade de referência, recebimento do kit enxoval do bebê e transporte de ambulância até a maternidade no momento do parto. Para se cadastrar no Programa Cegonha Carioca, a gestante deve realizar o pré-natal em uma clínica da família ou centro municipal de saúde no Rio de Janeiro. O cadastro é feito durante o pré-natal, e a gestante recebe o \"Passaporte Cegonha\", que indica a maternidade de referência para o parto.\n\n### 6.2) Orientações após o parto (mães ou pais em período pós-parto e que recém tiveram filho):\n\nÉ crucial lembrar que, após a alta da maternidade, seu bebê deve ter uma primeira consulta de rotina com o pediatra ou enfermeiro da Clínica da Família ou Centro Municipal de Saúde nos primeiros 3 a 7 dias de vida. Essa consulta de puericultura é essencial para avaliar a adaptação do bebê, ganho de peso, amamentação, realizar testes importantes (como o Teste do Pezinho, se não foi feito na maternidade) e tirar dúvidas.\nCaso identificado alguma situação com o bebê após a alta (período neonatal imediato, geralmente até 2 semanas após o nascimento) ou alguma condição que já estava sendo monitorada pela equipe que o atendeu, devemos orientar que o cidadão procure preferencialmente a maternidade onde o bebê nasceu. Para problemas mais genéricos, que podem surgir a qualquer momento da infância, um hospital com pronto-socorro pediátrico geral é o local adequado.\n\n## 7) Agendamento de exames\n\nEntender se o cidadão quer agendar um exame ou se quer consultar um agendamento realizado. Caso ele queira agendar um exame, explicar que toda solicitação de exame ocorre via SISREG (sistema de regulação) a partir de um encaminhamento prévio de uma das unidades de saúde do município, onde um médico, enfermeiro ou dentista da unidade de saúde avalia a necessidade do mesmo e realiza a marcação em sistema.\nSua equipe da unidade de saúde deverá informar, assim que houver vaga disponível, local, data e horário da consulta ou exame, através de uma autorização impressa;\nA orientação é que o cidadão chegue para a consulta ou exame na unidade agendada com pelo menos 15 minutos de antecedência do horário marcado, levando os seguintes documentos:\n- Documento de identificação\n- Formulário de encaminhamento (Referência e contra-referência)\n- Formulário de autorização do SISREG (Autorização de Procedimentos Ambulatoriais).\n- Se possível, leve os exames e receitas anteriores para facilitar o atendimento no dia da consulta agendada;\n\nPara realizar alguns exames é necessário um preparo. Verifique se seu exame exige algum preparo especial. Esta informação está na última parte do formulário de autorização do SISREG ou então acessando o portal Minha Saúde Rio através do link: https://web2.smsrio.org/minhasaudeRio/#/orientacoes-cidadao. Se você tiver outras dúvidas, pergunte ao seu médico ou enfermeiro.\n\n## 8) Retorno após consultas de especialidades\n\nQuando um cidadão já fez uma consulta em uma unidade de atenção secundária caso seja necessário uma consulta de retorno, o mesmo deverá se dirigir a mesma unidade onde fez a consulta com o especialista. Não devemos orientar que o cidadão se dirija a sua clínica da família.\n\n## 9) Remarcação ou cancelamentos\n\nQuando houver necessidade de cancelamento ou remarcação de uma consulta ou exame agendado, procure com antecedência de pelo menos dois dias o seu Centro Municipal de Saúde ou Clínica da Família para que outro paciente possa usufruir do atendimento. Neste caso, a sua unidade é responsável por cancelar a sua vaga no SISREG.\n\n# Regras para classificação de complexidade\n\n## Atendimentos de baixa complexidade: não representam risco imediato à vida ou à saúde. Incluem problemas leves, acompanhamento de doenças crônicas estáveis e ações de prevenção, como vacinação e exames de rotina.\nExemplos: dores de cabeça leve; dor de garganta; resfriado; gripe sem complicações graves; quadros de diarreia ou vômito sem desidratação severa; febre baixa a moderada, sem outros sintomas alarmantes; pequenas lesões, como cortes superficiais, escoriações; dor moderada em geral, sem sinais de urgência.\n\n## Atendimentos de média complexidade: representam risco à saúde, mas sem risco iminente de morte.\nExemplos: febre alta persistente, especialmente se acompanhada de outros sintomas como calafrios ou prostração; dores fortes no peito, que não são características de infarto, mas que precisam de avaliação rápida; dor abdominal intensa; crises de asma ou falta de ar moderada; vômito constante e/ou diarreia com sinais de desidratação; convulsões (após a crise, para avaliação e acompanhamento); picos de pressão alta (hipertensão arterial); quedas com torção, dor intensa ou suspeita de fraturas leves a moderadas; cortes com sangramento que necessitam de sutura; alergias severas com inchaço, coceira intensa, dificuldade para respirar leve; infecções urinárias com dor intensa; dores de cabeça intensas, súbitas e diferentes do habitual; acidentes com animais peçonhentos: aranhas, escorpiões, etc.\n\n## Atendimentos de alta complexidade: condições graves, que indicam a necessidade de procedimentos cirúrgicos de urgência ou de alta complexidade, ou condições que representam risco iminente de morte.\nExemplos: traumas graves: acidentes de carro, quedas de altura, ferimentos por arma de fogo ou arma branca, grandes queimaduras, etc; acidente vascular cerebral (AVC); infarto agudo do miocárdio (ataque cardíaco); hemorragias intensas e/ou que não param, sejam externas (ex: cortes profundos) ou internas (ex: vômito com sangue, sangramento retal volumoso); dificuldade respiratória grave: sensação de sufocamento, respiração muito rápida e superficial, lábios azulados; perda súbita de consciência/desmaio prolongado; crises convulsivas que não cessam ou se repetem; envenenamento ou intoxicação grave: ingestão de substâncias tóxicas com sintomas severos.\n\n# Regras para definição do equipamento a ser buscado\n\n- Importante: Caso não seja possível inferir a complexidade entre média e alta complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n- Sempre que identificado que o cidadão necessita de um equipamento da atenção primária (Clínica da família ou CMS), você deve sempre perguntar o endereço de residência do cidadão. Não deve ser considerado qualquer outro endereço a não ser o de residência. Para os outros equipamentos (atenção secundária e terciária), o cidadão pode informar qualquer endereço (residencial ou onde ele se encontra no momento).\n- Sempre que o cidadão necessitar um equipamento da atenção primária, considerar a busca por múltiplos tipos de equipamento, indicar como equipamentos: Clínica da Família + CMS + CSE.\n- Caso o cidadão cite somente que quer saber o hospital mais próximo, sempre pergunte qual é o problema de saúde/necessidade do cidadão, pois nem sempre o cidadão sabe qual é o melhor equipamento. Somente caso o cidadão insista que quer saber sobre um tipo específico de equipamento, daí você pode informar o equipamento desejado.\n- Quando o cidadão enviar o endereço, realizar a busca na internet para completar o endereço e tentar localizar o CEP na cidade do rio de janeiro. Retorne para o cidadão o endereço completo, contendo bairro e CEP e solicite a confirmação pelo cidadão.\n- Caso o cidadão cite especificamente uma das unidades de um equipamento da saúde (Ex: Hospital Souza Aguiar), realize a pesquisa no Google para obter o endereço, horário de funcionamento e telefone da unidade em específico.\n- Se o cidadão necessita de atendimento ambulatorial (ou seja, que não são emergências/urgências), nunca escolha os equipamentos Hospital, Maternidade ou policlínicas, pois nestes equipamentos o atendimento ambulatorial ocorre mediante encaminhamento prévio vindo da atenção primária ou secundária. O correto é indicar ao cidadão um dos equipamentos de atenção primária, se identificado que trata-se de um problema de saúde de baixa complexidade e não urgente.\n- Não indicar diretamente endereços dos equipamentos Policlínicas, pois estes equipamentos só realizam atendimento mediante agendamento prévio no SISREG. Para atenção secundária, indique sempre o equipamento UPA 24hrs.\n"
+                      }
+                    ],
+                    "categorias": {
+                      "SMC": [
+                        "ARENA",
+                        "ARENINHA",
+                        "BIBLIOTECA",
+                        "CENTRO CULTURAL",
+                        "LONA CULTURAL",
+                        "MUSEU",
+                        "TEATRO"
+                      ],
+                      "SME": [
+                        "BIBLIOTECA",
+                        "CRECHE",
+                        "ESCOLA",
+                        "ESCOLA ESPECIAL"
+                      ],
+                      "SMS": [
+                        "CENTRO DE ATENCAO PSICOSSOCIAL",
+                        "CENTRO DE EMERGENCIA REGIONAL",
+                        "CF",
+                        "CMS",
+                        "EQUIPE DA FAMILIA",
+                        "HOSPITAL",
+                        "MATERNIDADE",
+                        "POLICL",
+                        "POLO ACADEMIA DA SAUDE",
+                        "SAUDE MENTAL",
+                        "UPA"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Olá! Para te ajudar a encontrar o local mais adequado para o seu atendimento, preciso saber o seu *endereço completo* (rua, número, bairro) em Copacabana.\n\nCom essa informação, consigo indicar a Clínica da Família ou Centro Municipal de Saúde mais próximo de você."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "9a349cce-1e0d-4658-ad3e-8d0709a60a90",
+                  "message_id": "358883ee-6693-4c0f-aff8-20dcaf817789",
+                  "processed_at": "d93e5c8b-1188-457e-9327-f7c3fada0fc8",
+                  "total_tokens": 12339.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "user_message": "Moro na Rua Barata Ribeiro, 370. E agora, o que eu faço?",
+            "agent_message": "Para o seu caso de gripe, o local mais adequado para atendimento próximo à Rua Barata Ribeiro, 370, em Copacabana, é o *CMS João Barros Barreto*.\n\nAqui estão os detalhes:\n\n*   **Nome:** CMS João Barros Barreto\n*   **Endereço:** Rua Tenreiro Aranha, S/N, Copacabana\n*   **Telefone:** (21) 3208-5297\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta-feira: 07:00 às 22:00\n    *   Sábado: 07:00 às 12:00\n\nLembre-se de levar um documento de identificação com foto.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_by_address"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "arguments": "{'categories': ['CF', 'CMS'], 'address': 'Rua Barata Ribeiro, 370, Copacabana'}"
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "tool_return": {
+                    "instructions": "Retorne todos os equipamentos referente a busca do usuario, acompanhado de todas as informacoes disponiveis sobre o equipamento",
+                    "equipamentos": [
+                      {
+                        "plus8_grid": null,
+                        "plus8": "589R2RM7+",
+                        "plus10": "589R2RM7+52",
+                        "plus11": "589R2RM7+52M",
+                        "distancia_metros": 272,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "CMS",
+                        "nome_oficial": "CMS JOAO BARROS BARRETO - AP 21",
+                        "nome_popular": "CMS JOAO BARROS BARRETO",
+                        "logradouro": "RUA TENREIRO ARANHA",
+                        "numero": "S/N",
+                        "complemento": null,
+                        "bairro": "COPACABANA",
+                        "regiao_planejamento": "ZONA SUL",
+                        "regiao_administrativa": "COPACABANA",
+                        "subprefeitura": "ZONA SUL",
+                        "contato": {
+                          "telefones": [
+                            "(21) 3208-5297"
+                          ],
+                          "email": "admcmsjoaobarrosbarreto@gmail.com",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": "cmsjbb",
+                            "instagram": "cmsjoaobarrosbarreto",
+                            "twitter": "cmsjbb"
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Segunda a Sexta",
+                            "abre": "07:00:00",
+                            "fecha": "22:00:00"
+                          },
+                          {
+                            "dia": "Sábado",
+                            "abre": "07:00:00",
+                            "fecha": "12:00:00"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:41.986393+00:00"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Para o seu caso de gripe, o local mais adequado para atendimento próximo à Rua Barata Ribeiro, 370, em Copacabana, é o *CMS João Barros Barreto*.\n\nAqui estão os detalhes:\n\n*   **Nome:** CMS João Barros Barreto\n*   **Endereço:** Rua Tenreiro Aranha, S/N, Copacabana\n*   **Telefone:** (21) 3208-5297\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta-feira: 07:00 às 22:00\n    *   Sábado: 07:00 às 12:00\n\nLembre-se de levar um documento de identificação com foto."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "9a349cce-1e0d-4658-ad3e-8d0709a60a90",
+                  "message_id": "0ad670ec-b055-4094-b446-04704a5c4607",
+                  "processed_at": "d8c8a58f-2ecd-48f8-b77b-4265ce0ec948",
+                  "total_tokens": 17278.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "user_message": "Ah, valeu pela indicação! Vou dar uma olhada nesse CMS João Barros Barreto. Brigadão pela ajuda.  \n\nEVALUATION_CONCLUDED",
+            "agent_message": "De nada! Fico feliz em ajudar.\n\nSe precisar de mais alguma informação ou tiver outras dúvidas, é só chamar! Melhoras para você!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "De nada! Fico feliz em ajudar.\n\nSe precisar de mais alguma informação ou tiver outras dúvidas, é só chamar! Melhoras para você!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "9a349cce-1e0d-4658-ad3e-8d0709a60a90",
+                  "message_id": "9903a9cd-3b32-4e3f-8ecb-8699f5c689fe",
+                  "processed_at": "e2cf5bd7-66cd-4baf-b02a-39b77e4183ee",
+                  "total_tokens": 8935.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 4,
+            "user_message": "Ah, valeu mesmo pela ajuda! Vou lá no CMS João Barros Barreto pra me consultar. Brigadão! EVALUATION_CONCLUDED",
+            "agent_message": "De nada! Fico feliz em ter ajudado.\n\nDesejo-lhe uma rápida recuperação! Se precisar de mais alguma coisa, é só me chamar.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "De nada! Fico feliz em ter ajudado.\n\nDesejo-lhe uma rápida recuperação! Se precisar de mais alguma coisa, é só me chamar."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "9a349cce-1e0d-4658-ad3e-8d0709a60a90",
+                  "message_id": "773fdc54-b9e7-419b-a39d-187cb6401635",
+                  "processed_at": "c3e38efc-9c2e-4211-87a4-cf37344a5603",
+                  "total_tokens": 8996.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 5,
+            "user_message": "\"Ah, valeu mesmo pela ajuda! Vou lá no CMS João Barros Barreto pra me consultar. Brigadão!\"",
+            "agent_message": "De nada! Fico feliz em ter ajudado.\n\nDesejo-lhe uma rápida recuperação! Se precisar de mais alguma coisa, é só me chamar.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "De nada! Fico feliz em ter ajudado.\n\nDesejo-lhe uma rápida recuperação! Se precisar de mais alguma coisa, é só me chamar."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "9a349cce-1e0d-4658-ad3e-8d0709a60a90",
+                  "message_id": "6fdfe4e9-7efe-42ff-9206-ddae55cd4358",
+                  "processed_at": "078083e9-be63-4d61-a1e6-149f69feb431",
+                  "total_tokens": 9052.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 6,
+            "user_message": "\"Tranquilo, valeu pela ajuda! Vou lá no CMS João Barros Barreto dar uma olhada. Abraço!\" EVALUATION_CONCLUDED",
+            "agent_message": "De nada! Fico feliz em ter ajudado.\n\nQualquer outra dúvida, pode me chamar. Melhoras para você!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "De nada! Fico feliz em ter ajudado.\n\nQualquer outra dúvida, pode me chamar. Melhoras para você!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "9a349cce-1e0d-4658-ad3e-8d0709a60a90",
+                  "message_id": "aac81547-e982-4655-8e38-18f41ae5b7fb",
+                  "processed_at": "0abae693-fdf8-44b1-bc04-2fa5a79a10a8",
+                  "total_tokens": 9108.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          }
+        ],
         "evaluations": [
           {
             "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '1'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '1'."
+            "duration_seconds": 29.174,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: As categorias esperadas \"CF, CMS\" foram usadas corretamente pelo agente no argumento \"categories\" da ferramenta.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '1'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '1'."
+            "duration_seconds": 29.4959,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: O chatbot informou corretamente o equipamento \"CMS João Barros Barreto\" e forneceu detalhes como endereço e telefone, alinhando-se ao equipamento_correto fornecido.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '1'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '1'."
+            "duration_seconds": 29.7505,
+            "score": 2.0,
+            "annotations": "Score: 2  \nReasoning: O equipamento correto, \"CMS João Barros Barreto\", foi mencionado pela primeira vez no turno 2 pelo chatbot.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '1'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '1'."
+            "duration_seconds": 29.4343,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: Ambas as ferramentas foram chamadas na ordem correta: \"equipments_instructions\" primeiro e \"equipments_by_address\" segundo.",
+            "has_error": false,
+            "error_message": null
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
+        "has_error": false,
+        "error_message": null
       }
     },
     {
-      "duration_seconds": 0.0349,
+      "duration_seconds": 46.6018,
       "task_data": {
         "id": "2",
         "prompt": "caí e to achando q quebrei o braço, oq faço?",
@@ -207,48 +543,571 @@
         "error_message": null
       },
       "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
+        "final_agent_message": "Sim, a **UPA 24H Rocha Miranda** fica bem perto da sua localização na Estrada do Barro Vermelho. Ela está a aproximadamente *1 quilômetro* de distância.\n\nConsiderando a sua dor intensa e a suspeita de fratura, o ideal é que você procure um meio de transporte que te leve diretamente e com o mínimo de movimento possível, como um táxi, carro de aplicativo ou pedir a ajuda de alguém para te levar.\n\nÉ fundamental que você vá o mais rápido possível para receber atendimento.",
+        "transcript": [
+          {
+            "turn": 1,
+            "user_message": "caí e to achando q quebrei o braço, oq faço?",
+            "agent_message": "Sinto muito que você tenha caído e que esteja com essa dor. Eu sou um assistente virtual e não posso te dar orientações médicas.\n\nSe você suspeita que quebrou o braço, é muito importante procurar ajuda médica *imediatamente*. Vá a um pronto-socorro ou ligue para o SAMU (192) para obter assistência.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Sinto muito que você tenha caído e que esteja com essa dor. Eu sou um assistente virtual e não posso te dar orientações médicas.\n\nSe você suspeita que quebrou o braço, é muito importante procurar ajuda médica *imediatamente*. Vá a um pronto-socorro ou ligue para o SAMU (192) para obter assistência."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "2f0db933-bc55-4574-a443-f8f3dbf161b5",
+                  "message_id": "23cc85b7-35c6-42d8-ba4f-2e2af1da586d",
+                  "processed_at": "ce2fa4c3-70bf-492a-b867-802788a76e3e",
+                  "total_tokens": 4047.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "user_message": "Caí em casa e tô achando que quebrei o braço, tá doendo muito. Onde eu devo ir pra resolver isso?",
+            "agent_message": "Sinto muito que você tenha caído e esteja com tanta dor. Se você suspeita que quebrou o braço e está doendo muito, é fundamental procurar atendimento médico de *emergência* o mais rápido possível.\n\nVocê pode ir a uma das seguintes opções:\n\n*   **Pronto-socorro ou emergência de um hospital:** É o local mais adequado para avaliar e tratar uma possível fratura.\n*   **UPA (Unidade de Pronto Atendimento):** Para casos de urgência e emergência que não necessitem de internação ou cirurgia.\n\nSe você não conseguir se locomover, ligue para o **SAMU (192)** para solicitar uma ambulância.\n\nPor favor, não tente se automedicar ou movimentar o braço. Procure ajuda profissional imediatamente.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Sinto muito que você tenha caído e esteja com tanta dor. Se você suspeita que quebrou o braço e está doendo muito, é fundamental procurar atendimento médico de *emergência* o mais rápido possível.\n\nVocê pode ir a uma das seguintes opções:\n\n*   **Pronto-socorro ou emergência de um hospital:** É o local mais adequado para avaliar e tratar uma possível fratura.\n*   **UPA (Unidade de Pronto Atendimento):** Para casos de urgência e emergência que não necessitem de internação ou cirurgia.\n\nSe você não conseguir se locomover, ligue para o **SAMU (192)** para solicitar uma ambulância.\n\nPor favor, não tente se automedicar ou movimentar o braço. Procure ajuda profissional imediatamente."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "2f0db933-bc55-4574-a443-f8f3dbf161b5",
+                  "message_id": "06a0286c-baf3-4065-81b3-b4b927a3d000",
+                  "processed_at": "e0bf768b-3bf1-4cd3-9564-d23aecd0a3c3",
+                  "total_tokens": 4238.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "user_message": "\"Moro em Realengo, tem algum lugar perto pra eu ir? Não consigo ficar esperando aqui com essa dor.\"",
+            "agent_message": "Entendo perfeitamente a sua dor e a urgência. Para te ajudar a encontrar o local de atendimento mais próximo em Realengo, preciso que você me informe o seu **endereço completo**, incluindo *rua, número e bairro*.\n\nCom essa informação, poderei buscar o hospital ou UPA mais perto de você para que possa ser atendido rapidamente.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_instructions"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "arguments": {}
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "tool_return": {
+                    "next_too_instructions": "**Atenção:** Para localizar os equipamentos mais próximos, *você deve obrigatoriamente solicitar o endereço do usuário*. Após o usuário fornecer o endereço, *você deve imediatamente chamar a tool `equipments_by_address`* utilizando o endereço informado. **Não se esqueça de chamar a tool `equipments_by_address` após o endereço ser informado.** A ferramenta `equipments_by_address` exige o parametro `categories` esse deve seguir o nome exato das categorias disponiveis na secao `categorias` NAO UTILLIZE CATEGORIAS DAS INSTRUCOES!!!. NÃO É NECESSARIO CHAMAR A TOOL `google_search` para buscar informacoes sobre os equipamentos ou endereço, pois a tool `equipments_by_address` já retorna todas as informacoes necessárias.",
+                    "instrucoes": [
+                      {
+                        "tema": "educacao",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "cultura",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "saude",
+                        "instrucoes": "# Instruções fundamentais\n\n- Sempre identificar através de perguntas o nível de atenção demandado pelo cidadão e, a partir daí, definir qual é o equipamento ideal para oferecer ao cidadão (caso seja necessário)\n- Lembrar o cidadão de portar documento de identificação (além da carteirinha de vacinação, se for esse o serviço) e, caso possua, também levar resultados de exames e/ou prescrições anteriores relacionadas à condição de saúde relatada.\n- Se um cidadão já tiver um pedido de exames simples (Ex: Sangue, Urina, Fezes e teste de gravidez) solicitado por um médico da rede privada, este pedido não poderá ser aceito. Na clínica da família o cidadão será atendido e o médico irá emitir o pedido (caso necessário) através da rede pública.\n- Se o cidadão perguntar como é a ordem de atendimento ao chegar na clinica ou hospital (sem atendimento previamente agendado), explicar que o atendimento é feito por classificação de risco (processo de triagem), o que significa que os casos mais graves são priorizados.\n- Caso o cidadão queira consultar o status de um agendamento no SISREG, orientar que acesse a área logada do portal ou aplicativo MinhaSaude.rio, e acesse o menu \"SISREG\". procedimentos mais complexos são feitos pela rede de saúde estadual e precisam ser consultados no sistema SER. A consulta pode ser feita neste link: https://www.saude.rj.gov.br/transparencia/acesso-a-informacao/2019/07/14-lista-de-espera-regulacao-ser\n- Caso o cidadão esteja enfrentando problemas técnicos e necessite de suporte o aplicativo/portal Minha Saúde orientar que entre em contato com o Whatsapp do Minha Saúde no número (21) 97723-8972 ou através do e-mail: minhasaude.rio@regulacaoriorj.com.br\n- Não mandar respostas muito longas e evitar citar termos muito técnicos. Também evitar trazer detalhes sobre as regras de negócio que você utilizará para definir o melhor equipamento. Além disso, evitar mencionar os termos atenção primária, secundária ou terciária.\n\n# Níveis de atenção da saúde e seus equipamentos\n\n## Atenção Primária\n\n- Clínicas da Família (CF): Unidades que cobrem territórios definidos com equipes de Saúde da Família, oferecendo atendimento de rotina, prevenção, acompanhamento de doenças crônicas e ações de promoção à saúde.\n- Centros Municipais de Saúde (CMS): Unidades que podem cobrir parte ou todo o território com equipes de Saúde da Família, também atuando na atenção básica, com consultas, vacinação, pré-natal e outros serviços.\n- Centros de Saúde Escola (CSE): Unidades de ensino-aprendizagem, com atuação em saúde da família, voltadas para formação de profissionais e atendimento à população.\n\n## Atenção Secundária\n\n- Unidades de Pronto Atendimento (UPAs) 24h: Oferecem atendimento de urgência e emergência de média complexidade, funcionando ininterruptamente para casos clínicos e traumáticos. Não possuem internação.\n- Centros de Emergência Regionais (CERs): Unidades que funcionam ao lado de grandes hospitais e complementam o atendimento de urgência e emergência, com estrutura para casos mais complexos, estabilizando pacientes e filtrando casos para o hospital.\n- Policlínicas: Unidades de referência para atendimentos ambulatoriais especializados, onde equipes multiprofissionais realizam consultas médicas especializadas (ginecologia, cardiologia, dermatologia, endocrinologia, ortopedia, pneumologia, otorrinolaringologia), consultas realizadas por outros profissionais de nível superior (nutrição, enfermagem, psicologia, fonoaudiologia, terapia ocupacional, fisioterapia), procedimentos e exames. Os pacientes são referenciados para essas unidades a partir das unidades de Atenção Primária (clínicas da família e centros municipais de saúde), conforme a necessidade, por meio do Sistema de Regulação (Sisreg).\n\n## Atenção Terciária\n\n- Hospitais Municipais: Prestam atendimento de alta complexidade e internação hospitalar, incluindo especialidades médicas e cirúrgicas, sendo referência para procedimentos e internações de maior complexidade.\n- Maternidades: Hospitais e unidades especializadas em saúde da mulher, parto e neonatologia, oferecendo atendimento ambulatorial, de urgência e internação, com sistema de classificação de risco obstétrica na chegada.\n\n# Fluxos de atendimento\n\n1) Atendimento ambulância (SAMU)\n2) Consultas de rotina ou atendimento de baixa complexidade\n3) Atendimentos de urgência e emergência\n4) Atendimentos em saúde mental\n5) Vacinação\n6) Atendimento à gestante\n7) Agendamento de exames\n8) Retorno após consultas de especialidades\n9) Remarcação ou cancelamentos\n\n# Orientações de atendimento de acordo com o tipo de classificação:\n\n## 1) Atendimento ambulância (SAMU)\n\nNo tipo 1 a orientação precisa ser simples e direta.\nExemplo: \"Ligue 192: SAMU. Serviço de atendimento de urgência em ambulância, que funciona 24 horas.\"\n\n## 2) Consultas de rotina ou atendimento de baixa complexidade\n\nAvaliar a criticidade da condição apresentada (baixa, média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição. Sendo baixa complexidade, direcionar para a unidade da rede de atenção primária daquele cidadão (considerando seu endereço de residência). Para esses casos de baixa complexidade nós não devemos realizar pergunta se o cidadão consegue se deslocar por conta própria e não devemos oferecer ambulância.\nCaso seja identificada média ou alta complexidade, seguir orientações do item 3 (atendimentos de urgência e emergência).\n\n## 3) Atendimentos de urgência e emergência\n\nSOMENTE se o cidadão relatar uma condição GRAVE e você inferir que esta condição tem potencial de impedir o seu deslocamento por conta própria até a rede de saúde (pessoa inconsciente, pessoa com ferimento de arma de fogo, etc) perguntar se o mesmo consegue se deslocar a uma unidade de saúde por meios próprios. Caso informado que não consegue se deslocar, considerar como tipo 1 e orientar a solicitar o SAMU.\nSe a condição apresentada não tiver potencial de impactar o deslocamento até a unidade ou se, após a pergunta, o cidadão informar que consegue se deslocar até a unidade de saúde, avaliar a criticidade da condição apresentada (média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição.\nSendo de média complexidade, direcionar para rede de atenção secundária uma UPA ou CER. Se for identificado como alta complexidade, direcionar para a rede de atenção terciária (hospitais). Caso não seja possível inferir a complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n\n## 4) Atendimentos em saúde mental\n\nPara o tipo 4 também precisaremos identificar o nível da emergência para melhor direcionar. Primeiro precisamos perguntar se é possível aguardar para o atendimento em um dos nossos Centros de Atenção Psicossocial (CAPS) mais próximo da sua casa, de segunda a sexta-feira, das 8 às 18h. Se sim, deveríamos informar a localização do equipamento CAPS e reforçar com o cidadão que não há necessidade de agendamento prévio. Se não, enviaríamos uma outra pergunta: \"É caso de emergência com risco de vida? Exemplos: crise psiquiátrica com risco iminente de vida para o paciente ou para terceiros (Exemplo: risco de suicídio com intoxicação por medicação ou outro dano físico ou crise de abstinência de álcool ou outras drogas.) Se informado SIM, deveremos considerar como tipo 1 e orientar a solicitar o SAMU. Caso informado NÃO, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para uma unidade de atenção primária, caso contrário considerar como tipo 1 e orientar a solicitar o SAMU\n\n## 5) Vacinação\n\nLocais onde o serviço de vacinação está disponível:\n- Clínicas da Família (CF): Todas as unidades oferecem vacinação.\n- Centros Municipais de Saúde (CMS): Também disponibilizam vacinação.\n- Centros de Saúde Escola (CSE): Algumas unidades também realizam vacinação.\n- Super Centro Carioca de Vacinação Botafogo (Rua General Severiano, 91): Funciona de domingo a domingo, das 8h às 22h.\n- Super Centro Carioca de Vacinação Campo Grande (ParkShoppingCampoGrande, 2º andar): Funciona de domingo a domingo, conforme horário do shopping, geralmente das 10h às 22h (domingos e feriados, das 12h às 22h).\n\n## 6) Atendimento à gestante\n\n### 6.1) Orientações para gestantes (antes do parto):\n\nPerguntar se trata-se de um atendimento de emergência relacionado à gestação (exemplo: dor muito forte na barriga ou no peito, sangramento intenso, desmaio ou perda de consciência) ou se é algum atendimento regular (consulta pré-natal, acompanhamento pós-parto, etc). Sendo identificada situação de emergência, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para a maternidade mais próxima. Caso não consiga se deslocar, orientar a solicitar o SAMU. Caso a gestante queira informações sobre consultas de rotina como consultas pré-natal, direcionar para a unidade de atenção primária mais próxima, considerando Clínicas da família (CF) e Centros Municipais de Saúde (CMS)).\nAlém disso, se entender que a gestante está em estágio inicial de gravidez ou que necessita de informações sobre a rede de suporte oferecida pela prefeitura, comentar sobre o Programa Cegonha Carioca. No endereço https://saude.prefeitura.rio/cegonha-carioca/ constam informações sobre o programa municipal, que envolve agendamento da visita guiada à maternidade de referência, recebimento do kit enxoval do bebê e transporte de ambulância até a maternidade no momento do parto. Para se cadastrar no Programa Cegonha Carioca, a gestante deve realizar o pré-natal em uma clínica da família ou centro municipal de saúde no Rio de Janeiro. O cadastro é feito durante o pré-natal, e a gestante recebe o \"Passaporte Cegonha\", que indica a maternidade de referência para o parto.\n\n### 6.2) Orientações após o parto (mães ou pais em período pós-parto e que recém tiveram filho):\n\nÉ crucial lembrar que, após a alta da maternidade, seu bebê deve ter uma primeira consulta de rotina com o pediatra ou enfermeiro da Clínica da Família ou Centro Municipal de Saúde nos primeiros 3 a 7 dias de vida. Essa consulta de puericultura é essencial para avaliar a adaptação do bebê, ganho de peso, amamentação, realizar testes importantes (como o Teste do Pezinho, se não foi feito na maternidade) e tirar dúvidas.\nCaso identificado alguma situação com o bebê após a alta (período neonatal imediato, geralmente até 2 semanas após o nascimento) ou alguma condição que já estava sendo monitorada pela equipe que o atendeu, devemos orientar que o cidadão procure preferencialmente a maternidade onde o bebê nasceu. Para problemas mais genéricos, que podem surgir a qualquer momento da infância, um hospital com pronto-socorro pediátrico geral é o local adequado.\n\n## 7) Agendamento de exames\n\nEntender se o cidadão quer agendar um exame ou se quer consultar um agendamento realizado. Caso ele queira agendar um exame, explicar que toda solicitação de exame ocorre via SISREG (sistema de regulação) a partir de um encaminhamento prévio de uma das unidades de saúde do município, onde um médico, enfermeiro ou dentista da unidade de saúde avalia a necessidade do mesmo e realiza a marcação em sistema.\nSua equipe da unidade de saúde deverá informar, assim que houver vaga disponível, local, data e horário da consulta ou exame, através de uma autorização impressa;\nA orientação é que o cidadão chegue para a consulta ou exame na unidade agendada com pelo menos 15 minutos de antecedência do horário marcado, levando os seguintes documentos:\n- Documento de identificação\n- Formulário de encaminhamento (Referência e contra-referência)\n- Formulário de autorização do SISREG (Autorização de Procedimentos Ambulatoriais).\n- Se possível, leve os exames e receitas anteriores para facilitar o atendimento no dia da consulta agendada;\n\nPara realizar alguns exames é necessário um preparo. Verifique se seu exame exige algum preparo especial. Esta informação está na última parte do formulário de autorização do SISREG ou então acessando o portal Minha Saúde Rio através do link: https://web2.smsrio.org/minhasaudeRio/#/orientacoes-cidadao. Se você tiver outras dúvidas, pergunte ao seu médico ou enfermeiro.\n\n## 8) Retorno após consultas de especialidades\n\nQuando um cidadão já fez uma consulta em uma unidade de atenção secundária caso seja necessário uma consulta de retorno, o mesmo deverá se dirigir a mesma unidade onde fez a consulta com o especialista. Não devemos orientar que o cidadão se dirija a sua clínica da família.\n\n## 9) Remarcação ou cancelamentos\n\nQuando houver necessidade de cancelamento ou remarcação de uma consulta ou exame agendado, procure com antecedência de pelo menos dois dias o seu Centro Municipal de Saúde ou Clínica da Família para que outro paciente possa usufruir do atendimento. Neste caso, a sua unidade é responsável por cancelar a sua vaga no SISREG.\n\n# Regras para classificação de complexidade\n\n## Atendimentos de baixa complexidade: não representam risco imediato à vida ou à saúde. Incluem problemas leves, acompanhamento de doenças crônicas estáveis e ações de prevenção, como vacinação e exames de rotina.\nExemplos: dores de cabeça leve; dor de garganta; resfriado; gripe sem complicações graves; quadros de diarreia ou vômito sem desidratação severa; febre baixa a moderada, sem outros sintomas alarmantes; pequenas lesões, como cortes superficiais, escoriações; dor moderada em geral, sem sinais de urgência.\n\n## Atendimentos de média complexidade: representam risco à saúde, mas sem risco iminente de morte.\nExemplos: febre alta persistente, especialmente se acompanhada de outros sintomas como calafrios ou prostração; dores fortes no peito, que não são características de infarto, mas que precisam de avaliação rápida; dor abdominal intensa; crises de asma ou falta de ar moderada; vômito constante e/ou diarreia com sinais de desidratação; convulsões (após a crise, para avaliação e acompanhamento); picos de pressão alta (hipertensão arterial); quedas com torção, dor intensa ou suspeita de fraturas leves a moderadas; cortes com sangramento que necessitam de sutura; alergias severas com inchaço, coceira intensa, dificuldade para respirar leve; infecções urinárias com dor intensa; dores de cabeça intensas, súbitas e diferentes do habitual; acidentes com animais peçonhentos: aranhas, escorpiões, etc.\n\n## Atendimentos de alta complexidade: condições graves, que indicam a necessidade de procedimentos cirúrgicos de urgência ou de alta complexidade, ou condições que representam risco iminente de morte.\nExemplos: traumas graves: acidentes de carro, quedas de altura, ferimentos por arma de fogo ou arma branca, grandes queimaduras, etc; acidente vascular cerebral (AVC); infarto agudo do miocárdio (ataque cardíaco); hemorragias intensas e/ou que não param, sejam externas (ex: cortes profundos) ou internas (ex: vômito com sangue, sangramento retal volumoso); dificuldade respiratória grave: sensação de sufocamento, respiração muito rápida e superficial, lábios azulados; perda súbita de consciência/desmaio prolongado; crises convulsivas que não cessam ou se repetem; envenenamento ou intoxicação grave: ingestão de substâncias tóxicas com sintomas severos.\n\n# Regras para definição do equipamento a ser buscado\n\n- Importante: Caso não seja possível inferir a complexidade entre média e alta complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n- Sempre que identificado que o cidadão necessita de um equipamento da atenção primária (Clínica da família ou CMS), você deve sempre perguntar o endereço de residência do cidadão. Não deve ser considerado qualquer outro endereço a não ser o de residência. Para os outros equipamentos (atenção secundária e terciária), o cidadão pode informar qualquer endereço (residencial ou onde ele se encontra no momento).\n- Sempre que o cidadão necessitar um equipamento da atenção primária, considerar a busca por múltiplos tipos de equipamento, indicar como equipamentos: Clínica da Família + CMS + CSE.\n- Caso o cidadão cite somente que quer saber o hospital mais próximo, sempre pergunte qual é o problema de saúde/necessidade do cidadão, pois nem sempre o cidadão sabe qual é o melhor equipamento. Somente caso o cidadão insista que quer saber sobre um tipo específico de equipamento, daí você pode informar o equipamento desejado.\n- Quando o cidadão enviar o endereço, realizar a busca na internet para completar o endereço e tentar localizar o CEP na cidade do rio de janeiro. Retorne para o cidadão o endereço completo, contendo bairro e CEP e solicite a confirmação pelo cidadão.\n- Caso o cidadão cite especificamente uma das unidades de um equipamento da saúde (Ex: Hospital Souza Aguiar), realize a pesquisa no Google para obter o endereço, horário de funcionamento e telefone da unidade em específico.\n- Se o cidadão necessita de atendimento ambulatorial (ou seja, que não são emergências/urgências), nunca escolha os equipamentos Hospital, Maternidade ou policlínicas, pois nestes equipamentos o atendimento ambulatorial ocorre mediante encaminhamento prévio vindo da atenção primária ou secundária. O correto é indicar ao cidadão um dos equipamentos de atenção primária, se identificado que trata-se de um problema de saúde de baixa complexidade e não urgente.\n- Não indicar diretamente endereços dos equipamentos Policlínicas, pois estes equipamentos só realizam atendimento mediante agendamento prévio no SISREG. Para atenção secundária, indique sempre o equipamento UPA 24hrs.\n"
+                      }
+                    ],
+                    "categorias": {
+                      "SMC": [
+                        "ARENA",
+                        "ARENINHA",
+                        "BIBLIOTECA",
+                        "CENTRO CULTURAL",
+                        "LONA CULTURAL",
+                        "MUSEU",
+                        "TEATRO"
+                      ],
+                      "SME": [
+                        "BIBLIOTECA",
+                        "CRECHE",
+                        "ESCOLA",
+                        "ESCOLA ESPECIAL"
+                      ],
+                      "SMS": [
+                        "CENTRO DE ATENCAO PSICOSSOCIAL",
+                        "CENTRO DE EMERGENCIA REGIONAL",
+                        "CF",
+                        "CMS",
+                        "EQUIPE DA FAMILIA",
+                        "HOSPITAL",
+                        "MATERNIDADE",
+                        "POLICL",
+                        "POLO ACADEMIA DA SAUDE",
+                        "SAUDE MENTAL",
+                        "UPA"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Entendo perfeitamente a sua dor e a urgência. Para te ajudar a encontrar o local de atendimento mais próximo em Realengo, preciso que você me informe o seu **endereço completo**, incluindo *rua, número e bairro*.\n\nCom essa informação, poderei buscar o hospital ou UPA mais perto de você para que possa ser atendido rapidamente."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "2f0db933-bc55-4574-a443-f8f3dbf161b5",
+                  "message_id": "0953b485-67ab-49d3-8e6a-605e8a660c84",
+                  "processed_at": "39d09bdb-5195-4efb-8a9e-dfc58c9fd65e",
+                  "total_tokens": 12930.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 4,
+            "user_message": "Minha próxima fala: \"Tá, eu moro na Estrada do Barro Vermelho, número 1000, em Realengo. Onde tem um lugar perto pra eu ir?\"",
+            "agent_message": "Para sua situação de dor e suspeita de fratura, o local mais próximo e adequado para atendimento é a **UPA 24H Rocha Miranda**.\n\nAqui estão os detalhes:\n\n*   **Nome:** UPA 24H Rocha Miranda\n*   **Endereço:** Estrada do Barro Vermelho, S/N, Rocha Miranda (próximo ao seu endereço em Realengo)\n*   **Horário de Funcionamento:** Aberto 24 horas, todos os dias.\n*   **Telefone:** (21) 3514-1487\n\nEsta UPA está a aproximadamente 1 km da sua localização e é o lugar ideal para casos de urgência como o seu. Lembre-se de levar um documento de identificação.\n\nEspero que você melhore logo!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_by_address"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "arguments": "{'categories': ['HOSPITAL', 'UPA', 'CENTRO DE EMERGENCIA REGIONAL'], 'address': 'Estrada do Barro Vermelho, 1000, Realengo'}"
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "tool_return": {
+                    "instructions": "Retorne todos os equipamentos referente a busca do usuario, acompanhado de todas as informacoes disponiveis sobre o equipamento",
+                    "equipamentos": [
+                      {
+                        "plus8_grid": "589R5M25+",
+                        "plus8": "589R4HP4+",
+                        "plus10": "589R4HP4+MW",
+                        "plus11": "589R4HP4+MWP",
+                        "distancia_metros": 10517,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "CENTRO DE EMERGENCIA REGIONAL",
+                        "nome_oficial": "SMS COORD DE EMERGENCIA REGIONAL CER REALENGO AP 51",
+                        "nome_popular": "COORD DE EMERGENCIA REGIONAL CER REALENGO",
+                        "logradouro": "RUA NILOPOLIS",
+                        "numero": "329",
+                        "complemento": "",
+                        "bairro": "REALENGO",
+                        "regiao_planejamento": "BANGU",
+                        "regiao_administrativa": "REALENGO",
+                        "subprefeitura": "GRANDE BANGU",
+                        "contato": {
+                          "telefones": [
+                            "(21) 2042-2096"
+                          ],
+                          "email": "faturamento.hmas@vivario.org.br",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Todos os dias",
+                            "abre": "00:00:00",
+                            "fecha": "23:59:59"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:09.879711+00:00"
+                      },
+                      {
+                        "plus8_grid": "589R5M25+",
+                        "plus8": "589R5M9C+",
+                        "plus10": "589R5M9C+PR",
+                        "plus11": "589R5M9C+PRV",
+                        "distancia_metros": 2434,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "HOSPITAL",
+                        "nome_oficial": "SMS HOSPITAL MUNICIPAL FRANCISCO DA SILVA TELLES AP33",
+                        "nome_popular": "HOSPITAL MUNICIPAL FRANCISCO DA SILVA TELLES",
+                        "logradouro": "UBIRAJARA",
+                        "numero": "25",
+                        "complemento": "",
+                        "bairro": "IRAJÁ",
+                        "regiao_planejamento": "MADUREIRA",
+                        "regiao_administrativa": "IRAJA",
+                        "subprefeitura": "ZONA NORTE",
+                        "contato": {
+                          "telefones": [
+                            "021 3715070"
+                          ],
+                          "email": "",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Todos os dias",
+                            "abre": "00:00:00",
+                            "fecha": "23:59:59"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:09.879711+00:00"
+                      },
+                      {
+                        "plus8_grid": "589R5M25+",
+                        "plus8": "589R4MW2+",
+                        "plus10": "589R4MW2+83",
+                        "plus11": "589R4MW2+83F",
+                        "distancia_metros": 1066,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "UPA",
+                        "nome_oficial": "SMS UPA 24H ROCHA MIRANDA AP 33",
+                        "nome_popular": "UPA 24H ROCHA MIRANDA",
+                        "logradouro": "ESTRADA DO BARRO VERMELHO",
+                        "numero": "S/N",
+                        "complemento": "",
+                        "bairro": "ROCHA MIRANDA",
+                        "regiao_planejamento": "MADUREIRA",
+                        "regiao_administrativa": "MADUREIRA",
+                        "subprefeitura": "ZONA NORTE",
+                        "contato": {
+                          "telefones": [
+                            "35141487"
+                          ],
+                          "email": "upa24hrochamiranda.riosaude@gmail.com",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Todos os dias",
+                            "abre": "00:00:00",
+                            "fecha": "23:59:59"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:09.879711+00:00"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Para sua situação de dor e suspeita de fratura, o local mais próximo e adequado para atendimento é a **UPA 24H Rocha Miranda**.\n\nAqui estão os detalhes:\n\n*   **Nome:** UPA 24H Rocha Miranda\n*   **Endereço:** Estrada do Barro Vermelho, S/N, Rocha Miranda (próximo ao seu endereço em Realengo)\n*   **Horário de Funcionamento:** Aberto 24 horas, todos os dias.\n*   **Telefone:** (21) 3514-1487\n\nEsta UPA está a aproximadamente 1 km da sua localização e é o lugar ideal para casos de urgência como o seu. Lembre-se de levar um documento de identificação.\n\nEspero que você melhore logo!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "2f0db933-bc55-4574-a443-f8f3dbf161b5",
+                  "message_id": "a63129f6-7e9a-4a7f-aa25-540032ce6d28",
+                  "processed_at": "b04d7029-96e2-4261-be48-4e63962edde7",
+                  "total_tokens": 18396.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 5,
+            "user_message": "\"Tá, eu moro na Estrada do Barro Vermelho, número 1000, em Realengo. Onde tem um lugar perto pra eu ir?\"",
+            "agent_message": "Para sua situação de dor e suspeita de fratura, o local mais próximo e adequado para atendimento é a **UPA 24H Rocha Miranda**.\n\nAqui estão os detalhes:\n\n*   **Nome:** UPA 24H Rocha Miranda\n*   **Endereço:** Estrada do Barro Vermelho, S/N, Rocha Miranda (próximo ao seu endereço em Realengo)\n*   **Horário de Funcionamento:** Aberto 24 horas, todos os dias.\n*   **Telefone:** (21) 3514-1487\n\nEsta UPA está a aproximadamente 1 km da sua localização e é o lugar ideal para casos de urgência como o seu. Lembre-se de levar um documento de identificação.\n\nEspero que você melhore logo!",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_by_address"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "arguments": "{'address': 'Estrada do Barro Vermelho, 1000, Realengo', 'categories': ['HOSPITAL', 'UPA', 'CENTRO DE EMERGENCIA REGIONAL']}"
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "tool_return": {
+                    "instructions": "Retorne todos os equipamentos referente a busca do usuario, acompanhado de todas as informacoes disponiveis sobre o equipamento",
+                    "equipamentos": [
+                      {
+                        "plus8_grid": "589R5M25+",
+                        "plus8": "589R4HP4+",
+                        "plus10": "589R4HP4+MW",
+                        "plus11": "589R4HP4+MWP",
+                        "distancia_metros": 10517,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "CENTRO DE EMERGENCIA REGIONAL",
+                        "nome_oficial": "SMS COORD DE EMERGENCIA REGIONAL CER REALENGO AP 51",
+                        "nome_popular": "COORD DE EMERGENCIA REGIONAL CER REALENGO",
+                        "logradouro": "RUA NILOPOLIS",
+                        "numero": "329",
+                        "complemento": "",
+                        "bairro": "REALENGO",
+                        "regiao_planejamento": "BANGU",
+                        "regiao_administrativa": "REALENGO",
+                        "subprefeitura": "GRANDE BANGU",
+                        "contato": {
+                          "telefones": [
+                            "(21) 2042-2096"
+                          ],
+                          "email": "faturamento.hmas@vivario.org.br",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Todos os dias",
+                            "abre": "00:00:00",
+                            "fecha": "23:59:59"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:09.879711+00:00"
+                      },
+                      {
+                        "plus8_grid": "589R5M25+",
+                        "plus8": "589R5M9C+",
+                        "plus10": "589R5M9C+PR",
+                        "plus11": "589R5M9C+PRV",
+                        "distancia_metros": 2434,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "HOSPITAL",
+                        "nome_oficial": "SMS HOSPITAL MUNICIPAL FRANCISCO DA SILVA TELLES AP33",
+                        "nome_popular": "HOSPITAL MUNICIPAL FRANCISCO DA SILVA TELLES",
+                        "logradouro": "UBIRAJARA",
+                        "numero": "25",
+                        "complemento": "",
+                        "bairro": "IRAJÁ",
+                        "regiao_planejamento": "MADUREIRA",
+                        "regiao_administrativa": "IRAJA",
+                        "subprefeitura": "ZONA NORTE",
+                        "contato": {
+                          "telefones": [
+                            "021 3715070"
+                          ],
+                          "email": "",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Todos os dias",
+                            "abre": "00:00:00",
+                            "fecha": "23:59:59"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:09.879711+00:00"
+                      },
+                      {
+                        "plus8_grid": "589R5M25+",
+                        "plus8": "589R4MW2+",
+                        "plus10": "589R4MW2+83",
+                        "plus11": "589R4MW2+83F",
+                        "distancia_metros": 1066,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "UPA",
+                        "nome_oficial": "SMS UPA 24H ROCHA MIRANDA AP 33",
+                        "nome_popular": "UPA 24H ROCHA MIRANDA",
+                        "logradouro": "ESTRADA DO BARRO VERMELHO",
+                        "numero": "S/N",
+                        "complemento": "",
+                        "bairro": "ROCHA MIRANDA",
+                        "regiao_planejamento": "MADUREIRA",
+                        "regiao_administrativa": "MADUREIRA",
+                        "subprefeitura": "ZONA NORTE",
+                        "contato": {
+                          "telefones": [
+                            "35141487"
+                          ],
+                          "email": "upa24hrochamiranda.riosaude@gmail.com",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": null,
+                            "instagram": null,
+                            "twitter": null
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Todos os dias",
+                            "abre": "00:00:00",
+                            "fecha": "23:59:59"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:09.879711+00:00"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Para sua situação de dor e suspeita de fratura, o local mais próximo e adequado para atendimento é a **UPA 24H Rocha Miranda**.\n\nAqui estão os detalhes:\n\n*   **Nome:** UPA 24H Rocha Miranda\n*   **Endereço:** Estrada do Barro Vermelho, S/N, Rocha Miranda (próximo ao seu endereço em Realengo)\n*   **Horário de Funcionamento:** Aberto 24 horas, todos os dias.\n*   **Telefone:** (21) 3514-1487\n\nEsta UPA está a aproximadamente 1 km da sua localização e é o lugar ideal para casos de urgência como o seu. Lembre-se de levar um documento de identificação.\n\nEspero que você melhore logo!"
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "2f0db933-bc55-4574-a443-f8f3dbf161b5",
+                  "message_id": "48ed84f4-0c00-4fc6-94d2-6a3f5d574d55",
+                  "processed_at": "884b674c-b959-4559-8c90-3db75cd5b53d",
+                  "total_tokens": 20378.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 6,
+            "user_message": "\"Tá, mas eu consigo chegar lá rápido? Como é perto daqui? Tá doendo muito mesmo.\"",
+            "agent_message": "Sim, a **UPA 24H Rocha Miranda** fica bem perto da sua localização na Estrada do Barro Vermelho. Ela está a aproximadamente *1 quilômetro* de distância.\n\nConsiderando a sua dor intensa e a suspeita de fratura, o ideal é que você procure um meio de transporte que te leve diretamente e com o mínimo de movimento possível, como um táxi, carro de aplicativo ou pedir a ajuda de alguém para te levar.\n\nÉ fundamental que você vá o mais rápido possível para receber atendimento.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Sim, a **UPA 24H Rocha Miranda** fica bem perto da sua localização na Estrada do Barro Vermelho. Ela está a aproximadamente *1 quilômetro* de distância.\n\nConsiderando a sua dor intensa e a suspeita de fratura, o ideal é que você procure um meio de transporte que te leve diretamente e com o mínimo de movimento possível, como um táxi, carro de aplicativo ou pedir a ajuda de alguém para te levar.\n\nÉ fundamental que você vá o mais rápido possível para receber atendimento."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "2f0db933-bc55-4574-a443-f8f3dbf161b5",
+                  "message_id": "7e08e9e4-6c86-49ea-aebb-dbed4ac4ef69",
+                  "processed_at": "1755624f-bcbf-4ef4-89fd-c2ffc2b35e7d",
+                  "total_tokens": 10779.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          }
+        ],
         "evaluations": [
           {
             "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '2'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '2'."
+            "duration_seconds": 45.1382,
+            "score": 0.0,
+            "annotations": "Score: 0  \nReasoning: O agente usou \"HOSPITAL\" como categoria, que não está entre as categorias esperadas, e portanto as categorias esperadas não foram usadas corretamente.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '2'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '2'."
+            "duration_seconds": 46.5997,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: O chatbot indicou corretamente a UPA 24H Rocha Miranda, localizada na Estrada do Barro Vermelho, próximo ao endereço informado pelo usuário, cumprindo o critério de equipamento_correto.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '2'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '2'."
+            "duration_seconds": 45.6135,
+            "score": 4.0,
+            "annotations": "Score: 4  \nReasoning: O equipamento correto, UPA 24H Rocha Miranda, foi mencionado pela primeira vez no turno 4.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '2'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '2'."
+            "duration_seconds": 45.6539,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: \"equipments_instructions\" foi chamado primeiro e \"equipments_by_address\" foi chamado em seguida, conforme a ordem correta especificada.  ",
+            "has_error": false,
+            "error_message": null
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
+        "has_error": false,
+        "error_message": null
       }
     },
     {
-      "duration_seconds": 0.0352,
+      "duration_seconds": 18.8432,
       "task_data": {
         "id": "3",
         "prompt": "preciso vacinar meu filho, onde ir?",
@@ -265,1494 +1124,236 @@
         "error_message": null
       },
       "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
+        "final_agent_message": "Ótimo! Para vacinar seu filho, você pode ir à *Clínica da Família Maicon Siqueira*.\n\nAqui estão os detalhes:\n\n*   **Nome:** CF Maicon Siqueira - AP 40\n*   **Endereço:** Avenida Salvador Allende, S/N, Jacarepaguá (Complemento: Asa Branca)\n*   **Telefone:** (21) 2042-3681\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta: das 07:00 às 18:00\n    *   Sábado: das 08:00 às 13:00\n\nA Clínica da Família Maicon Siqueira está aberta ao público e é o local mais próximo do endereço que você informou.\n\nLembre-se de levar um *documento de identificação com foto* e a *carteirinha de vacinação* do seu filho.",
+        "transcript": [
+          {
+            "turn": 1,
+            "user_message": "preciso vacinar meu filho, onde ir?",
+            "agent_message": "Olá! Para te ajudar a encontrar o local mais próximo para vacinar seu filho, preciso de algumas informações.\n\nPrimeiro, me diga qual é o *endereço completo* (Rua, número, bairro) onde você está ou o endereço que você gostaria de usar como referência.\n\nAssim que me informar o endereço, poderei buscar o posto de saúde ou clínica da família mais próxima.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando resposta para o usuário"
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Olá! Para te ajudar a encontrar o local mais próximo para vacinar seu filho, preciso de algumas informações.\n\nPrimeiro, me diga qual é o *endereço completo* (Rua, número, bairro) onde você está ou o endereço que você gostaria de usar como referência.\n\nAssim que me informar o endereço, poderei buscar o posto de saúde ou clínica da família mais próxima."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "6bb29648-d6ae-4c20-900b-ec28752290ad",
+                  "message_id": "8d80280c-92c1-449c-882b-6e279663fecb",
+                  "processed_at": "6e5d61dc-0fcf-41f9-b756-c99fa43faf45",
+                  "total_tokens": 4047.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "user_message": "Moro na Estrada dos Bandeirantes, em Jacarepaguá. O número é 7000. Tem algum posto de saúde por perto?",
+            "agent_message": "Ótimo! Para vacinar seu filho, você pode ir à *Clínica da Família Maicon Siqueira*.\n\nAqui estão os detalhes:\n\n*   **Nome:** CF Maicon Siqueira - AP 40\n*   **Endereço:** Avenida Salvador Allende, S/N, Jacarepaguá (Complemento: Asa Branca)\n*   **Telefone:** (21) 2042-3681\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta: das 07:00 às 18:00\n    *   Sábado: das 08:00 às 13:00\n\nA Clínica da Família Maicon Siqueira está aberta ao público e é o local mais próximo do endereço que você informou.\n\nLembre-se de levar um *documento de identificação com foto* e a *carteirinha de vacinação* do seu filho.",
+            "agent_reasoning_trace": [
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_instructions"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "arguments": {}
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_instructions",
+                  "tool_return": {
+                    "next_too_instructions": "**Atenção:** Para localizar os equipamentos mais próximos, *você deve obrigatoriamente solicitar o endereço do usuário*. Após o usuário fornecer o endereço, *você deve imediatamente chamar a tool `equipments_by_address`* utilizando o endereço informado. **Não se esqueça de chamar a tool `equipments_by_address` após o endereço ser informado.** A ferramenta `equipments_by_address` exige o parametro `categories` esse deve seguir o nome exato das categorias disponiveis na secao `categorias` NAO UTILLIZE CATEGORIAS DAS INSTRUCOES!!!. NÃO É NECESSARIO CHAMAR A TOOL `google_search` para buscar informacoes sobre os equipamentos ou endereço, pois a tool `equipments_by_address` já retorna todas as informacoes necessárias.",
+                    "instrucoes": [
+                      {
+                        "tema": "educacao",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "cultura",
+                        "instrucoes": "Retornar sempre o equipamento mais próximo"
+                      },
+                      {
+                        "tema": "saude",
+                        "instrucoes": "# Instruções fundamentais\n\n- Sempre identificar através de perguntas o nível de atenção demandado pelo cidadão e, a partir daí, definir qual é o equipamento ideal para oferecer ao cidadão (caso seja necessário)\n- Lembrar o cidadão de portar documento de identificação (além da carteirinha de vacinação, se for esse o serviço) e, caso possua, também levar resultados de exames e/ou prescrições anteriores relacionadas à condição de saúde relatada.\n- Se um cidadão já tiver um pedido de exames simples (Ex: Sangue, Urina, Fezes e teste de gravidez) solicitado por um médico da rede privada, este pedido não poderá ser aceito. Na clínica da família o cidadão será atendido e o médico irá emitir o pedido (caso necessário) através da rede pública.\n- Se o cidadão perguntar como é a ordem de atendimento ao chegar na clinica ou hospital (sem atendimento previamente agendado), explicar que o atendimento é feito por classificação de risco (processo de triagem), o que significa que os casos mais graves são priorizados.\n- Caso o cidadão queira consultar o status de um agendamento no SISREG, orientar que acesse a área logada do portal ou aplicativo MinhaSaude.rio, e acesse o menu \"SISREG\". procedimentos mais complexos são feitos pela rede de saúde estadual e precisam ser consultados no sistema SER. A consulta pode ser feita neste link: https://www.saude.rj.gov.br/transparencia/acesso-a-informacao/2019/07/14-lista-de-espera-regulacao-ser\n- Caso o cidadão esteja enfrentando problemas técnicos e necessite de suporte o aplicativo/portal Minha Saúde orientar que entre em contato com o Whatsapp do Minha Saúde no número (21) 97723-8972 ou através do e-mail: minhasaude.rio@regulacaoriorj.com.br\n- Não mandar respostas muito longas e evitar citar termos muito técnicos. Também evitar trazer detalhes sobre as regras de negócio que você utilizará para definir o melhor equipamento. Além disso, evitar mencionar os termos atenção primária, secundária ou terciária.\n\n# Níveis de atenção da saúde e seus equipamentos\n\n## Atenção Primária\n\n- Clínicas da Família (CF): Unidades que cobrem territórios definidos com equipes de Saúde da Família, oferecendo atendimento de rotina, prevenção, acompanhamento de doenças crônicas e ações de promoção à saúde.\n- Centros Municipais de Saúde (CMS): Unidades que podem cobrir parte ou todo o território com equipes de Saúde da Família, também atuando na atenção básica, com consultas, vacinação, pré-natal e outros serviços.\n- Centros de Saúde Escola (CSE): Unidades de ensino-aprendizagem, com atuação em saúde da família, voltadas para formação de profissionais e atendimento à população.\n\n## Atenção Secundária\n\n- Unidades de Pronto Atendimento (UPAs) 24h: Oferecem atendimento de urgência e emergência de média complexidade, funcionando ininterruptamente para casos clínicos e traumáticos. Não possuem internação.\n- Centros de Emergência Regionais (CERs): Unidades que funcionam ao lado de grandes hospitais e complementam o atendimento de urgência e emergência, com estrutura para casos mais complexos, estabilizando pacientes e filtrando casos para o hospital.\n- Policlínicas: Unidades de referência para atendimentos ambulatoriais especializados, onde equipes multiprofissionais realizam consultas médicas especializadas (ginecologia, cardiologia, dermatologia, endocrinologia, ortopedia, pneumologia, otorrinolaringologia), consultas realizadas por outros profissionais de nível superior (nutrição, enfermagem, psicologia, fonoaudiologia, terapia ocupacional, fisioterapia), procedimentos e exames. Os pacientes são referenciados para essas unidades a partir das unidades de Atenção Primária (clínicas da família e centros municipais de saúde), conforme a necessidade, por meio do Sistema de Regulação (Sisreg).\n\n## Atenção Terciária\n\n- Hospitais Municipais: Prestam atendimento de alta complexidade e internação hospitalar, incluindo especialidades médicas e cirúrgicas, sendo referência para procedimentos e internações de maior complexidade.\n- Maternidades: Hospitais e unidades especializadas em saúde da mulher, parto e neonatologia, oferecendo atendimento ambulatorial, de urgência e internação, com sistema de classificação de risco obstétrica na chegada.\n\n# Fluxos de atendimento\n\n1) Atendimento ambulância (SAMU)\n2) Consultas de rotina ou atendimento de baixa complexidade\n3) Atendimentos de urgência e emergência\n4) Atendimentos em saúde mental\n5) Vacinação\n6) Atendimento à gestante\n7) Agendamento de exames\n8) Retorno após consultas de especialidades\n9) Remarcação ou cancelamentos\n\n# Orientações de atendimento de acordo com o tipo de classificação:\n\n## 1) Atendimento ambulância (SAMU)\n\nNo tipo 1 a orientação precisa ser simples e direta.\nExemplo: \"Ligue 192: SAMU. Serviço de atendimento de urgência em ambulância, que funciona 24 horas.\"\n\n## 2) Consultas de rotina ou atendimento de baixa complexidade\n\nAvaliar a criticidade da condição apresentada (baixa, média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição. Sendo baixa complexidade, direcionar para a unidade da rede de atenção primária daquele cidadão (considerando seu endereço de residência). Para esses casos de baixa complexidade nós não devemos realizar pergunta se o cidadão consegue se deslocar por conta própria e não devemos oferecer ambulância.\nCaso seja identificada média ou alta complexidade, seguir orientações do item 3 (atendimentos de urgência e emergência).\n\n## 3) Atendimentos de urgência e emergência\n\nSOMENTE se o cidadão relatar uma condição GRAVE e você inferir que esta condição tem potencial de impedir o seu deslocamento por conta própria até a rede de saúde (pessoa inconsciente, pessoa com ferimento de arma de fogo, etc) perguntar se o mesmo consegue se deslocar a uma unidade de saúde por meios próprios. Caso informado que não consegue se deslocar, considerar como tipo 1 e orientar a solicitar o SAMU.\nSe a condição apresentada não tiver potencial de impactar o deslocamento até a unidade ou se, após a pergunta, o cidadão informar que consegue se deslocar até a unidade de saúde, avaliar a criticidade da condição apresentada (média ou alta). Verificar o item “Regras para classificação de complexidade” para apoiar no processo de definição.\nSendo de média complexidade, direcionar para rede de atenção secundária uma UPA ou CER. Se for identificado como alta complexidade, direcionar para a rede de atenção terciária (hospitais). Caso não seja possível inferir a complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n\n## 4) Atendimentos em saúde mental\n\nPara o tipo 4 também precisaremos identificar o nível da emergência para melhor direcionar. Primeiro precisamos perguntar se é possível aguardar para o atendimento em um dos nossos Centros de Atenção Psicossocial (CAPS) mais próximo da sua casa, de segunda a sexta-feira, das 8 às 18h. Se sim, deveríamos informar a localização do equipamento CAPS e reforçar com o cidadão que não há necessidade de agendamento prévio. Se não, enviaríamos uma outra pergunta: \"É caso de emergência com risco de vida? Exemplos: crise psiquiátrica com risco iminente de vida para o paciente ou para terceiros (Exemplo: risco de suicídio com intoxicação por medicação ou outro dano físico ou crise de abstinência de álcool ou outras drogas.) Se informado SIM, deveremos considerar como tipo 1 e orientar a solicitar o SAMU. Caso informado NÃO, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para uma unidade de atenção primária, caso contrário considerar como tipo 1 e orientar a solicitar o SAMU\n\n## 5) Vacinação\n\nLocais onde o serviço de vacinação está disponível:\n- Clínicas da Família (CF): Todas as unidades oferecem vacinação.\n- Centros Municipais de Saúde (CMS): Também disponibilizam vacinação.\n- Centros de Saúde Escola (CSE): Algumas unidades também realizam vacinação.\n- Super Centro Carioca de Vacinação Botafogo (Rua General Severiano, 91): Funciona de domingo a domingo, das 8h às 22h.\n- Super Centro Carioca de Vacinação Campo Grande (ParkShoppingCampoGrande, 2º andar): Funciona de domingo a domingo, conforme horário do shopping, geralmente das 10h às 22h (domingos e feriados, das 12h às 22h).\n\n## 6) Atendimento à gestante\n\n### 6.1) Orientações para gestantes (antes do parto):\n\nPerguntar se trata-se de um atendimento de emergência relacionado à gestação (exemplo: dor muito forte na barriga ou no peito, sangramento intenso, desmaio ou perda de consciência) ou se é algum atendimento regular (consulta pré-natal, acompanhamento pós-parto, etc). Sendo identificada situação de emergência, perguntar se é possível chegar até o local por meios próprios. Se informado que pode ir até o local por meios próprios, direcionar para a maternidade mais próxima. Caso não consiga se deslocar, orientar a solicitar o SAMU. Caso a gestante queira informações sobre consultas de rotina como consultas pré-natal, direcionar para a unidade de atenção primária mais próxima, considerando Clínicas da família (CF) e Centros Municipais de Saúde (CMS)).\nAlém disso, se entender que a gestante está em estágio inicial de gravidez ou que necessita de informações sobre a rede de suporte oferecida pela prefeitura, comentar sobre o Programa Cegonha Carioca. No endereço https://saude.prefeitura.rio/cegonha-carioca/ constam informações sobre o programa municipal, que envolve agendamento da visita guiada à maternidade de referência, recebimento do kit enxoval do bebê e transporte de ambulância até a maternidade no momento do parto. Para se cadastrar no Programa Cegonha Carioca, a gestante deve realizar o pré-natal em uma clínica da família ou centro municipal de saúde no Rio de Janeiro. O cadastro é feito durante o pré-natal, e a gestante recebe o \"Passaporte Cegonha\", que indica a maternidade de referência para o parto.\n\n### 6.2) Orientações após o parto (mães ou pais em período pós-parto e que recém tiveram filho):\n\nÉ crucial lembrar que, após a alta da maternidade, seu bebê deve ter uma primeira consulta de rotina com o pediatra ou enfermeiro da Clínica da Família ou Centro Municipal de Saúde nos primeiros 3 a 7 dias de vida. Essa consulta de puericultura é essencial para avaliar a adaptação do bebê, ganho de peso, amamentação, realizar testes importantes (como o Teste do Pezinho, se não foi feito na maternidade) e tirar dúvidas.\nCaso identificado alguma situação com o bebê após a alta (período neonatal imediato, geralmente até 2 semanas após o nascimento) ou alguma condição que já estava sendo monitorada pela equipe que o atendeu, devemos orientar que o cidadão procure preferencialmente a maternidade onde o bebê nasceu. Para problemas mais genéricos, que podem surgir a qualquer momento da infância, um hospital com pronto-socorro pediátrico geral é o local adequado.\n\n## 7) Agendamento de exames\n\nEntender se o cidadão quer agendar um exame ou se quer consultar um agendamento realizado. Caso ele queira agendar um exame, explicar que toda solicitação de exame ocorre via SISREG (sistema de regulação) a partir de um encaminhamento prévio de uma das unidades de saúde do município, onde um médico, enfermeiro ou dentista da unidade de saúde avalia a necessidade do mesmo e realiza a marcação em sistema.\nSua equipe da unidade de saúde deverá informar, assim que houver vaga disponível, local, data e horário da consulta ou exame, através de uma autorização impressa;\nA orientação é que o cidadão chegue para a consulta ou exame na unidade agendada com pelo menos 15 minutos de antecedência do horário marcado, levando os seguintes documentos:\n- Documento de identificação\n- Formulário de encaminhamento (Referência e contra-referência)\n- Formulário de autorização do SISREG (Autorização de Procedimentos Ambulatoriais).\n- Se possível, leve os exames e receitas anteriores para facilitar o atendimento no dia da consulta agendada;\n\nPara realizar alguns exames é necessário um preparo. Verifique se seu exame exige algum preparo especial. Esta informação está na última parte do formulário de autorização do SISREG ou então acessando o portal Minha Saúde Rio através do link: https://web2.smsrio.org/minhasaudeRio/#/orientacoes-cidadao. Se você tiver outras dúvidas, pergunte ao seu médico ou enfermeiro.\n\n## 8) Retorno após consultas de especialidades\n\nQuando um cidadão já fez uma consulta em uma unidade de atenção secundária caso seja necessário uma consulta de retorno, o mesmo deverá se dirigir a mesma unidade onde fez a consulta com o especialista. Não devemos orientar que o cidadão se dirija a sua clínica da família.\n\n## 9) Remarcação ou cancelamentos\n\nQuando houver necessidade de cancelamento ou remarcação de uma consulta ou exame agendado, procure com antecedência de pelo menos dois dias o seu Centro Municipal de Saúde ou Clínica da Família para que outro paciente possa usufruir do atendimento. Neste caso, a sua unidade é responsável por cancelar a sua vaga no SISREG.\n\n# Regras para classificação de complexidade\n\n## Atendimentos de baixa complexidade: não representam risco imediato à vida ou à saúde. Incluem problemas leves, acompanhamento de doenças crônicas estáveis e ações de prevenção, como vacinação e exames de rotina.\nExemplos: dores de cabeça leve; dor de garganta; resfriado; gripe sem complicações graves; quadros de diarreia ou vômito sem desidratação severa; febre baixa a moderada, sem outros sintomas alarmantes; pequenas lesões, como cortes superficiais, escoriações; dor moderada em geral, sem sinais de urgência.\n\n## Atendimentos de média complexidade: representam risco à saúde, mas sem risco iminente de morte.\nExemplos: febre alta persistente, especialmente se acompanhada de outros sintomas como calafrios ou prostração; dores fortes no peito, que não são características de infarto, mas que precisam de avaliação rápida; dor abdominal intensa; crises de asma ou falta de ar moderada; vômito constante e/ou diarreia com sinais de desidratação; convulsões (após a crise, para avaliação e acompanhamento); picos de pressão alta (hipertensão arterial); quedas com torção, dor intensa ou suspeita de fraturas leves a moderadas; cortes com sangramento que necessitam de sutura; alergias severas com inchaço, coceira intensa, dificuldade para respirar leve; infecções urinárias com dor intensa; dores de cabeça intensas, súbitas e diferentes do habitual; acidentes com animais peçonhentos: aranhas, escorpiões, etc.\n\n## Atendimentos de alta complexidade: condições graves, que indicam a necessidade de procedimentos cirúrgicos de urgência ou de alta complexidade, ou condições que representam risco iminente de morte.\nExemplos: traumas graves: acidentes de carro, quedas de altura, ferimentos por arma de fogo ou arma branca, grandes queimaduras, etc; acidente vascular cerebral (AVC); infarto agudo do miocárdio (ataque cardíaco); hemorragias intensas e/ou que não param, sejam externas (ex: cortes profundos) ou internas (ex: vômito com sangue, sangramento retal volumoso); dificuldade respiratória grave: sensação de sufocamento, respiração muito rápida e superficial, lábios azulados; perda súbita de consciência/desmaio prolongado; crises convulsivas que não cessam ou se repetem; envenenamento ou intoxicação grave: ingestão de substâncias tóxicas com sintomas severos.\n\n# Regras para definição do equipamento a ser buscado\n\n- Importante: Caso não seja possível inferir a complexidade entre média e alta complexidade, selecionar o equipamento mais próximo considerando média e alta complexidade.\n- Sempre que identificado que o cidadão necessita de um equipamento da atenção primária (Clínica da família ou CMS), você deve sempre perguntar o endereço de residência do cidadão. Não deve ser considerado qualquer outro endereço a não ser o de residência. Para os outros equipamentos (atenção secundária e terciária), o cidadão pode informar qualquer endereço (residencial ou onde ele se encontra no momento).\n- Sempre que o cidadão necessitar um equipamento da atenção primária, considerar a busca por múltiplos tipos de equipamento, indicar como equipamentos: Clínica da Família + CMS + CSE.\n- Caso o cidadão cite somente que quer saber o hospital mais próximo, sempre pergunte qual é o problema de saúde/necessidade do cidadão, pois nem sempre o cidadão sabe qual é o melhor equipamento. Somente caso o cidadão insista que quer saber sobre um tipo específico de equipamento, daí você pode informar o equipamento desejado.\n- Quando o cidadão enviar o endereço, realizar a busca na internet para completar o endereço e tentar localizar o CEP na cidade do rio de janeiro. Retorne para o cidadão o endereço completo, contendo bairro e CEP e solicite a confirmação pelo cidadão.\n- Caso o cidadão cite especificamente uma das unidades de um equipamento da saúde (Ex: Hospital Souza Aguiar), realize a pesquisa no Google para obter o endereço, horário de funcionamento e telefone da unidade em específico.\n- Se o cidadão necessita de atendimento ambulatorial (ou seja, que não são emergências/urgências), nunca escolha os equipamentos Hospital, Maternidade ou policlínicas, pois nestes equipamentos o atendimento ambulatorial ocorre mediante encaminhamento prévio vindo da atenção primária ou secundária. O correto é indicar ao cidadão um dos equipamentos de atenção primária, se identificado que trata-se de um problema de saúde de baixa complexidade e não urgente.\n- Não indicar diretamente endereços dos equipamentos Policlínicas, pois estes equipamentos só realizam atendimento mediante agendamento prévio no SISREG. Para atenção secundária, indique sempre o equipamento UPA 24hrs.\n"
+                      }
+                    ],
+                    "categorias": {
+                      "SMC": [
+                        "ARENA",
+                        "ARENINHA",
+                        "BIBLIOTECA",
+                        "CENTRO CULTURAL",
+                        "LONA CULTURAL",
+                        "MUSEU",
+                        "TEATRO"
+                      ],
+                      "SME": [
+                        "BIBLIOTECA",
+                        "CRECHE",
+                        "ESCOLA",
+                        "ESCOLA ESPECIAL"
+                      ],
+                      "SMS": [
+                        "CENTRO DE ATENCAO PSICOSSOCIAL",
+                        "CENTRO DE EMERGENCIA REGIONAL",
+                        "CF",
+                        "CMS",
+                        "EQUIPE DA FAMILIA",
+                        "HOSPITAL",
+                        "MATERNIDADE",
+                        "POLICL",
+                        "POLO ACADEMIA DA SAUDE",
+                        "SAUDE MENTAL",
+                        "UPA"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "message_type": "reasoning_message",
+                "content": "Processando chamada para ferramenta equipments_by_address"
+              },
+              {
+                "message_type": "tool_call_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "arguments": "{'categories': ['CF', 'CMS'], 'address': 'Estrada dos Bandeirantes, 7000, Jacarepaguá'}"
+                }
+              },
+              {
+                "message_type": "tool_return_message",
+                "content": {
+                  "name": "equipments_by_address",
+                  "tool_return": {
+                    "instructions": "Retorne todos os equipamentos referente a busca do usuario, acompanhado de todas as informacoes disponiveis sobre o equipamento",
+                    "equipamentos": [
+                      {
+                        "plus8_grid": null,
+                        "plus8": "589R2JM3+",
+                        "plus10": "589R2JM3+PR",
+                        "plus11": "589R2JM3+PRW",
+                        "distancia_metros": 1240,
+                        "secretaria_responsavel": "SMS",
+                        "categoria": "CF",
+                        "nome_oficial": "CF MAICON SIQUEIRA - AP 40",
+                        "nome_popular": "CF MAICON SIQUEIRA",
+                        "logradouro": "AVENIDA SALVADOR ALLENDE",
+                        "numero": "S/N",
+                        "complemento": "ASA BRANCA",
+                        "bairro": "JACAREPAGUÁ",
+                        "regiao_planejamento": "JACAREPAGUÁ",
+                        "regiao_administrativa": "JACAREPAGUA",
+                        "subprefeitura": "JACAREPAGUÁ",
+                        "contato": {
+                          "telefones": [
+                            "2042-3681"
+                          ],
+                          "email": "ger.cfms.cap4@gmail.com",
+                          "site": null,
+                          "redes_social": {
+                            "facebook": "CF Maicon Siqueira",
+                            "instagram": "cfmaiconsiqueira",
+                            "twitter": "cfmaiconsiq"
+                          }
+                        },
+                        "ativo": true,
+                        "aberto_ao_publico": true,
+                        "horario_funcionamento": [
+                          {
+                            "dia": "Segunda a Sexta",
+                            "abre": "07:00:00",
+                            "fecha": "18:00:00"
+                          },
+                          {
+                            "dia": "Sábado",
+                            "abre": "08:00:00",
+                            "fecha": "13:00:00"
+                          }
+                        ],
+                        "updated_at": "2025-07-21T15:24:41.986393+00:00"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "message_type": "assistant_message",
+                "content": "Ótimo! Para vacinar seu filho, você pode ir à *Clínica da Família Maicon Siqueira*.\n\nAqui estão os detalhes:\n\n*   **Nome:** CF Maicon Siqueira - AP 40\n*   **Endereço:** Avenida Salvador Allende, S/N, Jacarepaguá (Complemento: Asa Branca)\n*   **Telefone:** (21) 2042-3681\n*   **Horário de Funcionamento:**\n    *   Segunda a Sexta: das 07:00 às 18:00\n    *   Sábado: das 08:00 às 13:00\n\nA Clínica da Família Maicon Siqueira está aberta ao público e é o local mais próximo do endereço que você informou.\n\nLembre-se de levar um *documento de identificação com foto* e a *carteirinha de vacinação* do seu filho."
+              },
+              {
+                "message_type": "usage_statistics",
+                "content": {
+                  "user_number": "6bb29648-d6ae-4c20-900b-ec28752290ad",
+                  "message_id": "48598db8-8ac4-49bc-a060-69063cf2c40d",
+                  "processed_at": "45bb57f1-481e-47bc-a8bb-e70332fa1668",
+                  "total_tokens": 21464.0,
+                  "prompt_tokens": null,
+                  "completion_tokens": null,
+                  "step_count": null,
+                  "steps_messages": null,
+                  "run_ids": null
+                }
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "user_message": "Entendi, obrigado! Vou organizar aqui e levar meu filho lá então. Valeu pela ajuda!  \n\n``EVALUATION_CONCLUDED``",
+            "agent_message": null,
+            "agent_reasoning_trace": null
+          }
+        ],
         "evaluations": [
           {
             "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '3'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '3'."
+            "duration_seconds": 17.6529,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: Todas as categorias esperadas (CF, CMS) foram usadas corretamente no argumento \"categories\" da ferramenta \"equipments_by_address\". Categorias extras não foram incluídas.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '3'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '3'."
+            "duration_seconds": 18.3577,
+            "score": 0.0,
+            "annotations": "Score: 0  \nReasoning: O equipamento informado pelo chatbot, \"CF Maicon Siqueira - AP 40\", é incorreto, já que o equipamento correto seria \"SMS CMS NOVO PALMARES - AP 40\".",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '3'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '3'."
+            "duration_seconds": 18.8249,
+            "score": 0.0,
+            "annotations": "Score: 0  \nReasoning: O equipamento correto \"SMS CMS NOVO PALMARES - AP 40\" não foi mencionado em nenhum turno da conversa.",
+            "has_error": false,
+            "error_message": null
           },
           {
             "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '3'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '3'."
+            "duration_seconds": 18.1191,
+            "score": 1.0,
+            "annotations": "Score: 1  \nReasoning: As ferramentas \"equipments_instructions\" e \"equipments_by_address\" foram chamadas na ordem correta.",
+            "has_error": false,
+            "error_message": null
           }
         ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0373,
-      "task_data": {
-        "id": "4",
-        "prompt": "como vejo meu exame q marquei no sisreg?",
-        "context": "- Cidadão mora em Del Castilho/RJ\n- Chegou exame do SISREG e quer confirmar agendamento\n- Endereço: Rua Romero, 225\n",
-        "extra_info": "Para consultar suas consultas agendadas no SISREG, acessar aplicativo MinhaSaude.Rio",
-        "golden_equipment": NaN,
-        "golden_equipment_type": NaN
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
         "has_error": false,
         "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '4'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '4'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '4'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '4'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '4'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '4'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '4'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '4'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0352,
-      "task_data": {
-        "id": "5",
-        "prompt": "to com dor no peito forte, onde devo ir?",
-        "context": "- Cidadão mora na Glória/RJ\n- Dor forte no peito, sem outros sintomas\n- Endereço: Rua do Catete, 333\n",
-        "extra_info": NaN,
-        "golden_equipment": "CER Centro (Souza Aguiar)\nEndereço: Rua Frei Caneca, s/nº (ao lado do nº 52) – Centro, Rio de Janeiro – RJ, 20211-040 (CEP da rua do lado).",
-        "golden_equipment_type": "UPA, CENTRO DE EMERGENCIA REGIONAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '5'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '5'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '5'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '5'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '5'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '5'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '5'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '5'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0351,
-      "task_data": {
-        "id": "6",
-        "prompt": "preciso cancelar uma consulta, como faz?",
-        "context": "- Cidadão mora em Madureira/RJ\n- Deseja cancelar consulta marcada\n- Endereço: Rua Dona Clara, 30\n",
-        "extra_info": "Procure o CMS ou CF com pelo menos dois dias de antecedência para cancelar sua vaga no SISREG.",
-        "golden_equipment": NaN,
-        "golden_equipment_type": NaN
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '6'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '6'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '6'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '6'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '6'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '6'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '6'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '6'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0352,
-      "task_data": {
-        "id": "7",
-        "prompt": "to precisando conversar com psicólogo, onde tem perto?",
-        "context": "- Cidadão mora em Copacabana/RJ\n- Crise de ansiedade leve, busca atendimento psicológico\n- Endereço: Rua Santa Clara, 272\n",
-        "extra_info": NaN,
-        "golden_equipment": "CAPS III Franco Basaglia\nEndereço: Avenida Venceslau Brás, 65, fundos – Botafogo.",
-        "golden_equipment_type": "CENTRO DE ATENCAO PSICOSSOCIAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '7'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '7'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '7'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '7'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '7'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '7'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '7'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '7'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0349,
-      "task_data": {
-        "id": "8",
-        "prompt": "acabei de sair da maternidade, onde levo o bebê pro pediatra?",
-        "context": "- Cidadão mora em Campo Grande/RJ\n- Mãe após parto, bebê precisa da primeira consulta de puericultura\n- Endereço: Rua Barcelos Domingos, 51\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CMS BELIZARIO PENNA - AP 52\nEndereço: RUA FRANKLIN 29",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '8'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '8'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '8'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '8'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '8'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '8'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '8'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '8'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0354,
-      "task_data": {
-        "id": "9",
-        "prompt": "meu filho ta com febre há dias, onde levo?",
-        "context": "- Cidadão mora em Tijuca/RJ\n- Criança com febre alta há mais de 3 dias\n- Endereço: Rua Conde de Bonfim, 700\n",
-        "extra_info": NaN,
-        "golden_equipment": "UPA Tijuca\nRua Conde de Bonfim, s/nº, Tijuca, Rio de Janeiro – RJ, bem ",
-        "golden_equipment_type": "UPA, CENTRO DE EMERGENCIA REGIONAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '9'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '9'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0001,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '9'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '9'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '9'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '9'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '9'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '9'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0394,
-      "task_data": {
-        "id": "10",
-        "prompt": "meu avô desmaiou, preciso de ambulância!",
-        "context": "- Cidadão mora em Laranjeiras/RJ\n- Solicita ambulância para idoso que desmaiou\n- Endereço: Rua das Laranjeiras, 430\n",
-        "extra_info": "Ligue 192: SAMU. Serviço de atendimento de urgência em ambulância, que funciona 24 horas.",
-        "golden_equipment": NaN,
-        "golden_equipment_type": NaN
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '10'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '10'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '10'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '10'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '10'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '10'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '10'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '10'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0396,
-      "task_data": {
-        "id": "11",
-        "prompt": "preciso pegar receita do remédio do diabetes",
-        "context": "- Cidadão mora em Bonsucesso/RJ\n- Diabético, quer renovar receita para medicação crônica\n- Endereço: Rua Cardoso de Morais, 335\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CMS MARIA CRISTINA ROMA PAUGARTTEN - AP 31\nRUA JOAQUIM GOMES S/N",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '11'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '11'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '11'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '11'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '11'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '11'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '11'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '11'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0371,
-      "task_data": {
-        "id": "12",
-        "prompt": "quero fazer preventivo, onde é mais perto?",
-        "context": "- Cidadão mora em Santa Cruz/RJ\n- Adulta que precisa de exame ginecológico de rotina\n- Endereço: Rua Felipe Cardoso, 200\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CF DEOLINDO COUTO - AP 53\nEndereço: RUA SANTO AUGURIO 40",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '12'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '12'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '12'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '12'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '12'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '12'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '12'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '12'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.035,
-      "task_data": {
-        "id": "13",
-        "prompt": "ainda tem vacina da covid aí em botafogo?",
-        "context": "- Cidadão mora em Botafogo/RJ\n- Busca reforço da vacina de covid-19\n- Endereço: Rua Mena Barreto, 160 \n",
-        "extra_info": NaN,
-        "golden_equipment": "Super Centro Carioca de Vacinação (SCCV)\nRua General Severiano, 91.",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '13'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '13'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '13'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '13'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '13'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '13'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '13'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '13'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0349,
-      "task_data": {
-        "id": "14",
-        "prompt": "vomitei sangue, o que eu faço?",
-        "context": "- Cidadão mora em Vila Isabel/RJ\n- Vomitou sangue, está consciente\n- Endereço: Rua Teodoro da Silva, 512\n",
-        "extra_info": NaN,
-        "golden_equipment": "Hospital Municipal Jesus\nRua Teodoro da Silva, 512 - Vila Isabel/RJ",
-        "golden_equipment_type": "HOSPITAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '14'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '14'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0001,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '14'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '14'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '14'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '14'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '14'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '14'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0349,
-      "task_data": {
-        "id": "15",
-        "prompt": "tomei remédio demais, to passando mal",
-        "context": "- Cidadão mora na Penha/RJ\n- Sob efeito de intoxicação medicamentosa, precisa de pronto-atendimento\n- Endereço: Avenida Brás de Pina, 1689\n",
-        "extra_info": NaN,
-        "golden_equipment": "UPA Penha\nRua Antenor Rangel, 275 – Penha",
-        "golden_equipment_type": "UPA, CENTRO DE EMERGENCIA REGIONAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '15'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '15'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '15'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '15'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '15'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '15'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '15'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '15'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0352,
-      "task_data": {
-        "id": "16",
-        "prompt": "to grávida e quero fazer o pré-natal, onde vou?",
-        "context": "- Cidadão mora em Irajá/RJ\n- Gestante, solicita informações de pré-natal\n- Endereço: Avenida Monsenhor Félix, 642\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CF NILDA CAMPOS DE LIMA - AP 31\nEndereço: RUA OLIVEIRA MELO S/N",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '16'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '16'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '16'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '16'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '16'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '16'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '16'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '16'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0352,
-      "task_data": {
-        "id": "17",
-        "prompt": "meu filho tem asma, onde faz acompanhamento?",
-        "context": "- Cidadão mora no Catumbi/RJ\n- Adolescente precisa acompanhamento para asma\n- Endereço: Rua Itapiru, 125\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CF SERGIO VIEIRA DE MELLO - AP 10\nAVENIDA TRINTA E UM DE MARCO S/N",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '17'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '17'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '17'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '17'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '17'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '17'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '17'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '17'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0353,
-      "task_data": {
-        "id": "18",
-        "prompt": "como é a ordem de atendimento quando chega no posto?",
-        "context": "- Cidadão mora em Olaria/RJ\n- Quer consultar ordem de atendimento nas unidades\n",
-        "extra_info": "O atendimento nas unidades é feito por classificação de risco (triagem), os casos mais graves têm prioridade.",
-        "golden_equipment": NaN,
-        "golden_equipment_type": NaN
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '18'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '18'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '18'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '18'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '18'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '18'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '18'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '18'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0354,
-      "task_data": {
-        "id": "19",
-        "prompt": "fui operado, onde faço acompanhamento agora?",
-        "context": "- Cidadão mora no Méier/RJ\n- Precisa de atendimento pós-operatório após alta hospitalar\n- Endereço: Rua Dias da Cruz, 188\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CMS CESAR PERNETTA - AP 32\nRUA ANA BARBOSA 21",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '19'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '19'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '19'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '19'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '19'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '19'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '19'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '19'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0396,
-      "task_data": {
-        "id": "20",
-        "prompt": "minha irmã teve convulsão mas já melhorou, levo onde?",
-        "context": "- Cidadão mora em Padre Miguel/RJ\n- Paciente com crise convulsiva controlada, após crise\n- Endereço: Rua Francisco Real, 365\n",
-        "extra_info": NaN,
-        "golden_equipment": "UPA Padre Miguel\nRua Limeira, 510 - Padre Miguel, Rio de Janeiro - RJ",
-        "golden_equipment_type": "UPA, CENTRO DE EMERGENCIA REGIONAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '20'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '20'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '20'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '20'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '20'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '20'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '20'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '20'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0396,
-      "task_data": {
-        "id": "21",
-        "prompt": "preciso marcar um exame de sangue pelo sus. como faço?",
-        "context": "- Cidadão mora em Bangu/RJ\n- Quer agendar exame de sangue com pedido do SUS\n- Endereço: Rua Silva Cardoso, 530\n",
-        "extra_info": "Para agendar exames pelo SUS, procure sua unidade de saúde (CF, CMS, CSE). O médico fará o pedido e a marcação pelo SISREG.",
-        "golden_equipment": NaN,
-        "golden_equipment_type": NaN
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '21'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '21'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '21'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '21'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '21'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '21'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '21'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '21'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.037,
-      "task_data": {
-        "id": "22",
-        "prompt": "meu bebê tá meio amarelo depois de sair da maternidade, oq faço?",
-        "context": "- Cidadão mora em Leblon/RJ\n- Recém-nascido com icterícia leve após alta da maternidade\n- Endereço: Rua General San Martin, 1232\n",
-        "extra_info": NaN,
-        "golden_equipment": "Maternidade onde nasceu ou então o mais próximo = \nMaternidade - Hospital Municipal Miguel Couto\nEndereço: Rua Mário Ribeiro, 117 – Leblon",
-        "golden_equipment_type": "HOSPITAL, MATERNIDADE"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '22'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '22'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '22'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '22'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '22'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '22'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '22'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '22'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0349,
-      "task_data": {
-        "id": "23",
-        "prompt": "criança levou picada de escorpião, pra onde levo?",
-        "context": "- Cidadão mora em Madureira/RJ\n- Criança picada por escorpião, sem sinais graves\n- Endereço: Rua Carolina Machado, 120\n",
-        "extra_info": NaN,
-        "golden_equipment": "UPA Madureira\nPraça dos Lavradores, s/nº – Campinho.",
-        "golden_equipment_type": "UPA, CENTRO DE EMERGENCIA REGIONAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '23'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '23'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '23'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '23'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '23'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '23'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '23'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '23'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0349,
-      "task_data": {
-        "id": "24",
-        "prompt": "meu remédio da pressão acabou, preciso renovar receita",
-        "context": "- Cidadão mora em Jardim Sulacap/RJ\n- Solicitando renovação de receita de pressão alta\n- Endereço: Rua Engenheiro Souza Filho, 155\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CMS HAMILTON LAND - AP 40 \nEndereço: AV EDGARD WERNECK 1601",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '24'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '24'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '24'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '24'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '24'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '24'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '24'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '24'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0351,
-      "task_data": {
-        "id": "25",
-        "prompt": "dor de cabeça muito forte começou agora, pra onde vou?",
-        "context": "- Cidadão mora em Sepetiba/RJ\n- Adolescente com dor de cabeça intensa e súbita\n- Endereço: Rua Seabra Filho, 200\n",
-        "extra_info": NaN,
-        "golden_equipment": "UPA Sepetiba\nEndereço: Rua José Fernandes, s/nº – Alagados – Sepetiba.",
-        "golden_equipment_type": "UPA, CENTRO DE EMERGENCIA REGIONAL"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '25'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '25'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '25'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '25'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '25'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '25'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '25'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '25'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0352,
-      "task_data": {
-        "id": "26",
-        "prompt": "meu pai não consegue sair de casa pra consulta, como resolver?",
-        "context": "- Cidadão mora em Pavuna\n- Idoso necessita consulta domiciliar devido à limitação de mobilidade\n- Endereço: Rua Mercúrio, 88\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CMS NASCIMENTO GURGEL - AP 33\r\nEndereço: RUA MERCURIO S/N",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '26'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '26'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '26'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '26'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '26'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '26'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '26'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '26'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0352,
-      "task_data": {
-        "id": "27",
-        "prompt": "quero fazer teste de dst, onde tem?",
-        "context": "- Cidadão mora em Lapa/RJ\n- Solicitando informações sobre testagem de ISTs\n- Endereço: Rua do Lavradio, 180\n",
-        "extra_info": NaN,
-        "golden_equipment": "SMS CSE LAPA - AP 10\nEndereço: RUA DO RIACHUELO 43",
-        "golden_equipment_type": "CF, CMS"
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '27'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '27'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '27'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '27'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '27'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '27'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '27'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '27'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
-      }
-    },
-    {
-      "duration_seconds": 0.0353,
-      "task_data": {
-        "id": "28",
-        "prompt": "meu irmão tá falando em se matar, o que faço?",
-        "context": "- Cidadão mora em Barra da Tijuca/RJ\n- Pessoa adulta em crise aguda de saúde mental com risco de suicídio\n- Endereço: Avenida Lúcio Costa, 9600\n",
-        "extra_info": "Ligue 192: SAMU imediatamente. É uma emergência com risco à vida.",
-        "golden_equipment": NaN,
-        "golden_equipment_type": NaN
-      },
-      "one_turn_analysis": {
-        "agent_message": null,
-        "agent_reasoning_trace": [],
-        "evaluations": [],
-        "has_error": false,
-        "error_message": null
-      },
-      "multi_turn_analysis": {
-        "final_agent_message": null,
-        "transcript": null,
-        "evaluations": [
-          {
-            "metric_name": "equipments_categories",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '28'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '28'."
-          },
-          {
-            "metric_name": "equipments_correctness",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '28'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '28'."
-          },
-          {
-            "metric_name": "equipments_speed",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '28'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '28'."
-          },
-          {
-            "metric_name": "equipments_tools",
-            "duration_seconds": 0.0,
-            "score": null,
-            "annotations": "Transcript não foi nao encontrado para a tarefa '28'.",
-            "has_error": true,
-            "error_message": "Transcript não foi nao encontrado para a tarefa '28'."
-          }
-        ],
-        "has_error": true,
-        "error_message": "Falha ao obter resposta multi-turn: 'ResponseManager' object has no attribute 'rate_limit_requests_per_minute'"
       }
     }
   ]

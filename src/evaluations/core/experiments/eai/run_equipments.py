@@ -33,7 +33,7 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=1216607284#gid=1216607284",  # golden equipments
-        # number_rows=3,
+        number_rows=3,
         id_col="id",
         prompt_col="initial_message",
         dataset_name="Golden Equipment Test",
@@ -44,7 +44,7 @@ async def run_experiment():
             "golden_equipment_type",
             "extra_info",
         ],
-        # upload_to_bq=False,
+        upload_to_bq=False,
     )
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
@@ -80,7 +80,7 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 30
+    MAX_CONCURRENCY = 10
 
     runner = AsyncExperimentRunner(
         experiment_name="eai-2025-08-04-v59",
@@ -88,9 +88,9 @@ async def run_experiment():
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
-        upload_to_bq=False,
+        # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
-        rate_limit_requests_per_minute=50,
+        rate_limit_requests_per_minute=100,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
