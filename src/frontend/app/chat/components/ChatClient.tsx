@@ -27,7 +27,7 @@ const JsonViewer = ({ data }: { data: object }) => (
   </pre>
 );
 
-const ToolReturnViewer = ({ toolReturn }: { toolReturn: unknown }) => {
+const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolName?: string }) => {
   try {
     const data = typeof toolReturn === 'string' ? JSON.parse(toolReturn) : toolReturn;
     
@@ -35,23 +35,136 @@ const ToolReturnViewer = ({ toolReturn }: { toolReturn: unknown }) => {
       return <p className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
     }
 
-    return (
-      <div className="space-y-2">
-        {Object.entries(data).map(([key, value]) => (
-          <div key={key}>
-            <p className="font-semibold text-xs capitalize">{key.replace(/_/g, ' ')}:</p>
-            {key.toLowerCase().includes('text') || key.toLowerCase().includes('markdown') ? (
-              <div 
-                className="prose prose-sm dark:prose-invert max-w-full"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(String(value)) as string) }}
-              />
-            ) : (
-              <JsonViewer data={value as object} />
-            )}
-          </div>
-        ))}
-      </div>
-    );
+    // Special handling for specific tools
+    if (toolName === 'google_search') {
+      const entries = Object.entries(data);
+      const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
+      const orderedEntries = [];
+      
+      // Add fields in the specified order
+      for (const field of orderedFields) {
+        const entry = entries.find(([key]) => key === field);
+        if (entry) {
+          orderedEntries.push(entry);
+        }
+      }
+      
+      // Add any remaining fields
+      for (const entry of entries) {
+        if (!orderedFields.includes(entry[0])) {
+          orderedEntries.push(entry);
+        }
+      }
+      
+      return (
+        <div className="space-y-2">
+          {orderedEntries.map(([key, value]) => (
+            <div key={key} className="space-y-1">
+              <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
+              <div className="pl-4">
+                {key === 'sources' ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="sources" className="border-none">
+                      <AccordionTrigger className="text-xs p-2 hover:no-underline">
+                        Ver Fontes
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        {typeof value === 'string' ? (
+                          <div
+                            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                          />
+                        ) : (
+                          <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                            {JSON.stringify(value, null, 2)}
+                          </pre>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                ) : typeof value === 'string' ? (
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                  />
+                ) : (
+                  <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                    {JSON.stringify(value, null, 2)}
+                  </pre>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } else if (toolName === 'equipments_instructions') {
+      // Special handling for equipments_instructions
+      const toolReturnData = data as {
+        tema?: string;
+        instrucoes?: Array<{
+          tema?: string;
+          instrucoes?: string;
+        }>;
+      };
+      
+      return (
+        <div className="space-y-4">
+          {toolReturnData.tema && (
+            <div className="space-y-1">
+              <h5 className="font-medium text-sm capitalize text-muted-foreground">Tema</h5>
+              <div className="pl-4">
+                <div className="text-sm font-medium text-foreground">
+                  {toolReturnData.tema}
+                </div>
+              </div>
+            </div>
+          )}
+          {toolReturnData.instrucoes && Array.isArray(toolReturnData.instrucoes) && (
+            <div className="space-y-1">
+              <h5 className="font-medium text-sm capitalize text-muted-foreground">Instruções</h5>
+              <div className="pl-4 space-y-3">
+                {toolReturnData.instrucoes.map((item: any, index: number) => (
+                  <div key={index} className="border-l-2 border-primary/20 pl-3">
+                    {/* Renderiza tema primeiro se existir */}
+                    {item.tema && (
+                      <div className="text-xs text-muted-foreground mb-2">
+                        <span className="font-medium">Tema:</span> {item.tema}
+                      </div>
+                    )}
+                    {/* Renderiza instruções se existir */}
+                    {item.instrucoes && typeof item.instrucoes === 'string' && (
+                      <div
+                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(item.instrucoes) as string) }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      // Default behavior for other tools
+      return (
+        <div className="space-y-2">
+          {Object.entries(data).map(([key, value]) => (
+            <div key={key}>
+              <p className="font-semibold text-xs capitalize">{key.replace(/_/g, ' ')}:</p>
+              {key.toLowerCase().includes('text') || key.toLowerCase().includes('markdown') ? (
+                <div 
+                  className="prose prose-sm dark:prose-invert max-w-full"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(String(value)) as string) }}
+                />
+              ) : (
+                <JsonViewer data={value as object} />
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
   } catch {
     return (
       <p className="p-2 bg-muted/50 rounded-md text-xs whitespace-pre-wrap break-all font-mono">
@@ -184,8 +297,21 @@ export default function ChatClient() {
                                   {step.name && <Badge variant="secondary">{step.name}</Badge>}
                                 </div>
                                 {step.reasoning && <p className="italic text-muted-foreground text-xs pl-6">{step.reasoning}</p>}
-                                {step.tool_call && <JsonViewer data={JSON.parse(step.tool_call.arguments)} />}
-                                {step.tool_return && <ToolReturnViewer toolReturn={step.tool_return} />}
+                                {step.tool_call && (
+                                  <div>
+                                    <p className="font-semibold text-xs capitalize mb-2">Tool Call Arguments:</p>
+                                    <JsonViewer data={(() => {
+                                      try {
+                                        return typeof step.tool_call.arguments === 'string' 
+                                          ? JSON.parse(step.tool_call.arguments)
+                                          : step.tool_call.arguments;
+                                      } catch {
+                                        return { raw: step.tool_call.arguments };
+                                      }
+                                    })()} />
+                                  </div>
+                                )}
+                                {step.tool_return && <ToolReturnViewer toolReturn={step.tool_return} toolName={step.name || undefined} />}
                               </div>
                             ))}
                             <div className="space-y-2 pt-2 border-t">
