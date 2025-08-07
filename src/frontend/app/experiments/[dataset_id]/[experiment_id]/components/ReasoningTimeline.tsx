@@ -10,6 +10,7 @@ import DOMPurify from 'dompurify';
 
 interface ReasoningTimelineProps {
   reasoningTrace: ReasoningStep[] | null;
+  defaultExpanded?: boolean;
 }
 
 const getStepIcon = (messageType: string) => {
@@ -225,7 +226,7 @@ const StepContent = ({ content, messageType }: { content: unknown; messageType: 
     );
 };
 
-export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineProps) {
+export default function ReasoningTimeline({ reasoningTrace, defaultExpanded = false }: ReasoningTimelineProps) {
     if (!reasoningTrace || reasoningTrace.length === 0) {
         return (
             <Card>
@@ -242,8 +243,13 @@ export default function ReasoningTimeline({ reasoningTrace }: ReasoningTimelineP
         );
     }
 
+    // Se defaultExpanded é true, todos os itens começam expandidos
+    const defaultValue = defaultExpanded 
+        ? reasoningTrace.map((_, i) => `item-${i}`)
+        : [];
+
     return (
-        <Accordion type="multiple" className="w-full" defaultValue={reasoningTrace.map((_, i) => `item-${i}`)}>
+        <Accordion type="multiple" className="w-full" defaultValue={defaultValue}>
             {reasoningTrace.map((step, index) => {
                 const Icon = getStepIcon(step.message_type);
                 const title = step.message_type.replace(/_/g, ' ');

@@ -70,6 +70,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
         if (isOneTurn || !run.multi_turn_analysis.transcript) {
             return [];
         }
+        // No modo multi-turno, usamos o transcript diretamente
         return run.multi_turn_analysis.transcript.flatMap(turn => turn.agent_reasoning_trace || []);
     }, [isOneTurn, run.multi_turn_analysis.transcript]);
 
@@ -111,7 +112,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                         <span>Resposta do Agente</span>
                                     </CardTitle>
                                     <div className="flex gap-2">
-                                        {reasoningTrace && reasoningTrace.length > 0 && (
+                                        {isOneTurn && reasoningTrace && reasoningTrace.length > 0 && (
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <Button variant="outline" size="sm">
@@ -202,7 +203,10 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                 {isOneTurn ? (
                                     <ReasoningTimeline reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} />
                                 ) : (
-                                    <ReasoningTimeline reasoningTrace={multiTurnReasoningTrace} />
+                                    <ReasoningTimeline 
+                                        reasoningTrace={multiTurnReasoningTrace} 
+                                        defaultExpanded={true}
+                                    />
                                 )}
                             </AccordionContent>
                         </AccordionItem>
