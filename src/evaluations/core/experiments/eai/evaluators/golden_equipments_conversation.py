@@ -6,7 +6,7 @@ from src.evaluations.core.eval import (
 )
 
 
-class GoldenEquipmenConversation(BaseConversationEvaluator):
+class GoldenEquipmentConversation(BaseConversationEvaluator):
     """
     Avalia a ativação correta de ferramentas, identificação do equipamento correto e rapidez de resposta
     com base na transcrição completa da conversa.
@@ -20,8 +20,9 @@ Você é um especialista na avaliação de sistemas automatizados de chatbot. Su
 
 **Objetivo da Tarefa:**
 {agent_response[prompt]}
-**Histórico da Conversa até agora:**
-{history}
+
+**Transcrição Completa da Conversa:**
+{agent_response[conversation_history]}
 
 **Informações de Referência para Avaliação:**
 - equipamento_correto: {task[golden_equipment]}

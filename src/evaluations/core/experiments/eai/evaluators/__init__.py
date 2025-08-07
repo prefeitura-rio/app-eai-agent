@@ -21,11 +21,15 @@ from src.evaluations.core.experiments.eai.evaluators.activate_search import (
 )
 
 from src.evaluations.core.experiments.eai.evaluators.golden_equipments_conversation import (
-    GoldenEquipmenConversation,
+    GoldenEquipmentConversation,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.whatsapp_format import (
     WhatsAppFormatEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.golden_equipment_llm_guided_conv import (
+    GoldenEquipmentLLMGuidedConversation,
 )
 
 __all__ = [
@@ -35,6 +39,7 @@ __all__ = [
     "AnswerAddressingEvaluator",
     "ClarityEvaluator",
     "ActivateSearchEvaluator",
-    "GoldenEquipmentEvaluator",
+    "GoldenEquipmentConversation",
     "WhatsAppFormatEvaluator",
+    "GoldenEquipmentLLMGuidedConversation",
 ]

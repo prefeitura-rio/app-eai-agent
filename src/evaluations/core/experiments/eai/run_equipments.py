@@ -12,7 +12,8 @@ from src.utils.log import logger
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
-    GoldenEquipmenConversation,
+    GoldenEquipmentConversation,
+    GoldenEquipmentLLMGuidedConversation
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
@@ -50,7 +51,8 @@ async def run_experiment():
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
-        GoldenEquipmenConversation(judge_client),
+        GoldenEquipmentLLMGuidedConversation(judge_client),
+        GoldenEquipmentConversation(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
