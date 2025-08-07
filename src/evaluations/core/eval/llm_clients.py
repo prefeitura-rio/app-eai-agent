@@ -30,8 +30,12 @@ class EAIConversationManager:
         self,
         # agent_config: CreateAgentRequest,
         eai_client: EAIClient = EAIClient(),
+        timeout: int = 180,
+        polling_interval: int = 2,
     ):
-        self.user_number: str = None
+        self.user_number: Optional[str] = None
+        self.timeout = timeout
+        self.polling_interval = polling_interval
         self.eai_client = eai_client
         # self.agent_config = agent_config
         # self.agent_id: Optional[str] = None
@@ -73,8 +77,6 @@ class EAIConversationManager:
     async def send_message(
         self,
         message: str,
-        timeout: int = 30,
-        polling_interval: int = 2,
     ) -> AgentResponse:
         """
         Envia uma mensagem para o agente existente e retorna a resposta com o
@@ -93,10 +95,8 @@ class EAIConversationManager:
                 # agent_id=self.agent_id,
                 user_number=self.user_number,
                 message=message,
-                timeout=timeout,
-                polling_interval=polling_interval,
             )
-            logger.info(f"Resposta recebida do agente {self.user_number}.")
+            logger.info(f"Resposta recebida do numero: {self.user_number}.")
             response_dict = response.model_dump(exclude_none=True)
 
             if "data" in response_dict and "messages" in response_dict["data"]:

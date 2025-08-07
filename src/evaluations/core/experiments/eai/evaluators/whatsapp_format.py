@@ -10,8 +10,8 @@ class WhatsAppFormatEvaluator(BaseOneTurnEvaluator):
     """
 
     name = "whatsapp_format"
-    
-    WHATSAPP_FORMAT_PROMPT = """
+
+    PROMPT_TEMPLATE = """
 Você é um avaliador de conformidade com as regras de formatação do WhatsApp. Seu objetivo é julgar se a resposta do modelo segue todas as regras abaixo, pensadas para garantir concisão e legibilidade para o cidadão.
 
 **Regras de Formatação do WhatsApp:**
@@ -50,12 +50,10 @@ Resposta do Modelo: {agent_response[message]}
 """
 
     async def evaluate(
-        self, 
-        agent_response: AgentResponse, 
-        task: EvaluationTask
+        self, agent_response: AgentResponse, task: EvaluationTask
     ) -> EvaluationResult:
         return await self._get_llm_judgement(
-            prompt_template=self.WHATSAPP_FORMAT_PROMPT,
+            prompt_template=self.PROMPT_TEMPLATE,
             task=task,
             agent_response=agent_response,
         )

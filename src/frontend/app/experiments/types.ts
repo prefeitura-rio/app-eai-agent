@@ -22,7 +22,7 @@ export interface EvaluationTask {
 
 export interface EvaluationResult {
     score: number | null;
-    annotations: string;
+    annotations: string | Record<string, unknown>;
     has_error: boolean;
     error_message: string | null;
 }

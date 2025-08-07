@@ -28,10 +28,14 @@ class ResponseManager:
         # agent_config: Dict[str, Any],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         eai_client: EAIClient = EAIClient(),
+        timeout: int = 180,
+        polling_interval: int = 2,
     ):
         # self.agent_config = agent_config
         self.precomputed_responses = precomputed_responses or {}
         self.eai_client = eai_client
+        self.timeout = timeout
+        self.polling_interval = polling_interval
 
     # @asynccontextmanager
     # async def _get_agent_manager(
@@ -61,6 +65,8 @@ class ResponseManager:
             return
         agent_manager = EAIConversationManager(
             eai_client=self.eai_client,
+            timeout=self.timeout,
+            polling_interval=self.polling_interval,
         )
         try:
             await agent_manager.initialize()

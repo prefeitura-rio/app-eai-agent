@@ -4,79 +4,90 @@ import React from 'react';
 import { ExperimentDetails } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings } from 'lucide-react';
 
 export default function ExperimentSummary({ experimentData }: { experimentData: ExperimentDetails }) {
+    // Verificações de segurança
+    if (!experimentData) {
+        return <div className="text-center text-muted-foreground">Carregando dados do experimento...</div>;
+    }
+    
     return (
         <div className="space-y-6">
             <Card>
-                <CardHeader><CardTitle>Resumo da Execução</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <p className="text-sm text-muted-foreground">Duração Total</p>
-                        <p className="text-2xl font-bold">{experimentData.execution_summary.total_duration_seconds.toFixed(2)}s</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">Duração Média/Task</p>
-                        <p className="text-2xl font-bold">{experimentData.execution_summary.average_task_duration_seconds.toFixed(2)}s</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">Duração Média/Métrica</p>
-                        <p className="text-2xl font-bold">{experimentData.execution_summary.average_metric_duration_seconds.toFixed(2)}s</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader><CardTitle>Métricas Agregadas</CardTitle></CardHeader>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-lg">
+                        <Settings className="h-5 w-5 text-primary" />
+                        <span>Metadados do Experimento</span>
+                    </CardTitle>
+                </CardHeader>
                 <CardContent>
-                    {experimentData.aggregate_metrics.map(metric => (
-                        <div key={metric.metric_name} className="mb-4 last:mb-0">
-                            <h4 className="font-semibold text-base mb-2">{metric.metric_name}</h4>
-                            <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                                <span>Média: <strong className="text-foreground">{metric.score_statistics?.average?.toFixed(3) ?? 'N/A'}</strong></span>
-                                <span>Mediana: <strong className="text-foreground">{metric.score_statistics?.median?.toFixed(3) ?? 'N/A'}</strong></span>
-                                <span>Sucessos: <strong className="text-foreground text-green-600">{metric.successful_runs}</strong></span>
-                                <span>Falhas: <strong className="text-foreground text-red-600">{metric.failed_runs}</strong></span>
-                            </div>
-                            <div className="mt-2">
-                                <h5 className="text-sm font-medium mb-2">Distribuição de Scores</h5>
-                                <div className="space-y-1">
-                                    {metric.score_distribution.map((dist) => (
-                                        <div key={dist.value} className="grid grid-cols-[3rem_1fr_5rem] items-center gap-2 text-xs">
-                                            <div className="text-right font-bold">{dist.value.toFixed(1)}</div>
-                                            <Progress value={dist.percentage} className="h-2" />
-                                            <div className="text-left text-muted-foreground">({dist.count} runs) {dist.percentage.toFixed(0)}%</div>
+                    <div className="space-y-4">
+                        {/* Campos diretos em grid de 4 colunas */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {Object.entries(experimentData.experiment_metadata || {})
+                                .filter(([key]) => !['judges_prompts', 'system_prompt'].includes(key))
+                                .map(([key, value]) => {
+                                    const displayValue = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+                                    return (
+                                        <div key={key} className="space-y-1">
+                                            <h4 className="font-semibold text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h4>
+                                            <div className="p-2 rounded-md min-h-[60px] flex items-center">
+                                                {typeof value === 'string' ? (
+                                                    <p className="text-xs leading-tight">{displayValue}</p>
+                                                ) : (
+                                                    <pre className="text-xs whitespace-pre-wrap break-all font-mono leading-tight">
+                                                        {displayValue}
+                                                    </pre>
+                                                )}
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                    );
+                                })}
                         </div>
-                    ))}
+                        
+                        {/* System Prompt */}
+                        {experimentData.experiment_metadata?.system_prompt && (
+                            <Accordion type="multiple" className="w-full">
+                                <AccordionItem value="system_prompt">
+                                    <AccordionTrigger className="capitalize">System Prompt</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="p-4 rounded-md text-xs whitespace-pre-wrap break-all font-mono text-foreground bg-muted/50 border">
+                                            {String(experimentData.experiment_metadata.system_prompt)}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        )}
+                        
+                        {/* Judges Prompts */}
+                        {experimentData.experiment_metadata?.judges_prompts && Object.keys(experimentData.experiment_metadata.judges_prompts).length > 0 && (
+                            <Accordion type="multiple" className="w-full">
+                                <AccordionItem value="judges_prompts">
+                                    <AccordionTrigger className="capitalize">Judges Prompts</AccordionTrigger>
+                                    <AccordionContent>
+                                        <Tabs defaultValue={Object.keys(experimentData.experiment_metadata.judges_prompts)[0]} className="w-full">
+                                            <TabsList>
+                                                {Object.keys(experimentData.experiment_metadata.judges_prompts).map(key => (
+                                                    <TabsTrigger key={key} value={key} className="text-xs">{key.replace(/_/g, ' ')}</TabsTrigger>
+                                                ))}
+                                            </TabsList>
+                                            {Object.entries(experimentData.experiment_metadata.judges_prompts).map(([key, value]) => (
+                                                <TabsContent key={key} value={key}>
+                                                    <div className="p-4 rounded-md text-xs whitespace-pre-wrap break-all font-mono text-foreground bg-muted/50 border">
+                                                        {String(value)}
+                                                    </div>
+                                                </TabsContent>
+                                            ))}
+                                        </Tabs>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader><CardTitle>Metadados do Experimento</CardTitle></CardHeader>
-                <CardContent>
-                    <Accordion type="multiple" className="w-full">
-                        {Object.entries(experimentData.experiment_metadata).map(([key, value]) => (
-                            <AccordionItem value={key} key={key}>
-                                <AccordionTrigger className="capitalize">{key.replace(/_/g, ' ')}</AccordionTrigger>
-                                <AccordionContent>
-                                    <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap break-all font-mono text-foreground">
-                                        {JSON.stringify(value, null, 2)}
-                                    </pre>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                </CardContent>
-            </Card>
-            
-            <div className="flex h-full items-center justify-center text-center text-muted-foreground pt-8">
-                <p>Selecione um run na lista à esquerda para ver os detalhes completos.</p>
-            </div>
         </div>
     );
 }

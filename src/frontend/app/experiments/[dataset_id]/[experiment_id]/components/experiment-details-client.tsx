@@ -11,7 +11,7 @@ import JsonViewerModal from '@/app/components/JsonViewerModal';
 import DownloadLlmJsonModal, { LlmJsonFilters } from './DownloadLlmJsonModal';
 import RunDetails from './RunDetails';
 import SummaryMetrics from './SummaryMetrics';
-import DetailsPlaceholder from './DetailsPlaceholder';
+import ExperimentSummary from './ExperimentSummary';
 import Filters from './Filters';
 
 interface ClientProps {
@@ -133,10 +133,11 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
           </CardContent>
         </Card>
 
-        <div className="overflow-y-auto pr-4">
+        <div className="overflow-y-auto pr-4 min-h-screen">
           <div className="space-y-6">
+              <ExperimentSummary experimentData={experimentData} />
               <SummaryMetrics aggregateMetrics={experimentData.aggregate_metrics} />
-              {selectedRun ? <RunDetails run={selectedRun} /> : <DetailsPlaceholder />}
+              {selectedRun && <RunDetails run={selectedRun} />}
           </div>
         </div>
       </div>
