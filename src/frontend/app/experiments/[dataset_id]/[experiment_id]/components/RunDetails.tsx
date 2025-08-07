@@ -186,7 +186,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                         </CardContent>
                     </Card>
                     
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full" defaultValue={undefined}>
                         <AccordionItem value="reasoning" className="border-none">
                             <AccordionTrigger className="hover:no-underline">
                                 <div className="flex items-center gap-3">
@@ -201,7 +201,10 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                         defaultExpanded={true}
                                     />
                                 ) : (
-                                    <ConversationTranscript transcript={run.multi_turn_analysis.transcript} />
+                                    <ConversationTranscript 
+                                        transcript={run.multi_turn_analysis.transcript} 
+                                        defaultExpanded={true}
+                                    />
                                 )}
                             </AccordionContent>
                         </AccordionItem>

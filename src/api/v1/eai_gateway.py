@@ -14,7 +14,8 @@ from typing import Dict, Any, Optional, List
 # --- Pydantic Models ---
 
 
-class ChatRequest(CreateAgentRequest):
+class ChatRequest(BaseModel):
+    user_number: str
     message: str
     timeout: int = 180
     polling_interval: int = 2
@@ -32,14 +33,6 @@ router = APIRouter(
     tags=["EAI Gateway"],
     dependencies=[Depends(validar_token)],
 )
-
-
-# --- Event Handlers ---
-
-
-@router.on_event("shutdown")
-async def shutdown_event():
-    await eai_client.close()
 
 
 # --- Endpoints ---

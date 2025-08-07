@@ -10,6 +10,7 @@ import ReasoningTimeline from './ReasoningTimeline';
 
 interface ConversationTranscriptProps {
     transcript: ConversationTurn[] | null;
+    defaultExpanded?: boolean;
 }
 
 const renderMarkdown = (content: string) => {
@@ -18,7 +19,7 @@ const renderMarkdown = (content: string) => {
     return <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: html }} />;
 };
 
-export default function ConversationTranscript({ transcript }: ConversationTranscriptProps) {
+export default function ConversationTranscript({ transcript, defaultExpanded = false }: ConversationTranscriptProps) {
     if (!transcript || transcript.length === 0) {
         return <p className="text-sm text-muted-foreground p-4">Nenhuma transcrição de conversa disponível.</p>;
     }
@@ -42,7 +43,7 @@ export default function ConversationTranscript({ transcript }: ConversationTrans
                             <div className="max-w-[80%] rounded-lg bg-muted p-3 w-full">
                                 {renderMarkdown(turn.agent_message)}
                                 {turn.agent_reasoning_trace && turn.agent_reasoning_trace.length > 0 && (
-                                    <Accordion type="single" collapsible className="w-full mt-2">
+                                    <Accordion type="single" collapsible className="w-full mt-2" value={defaultExpanded ? "reasoning" : undefined}>
                                         <AccordionItem value="reasoning" className="border-none">
                                             <AccordionTrigger className="text-xs p-2 hover:no-underline">
                                                 Ver Cadeia de Pensamento
