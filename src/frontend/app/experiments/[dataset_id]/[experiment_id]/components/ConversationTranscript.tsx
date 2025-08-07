@@ -48,7 +48,10 @@ export default function ConversationTranscript({ transcript }: ConversationTrans
                                                 Ver Cadeia de Pensamento
                                             </AccordionTrigger>
                                             <AccordionContent>
-                                                <ReasoningTimeline reasoningTrace={turn.agent_reasoning_trace} />
+                                                <ReasoningTimeline 
+                                                    reasoningTrace={turn.agent_reasoning_trace} 
+                                                    defaultExpanded={true}
+                                                />
                                             </AccordionContent>
                                         </AccordionItem>
                                     </Accordion>

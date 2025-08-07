@@ -125,7 +125,10 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                                         <DialogTitle>Cadeia de Pensamento</DialogTitle>
                                                     </DialogHeader>
                                                     <div className="overflow-y-auto max-h-[70vh]">
-                                                        <ReasoningTimeline reasoningTrace={reasoningTrace} />
+                                                        <ReasoningTimeline 
+                                                            reasoningTrace={reasoningTrace} 
+                                                            defaultExpanded={true}
+                                                        />
                                                     </div>
                                                 </DialogContent>
                                             </Dialog>
@@ -201,7 +204,10 @@ export default function RunDetails({ run }: RunDetailsProps) {
                             </AccordionTrigger>
                             <AccordionContent>
                                 {isOneTurn ? (
-                                    <ReasoningTimeline reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} />
+                                    <ReasoningTimeline 
+                                        reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} 
+                                        defaultExpanded={true}
+                                    />
                                 ) : (
                                     <ReasoningTimeline 
                                         reasoningTrace={multiTurnReasoningTrace} 
