@@ -61,13 +61,21 @@ export default function RunDetails({ run }: RunDetailsProps) {
     );
     
     const initialViewMode = useMemo(() => {
-        // Se há erro em multi_turn mas não em one_turn, começa com multi_turn
-        if (hasMultiTurnError && !hasOneTurnError && !hasOneTurnData) {
+        // Se há erro em multi_turn, sempre começa com multi_turn para mostrar o erro
+        if (run.multi_turn_analysis && run.multi_turn_analysis.has_error) {
             return 'multi_turn';
         }
+        // Se há erro em one_turn, sempre começa com one_turn para mostrar o erro
+        if (run.one_turn_analysis && run.one_turn_analysis.has_error) {
+            return 'one_turn';
+        }
         // Se há dados válidos em one_turn, começa com one_turn
-        return hasOneTurnData ? 'one_turn' : 'multi_turn';
-    }, [hasOneTurnData, hasMultiTurnError, hasOneTurnError]);
+        if (hasOneTurnData) {
+            return 'one_turn';
+        }
+        // Caso contrário, começa com multi_turn
+        return 'multi_turn';
+    }, [hasOneTurnData, run.multi_turn_analysis, run.one_turn_analysis]);
     
     const [viewMode, setViewMode] = useState<'one_turn' | 'multi_turn'>(initialViewMode);
     
@@ -104,16 +112,26 @@ export default function RunDetails({ run }: RunDetailsProps) {
 
     // Verifica se deve exibir erro para o modo atual
     const shouldShowError = useMemo(() => {
-        if (isOneTurn) {
-            return hasOneTurnError || !hasOneTurnData;
-        } else {
-            return hasMultiTurnError || !hasMultiTurnData;
+        // Se há erro na análise atual, sempre mostra
+        if (analysis.has_error) {
+            return true;
         }
-    }, [isOneTurn, hasOneTurnError, hasOneTurnData, hasMultiTurnError, hasMultiTurnData]);
+        
+        // Se não há dados válidos para o modo atual
+        if (isOneTurn && !hasOneTurnData) {
+            return true;
+        }
+        
+        if (!isOneTurn && !hasMultiTurnData) {
+            return true;
+        }
+        
+        return false;
+    }, [analysis.has_error, isOneTurn, hasOneTurnData, hasMultiTurnData]);
 
     // Determina a mensagem de erro apropriada
     const errorMessage = useMemo(() => {
-        // PRIORIDADE 1: Se há erro específico a nível de run na análise atual, use essa mensagem
+        // PRIORIDADE 1: Se há erro na análise atual, use essa mensagem
         if (analysis.has_error && analysis.error_message) {
             return analysis.error_message;
         }
@@ -131,14 +149,19 @@ export default function RunDetails({ run }: RunDetailsProps) {
         return "Erro desconhecido na análise.";
     }, [analysis.has_error, analysis.error_message, isOneTurn, hasOneTurnData, hasMultiTurnData]);
 
-    // Atualiza o viewMode se necessário - apenas quando os dados mudam
+    // Atualiza o viewMode se necessário - apenas quando os dados mudam E não há erro
     React.useEffect(() => {
+        // Não muda o modo se há erro em qualquer análise
+        if (hasOneTurnError || hasMultiTurnError) {
+            return;
+        }
+        
         if (!hasOneTurnData && viewMode === 'one_turn') {
             setViewMode('multi_turn');
         } else if (!hasMultiTurnData && viewMode === 'multi_turn') {
             setViewMode('one_turn');
         }
-    }, [hasOneTurnData, hasMultiTurnData]); // Removido viewMode das dependências
+    }, [hasOneTurnData, hasMultiTurnData, hasOneTurnError, hasMultiTurnError, viewMode]);
 
     return (
         <div className="space-y-6">
