@@ -15,7 +15,6 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -210,7 +209,7 @@ export default function DatasetDetailsClient({
                             <AlertDialogHeader>
                               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Tem certeza que deseja deletar o experimento "{exp.experiment_name}"? 
+                                Tem certeza que deseja deletar o experimento &quot;{exp.experiment_name}&quot;? 
                                 <br /><br />
                                 <strong>Esta ação não pode ser desfeita.</strong>
                               </AlertDialogDescription>

@@ -39,6 +39,7 @@ interface DatasetsClientProps {
 }
 
 type SortKey = keyof DatasetInfo;
+type TableHeaderKey = SortKey | 'actions';
 
 export default function DatasetsClient({ datasets: initialDatasets }: DatasetsClientProps) {
   const router = useRouter();
@@ -114,7 +115,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
     }
   };
 
-  const tableHeaders: { key: keyof DatasetInfo; label: string; className?: string }[] = [
+  const tableHeaders: { key: TableHeaderKey; label: string; className?: string }[] = [
     { key: 'dataset_name', label: 'Nome', className: 'w-[25%]' },
     { key: 'dataset_description', label: 'Descrição' },
     { key: 'num_examples', label: 'Exemplos', className: 'text-center w-[100px]' },
@@ -207,7 +208,7 @@ export default function DatasetsClient({ datasets: initialDatasets }: DatasetsCl
                           <AlertDialogHeader>
                             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Tem certeza que deseja deletar o dataset "{dataset.dataset_name}"? 
+                              Tem certeza que deseja deletar o dataset &quot;{dataset.dataset_name}&quot;? 
                               Esta ação irá deletar o dataset e todos os {dataset.num_runs} experimentos associados.
                               <br /><br />
                               <strong>Esta ação não pode ser desfeita.</strong>
