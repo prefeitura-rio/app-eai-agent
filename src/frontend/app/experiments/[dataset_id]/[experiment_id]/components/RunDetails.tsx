@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { ExperimentRun } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, CheckSquare, Network, Trophy, Bot, MessageSquare, AlertTriangle } from 'lucide-react';
@@ -16,6 +18,12 @@ import ConversationTranscript from './ConversationTranscript';
 interface RunDetailsProps {
   run: ExperimentRun;
 }
+
+const renderMarkdown = (content: string) => {
+    marked.use({ breaks: true });
+    const html = DOMPurify.sanitize(marked.parse(content) as string);
+    return <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 const ErrorDisplay = ({ message }: { message: string }) => (
     <div className="flex items-center gap-3 text-destructive p-4 bg-destructive/10 rounded-lg">
@@ -81,7 +89,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pl-12">
-                    <p className="text-foreground text-sm">{run.task_data.prompt || "Prompt não disponível"}</p>
+                    {renderMarkdown(run.task_data.prompt || "Prompt não disponível")}
                 </CardContent>
             </Card>
             

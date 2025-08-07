@@ -15,13 +15,20 @@ export default function Comparison({ content }: ComparisonProps) {
     useEffect(() => {
         const text = content || "";
         if (text) {
-            setContentHtml(DOMPurify.sanitize(marked.parse(text) as string));
+            marked.use({ breaks: true });
+            const html = DOMPurify.sanitize(marked.parse(text) as string);
+            console.log('Original text:', text);
+            console.log('Parsed HTML:', html);
+            setContentHtml(html);
         } else {
             setContentHtml("<p class='text-muted-foreground italic'>Nenhuma resposta disponível.</p>");
         }
     }, [content]);
 
     return (
-        <CardContent className="prose text-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+        <CardContent 
+            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
+            dangerouslySetInnerHTML={{ __html: contentHtml }} 
+        />
     );
 }

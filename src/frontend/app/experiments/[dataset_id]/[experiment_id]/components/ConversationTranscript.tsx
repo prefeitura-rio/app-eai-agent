@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { User, Bot } from 'lucide-react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { ConversationTurn } from '../../../types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import ReasoningTimeline from './ReasoningTimeline';
@@ -9,6 +11,12 @@ import ReasoningTimeline from './ReasoningTimeline';
 interface ConversationTranscriptProps {
     transcript: ConversationTurn[] | null;
 }
+
+const renderMarkdown = (content: string) => {
+    marked.use({ breaks: true });
+    const html = DOMPurify.sanitize(marked.parse(content) as string);
+    return <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 export default function ConversationTranscript({ transcript }: ConversationTranscriptProps) {
     if (!transcript || transcript.length === 0) {
@@ -22,7 +30,7 @@ export default function ConversationTranscript({ transcript }: ConversationTrans
                     {/* User's Message */}
                     <div className="flex items-start gap-3 justify-end mb-2">
                         <div className="max-w-[80%] rounded-lg bg-primary text-primary-foreground p-3">
-                            <p className="text-sm">{turn.user_message}</p>
+                            {renderMarkdown(turn.user_message)}
                         </div>
                         <User className="h-6 w-6 flex-shrink-0" />
                     </div>
@@ -32,7 +40,7 @@ export default function ConversationTranscript({ transcript }: ConversationTrans
                         <div className="flex items-start gap-3">
                             <Bot className="h-6 w-6 text-primary flex-shrink-0" />
                             <div className="max-w-[80%] rounded-lg bg-muted p-3 w-full">
-                                <p className="text-sm">{turn.agent_message}</p>
+                                {renderMarkdown(turn.agent_message)}
                                 {turn.agent_reasoning_trace && turn.agent_reasoning_trace.length > 0 && (
                                     <Accordion type="single" collapsible className="w-full mt-2">
                                         <AccordionItem value="reasoning" className="border-none">
