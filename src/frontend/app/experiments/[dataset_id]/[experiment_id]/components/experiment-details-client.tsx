@@ -107,8 +107,8 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
         onOpenChange={setLlmModalOpen}
         onConfirm={handleDownloadCleanJson}
       />
-      <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full pb-6">
-        <Card className="flex flex-col">
+      <div className="grid md:grid-cols-[300px_1fr] gap-6">
+        <Card className="flex flex-col h-screen">
           <CardHeader>
             <CardTitle>Runs ({filteredRuns.length})</CardTitle>
           </CardHeader>
@@ -133,7 +133,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
           </CardContent>
         </Card>
 
-        <div className="overflow-y-auto pr-4 min-h-screen">
+        <div className="overflow-y-auto pr-4 pb-6">
           <div className="space-y-6">
               <ExperimentSummary experimentData={experimentData} />
               <SummaryMetrics aggregateMetrics={experimentData.aggregate_metrics} />

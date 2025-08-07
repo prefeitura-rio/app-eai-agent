@@ -61,8 +61,10 @@ export default function ExperimentDetailsPage({ params }: PageProps) {
     const { dataset_id, experiment_id } = use(params);
 
     return (
-        <Suspense fallback={<ExperimentDetailsSkeleton />}>
-            <ExperimentDetailsPageContent datasetId={dataset_id} experimentId={experiment_id} />
-        </Suspense>
+        <div className="h-screen overflow-hidden">
+            <Suspense fallback={<ExperimentDetailsSkeleton />}>
+                <ExperimentDetailsPageContent datasetId={dataset_id} experimentId={experiment_id} />
+            </Suspense>
+        </div>
     );
 }

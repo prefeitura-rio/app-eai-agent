@@ -12,9 +12,10 @@ class GoldenEquipmentLLMGuidedConversation(BaseConversationEvaluator):
     onde um LLM-Juiz atua como o usuário, seguindo um roteiro definido no
     campo 'judge_context' da tarefa.
     """
+
     name = "golden_equipment_llm_guided_conversation"
 
-    GOLDEN_EQUIPMENT_LLM_GUIDED_PROMPT = """
+    PROMPT_TEMPLATE = """
 Você é um Juiz de IA conduzindo uma avaliação conversacional para testar o agente.
 
 Sua função é **simular o comportamento de um cidadão** com base no roteiro abaixo. Esse roteiro representa o problema que o cidadão está tentando resolver.
@@ -27,7 +28,7 @@ Sua função é **simular o comportamento de um cidadão** com base no roteiro a
 
 **Sua Próxima Ação:**
 
-1. Continue a conversa como o cidadão, mantendo o estilo e objetivo do roteiro.
+1. Continue a conversa como o agente, mantendo o estilo e objetivo do roteiro.
 2. Se o objetivo do cidadão já foi atingido ou a conversa não precisa continuar, responda com: `{stop_signal}`
 
 **Sua Próxima Fala ou Sinal de Parada:**
