@@ -96,7 +96,27 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                         <div key={key} className="space-y-1">
                                                             <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
                                                             <div className="pl-4">
-                                                                {typeof value === 'string' ? (
+                                                                {key === 'sources' ? (
+                                                                    <Accordion type="single" collapsible className="w-full">
+                                                                        <AccordionItem value="sources" className="border-none">
+                                                                            <AccordionTrigger className="text-xs p-2 hover:no-underline">
+                                                                                Ver Fontes
+                                                                            </AccordionTrigger>
+                                                                            <AccordionContent>
+                                                                                {typeof value === 'string' ? (
+                                                                                    <div
+                                                                                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                                        {JSON.stringify(value, null, 2)}
+                                                                                    </pre>
+                                                                                )}
+                                                                            </AccordionContent>
+                                                                        </AccordionItem>
+                                                                    </Accordion>
+                                                                ) : typeof value === 'string' ? (
                                                                     <div
                                                                         className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
                                                                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
