@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -371,6 +372,15 @@ export default function ChatClient() {
     copyToClipboard(userNumber);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !isLoading) {
+        handleSendMessage(e as any);
+      }
+    }
+  };
+
   return (
     <div className="grid md:grid-cols-[1fr_350px] gap-6 h-full">
       {/* Painel do Chat (Esquerda) */}
@@ -384,10 +394,16 @@ export default function ChatClient() {
                 <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                   {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
                   <div className={`w-full max-w-[80%] rounded-lg ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    <div 
-                      className="prose prose-base dark:prose-invert p-4 whitespace-pre-wrap text-base"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
-                    />
+                    {msg.sender === 'user' ? (
+                      <div className="p-4 whitespace-pre-wrap text-base text-primary-foreground break-words overflow-wrap-anywhere">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <div 
+                        className="prose prose-base dark:prose-invert p-4 whitespace-pre-wrap text-base break-words overflow-wrap-anywhere"
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
+                      />
+                    )}
                     {msg.sender === 'bot' && msg.fullResponse && (
                       <div className="mt-3 pt-3 border-t border-muted/30">
                         <Accordion type="single" collapsible className="w-full">
@@ -444,14 +460,17 @@ export default function ChatClient() {
         </CardContent>
         <CardFooter className="border-t pt-4">
           <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
-            <Input
+            <Textarea
               id="message"
               placeholder="Digite sua mensagem..."
-              className="flex-1"
+              className="flex-1 min-h-[60px] resize-none"
               autoComplete="off"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={isLoading}
+              rows={3}
+              style={{ resize: 'none' }}
             />
             <Button type="submit" size="icon" disabled={isLoading}>
               {isLoading ? (
