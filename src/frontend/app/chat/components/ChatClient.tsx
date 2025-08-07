@@ -4,13 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Trash2, Lightbulb, Wrench, LogIn, BarChart2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { sendChatMessage, ChatRequestPayload, deleteAgentAssociation, ChatResponseData, AgentMessage } from '../services/api';
+import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage } from '../services/api';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -71,6 +70,21 @@ const getStepIcon = (messageType: AgentMessage['message_type']) => {
   }
 };
 
+// Função para gerar número aleatório de 9 dígitos
+const generateRandomNumber = (): string => {
+  return Math.floor(100000000 + Math.random() * 900000000).toString();
+};
+
+// Função para copiar texto para clipboard
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success("Número copiado para a área de transferência!");
+  } catch {
+    toast.error("Erro ao copiar número");
+  }
+};
+
 export default function ChatClient() {
   const { token } = useAuth();
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -78,11 +92,10 @@ export default function ChatClient() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Agent Parameters State
-  const [userNumber, setUserNumber] = useState('chat-ui-user');
-  const [systemPrompt, setSystemPrompt] = useState('You are a helpful AI assistant.');
-  const [model, setModel] = useState('google_ai/gemini-2.5-flash-lite-preview-06-17');
-  const [tools, setTools] = useState('google_search, equipments_instructions, equipments_by_address');
+  // Chat Parameters State
+  const [userNumber, setUserNumber] = useState(generateRandomNumber());
+  const [isNumberFixed, setIsNumberFixed] = useState(false);
+  const [provider] = useState('google_agent_engine'); // Provider fixo, não editável
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -103,10 +116,7 @@ export default function ChatClient() {
       const payload: ChatRequestPayload = {
         user_number: userNumber,
         message: input,
-        name: `ui-agent-${userNumber}`,
-        system: systemPrompt,
-        model: model,
-        tools: tools.split(',').map(t => t.trim()).filter(Boolean),
+        provider: provider,
       };
 
       const botResponseData = await sendChatMessage(payload, token);
@@ -128,20 +138,20 @@ export default function ChatClient() {
     }
   };
 
-  const handleDeleteAgent = async () => {
-    if (!userNumber.trim() || !token) {
-      toast.error("User Number é obrigatório para deletar um agente.");
-      return;
+  const handleGenerateNumber = () => {
+    if (!isNumberFixed) {
+      setUserNumber(generateRandomNumber());
+      toast.success("Novo número gerado!");
     }
-        if (confirm(`Tem certeza que deseja deletar o agente para o usuário '${userNumber}'? A conversa será reiniciada.`)) {
-      const result = await deleteAgentAssociation(userNumber, token);
-      if (result.success) {
-        toast.success("Agente deletado com sucesso. A próxima mensagem criará um novo agente.");
-        setMessages([]); // Clear chat history
-      } else {
-        toast.error("Erro ao deletar agente", { description: result.message });
-      }
-    }
+  };
+
+  const handleToggleFixNumber = () => {
+    setIsNumberFixed(!isNumberFixed);
+    toast.success(isNumberFixed ? "Número desbloqueado!" : "Número fixado!");
+  };
+
+  const handleCopyNumber = () => {
+    copyToClipboard(userNumber);
   };
 
   return (
@@ -226,47 +236,69 @@ export default function ChatClient() {
               <Input
                 id="user-number"
                 value={userNumber}
-                onChange={(e) => setUserNumber(e.target.value)}
+                onChange={(e) => !isNumberFixed && setUserNumber(e.target.value)}
+                disabled={isNumberFixed}
+                className="flex-1"
               />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={handleDeleteAgent}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={handleGenerateNumber}
+                      disabled={isNumberFixed}
+                    >
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Deletar agente e reiniciar conversa</p>
+                    <p>Gerar novo número aleatório</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={handleToggleFixNumber}
+                    >
+                      {isNumberFixed ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isNumberFixed ? "Desbloquear número" : "Fixar número"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={handleCopyNumber}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Copiar número</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
           </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="system-prompt">System Prompt</Label>
-            <Textarea
-              id="system-prompt"
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              className="h-32"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="model">Modelo</Label>
-            <Textarea
-              id="model"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="h-10 resize-y"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tools">Tools (separado por vírgula)</Label>
-            <Textarea
-              id="tools"
-              value={tools}
-              onChange={(e) => setTools(e.target.value)}
-              className="h-20 resize-y"
+            <Label htmlFor="provider">Provider</Label>
+            <Input
+              id="provider"
+              value={provider}
+              disabled
+              className="bg-muted"
             />
           </div>
         </CardContent>
