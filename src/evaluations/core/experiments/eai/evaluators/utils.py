@@ -1,6 +1,6 @@
 import ast
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 from urllib.parse import urlparse, unquote, parse_qsl, urlencode
 from src.utils.log import logger
@@ -38,7 +38,7 @@ def parse_golden_links(links: str) -> List[str]:
         return []
 
 
-def extract_links_from_text(text: str) -> List[str]:
+def extract_links_from_text(text: Optional[str]) -> List[str]:
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", text)
     plain_links = re.findall(r"https?://[^\s)\]]+", text)
     normalized = [
@@ -64,15 +64,17 @@ def match_golden_link(answer_links, golden_links):
                 matched_golden = golden_link
                 overall_count += 1
                 break
-        
-        result.append({
-            "url": answer_url,
-            "golden_link": matched_golden,
-            "has_golden_link": matched_golden is not None,
-        })
+
+        result.append(
+            {
+                "url": answer_url,
+                "golden_link": matched_golden,
+                "has_golden_link": matched_golden is not None,
+            }
+        )
 
     reordered_data = sorted(result, key=lambda item: not item["has_golden_link"])
-    
+
     return reordered_data, overall_count
 
 

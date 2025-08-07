@@ -13,9 +13,17 @@ interface MetadataProps {
   metadata: ExperimentDetails['experiment_metadata'];
 }
 
-const MarkdownRenderer = ({ content }: { content: string }) => {
+const MarkdownRenderer = ({ content }: { content: string | Record<string, unknown> }) => {
+    // Convert object to formatted string if needed
+    let contentString: string;
+    if (typeof content === 'string') {
+        contentString = content;
+    } else {
+        contentString = JSON.stringify(content, null, 2);
+    }
+    
     marked.use({ breaks: true });
-    const html = DOMPurify.sanitize(marked.parse(content) as string);
+    const html = DOMPurify.sanitize(marked.parse(contentString) as string);
     return (
         <div
             className="text-sm max-w-none p-4 bg-muted rounded-md whitespace-pre-wrap"

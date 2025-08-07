@@ -1,42 +1,45 @@
 from src.evaluations.core.experiments.eai.evaluators.golden_link_in_answer import (
-    GoldenLinkInAnswerEvaluator
+    GoldenLinkInAnswerEvaluator,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.golden_link_in_tool_calling import (
-    GoldenLinkInToolCallingEvaluator
+    GoldenLinkInToolCallingEvaluator,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.answer_completeness import (
-    AnswerCompletenessEvaluator
+    AnswerCompletenessEvaluator,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.answer_addressing import (
-    AnswerAddressingEvaluator
+    AnswerAddressingEvaluator,
 )
 
-from src.evaluations.core.experiments.eai.evaluators.clarity import (
-    ClarityEvaluator
-)
+from src.evaluations.core.experiments.eai.evaluators.clarity import ClarityEvaluator
 
 from src.evaluations.core.experiments.eai.evaluators.activate_search import (
-    ActivateSearchEvaluator
+    ActivateSearchEvaluator,
 )
 
-from src.evaluations.core.experiments.eai.evaluators.golden_equipment import (
-    GoldenEquipmentEvaluator
+from src.evaluations.core.experiments.eai.evaluators.golden_equipments_conversation import (
+    GoldenEquipmentConversation,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.whatsapp_format import (
-    WhatsAppFormatEvaluator
+    WhatsAppFormatEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.golden_equipment_llm_guided_conv import (
+    GoldenEquipmentLLMGuidedConversation,
 )
 
 __all__ = [
-    "GoldenLinkInAnswerEvaluator", 
+    "GoldenLinkInAnswerEvaluator",
     "GoldenLinkInToolCallingEvaluator",
     "AnswerCompletenessEvaluator",
     "AnswerAddressingEvaluator",
     "ClarityEvaluator",
     "ActivateSearchEvaluator",
-    "GoldenEquipmentEvaluator",
-    "WhatsAppFormatEvaluator"
+    "GoldenEquipmentConversation",
+    "WhatsAppFormatEvaluator",
+    "GoldenEquipmentLLMGuidedConversation",
 ]

@@ -36,6 +36,7 @@ function ExperimentDetailsPageContent({ datasetId, experimentId }: { datasetId: 
                     }
 
                     const data = await res.json();
+                    console.log('Dados recebidos da API:', data);
                     setExperimentData(data);
 
                 } catch (error) {

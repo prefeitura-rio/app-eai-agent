@@ -11,11 +11,11 @@ class AnswerCompletenessEvaluator(BaseOneTurnEvaluator):
 
     name = "answer_completeness"
 
-# - 1.0 (excelente): A resposta cobre todos ou quase todos os conceitos importantes da resposta ideal. Detalhes pequenos ausentes são aceitáveis se os pontos principais estiverem claros.
-# - 0.5 (bom): A resposta captura parcialmente os pontos centrais, mas perde informações importantes que comprometem o entendimento completo.
-# - 0.0 (ruim): A resposta ignora ou omite a maior parte das ideias principais, ou diverge muito em significado.
+    # - 1.0 (excelente): A resposta cobre todos ou quase todos os conceitos importantes da resposta ideal. Detalhes pequenos ausentes são aceitáveis se os pontos principais estiverem claros.
+    # - 0.5 (bom): A resposta captura parcialmente os pontos centrais, mas perde informações importantes que comprometem o entendimento completo.
+    # - 0.0 (ruim): A resposta ignora ou omite a maior parte das ideias principais, ou diverge muito em significado.
 
-    ANSWER_COMPLETENESS_PROMPT = """
+    PROMPT_TEMPLATE = """
 Nesta tarefa, você irá avaliar o quanto a resposta de um modelo cobre os tópicos centrais e os conceitos essenciais presentes em uma resposta ideal.
 
 A avaliação deve ser feita com base na cobertura do conteúdo, não na similaridade de estilo ou na forma de redigir.
@@ -39,12 +39,10 @@ Resposta Ideal: {task[golden_answer]}
 """
 
     async def evaluate(
-        self, 
-        agent_response: AgentResponse, 
-        task: EvaluationTask
+        self, agent_response: AgentResponse, task: EvaluationTask
     ) -> EvaluationResult:
         return await self._get_llm_judgement(
-            prompt_template=self.ANSWER_COMPLETENESS_PROMPT,
+            prompt_template=self.PROMPT_TEMPLATE,
             task=task,
             agent_response=agent_response,
         )

@@ -20,9 +20,7 @@ class GoldenLinkInAnswerEvaluator(BaseOneTurnEvaluator):
     name = "golden_link_in_answer"
 
     async def evaluate(
-        self, 
-        agent_response: AgentResponse, 
-        task: EvaluationTask
+        self, agent_response: AgentResponse, task: EvaluationTask
     ) -> EvaluationResult:
         try:
             golden_links = parse_golden_links(task.golden_links_list)

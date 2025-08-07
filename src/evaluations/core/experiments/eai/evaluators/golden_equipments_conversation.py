@@ -2,13 +2,11 @@
 from typing import List
 from src.evaluations.core.eval import (
     EvaluationTask,
-    EvaluationResult,
-    MultiTurnEvaluationInput,
     BaseConversationEvaluator,
 )
 
 
-class GoldenEquipmentEvaluator(BaseConversationEvaluator):
+class GoldenEquipmentConversation(BaseConversationEvaluator):
     """
     Avalia a ativação correta de ferramentas, identificação do equipamento correto e rapidez de resposta
     com base na transcrição completa da conversa.
@@ -16,9 +14,8 @@ class GoldenEquipmentEvaluator(BaseConversationEvaluator):
 
     name = "golden_equipment"
 
-    GOLDEN_EQUIPMENT_PROMPT = """
-Você é um especialista na avaliação de sistemas automatizados de chatbot. 
-Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e atribuir notas para três critérios:
+    PROMPT_TEMPLATE = """
+Você é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e atribuir notaas para três critérios:
 
 
 **Objetivo da Tarefa:**
@@ -135,17 +132,17 @@ equipamento_correto: 1
 rapidez_de_resposta: 3
 """
 
-    async def get_judge_prompt(
-        self, 
-        task: EvaluationTask, 
-        history: List[str]
-    ) -> str:
+    def get_judge_prompt(self, task: EvaluationTask, history: List[str]) -> str:
+        """
+        Implementa a lógica para formatar o prompt que guia o juiz
+        com base no roteiro.
+        """
+
         history_str = "\n".join(history)
         task_dict = task.model_dump(exclude_none=True)
 
-        return self.GOLDEN_EQUIPMENT_PROMPT.format(
+        return self.PROMPT_TEMPLATE.format(
             task=task_dict,
             history=history_str,
             stop_signal=self.stop_signal,
         )
-

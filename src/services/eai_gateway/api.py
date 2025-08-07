@@ -42,7 +42,7 @@ class AgentWebhookRequest(BaseModel):
 
 
 class UserWebhookRequest(BaseModel):
-    user_number: str
+    user_number: Optional[str]
     message: str
     provider: Optional[str] = "google_agent_engine"
 
@@ -103,15 +103,22 @@ class EAIClientError(Exception):
 
 
 class EAIClient:
-    def __init__(self, provider: str = "google_agent_engine"):
+    def __init__(
+        self,
+        provider: str = "google_agent_engine",
+        timeout: int = 180,
+        polling_interval: int = 2,
+    ):
         self.base_url = env.EAI_GATEWAY_API_URL
+        self.timeout = timeout
+        self.polling_interval = polling_interval
         headers = (
             {"Authorization": f"Bearer {env.EAI_GATEWAY_API_TOKEN}"}
             if env.EAI_GATEWAY_API_TOKEN
             else {}
         )
         self._client = httpx.AsyncClient(
-            base_url=self.base_url, headers=headers, timeout=120.0
+            base_url=self.base_url, headers=headers, timeout=self.timeout
         )
         self.provider = provider
 
@@ -202,11 +209,9 @@ class EAIClient:
 
     async def send_message_and_get_response(
         self,
-        user_number: str,
+        user_number: Optional[str],
         message: str,
         # agent_id: Optional[str] = None,
-        timeout: int = 180,
-        polling_interval: int = 2,
     ) -> MessageResponse:
         """
         High-level method to send a message and poll for the final response.
@@ -222,12 +227,12 @@ class EAIClient:
         #     f"Message sent to user number ({self.provider}): {user_number} with message_id: {message_id}"
         # )
         start_time = time.time()
-        while time.time() - start_time < timeout:
+        while time.time() - start_time < self.timeout:
             try:
                 response = await self.get_message_response(message_id)
-                logger.info(
-                    f"Pulling message response from ({self.provider}): {user_number} with message_id: {message_id}\nResponse: {response}"
-                )
+                # logger.info(
+                #     f"Pulling message response from ({self.provider}): {user_number} with message_id: {message_id}\nResponse: {response}"
+                # )
 
                 if response.status == "completed":
                     return response
@@ -248,10 +253,10 @@ class EAIClient:
                         message_id=message_id,
                     ) from e
 
-            await asyncio.sleep(polling_interval)
+            await asyncio.sleep(self.polling_interval)
 
         raise EAIClientError(
-            message="Timeout waiting for agent response.",
+            message=f"Timeout waiting for agent response after {self.timeout} seconds.",
             user_number=user_number,
             message_id=message_id,
         )
@@ -263,7 +268,7 @@ class EAIClient:
 async def main():
     client = EAIClient()
     response = await client.send_message_and_get_response(
-        user_number="123", message="Hello, how are you?", provider="letta"
+        user_number="123", message="Hello, how are you?"
     )
     print(response)
 

@@ -11,11 +11,11 @@ class ClarityEvaluator(BaseOneTurnEvaluator):
 
     name = "clarity"
 
-# - 1.0 (excelente): A resposta é clara, acessível e traz orientações práticas e úteis
-# - 0.5 (boa): A resposta é parcialmente clara, mas tem pontos que dificultam o entendimento ou limitam a utilidade
-# - 0.0 (ruim): A resposta é confusa, usa linguagem complicada ou não traz orientação prática
+    # - 1.0 (excelente): A resposta é clara, acessível e traz orientações práticas e úteis
+    # - 0.5 (boa): A resposta é parcialmente clara, mas tem pontos que dificultam o entendimento ou limitam a utilidade
+    # - 0.0 (ruim): A resposta é confusa, usa linguagem complicada ou não traz orientação prática
 
-    CLARITY_PROMPT = """
+    PROMPT_TEMPLATE = """
 Nesta tarefa, você irá avaliar se uma resposta em português é clara e compreensível para cidadãos comuns do Rio de Janeiro que buscam serviços públicos ou informações.
 Uma resposta clara deve ser fácil de entender por pessoas com diferentes níveis de escolaridade, evitando linguagem burocrática, sem perder a precisão ou a utilidade.
 
@@ -81,12 +81,10 @@ Resposta do Modelo: {agent_response[message]}
 """
 
     async def evaluate(
-        self, 
-        agent_response: AgentResponse, 
-        task: EvaluationTask
+        self, agent_response: AgentResponse, task: EvaluationTask
     ) -> EvaluationResult:
         return await self._get_llm_judgement(
-            prompt_template=self.CLARITY_PROMPT,
+            prompt_template=self.PROMPT_TEMPLATE,
             task=task,
             agent_response=agent_response,
         )

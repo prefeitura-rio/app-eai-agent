@@ -12,11 +12,11 @@ class AnswerAddressingEvaluator(BaseOneTurnEvaluator):
 
     name = "answer_addressing"
 
-# - 1.0 (excelente): A resposta aborda claramente o ponto principal da consulta e fornece uma resposta útil e razoavelmente completa. Isso inclui soluções relevantes, orientações práticas ou próximos passos claros, mesmo que a solicitação de ajuda não esteja explicitamente formulada. Pequenas omissões são aceitáveis se a necessidade do usuário for atendida de forma satisfatória.
-# - 0.5 (bom): A resposta aborda parcialmente a questão, mas falta clareza, profundidade ou deixa lacunas relevantes para a necessidade do usuário.
-# - 0.0 (ruim): A resposta ignora ou evita o objetivo central da pergunta (explícito ou implícito), responde de forma vaga ou incorreta, não oferece solução ou orientação quando o problema exige, ou omite informações-chave que impeçam o usuário de agir ou sentir-se atendido.
+    # - 1.0 (excelente): A resposta aborda claramente o ponto principal da consulta e fornece uma resposta útil e razoavelmente completa. Isso inclui soluções relevantes, orientações práticas ou próximos passos claros, mesmo que a solicitação de ajuda não esteja explicitamente formulada. Pequenas omissões são aceitáveis se a necessidade do usuário for atendida de forma satisfatória.
+    # - 0.5 (bom): A resposta aborda parcialmente a questão, mas falta clareza, profundidade ou deixa lacunas relevantes para a necessidade do usuário.
+    # - 0.0 (ruim): A resposta ignora ou evita o objetivo central da pergunta (explícito ou implícito), responde de forma vaga ou incorreta, não oferece solução ou orientação quando o problema exige, ou omite informações-chave que impeçam o usuário de agir ou sentir-se atendido.
 
-    ANSWER_ADDRESSING_PROMPT = """
+    PROMPT_TEMPLATE = """
 Nesta tarefa, você irá avaliar se a resposta do modelo atende de forma direta e suficiente à pergunta do usuário ou à necessidade implícita presente na consulta. Frequentemente, uma pergunta (especialmente quando formulada como uma reclamação ou dúvida sobre um problema — ex: "é normal o X não funcionar?") carrega um pedido implícito por solução ou próximo passo. Uma resposta eficaz deve contemplar essa necessidade implícita.
 
 Você deverá atribuir uma das seguintes pontuações:
@@ -37,12 +37,10 @@ Resposta do Modelo: {agent_response[message]}
 """
 
     async def evaluate(
-        self, 
-        agent_response: AgentResponse, 
-        task: EvaluationTask
+        self, agent_response: AgentResponse, task: EvaluationTask
     ) -> EvaluationResult:
         return await self._get_llm_judgement(
-            prompt_template=self.ANSWER_ADDRESSING_PROMPT,
+            prompt_template=self.PROMPT_TEMPLATE,
             task=task,
             agent_response=agent_response,
         )
