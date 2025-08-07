@@ -7,10 +7,9 @@ import { API_BASE_URL } from '@/app/components/config';
 export interface ChatRequestPayload {
   user_number: string;
   message: string;
-  name?: string;
-  system?: string;
-  model?: string;
-  tools?: string[];
+  timeout?: number;
+  polling_interval?: number;
+  provider?: string;
 }
 
 export interface ToolCall {
@@ -92,28 +91,5 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
       }],
       usage: { completion_tokens: 0, prompt_tokens: 0, total_tokens: 0, step_count: 0 }
     };
-  }
-}
-
-export async function deleteAgentAssociation(userNumber: string, token: string): Promise<{ success: boolean; message?: string }> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/agent/${userNumber}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (res.status === 204) {
-      return { success: true };
-    }
-
-    const errorData = await res.json().catch(() => ({ detail: 'Failed to parse error response.' }));
-    return { success: false, message: errorData.detail || `Request failed with status ${res.status}` };
-
-  } catch (error) {
-    console.error("Error deleting agent association:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    return { success: false, message: errorMessage };
   }
 }
