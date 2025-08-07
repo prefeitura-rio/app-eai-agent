@@ -37,7 +37,16 @@ const ErrorDisplay = ({ message }: { message: string }) => (
 );
 
 export default function RunDetails({ run }: RunDetailsProps) {
-    const [viewMode, setViewMode] = useState<'one_turn' | 'multi_turn'>('one_turn');
+    // Determina o modo inicial baseado na disponibilidade dos dados
+    const hasOneTurnData = run.one_turn_analysis && 
+        !run.one_turn_analysis.has_error && 
+        run.one_turn_analysis.agent_message !== null;
+    const hasMultiTurnData = run.multi_turn_analysis && 
+        !run.multi_turn_analysis.has_error && 
+        run.multi_turn_analysis.final_agent_message !== null;
+    const initialViewMode = hasOneTurnData ? 'one_turn' : 'multi_turn';
+    
+    const [viewMode, setViewMode] = useState<'one_turn' | 'multi_turn'>(initialViewMode);
     
     const taskDataKeys = useMemo(() => 
         Object.keys(run.task_data).filter(key => key !== 'id' && key !== 'prompt'),
@@ -70,14 +79,26 @@ export default function RunDetails({ run }: RunDetailsProps) {
         ? run.one_turn_analysis.agent_reasoning_trace 
         : [];
 
+    // Atualiza o viewMode se necessário
+    React.useEffect(() => {
+        if (!hasOneTurnData && viewMode === 'one_turn') {
+            setViewMode('multi_turn');
+        } else if (!hasMultiTurnData && viewMode === 'multi_turn') {
+            setViewMode('one_turn');
+        }
+    }, [hasOneTurnData, hasMultiTurnData, viewMode]);
+
     return (
         <div className="space-y-6">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'one_turn' | 'multi_turn')} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="one_turn">Análise de Turno Único</TabsTrigger>
-                    <TabsTrigger value="multi_turn">Análise Multi-Turno</TabsTrigger>
-                </TabsList>
-            </Tabs>
+            {/* Mostra as abas apenas se ambos os modos têm dados */}
+            {(hasOneTurnData && hasMultiTurnData) && (
+                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'one_turn' | 'multi_turn')} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="one_turn">Análise de Turno Único</TabsTrigger>
+                        <TabsTrigger value="multi_turn">Análise Multi-Turno</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            )}
 
             <Card>
                 <CardHeader>
