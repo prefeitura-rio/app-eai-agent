@@ -36,7 +36,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                 const html = DOMPurify.sanitize(marked.parse(content) as string);
                 return (
                     <div
-                        className="prose prose-sm dark:prose-invert max-w-none"
+                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: html }}
                     />
                 );
@@ -63,7 +63,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                 <div className="pl-4">
                                     {typeof obj.tool_return === 'string' ? (
                                         <div
-                                            className="prose prose-sm dark:prose-invert max-w-none"
+                                            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(obj.tool_return) as string) }}
                                         />
                                     ) : typeof obj.tool_return === 'object' && obj.tool_return !== null ? (
@@ -98,7 +98,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                             <div className="pl-4">
                                                                 {typeof value === 'string' ? (
                                                                     <div
-                                                                        className="prose prose-sm dark:prose-invert max-w-none"
+                                                                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
                                                                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
                                                                     />
                                                                 ) : (
@@ -117,7 +117,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                             <div className="pl-4">
                                                                 {typeof value === 'string' ? (
                                                                     <div
-                                                                        className="prose prose-sm dark:prose-invert max-w-none"
+                                                                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
                                                                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
                                                                     />
                                                                 ) : (
