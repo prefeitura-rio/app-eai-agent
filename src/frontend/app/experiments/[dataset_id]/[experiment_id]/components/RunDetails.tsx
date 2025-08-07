@@ -5,11 +5,12 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { ExperimentRun } from '../../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, CheckSquare, Network, Trophy, Bot, MessageSquare, AlertTriangle } from 'lucide-react';
+import { User, CheckSquare, Network, Trophy, Bot, MessageSquare, AlertTriangle, Brain } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Comparison from './Comparison';
 import Evaluations from './Evaluations';
 import ReasoningTimeline from './ReasoningTimeline';
@@ -72,6 +73,10 @@ export default function RunDetails({ run }: RunDetailsProps) {
         return run.multi_turn_analysis.transcript.flatMap(turn => turn.agent_reasoning_trace || []);
     }, [isOneTurn, run.multi_turn_analysis.transcript]);
 
+    const reasoningTrace = isOneTurn 
+        ? run.one_turn_analysis.agent_reasoning_trace 
+        : multiTurnReasoningTrace;
+
     return (
         <div className="space-y-6">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'one_turn' | 'multi_turn')} className="w-full">
@@ -105,24 +110,44 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                         <Bot className="h-5 w-5 text-primary" />
                                         <span>Resposta do Agente</span>
                                     </CardTitle>
-                                    {!isOneTurn && (
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="outline" size="sm" disabled={!run.multi_turn_analysis.transcript}>
-                                                    <MessageSquare className="h-4 w-4 mr-2" />
-                                                    Ver Transcrição
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="sm:max-w-[60vw]">
-                                                <DialogHeader>
-                                                    <DialogTitle>Transcrição da Conversa</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="max-h-[70vh] overflow-y-auto p-4">
-                                                    <ConversationTranscript transcript={run.multi_turn_analysis.transcript} />
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
-                                    )}
+                                    <div className="flex gap-2">
+                                        {reasoningTrace && reasoningTrace.length > 0 && (
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" size="sm">
+                                                        <Brain className="h-4 w-4 mr-2" />
+                                                        Ver Cadeia de Pensamento
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-[80vw] max-h-[80vh]">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Cadeia de Pensamento</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="overflow-y-auto max-h-[70vh]">
+                                                        <ReasoningTimeline reasoningTrace={reasoningTrace} />
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+                                        )}
+                                        {!isOneTurn && (
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="outline" size="sm" disabled={!run.multi_turn_analysis.transcript}>
+                                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                                        Ver Transcrição
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-[60vw]">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Transcrição da Conversa</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="max-h-[70vh] overflow-y-auto p-4">
+                                                        <ConversationTranscript transcript={run.multi_turn_analysis.transcript} />
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+                                        )}
+                                    </div>
                                 </div>
                             </CardHeader>
                             <Comparison content={agentResponse || ''} />
@@ -165,21 +190,23 @@ export default function RunDetails({ run }: RunDetailsProps) {
                         </CardContent>
                     </Card>
                     
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3 text-lg">
-                                <Network className="h-5 w-5 text-primary" />
-                                <span>Cadeia de Pensamento</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {isOneTurn ? (
-                                <ReasoningTimeline reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} />
-                            ) : (
-                                <ReasoningTimeline reasoningTrace={multiTurnReasoningTrace} />
-                            )}
-                        </CardContent>
-                    </Card>
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="reasoning" className="border-none">
+                            <AccordionTrigger className="hover:no-underline">
+                                <div className="flex items-center gap-3">
+                                    <Network className="h-5 w-5 text-primary" />
+                                    <span>Cadeia de Pensamento</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                {isOneTurn ? (
+                                    <ReasoningTimeline reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} />
+                                ) : (
+                                    <ReasoningTimeline reasoningTrace={multiTurnReasoningTrace} />
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </>
             )}
         </div>
