@@ -30,12 +30,14 @@ class ResponseManager:
         eai_client: EAIClient = EAIClient(),
         timeout: int = 180,
         polling_interval: int = 2,
+        rate_limit_requests_per_minute: int = 60,
     ):
         # self.agent_config = agent_config
         self.precomputed_responses = precomputed_responses or {}
         self.eai_client = eai_client
         self.timeout = timeout
         self.polling_interval = polling_interval
+        self.rate_limit_requests_per_minute = rate_limit_requests_per_minute
 
     # @asynccontextmanager
     # async def _get_agent_manager(
@@ -67,6 +69,7 @@ class ResponseManager:
             eai_client=self.eai_client,
             timeout=self.timeout,
             polling_interval=self.polling_interval,
+            rate_limit_requests_per_minute=self.rate_limit_requests_per_minute,
         )
         try:
             await agent_manager.initialize()

@@ -32,6 +32,7 @@ class EAIConversationManager:
         eai_client: EAIClient = EAIClient(),
         timeout: int = 180,
         polling_interval: int = 2,
+        rate_limit_requests_per_minute: int = 60,
     ):
         self.user_number: Optional[str] = None
         self.timeout = timeout
@@ -260,7 +261,7 @@ class GeminiAIClient(BaseJudgeClient):
 
 
 async def main():
-    # Exemplo de uso do novo EAIConversationManager
+    # Exemplo de uso do novo EAIConversationManager com rate limiting
     agent_config = CreateAgentRequest(
         model="google_ai/gemini-2.5-flash-lite-preview-06-17",
         system="voce é o batman",
@@ -270,7 +271,8 @@ async def main():
         tags=["batman"],
     )
 
-    manager = EAIConversationManager(agent_config=agent_config)
+    # Rate limiting de 50 requisições por minuto para evitar exceder a quota
+    manager = EAIConversationManager(rate_limit_requests_per_minute=50)
 
     try:
         # Inicia a conversa (cria o agente)

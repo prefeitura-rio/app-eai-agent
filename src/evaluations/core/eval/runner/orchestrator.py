@@ -58,6 +58,7 @@ class AsyncExperimentRunner:
         provider: str = "google_agent_engine",
         timeout: int = 180,
         polling_interval: int = 2,
+        rate_limit_requests_per_minute: int = 60,
     ):
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
@@ -69,7 +70,10 @@ class AsyncExperimentRunner:
         self.upload_to_bq = upload_to_bq
         self.output_dir = Path(output_dir)
         self.eai_client = EAIClient(
-            provider=provider, timeout=timeout, polling_interval=polling_interval
+            provider=provider,
+            timeout=timeout,
+            polling_interval=polling_interval,
+            rate_limit_requests_per_minute=rate_limit_requests_per_minute,
         )
 
         self._evaluator_cache = self._categorize_evaluators()
@@ -167,6 +171,7 @@ class AsyncExperimentRunner:
             eai_client=self.eai_client,
             timeout=self.eai_client.timeout,
             polling_interval=self.eai_client.polling_interval,
+            rate_limit_requests_per_minute=self.eai_client.rate_limit_requests_per_minute,
         )
         task_processor = TaskProcessor(self._evaluator_cache, response_manager)
         result_analyzer = ResultAnalyzer()

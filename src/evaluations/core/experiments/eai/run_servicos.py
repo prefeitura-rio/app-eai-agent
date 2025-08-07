@@ -41,7 +41,7 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
-        number_rows=10,
+        # number_rows=10,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
         dataset_name="Golden Dataset 10 samples",

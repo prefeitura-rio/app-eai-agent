@@ -7,6 +7,34 @@ from pydantic import BaseModel, Field
 from src.utils.log import logger
 
 
+# --- Rate Limiter ---
+
+
+class EAIRateLimiter:
+    """
+    Rate limiter simples para controlar requisições por minuto.
+    Garante que não exceda a quota do Google (60 req/min).
+    """
+
+    def __init__(self, requests_per_minute: int = 60):
+        self.requests_per_minute = requests_per_minute
+        self.min_interval = 60.0 / requests_per_minute  # segundos entre requisições
+        self.last_request_time = 0
+
+    async def wait_if_needed(self):
+        """Aguarda o tempo necessário para respeitar o rate limit."""
+        current_time = time.time()
+        time_since_last = current_time - self.last_request_time
+        if time_since_last < self.min_interval:
+            wait_time = self.min_interval - time_since_last
+            logger.info(
+                f"Rate limit de {self.requests_per_minute} requisições por minuto atingido, "
+                f"aguardando {wait_time:.2f} segundos"
+            )
+            await asyncio.sleep(wait_time)
+        self.last_request_time = time.time()
+
+
 # --- Pydantic Models for API Interaction ---
 
 
@@ -108,10 +136,14 @@ class EAIClient:
         provider: str = "google_agent_engine",
         timeout: int = 180,
         polling_interval: int = 2,
+        rate_limit_requests_per_minute: int = 60,
     ):
         self.base_url = env.EAI_GATEWAY_API_URL
         self.timeout = timeout
         self.polling_interval = polling_interval
+        self.rate_limit_requests_per_minute = EAIRateLimiter(
+            rate_limit_requests_per_minute
+        )
         headers = (
             {"Authorization": f"Bearer {env.EAI_GATEWAY_API_TOKEN}"}
             if env.EAI_GATEWAY_API_TOKEN
@@ -166,6 +198,9 @@ class EAIClient:
         self, request: UserWebhookRequest
     ) -> AgentWebhookResponse:
         """(Low-level) Sends a message to a specific user number."""
+        # Aplica rate limiting antes de fazer a requisição
+        await self.rate_limit_requests_per_minute.wait_if_needed()
+
         try:
             response = await self._client.post(
                 "/api/v1/message/webhook/user", json=request.model_dump()
@@ -266,7 +301,8 @@ class EAIClient:
 
 
 async def main():
-    client = EAIClient()
+    # Exemplo com rate limiting de 50 requisições por minuto
+    client = EAIClient(rate_limit_requests_per_minute=50)
     response = await client.send_message_and_get_response(
         user_number="123", message="Hello, how are you?"
     )
