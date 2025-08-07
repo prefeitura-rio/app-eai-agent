@@ -107,7 +107,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
         onOpenChange={setLlmModalOpen}
         onConfirm={handleDownloadCleanJson}
       />
-      <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full">
+      <div className="grid md:grid-cols-[300px_1fr] gap-6 h-full pb-6">
         <Card className="flex flex-col h-full">
           <CardHeader className="flex-shrink-0">
             <CardTitle>Runs ({filteredRuns.length})</CardTitle>
@@ -116,7 +116,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
             <Filters runs={experimentData.runs} onFilterChange={handleFilterChange} />
           </div>
           <CardContent className="flex-1 overflow-y-auto p-2">
-              <div className="space-y-2">
+              <div className="space-y-2 pb-4">
                   {filteredRuns.map((run) => (
                       <div
                           key={run.task_data.id}

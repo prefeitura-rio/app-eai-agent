@@ -69,23 +69,67 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                     ) : typeof obj.tool_return === 'object' && obj.tool_return !== null ? (
                                         // Handle nested objects - go one level deep
                                         <div className="space-y-2">
-                                            {Object.entries(obj.tool_return).map(([key, value]) => (
-                                                <div key={key} className="space-y-1">
-                                                    <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
-                                                    <div className="pl-4">
-                                                        {typeof value === 'string' ? (
-                                                            <div
-                                                                className="prose prose-sm dark:prose-invert max-w-none"
-                                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
-                                                            />
-                                                        ) : (
-                                                            <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
-                                                                {JSON.stringify(value, null, 2)}
-                                                            </pre>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                            {(() => {
+                                                const entries = Object.entries(obj.tool_return);
+                                                
+                                                // If it's google_search, order the fields specifically
+                                                if (obj.name === 'google_search') {
+                                                    const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
+                                                    const orderedEntries = [];
+                                                    
+                                                    // Add fields in the specified order
+                                                    for (const field of orderedFields) {
+                                                        const entry = entries.find(([key]) => key === field);
+                                                        if (entry) {
+                                                            orderedEntries.push(entry);
+                                                        }
+                                                    }
+                                                    
+                                                    // Add any remaining fields
+                                                    for (const entry of entries) {
+                                                        if (!orderedFields.includes(entry[0])) {
+                                                            orderedEntries.push(entry);
+                                                        }
+                                                    }
+                                                    
+                                                    return orderedEntries.map(([key, value]) => (
+                                                        <div key={key} className="space-y-1">
+                                                            <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
+                                                            <div className="pl-4">
+                                                                {typeof value === 'string' ? (
+                                                                    <div
+                                                                        className="prose prose-sm dark:prose-invert max-w-none"
+                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                    />
+                                                                ) : (
+                                                                    <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                        {JSON.stringify(value, null, 2)}
+                                                                    </pre>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                } else {
+                                                    // Default behavior for other tools
+                                                    return entries.map(([key, value]) => (
+                                                        <div key={key} className="space-y-1">
+                                                            <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
+                                                            <div className="pl-4">
+                                                                {typeof value === 'string' ? (
+                                                                    <div
+                                                                        className="prose prose-sm dark:prose-invert max-w-none"
+                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                    />
+                                                                ) : (
+                                                                    <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                        {JSON.stringify(value, null, 2)}
+                                                                    </pre>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                }
+                                            })()}
                                         </div>
                                     ) : (
                                         <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
