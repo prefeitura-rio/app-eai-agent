@@ -130,6 +130,54 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                             </div>
                                                         </div>
                                                     ));
+                                                } else if (obj.name === 'equipments_instructions') {
+                                                    // Special handling for equipments_instructions
+                                                    const toolReturn = obj.tool_return as {
+                                                        tema?: string;
+                                                        instrucoes?: Array<{
+                                                            tema?: string;
+                                                            instrucoes?: string;
+                                                        }>;
+                                                    };
+                                                    
+                                                    return (
+                                                        <div className="space-y-4">
+                                                            {toolReturn.tema && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Tema</h5>
+                                                                    <div className="pl-4">
+                                                                        <div className="text-sm font-medium text-foreground">
+                                                                            {toolReturn.tema}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {toolReturn.instrucoes && Array.isArray(toolReturn.instrucoes) && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Instruções</h5>
+                                                                    <div className="pl-4 space-y-3">
+                                                                        {toolReturn.instrucoes.map((item: any, index: number) => (
+                                                                            <div key={index} className="border-l-2 border-primary/20 pl-3">
+                                                                                {/* Renderiza tema primeiro se existir */}
+                                                                                {item.tema && (
+                                                                                    <div className="text-xs text-muted-foreground mb-2">
+                                                                                        <span className="font-medium">Tema:</span> {item.tema}
+                                                                                    </div>
+                                                                                )}
+                                                                                {/* Renderiza instruções se existir */}
+                                                                                {item.instrucoes && typeof item.instrucoes === 'string' && (
+                                                                                    <div
+                                                                                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(item.instrucoes) as string) }}
+                                                                                    />
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
                                                 } else {
                                                     // Default behavior for other tools
                                                     return entries.map(([key, value]) => (
@@ -163,7 +211,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                     </div>
                 );
             }
-            break;
+            return null;
             
         case 'tool_call_message':
             // This is an object with name and arguments
@@ -192,7 +240,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                     </div>
                 );
             }
-            break;
+            return null;
             
         case 'usage_statistics':
             // This is an object with usage statistics - render directly as JSON
@@ -203,7 +251,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                     </pre>
                 );
             }
-            break;
+            return null;
     }
     
     // Fallback for unknown types
