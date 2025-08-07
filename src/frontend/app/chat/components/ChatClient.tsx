@@ -393,17 +393,11 @@ export default function ChatClient() {
               {messages.map((msg, index) => (
                 <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                   {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                  <div className={`w-full max-w-[80%] rounded-lg ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    {msg.sender === 'user' ? (
-                      <div className="p-4 whitespace-pre-wrap text-base text-primary-foreground break-words overflow-wrap-anywhere">
-                        {msg.content}
-                      </div>
-                    ) : (
-                      <div 
-                        className="prose prose-base dark:prose-invert p-4 whitespace-pre-wrap text-base break-words overflow-wrap-anywhere"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
-                      />
-                    )}
+                  <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                    <div 
+                      className={`prose prose-base dark:prose-invert p-4 whitespace-pre-wrap text-base break-words overflow-wrap-anywhere ${msg.sender === 'user' ? 'text-primary-foreground' : ''}`}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
+                    />
                     {msg.sender === 'bot' && msg.fullResponse && (
                       <div className="mt-3 pt-3 border-t border-muted/30">
                         <Accordion type="single" collapsible className="w-full">
