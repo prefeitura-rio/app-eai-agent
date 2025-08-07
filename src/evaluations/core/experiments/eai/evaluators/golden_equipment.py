@@ -17,13 +17,15 @@ class GoldenEquipmentEvaluator(BaseConversationEvaluator):
     name = "golden_equipment"
 
     GOLDEN_EQUIPMENT_PROMPT = """
-Você é um especialista na avaliação de sistemas automatizados de chatbot. Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e atribuir notaas para três critérios:
+Você é um especialista na avaliação de sistemas automatizados de chatbot. 
+Sua tarefa é analisar uma conversa completa entre um chatbot e um usuário e atribuir notas para três critérios:
 
 
 **Objetivo da Tarefa:**
 {agent_response[prompt]}
-**Histórico da Conversa até agora:**
-{history}
+
+**Transcrição Completa da Conversa:**
+{agent_response[conversation_history]}
 
 **Informações de Referência para Avaliação:**
 - equipamento_correto: {task[golden_equipment]}
