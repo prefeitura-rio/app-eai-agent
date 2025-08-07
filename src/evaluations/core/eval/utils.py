@@ -45,8 +45,9 @@ def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, A
             content = msg.get("content")
         elif message_type == "usage_statistics":
             content = {
-                "agent_name": msg.get("agent_name"),
-                "agent_id": msg.get("agent_id"),
+                # "agent_name": msg.get("agent_name"),
+                # "agent_id": msg.get("agent_id"),
+                "user_number": msg.get("user_number"),
                 "message_id": msg.get("message_id"),
                 "processed_at": msg.get("processed_at"),
                 "total_tokens": msg.get("total_tokens"),

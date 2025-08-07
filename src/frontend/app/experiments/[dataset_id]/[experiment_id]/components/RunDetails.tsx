@@ -164,7 +164,7 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                 <span>Cadeia de Pensamento</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pl-12">
+                        <CardContent>
                             {isOneTurn ? (
                                 <ReasoningTimeline reasoningTrace={run.one_turn_analysis.agent_reasoning_trace} />
                             ) : (

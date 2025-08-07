@@ -106,6 +106,7 @@ class EAIConversationManager:
                     {
                         # "agent_id": response_dict["data"].get("agent_id"),
                         # "agent_name": self.agent_config.name,
+                        "user_number": self.user_number,
                         "message_id": response_dict.get("message_id"),
                         "processed_at": response_dict["data"].get("processed_at"),
                         "message_type": "usage_statistics",  # Garante que o parser identifique o tipo
