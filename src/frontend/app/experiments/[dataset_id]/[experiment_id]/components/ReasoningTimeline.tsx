@@ -8,6 +8,11 @@ import { Lightbulb, Wrench, LogIn, MessageSquare, Bot, Brain } from 'lucide-reac
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
+interface InstrucaoItem {
+  tema?: string;
+  instrucoes?: string;
+}
+
 interface ReasoningTimelineProps {
   reasoningTrace: ReasoningStep[] | null;
   defaultExpanded?: boolean;
@@ -58,7 +63,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                 </div>
                             </div>
                         )}
-                        {obj.tool_return && (
+                        {Boolean(obj.tool_return) && (
                             <div className="space-y-1">
                                 <h4 className="font-semibold text-sm capitalize text-muted-foreground">Tool Return</h4>
                                 <div className="pl-4">
@@ -156,7 +161,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                                 <div className="space-y-1">
                                                                     <h5 className="font-medium text-sm capitalize text-muted-foreground">Instruções</h5>
                                                                     <div className="pl-4 space-y-3">
-                                                                        {toolReturn.instrucoes.map((item: any, index: number) => (
+                                                                        {toolReturn.instrucoes.map((item: InstrucaoItem, index: number) => (
                                                                             <div key={index} className="border-l-2 border-primary/20 pl-3">
                                                                                 {/* Renderiza tema primeiro se existir */}
                                                                                 {item.tema && (
@@ -227,7 +232,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                 </div>
                             </div>
                         )}
-                        {obj.arguments && (
+                        {Boolean(obj.arguments) && (
                             <div className="space-y-1">
                                 <h4 className="font-semibold text-sm capitalize text-muted-foreground">Arguments</h4>
                                 <div className="pl-4">

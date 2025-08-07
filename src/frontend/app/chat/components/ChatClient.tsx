@@ -25,6 +25,11 @@ interface DisplayMessage {
   fullResponse?: ChatResponseData;
 }
 
+interface InstrucaoItem {
+  tema?: string;
+  instrucoes?: string;
+}
+
 const JsonViewer = ({ data }: { data: object }) => (
   <pre className="p-2 bg-muted/50 rounded-md text-base-custom whitespace-pre-wrap break-all font-mono">
     {JSON.stringify(data, null, 2)}
@@ -127,7 +132,7 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
             <div className="space-y-1">
               <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Instruções</h5>
               <div className="pl-4 space-y-3">
-                {toolReturnData.instrucoes.map((item: any, index: number) => (
+                {toolReturnData.instrucoes.map((item: InstrucaoItem, index: number) => (
                   <div key={index} className="border-l-2 border-primary/20 pl-3">
                     {/* Renderiza tema primeiro se existir */}
                     {item.tema && (
@@ -376,7 +381,7 @@ export default function ChatClient() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isLoading) {
-        handleSendMessage(e as any);
+        handleSendMessage(e as React.FormEvent);
       }
     }
   };
