@@ -88,7 +88,7 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 5
+    MAX_CONCURRENCY = 20
 
     runner = AsyncExperimentRunner(
         experiment_name="eai-2025-08-07-v59",
@@ -101,7 +101,7 @@ async def run_experiment():
         output_dir=EXPERIMENT_DATA_PATH,
         timeout=180,
         polling_interval=5,
-        rate_limit_requests_per_minute=5,
+        rate_limit_requests_per_minute=20,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
