@@ -25,6 +25,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ClarityEvaluator,
     ActivateSearchEvaluator,
     WhatsAppFormatEvaluator,
+    ProactivityEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     SYSTEM_PROMPT,
@@ -68,6 +69,7 @@ async def run_experiment():
         ClarityEvaluator(judge_client),
         ActivateSearchEvaluator(judge_client),
         WhatsAppFormatEvaluator(judge_client),
+        ProactivityEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
