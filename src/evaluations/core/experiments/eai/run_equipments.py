@@ -83,8 +83,8 @@ async def run_experiment():
     MAX_CONCURRENCY = 30
 
     runner = AsyncExperimentRunner(
-        experiment_name="eai-2025-08-04-v59",
-        experiment_description="Test",
+        experiment_name="eai-2025-08-04-v66",
+        experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
