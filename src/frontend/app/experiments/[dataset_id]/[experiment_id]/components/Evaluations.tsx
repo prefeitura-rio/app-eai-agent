@@ -44,10 +44,46 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
             // If not JSON, render as markdown
             marked.use({ breaks: true });
             const html = DOMPurify.sanitize(marked.parse(content) as string);
+            // Check if the content is just simple text wrapped in code blocks
+            const isSimpleTextInCodeBlock = content.trim().startsWith('```') && 
+                                          content.trim().endsWith('```') && 
+                                          !content.includes('**') && 
+                                          !content.includes('*') && 
+                                          !content.includes('[') && 
+                                          !content.includes(']') &&
+                                          !content.includes('#');
+            
+            
+            if (isSimpleTextInCodeBlock) {
+                // Extract the content without the code block markers
+                const cleanContent = content.trim().replace(/^```\s*/, '').replace(/\s*```$/, '');
+                return (
+                    <div
+                        className="p-4 bg-muted/50 border rounded-md prose prose-sm dark:prose-invert max-w-none break-words overflow-wrap-anywhere"
+                        style={{
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word',
+                            whiteSpace: 'pre-wrap',
+                            maxWidth: '100%',
+                            overflow: 'visible'
+                        }}
+                        dangerouslySetInnerHTML={{ __html: `<p style="word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap; max-width: 100%;">${cleanContent}</p>` }}
+                    />
+                );
+            }
+            
             return (
                 <div
-                    className="p-4 bg-muted/50 border rounded-md prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                    className="p-4 bg-muted/50 border rounded-md prose prose-sm dark:prose-invert max-w-none break-words overflow-wrap-anywhere"
+                    style={{
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        maxWidth: '100%',
+                        overflow: 'visible'
+                    }}
                     dangerouslySetInnerHTML={{ __html: html }}
+
                 />
             );
         }
@@ -75,22 +111,26 @@ export default function Evaluations({ evaluations }: EvaluationsProps) {
 
     return (
         <Accordion type="multiple" defaultValue={evaluations.map(e => e.metric_name)}>
-            {evaluations.map((ev) => (
-                <AccordionItem value={ev.metric_name} key={ev.metric_name}>
-                    <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3">
-                            <Badge className={getScoreBadgeClass(ev.score ?? 0)}>
-                                {ev.score?.toFixed(1) ?? 'N/A'}
-                            </Badge>
-                            <span className="font-semibold text-left">{ev.metric_name}</span>
-                            {ev.has_error && <AlertTriangle className="h-4 w-4 text-destructive" />}
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <MarkdownRenderer content={ev.annotations} />
-                    </AccordionContent>
-                </AccordionItem>
-            ))}
+            {evaluations.map((ev, index) => {
+                return (
+                    <AccordionItem value={ev.metric_name} key={ev.metric_name}>
+                        <AccordionTrigger className="hover:no-underline">
+                            <div className="flex items-center gap-3">
+                                <Badge className={getScoreBadgeClass(ev.score ?? 0)}>
+                                    {ev.score?.toFixed(1) ?? 'N/A'}
+                                </Badge>
+                                <span className="font-semibold text-left">{ev.metric_name}</span>
+                                {ev.has_error && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <div>
+                                <MarkdownRenderer content={ev.annotations} />
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                );
+            })}
         </Accordion>
     );
 }
