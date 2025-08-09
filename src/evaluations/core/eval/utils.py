@@ -2,6 +2,11 @@ import json
 from typing import List, Dict, Any
 
 
+def md_to_wpp(md):
+
+    wpp = md.replace("**", "*")
+
+
 def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Transforma a lista de mensagens brutas da API em uma estrutura limpa e padronizada.
