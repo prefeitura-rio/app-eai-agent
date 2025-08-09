@@ -7,6 +7,11 @@ from src.evaluations.core.eval.schemas import AgentResponse
 class WhatsAppFormatEvaluator(BaseOneTurnEvaluator):
     """
     Avalia se a resposta do agente está conforme as regras de formatação do WhatsApp.
+    - Formatacao whatsapp:
+        - negrito:`*texto*`,
+        - italico: `_texto_`,
+        - listas `-` ou numeradas `1.`, `2.`
+        - links: `http://www.exemplo.com`, `https://exemplo.com` ou `www.exemplo.com`
     """
 
     name = "whatsapp_format"
@@ -28,8 +33,10 @@ O objetivo é garantir que as mensagens sejam claras, concisas, legíveis e usem
    - **Itálico (`_texto_`):** *Apenas* para ênfase leve ou para destacar termos específicos.
    - **Listas:** Listas com `-` ou numeradas (`1.`, `2.`) são permitidas.
    - **Links diretos:** URLs completas (ex: `https://1746.rio` ou `www.exemplo.com.br`) são permitidas.
-
+    
 **2. Formatação ESTRITAMENTE PROIBIDA (NUNCA USAR):**
+   - Presença de qualquer formatacao no estilo markdown
+   - Negrito: `**texto**`
    - Links no formato Markdown: `[texto](link)`
    - Títulos com hashtag: `#`
    - Citações: `>`

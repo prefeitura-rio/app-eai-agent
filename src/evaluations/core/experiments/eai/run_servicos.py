@@ -97,7 +97,7 @@ async def run_experiment():
     runner = AsyncExperimentRunner(
         # experiment_name=f"eai-2025-08-07-v{prompt_data['version']}",
         experiment_name=f"eai-2025-08-07-v66",
-        experiment_description="gemini-2.5-flash | sem formatacao md -> wpp",
+        experiment_description="gemini-2.5-flash | com formatacao md -> wpp",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
