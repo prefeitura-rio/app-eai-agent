@@ -1,10 +1,6 @@
 import json
 from typing import List, Dict, Any
-
-
-def md_to_wpp(md):
-
-    wpp = md.replace("**", "*")
+from src.evaluations.core.eval.md_to_wpp import markdown_to_whatsapp
 
 
 def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -21,6 +17,7 @@ def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, A
 
         if message_type == "assistant_message":
             content = msg.get("content")
+            # content = markdown_to_whatsapp(content)
         elif message_type == "reasoning_message":
             content = msg.get("reasoning")
         elif message_type == "tool_return_message":

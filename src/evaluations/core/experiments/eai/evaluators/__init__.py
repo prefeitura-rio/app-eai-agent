@@ -19,9 +19,11 @@ from src.evaluations.core.experiments.eai.evaluators.clarity import ClarityEvalu
 from src.evaluations.core.experiments.eai.evaluators.activate_search import (
     ActivateSearchEvaluator,
 )
-
 from src.evaluations.core.experiments.eai.evaluators.whatsapp_format import (
     WhatsAppFormatEvaluator,
+)
+from src.evaluations.core.experiments.eai.evaluators.message_length import (
+    MessageLengthEvaluator,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.golden_equipment_llm_guided_conv import (
@@ -62,4 +64,5 @@ __all__ = [
     "EquipmentsToolsEvaluator",
     "EquipmentsCategoriesEvaluator",
     "ProactivityEvaluator",
+    "MessageLengthEvaluator",
 ]

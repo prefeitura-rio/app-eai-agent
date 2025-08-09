@@ -19,7 +19,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     EquipmentsCategoriesEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
-    SYSTEM_PROMPT,
+    prompt_data,
 )
 
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
@@ -83,7 +83,7 @@ async def run_experiment():
     MAX_CONCURRENCY = 30
 
     runner = AsyncExperimentRunner(
-        experiment_name="eai-2025-08-04-v66",
+        experiment_name="eai-2025-08-04-v68",
         experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,

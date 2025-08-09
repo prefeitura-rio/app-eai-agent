@@ -206,12 +206,12 @@ export default function RunDetails({ run }: RunDetailsProps) {
                                                 <DialogTrigger asChild>
                                                     <Button variant="outline" size="sm">
                                                         <Brain className="h-4 w-4 mr-2" />
-                                                        Ver Cadeia de Pensamento
+                                                        Ver Detalhes
                                                     </Button>
                                                 </DialogTrigger>
                                                 <DialogContent className="sm:max-w-[80vw] max-h-[80vh]">
                                                     <DialogHeader>
-                                                        <DialogTitle>Cadeia de Pensamento</DialogTitle>
+                                                        <DialogTitle>Ver Detalhes</DialogTitle>
                                                     </DialogHeader>
                                                     <div className="overflow-y-auto max-h-[70vh]">
                                                         <ReasoningTimeline 

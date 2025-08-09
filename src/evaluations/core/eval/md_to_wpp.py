@@ -2,6 +2,8 @@
 i am working in a markdon to whatsapp converter it is
 almost perfect, only need to work in the break lines lost
 and include a removal for the bars patern, sometimes it include before and after the text example \"Samba & Feijoada"\ or \Samba & Feijoada\
+run the code to see the results of the tests, and them fix it, run again to se if not break anything, do this untill solved my last problems    
+
 """
 
 import re
@@ -72,8 +74,9 @@ def markdown_to_whatsapp(text):
     converted_text = converted_text.replace("<i>", "_").replace("</i>", "_")
 
     # 4. BLOCK-LEVEL CONVERSIONS
+    # FIX 1: Add a newline after headers to ensure separation.
     converted_text = re.sub(
-        r"^\s*#+\s+(.+?)\s*#*$", r"*\1*", converted_text, flags=re.MULTILINE
+        r"^\s*#+\s+(.+?)\s*#*$", r"*\1*\n", converted_text, flags=re.MULTILINE
     )
 
     # Replace horizontal rules with a guaranteed paragraph break
@@ -134,6 +137,9 @@ def markdown_to_whatsapp(text):
     converted_text = converted_text.replace("¤L¤ ", "* ")
     for i, code_block in enumerate(code_blocks):
         converted_text = converted_text.replace(f"¤C{i}¤", code_block)
+
+    # FIX 2: Clean up the specific escaped quote pattern.
+    converted_text = re.sub(r"\{r'\\\"(.*?)\\\"\'\}", r'"\1"', converted_text)
 
     # Clean up excess newlines
     converted_text = re.sub(r"\n{3,}", "\n\n", converted_text)
@@ -347,6 +353,6 @@ def demo_conversion():
     print("\n" + "=" * 50 + "\n")
 
 
-if __name__ == "__main__":
-    run_tests()
-    demo_conversion()
+# if __name__ == "__main__":
+#     run_tests()
+#     demo_conversion()

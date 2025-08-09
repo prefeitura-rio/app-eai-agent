@@ -26,9 +26,10 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ActivateSearchEvaluator,
     WhatsAppFormatEvaluator,
     ProactivityEvaluator,
+    MessageLengthEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
-    SYSTEM_PROMPT,
+    prompt_data,
 )
 
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
@@ -70,6 +71,7 @@ async def run_experiment():
         ActivateSearchEvaluator(judge_client),
         WhatsAppFormatEvaluator(judge_client),
         ProactivityEvaluator(judge_client),
+        MessageLengthEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -84,7 +86,7 @@ async def run_experiment():
 
     metadata = {
         # "agent_config": agent_config.model_dump(exclude_none=True),
-        # "system_prompt": SYSTEM_PROMPT,
+        # "system_prompt": prompt_data["systen_prompt"],
         "judge_model": judge_client.model_name,
         "judges_prompts": judges_prompts,
     }
@@ -93,8 +95,9 @@ async def run_experiment():
     MAX_CONCURRENCY = 20
 
     runner = AsyncExperimentRunner(
-        experiment_name="eai-2025-08-07-v66",
-        experiment_description="gemini-2.5-flash",
+        # experiment_name=f"eai-2025-08-07-v{prompt_data['version']}",
+        experiment_name=f"eai-2025-08-07-v66",
+        experiment_description="gemini-2.5-flash | sem formatacao md -> wpp",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
