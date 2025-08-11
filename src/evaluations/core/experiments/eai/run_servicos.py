@@ -27,6 +27,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     WhatsAppFormatEvaluator,
     ProactivityEvaluator,
     MessageLengthEvaluator,
+    HasLinkEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -72,6 +73,7 @@ async def run_experiment():
         WhatsAppFormatEvaluator(judge_client),
         ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
+        HasLinkEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -95,9 +97,8 @@ async def run_experiment():
     MAX_CONCURRENCY = 20
 
     runner = AsyncExperimentRunner(
-        # experiment_name=f"eai-2025-08-07-v{prompt_data['version']}",
-        experiment_name=f"eai-2025-08-07-v66",
-        experiment_description="gemini-2.5-flash | com formatacao md -> wpp",
+        experiment_name=f"eai-2025-08-11-v{prompt_data['version']}",
+        experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,

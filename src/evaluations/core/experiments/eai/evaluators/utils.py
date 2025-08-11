@@ -1,13 +1,7 @@
 import ast
 import re
-from typing import List, Dict, Any, Optional
-import json
+from typing import List, Optional
 from urllib.parse import urlparse, unquote, parse_qsl, urlencode
-from src.utils.log import logger
-from src.services.letta.agents.agentic_search_agent import (
-    _get_system_prompt_from_api,
-    _update_system_prompt_from_api,
-)
 
 
 def parse_golden_links(links: str) -> List[str]:

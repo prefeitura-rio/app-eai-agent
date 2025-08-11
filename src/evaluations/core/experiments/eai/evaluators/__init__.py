@@ -50,6 +50,10 @@ from src.evaluations.core.experiments.eai.evaluators.proactivity import (
     ProactivityEvaluator,
 )
 
+from src.evaluations.core.experiments.eai.evaluators.has_link import (
+    HasLinkEvaluator,
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator",
     "GoldenLinkInToolCallingEvaluator",
@@ -65,4 +69,5 @@ __all__ = [
     "EquipmentsCategoriesEvaluator",
     "ProactivityEvaluator",
     "MessageLengthEvaluator",
+    "HasLinkEvaluator",
 ]
