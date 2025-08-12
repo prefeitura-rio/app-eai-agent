@@ -8,7 +8,7 @@ from src.evaluations.core.eval import (
 
 class GoldenEquipmentLLMGuidedConversation(BaseConversationEvaluator):
     """
-    Implementação específica para o experimento do Batman que conduz uma conversa
+    Implementação específica para o experimento do EAI que conduz uma conversa
     onde um LLM-Juiz atua como o usuário, seguindo um roteiro definido no
     campo 'judge_context' da tarefa.
     """
@@ -30,7 +30,7 @@ Estas são as suas informações. Você não deve revelá-las todas de uma vez. 
 {history}
 
 ### OBJETIVO ###
-Receber o endereço do equipamento publico relevante para o contexto!
+Siga o objetivo que está no seu roteiro, considerando os detalhes que estão nele!
 
 ---
 
