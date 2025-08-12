@@ -9,7 +9,7 @@ class MessageLengthEvaluator(BaseOneTurnEvaluator):
     Avalia se a resposta do agente está conforme as regras de formatação do WhatsApp.
     """
 
-    name = "menssage_lengh"
+    name = "message_length"
 
     async def evaluate(
         self, agent_response: AgentResponse, task: EvaluationTask
