@@ -11,14 +11,15 @@ from langchain_core.messages import BaseMessage
 
 
 async def get_checkpointer() -> PostgresSaver:
-    engine = await PostgresEngine.afrom_instance(
-        project_id=env.PROJECT_ID,
-        region=env.LOCATION,
-        instance=env.INSTANCE,
-        database=env.DATABASE,
-        user=env.DATABASE_USER,
-        password=env.DATABASE_PASSWORD,
-        engine_args={"pool_pre_ping": True, "pool_recycle": 300},
+    # Conexão direta TCP usando asyncpg (não chama SQL Admin API)
+    url = (
+        f"postgresql+asyncpg://{env.DATABASE_USER}:{env.DATABASE_PASSWORD}"
+        f"@{env.DB_HOST}:{env.DB_PORT}/{env.DATABASE}"
+    )
+    engine = PostgresEngine.from_engine_args(
+        url=url,
+        pool_pre_ping=True,
+        pool_recycle=300,
     )
     return await PostgresSaver.create(engine=engine)
 

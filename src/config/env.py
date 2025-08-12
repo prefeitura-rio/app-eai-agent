@@ -82,3 +82,8 @@ INSTANCE = getenv_or_action("INSTANCE")
 DATABASE = getenv_or_action("DATABASE")
 DATABASE_USER = getenv_or_action("DATABASE_USER")
 DATABASE_PASSWORD = getenv_or_action("DATABASE_PASSWORD")
+
+# --- Conexão direta (TCP) ao Postgres ---
+# Usado quando não queremos depender da SQL Admin API/Connector
+DB_HOST = getenv_or_action("DB_HOST")
+DB_PORT = getenv_or_action("DB_PORT", default="5432")
