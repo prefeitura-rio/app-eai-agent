@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Any
-from src.evaluations.core.eval.md_to_wpp import markdown_to_whatsapp
+from src.utils.md_to_wpp import markdown_to_whatsapp
 
 
 def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
