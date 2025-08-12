@@ -5,16 +5,13 @@ from src.core.security.dependencies import validar_token
 from src.utils.log import logger
 from src.config import env
 
-from langchain_postgres import PostgresSaver
+from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import BaseMessage
 
 
 async def get_checkpointer() -> PostgresSaver:
-    # Conexão exclusivamente via Cloud SQL
-    from langchain_google_cloud_sql_pg import PostgresEngine as GCPPostgresEngine  # type: ignore
-
-    engine = await GCPPostgresEngine.afrom_instance(
+    engine = await PostgresEngine.afrom_instance(
         project_id=env.PROJECT_ID,
         region=env.LOCATION,
         instance=env.INSTANCE,
@@ -42,7 +39,6 @@ async def get_google_agent_engine_history(
         checkpointer = await get_checkpointer()
         config = RunnableConfig(configurable={"thread_id": thread_id})
 
-        # "aget" retorna o último checkpoint (estado mais recente) para o thread
         state = await checkpointer.aget(config=config)
         if not state:
             return {"thread_id": thread_id, "total_messages": 0, "messages": []}
