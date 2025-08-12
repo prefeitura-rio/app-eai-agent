@@ -1,6 +1,7 @@
 import ast
 import re
 from typing import List, Optional
+import unicodedata
 from urllib.parse import urlparse, unquote, parse_qsl, urlencode
 
 
@@ -15,7 +16,7 @@ def extract_links_from_text(text: Optional[str]) -> List[str]:
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", text)
     plain_links = re.findall(r"https?://[^\s)\]]+", text)
     normalized = [
-        link if link.startswith("http") else f"https://{link}"
+        link.strip().strip('.') if link.startswith("http") else f"https://{link}"
         for link in markdown_links + plain_links
     ]
     return list(dict.fromkeys(normalized))
@@ -64,6 +65,11 @@ def _norm_url(url: str) -> str:
 
     domain = parsed.netloc.lower().removeprefix("www.")
     path = unquote(parsed.path).lower().rstrip("/")
+
+    path = ''.join(
+        c for c in unicodedata.normalize('NFD', path)
+        if unicodedata.category(c) != 'Mn'
+    )
 
     if ":~:text=" in path:  # Strip scroll-to-text fragments
         path = path.split(":~:text=")[0]
