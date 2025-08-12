@@ -30,32 +30,77 @@ class SystemPromptRepository:
 
         Returns:
             SystemPrompt: Novo system prompt criado
+        
+        Raises:
+            Exception: Se houver conflito de versão (constraint unique violation)
         """
-        # Se a versão não foi fornecida, obter a versão mais recente e incrementar
-        if version is None:
-            latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
-            version = 1 if latest_prompt is None else latest_prompt.version + 1
+        from sqlalchemy.exc import IntegrityError
+        
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Se a versão não foi fornecida, obter a versão mais recente e incrementar
+                if version is None:
+                    latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
+                    current_version = 1 if latest_prompt is None else latest_prompt.version + 1
+                else:
+                    current_version = version
 
-        # Desativa todos os prompts anteriores deste tipo de agente
-        if version > 1:
-            db.query(SystemPrompt).filter(
-                SystemPrompt.agent_type == agent_type, SystemPrompt.is_active == True
-            ).update({"is_active": False})
+                # Verifica se já existe um prompt com esta versão (prevenção extra)
+                existing_prompt = db.query(SystemPrompt).filter(
+                    SystemPrompt.agent_type == agent_type,
+                    SystemPrompt.version == current_version
+                ).first()
+                
+                if existing_prompt:
+                    if version is not None:
+                        # Se uma versão específica foi solicitada e já existe, lança erro
+                        raise Exception(f"Já existe um prompt com agent_type '{agent_type}' e version {current_version}")
+                    else:
+                        # Se a versão foi auto-gerada, incrementa e tenta novamente
+                        current_version = existing_prompt.version + 1
 
-        # Cria o novo prompt
-        prompt = SystemPrompt(
-            agent_type=agent_type,
-            content=content,
-            version=version,
-            is_active=True,
-            prompt_metadata=metadata or {},
-        )
+                # Desativa todos os prompts anteriores deste tipo de agente
+                db.query(SystemPrompt).filter(
+                    SystemPrompt.agent_type == agent_type, 
+                    SystemPrompt.is_active == True
+                ).update({"is_active": False})
 
-        db.add(prompt)
-        db.commit()
-        db.refresh(prompt)
+                # Cria o novo prompt
+                prompt = SystemPrompt(
+                    agent_type=agent_type,
+                    content=content,
+                    version=current_version,
+                    is_active=True,
+                    prompt_metadata=metadata or {},
+                )
 
-        return prompt
+                db.add(prompt)
+                db.commit()
+                db.refresh(prompt)
+
+                return prompt
+                
+            except IntegrityError as e:
+                db.rollback()
+                retry_count += 1
+                
+                if "uix_agent_type_version" in str(e) and retry_count < max_retries:
+                    # Se for erro de constraint única e ainda temos tentativas, 
+                    # força recalculo da versão
+                    version = None
+                    continue
+                else:
+                    # Se não for erro de constraint ou esgotamos tentativas, re-raise
+                    raise Exception(f"Erro ao criar prompt após {retry_count} tentativas: {str(e)}")
+            
+            except Exception as e:
+                db.rollback()
+                raise e
+                
+        raise Exception(f"Não foi possível criar o prompt após {max_retries} tentativas")
 
     @staticmethod
     def get_prompt_by_id(db: Session, prompt_id: str) -> Optional[SystemPrompt]:
@@ -287,3 +332,86 @@ class SystemPromptRepository:
         )
 
         return [p.prompt_id for p in prompts] if prompts else []
+
+    @staticmethod
+    def count_prompts_by_date_and_type(db: Session, agent_type: str, date) -> int:
+        """
+        Conta quantos prompts foram criados em uma data específica para um tipo de agente.
+
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            date: Data para filtrar (datetime.date)
+
+        Returns:
+            int: Número de prompts criados na data
+        """
+        from sqlalchemy import func, cast, Date
+        
+        return (
+            db.query(SystemPrompt)
+            .filter(
+                SystemPrompt.agent_type == agent_type,
+                cast(SystemPrompt.created_at, Date) == date
+            )
+            .count()
+        )
+    
+    @staticmethod
+    def count_unified_changes_by_date_and_type(db: Session, agent_type: str, date) -> int:
+        """
+        Conta quantas alterações (prompts + configs) foram criadas em uma data específica 
+        para um tipo de agente, permitindo versionamento unificado.
+        
+        Se não há registros para hoje, retorna a próxima versão baseada no maior número
+        de versão existente entre prompts e configs.
+
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            date: Data para filtrar (datetime.date)
+
+        Returns:
+            int: Número total de alterações (prompts + configs) criadas na data
+        """
+        from sqlalchemy import func, cast, Date
+        from src.models.agent_config_model import AgentConfig
+        
+        prompt_count = (
+            db.query(SystemPrompt)
+            .filter(
+                SystemPrompt.agent_type == agent_type,
+                cast(SystemPrompt.created_at, Date) == date
+            )
+            .count()
+        )
+        
+        config_count = (
+            db.query(AgentConfig)
+            .filter(
+                AgentConfig.agent_type == agent_type,
+                cast(AgentConfig.created_at, Date) == date
+            )
+            .count()
+        )
+        
+        total_today = prompt_count + config_count
+        
+        # Se não há alterações hoje, verificar a maior versão existente
+        # para evitar conflitos de versionamento
+        if total_today == 0:
+            latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
+            latest_config = (
+                db.query(AgentConfig)
+                .filter(AgentConfig.agent_type == agent_type)
+                .order_by(AgentConfig.version.desc())
+                .first()
+            )
+            
+            prompt_version = latest_prompt.version if latest_prompt else 0
+            config_version = latest_config.version if latest_config else 0
+            
+            # Retorna a maior versão encontrada (será incrementada +1 no serviço)
+            return max(prompt_version, config_version)
+        
+        return total_today

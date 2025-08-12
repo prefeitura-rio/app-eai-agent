@@ -1,14 +1,17 @@
 import os
 import traceback
-import logging
 from typing import List, Optional
+import httpx
 from letta_client import Letta, AsyncLetta
 from letta_client.types import MessageCreate, TextContent
 
 import src.config.env as env
-from src.services.letta.message_wrapper import process_stream, process_stream_raw
+from src.services.letta.message_wrapper import (
+    process_stream,
+    process_stream_raw,
+)
 
-logger = logging.getLogger(__name__)
+from src.utils.log import logger
 
 
 class LettaService:
@@ -16,8 +19,26 @@ class LettaService:
         """Inicializa o cliente Letta com as configurações do ambiente."""
         self.token = env.LETTA_API_TOKEN
         self.base_url = env.LETTA_API_URL
-        self.client = Letta(token=self.token, base_url=self.base_url)
-        self.client_async = AsyncLetta(token=self.token, base_url=self.base_url)
+
+        # Configurar timeout personalizado para o cliente HTTP
+        timeout_config = httpx.Timeout(
+            connect=120.0,  # Timeout para conectar
+            read=120.0,  # Timeout para ler a resposta
+            write=120.0,  # Timeout para escrever
+            pool=120.0,  # Timeout para pool de conexões
+        )
+
+        # Configurar cliente HTTP personalizado
+        httpx_client = httpx.Client(timeout=timeout_config)
+        httpx_async_client = httpx.AsyncClient(timeout=timeout_config)
+
+        # Inicializar clientes Letta com configurações personalizadas
+        self.client = Letta(
+            token=self.token, base_url=self.base_url, httpx_client=httpx_client
+        )
+        self.client_async = AsyncLetta(
+            token=self.token, base_url=self.base_url, httpx_client=httpx_async_client
+        )
 
     def get_client(self):
         """Retorna a instância do cliente Letta."""
@@ -54,7 +75,15 @@ class LettaService:
             return []
 
     async def create_agent(
-        self, agent_type: str, tags: List[str] = None, name: str = None
+        self,
+        agent_type: str,
+        tags: List[str] = None,
+        name: str = None,
+        tools: list = None,
+        model_name: str = None,
+        system_prompt: str = None,
+        temperature: float = 0.7,
+        use_api_system_prompt: bool = True,
     ):
         """Cria um novo agente de acordo com o tipo de agente passado."""
         if agent_type == "agentic_search":
@@ -62,9 +91,32 @@ class LettaService:
                 create_agentic_search_agent,
             )
 
-            return await create_agentic_search_agent(tags=tags, name=name)
+            return await create_agentic_search_agent(
+                tags=tags,
+                username=name,
+                tools=tools,
+                model_name=model_name,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                use_api_system_prompt=use_api_system_prompt,
+            )
         else:
             raise ValueError(f"Tipo de agente não suportado: {agent_type}")
+
+    async def delete_agent(self, agent_id: str):
+        """Deleta um agente de acordo com o ID passado."""
+        if agent_id:
+            return await self.client_async.agents.delete(agent_id)
+        else:
+            raise ValueError(f"ID do agente não suportado: {agent_id}")
+
+    async def deletar_agentes_teste(self):
+        """Deleta todos os agentes de teste."""
+        agents = await self.client_async.agents.list()
+        for agent in agents:
+            if hasattr(agent, "tags") and agent.tags:
+                if any("test" in tag.lower() for tag in agent.tags):
+                    await self.client_async.agents.delete(agent.id)
 
     async def send_timer_message(self, agent_id: str) -> str:
         """
@@ -82,18 +134,18 @@ class LettaService:
         )
 
         try:
-            response = client.agents.messages.create_stream(
-                agent_id=agent_id, messages=[letta_message]
-            )
 
-            if response:
-                agent_message_response = await process_stream(response)
-                return agent_message_response or ""
+            def create_response():
+                return client.agents.messages.create_stream(
+                    agent_id=agent_id, messages=[letta_message]
+                )
 
-            return ""
+            agent_message_response = await process_stream(create_response())
+            return agent_message_response or ""
+
         except Exception as error:
-            print(f"Erro detalhado: {error}")
-            print(traceback.format_exc())
+            logger.error(f"Erro detalhado ao enviar timer message: {error}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
     async def send_message(
@@ -132,9 +184,23 @@ class LettaService:
                 return agent_message_response or ""
 
             return ""
-        except Exception as error:
-            return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
+        except Exception as error:
+            logger.error(f"Erro detalhado ao enviar message: {error}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+
+            # Verificar se é erro específico do servidor Letta
+            if hasattr(error, "status_code"):
+                if error.status_code == 500:
+                    return "Erro interno do servidor Letta. Tente novamente em alguns instantes ou verifique se o agente está configurado corretamente."
+                elif error.status_code == 401:
+                    return "Erro de autenticação com o servidor Letta. Verifique as credenciais."
+                elif error.status_code == 404:
+                    return "Agente não encontrado. Verifique se o ID do agente está correto."
+                else:
+                    return f"Erro do servidor Letta (código {error.status_code}). Tente novamente mais tarde."
+
+            return "Ocorreu um erro ao enviar a mensagem para o agente. Por favor, tente novamente mais tarde."
 
     async def send_message_raw(
         self, agent_id: str, message_content: str, name: str = None
@@ -164,22 +230,13 @@ class LettaService:
         letta_message = MessageCreate(**message_params)
 
         try:
-            response = client.agents.messages.create_stream(
-                agent_id=agent_id, messages=[letta_message]
-            )
 
-            if response:
-                return await process_stream_raw(response)
+            def create_response():
+                return client.agents.messages.create_stream(
+                    agent_id=agent_id, messages=[letta_message]
+                )
 
-            return {
-                "system_messages": [],
-                "user_messages": [],
-                "reasoning_messages": [],
-                "tool_call_messages": [],
-                "tool_return_messages": [],
-                "assistant_messages": [],
-                "letta_usage_statistics": []
-            }
+            return await process_stream_raw(create_response())
         except Exception as error:
             logger.error(f"Erro ao enviar mensagem: {error}")
             return {
@@ -190,7 +247,7 @@ class LettaService:
                 "tool_call_messages": [],
                 "tool_return_messages": [],
                 "assistant_messages": [],
-                "letta_usage_statistics": []
+                "letta_usage_statistics": [],
             }
 
 

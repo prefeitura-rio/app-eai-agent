@@ -8,6 +8,8 @@ from alembic import context
 
 from src.config import env as app_env
 from src.models.system_prompt_model import SystemPrompt, SystemPromptDeployment
+from src.models.agent_config_model import AgentConfig
+from src.models.unified_version_model import UnifiedVersion
 from src.db import Base
 
 # this is the Alembic Config object, which provides

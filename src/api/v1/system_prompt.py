@@ -128,6 +128,7 @@ async def update_system_prompt(
             prompt_id=result.get("prompt_id"),
             agents_updated=result.get("agents_updated", {}),
             message=message,
+            version=result.get("unified_version", None),
         )
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))

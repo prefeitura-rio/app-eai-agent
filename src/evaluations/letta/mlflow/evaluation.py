@@ -31,15 +31,15 @@ for var in [
     "MLFLOW_TRACKING_URL",
     "MLFLOW_TRACKING_USERNAME",
     "MLFLOW_TRACKING_PASSWORD",
-    "AGENTIC_SEARCH_URL",
-    "AGENTIC_SEARCH_TOKEN",
+    "EAI_AGENT_URL",
+    "EAI_AGENT_TOKEN",
     "GEMINI_API_KEY",
 ]:
     assert os.environ.get(var), f"Environment variable {var} is not set"
 
 
 async def get_response_from_letta(query: str) -> dict:
-    url = os.getenv("AGENTIC_SEARCH_URL") + "/letta/test-message-raw"
+    url = os.getenv("EAI_AGENT_URL") + "api/v1/letta/test-message-raw"
     payload = {
         "agent_id": "agent-23301e87-a554-4487-be6e-18f299af803a",
         "message": query,
@@ -61,8 +61,8 @@ async def get_response_from_letta(query: str) -> dict:
 
 
 def get_system_prompt() -> str:
-    url = os.getenv("AGENTIC_SEARCH_URL") + "/system-prompt?agent_type=agentic_search"
-    bearer_token = os.getenv("AGENTIC_SEARCH_TOKEN")
+    url = os.getenv("EAI_AGENT_URL") + "api/v1/system-prompt?agent_type=agentic_search"
+    bearer_token = os.getenv("EAI_AGENT_TOKEN")
     headers = {"accept": "application/json", "Authorization": f"Bearer {bearer_token}"}
     response = httpx.get(url, headers=headers)
     return response.json()["prompt"]
@@ -180,7 +180,7 @@ async def main():
         "whatsapp_formating",
         "answer_completness",
         "entity_presence",
-        "gold_standart",
+        "gold_standard",
         "groundness",
         "tool_calling",
         "search_query_effectiveness",

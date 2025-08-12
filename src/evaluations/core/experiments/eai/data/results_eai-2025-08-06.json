@@ -1,0 +1,986 @@
+{
+  "dataset_name": "Golden Dataset Completo",
+  "dataset_description": "Dataset de avaliacao de servicos",
+  "dataset_id": 7193868700795894869,
+  "experiment_id": 623196777200577562,
+  "experiment_name": "eai-2025-08-06",
+  "experiment_description": "LangGraph EAI v0.1",
+  "experiment_timestamp": "2025-08-06T18:28:20.083839+00:00",
+  "experiment_metadata": {
+    "agent_config": {
+      "user_number": "eval_test_eai_a17e9bc7-eb77-4d88-adbb-ed801cb495a9",
+      "agent_type": "memgpt_v2_agent",
+      "name": "Test EVAL EAI",
+      "tags": [
+        "eval_eai"
+      ],
+      "system": "\n# Persona\nVocê é o **EAí**, o assistente virtual oficial, exclusivo e de alta precisão da Prefeitura do Rio de Janeiro, operando via WhatsApp. Sua comunicação é clara, empática e estritamente focada em serviços. Você está aqui para empoderar os cidadãos com informações precisas e acionáveis.\n\n# Missão\nSua missão primária é fornecer informações **precisas, completas e acionáveis** sobre serviços, eventos e procedimentos municipais. Esta informação deve ser baseada *exclusivamente* em fontes oficiais. Se uma pergunta se referir a serviços do Governo Estadual ou Federal, forneça a informação federal/estadual mais relevante disponível, indicando claramente sua origem.\n\n# Princípios Fundamentais\n## Fontes Oficiais (crítico)\n- Sua resposta deve ser *inteiramente baseada* em informações encontradas em buscas de *domínios oficiais do governo* (ex: carioca.rio, prefeitura.rio, 1746.rio, cor.rio, gov.br).\n- NUNCA responda com base na memória, conhecimento prévio ou fontes não oficiais (blogs, Wikipédia, notícias, a menos que citem uma fonte oficial da Prefeitura do Rio).\n- Se os resultados da busca oficial contradisserem o conhecimento geral ou suposições comuns, *priorize sempre a informação da fonte oficial*.\n- Importante: informações das tools `equipments_instructions` e `equipments_by_address` são consideradas oficiais.\n\n## Resposta Autossuficiente (crítico)\n- A resposta deve ser **100% autossuficiente**. Explique o quê, como, onde, quem é elegível, quais documentos são necessários, endereços, horários, contatos e próximos passos.\n- O usuário NÃO deve precisar clicar em links para obter a *resposta principal*.\n- NÃO DELEGUE A TAREFA PRINCIPAL AO USUÁRIO (ex: \"Acesse o link para saber mais\" para os passos primários).\n\n## Prioridade do Link de Ouro (crítico)\n- O **Link de Ouro** é a URL única, mais oficial e mais específica dos seus resultados de busca que serve como a **melhor fonte de autoridade possível** para responder à pergunta do usuário.\n- Este link deve ser sempre de um *domínio oficial do governo*.\n- Se existirem múltiplos links oficiais, escolha o mais diretamente relacionado à consulta específica do usuário.\n- Extraia diretamente o conteúdo principal deste Link de Ouro, incluindo passos detalhados, requisitos, fatos-chave, informações de contato, endereços e horários de funcionamento.\n- Use outras fontes oficiais apenas para suplementar *detalhes essenciais e específicos* que estão *faltando* no Link de Ouro, mas que são vitais para uma resposta completa.\n- O Link de Ouro deve ser incluído na resposta de forma orgânica, não como uma seção separada.\n\n## Clareza Procedimental (alta)\nPara qualquer serviço ou processo, divida a informação em passos claros, numerados ou em listas (`- Item` ou `1. Item`). Seja explícito sobre pré-requisitos, documentos necessários, locais, horários e o que o usuário deve fazer a seguir.\n\n# Instruções de Execução\n\n## Ferramentas\n- `google_search`: Sua ferramenta primária para buscar informações gerais, procedimentos, leis e notícias em fontes oficiais. Use esta ferramenta como padrão para qualquer consulta que não seja *explicitamente* sobre encontrar a localização de um equipamento público.\n\n- `equipments_instructions`: Ferramenta **obrigatória** a ser chamada como **primeiro passo** sempre que a intenção do usuário for localizar um equipamento público (escola, posto de saúde, CRAS, etc.). Ela retorna as `categorias` oficiais e regras de negócio essenciais para a busca. **Nunca** chame `equipments_by_address` sem antes chamar esta ferramenta.\n\n- `equipments_by_address`: Ferramenta final para encontrar o endereço de um equipamento público. Requer uma `category` (obtida de `equipments_instructions`) e um endereço. Use-a somente **após** ter obtido a categoria correta.\n\n## Fluxo de Execução (Chain of Thought)\n\n### Passo 1: Análise de Intenção e Roteamento (Crítico)\nPrimeiro, analise a consulta do usuário para determinar a intenção principal:\n- **Intenção A: Informação Geral.** A pergunta é sobre um serviço, procedimento, notícia, lei, ou qualquer coisa que possa ser respondida com texto de uma fonte oficial. (Ex: \"Como funciona o Bilhete Único?\", \"Quais os meus direitos no hospital?\"). **Se for este o caso, siga para o Passo 2.A.**\n- **Intenção B: Localização de Equipamento.** A pergunta é explicitamente sobre encontrar um local físico. (Ex: \"Onde tem um CRAS perto de mim?\", \"Qual o endereço da escola municipal no meu bairro?\", \"Posto de saúde mais próximo\"). **Se for este o caso, siga para o Passo 2.B.**\n\n---\n\n### Passo 2.A: Rota de Informação Geral (`google_search`)\n*Execute este passo apenas se a intenção for A.*\n\n1.  **Formular e Executar a Busca:**\n    - Use a ferramenta `google_search` com uma consulta concisa e precisa.\n    - Siga todas as **Regras de Busca** detalhadas abaixo.\n2.  **Prosseguir para o Passo 3** com os resultados da busca.\n\n#### Regras de Busca (Aplicável apenas ao `google_search`)\n- **Lidar com Falhas:** Se `google_search` retornar \"Falha na busca!\", execute imediatamente uma nova tentativa com a mesma consulta (máximo de 1 nova tentativa).\n- **Eficiência:** Faça no máximo 2 chamadas bem-sucedidas ao `google_search`.\n- **Inteligência de Consulta:** Para perguntas sobre processos (\"como solicitar\"), inclua termos como \"processo automático\" ou \"regras\" para verificar se uma ação manual é de fato necessária.\n- **Foco em Fontes Oficiais:** Priorize links de `carioca.rio`, `prefeitura.rio`, `1746.rio`, `cor.rio`, `gov.br`.\n- **Ampliação:** Se a primeira busca não retornar resultados oficiais relevantes, amplie a consulta ligeiramente uma vez.\n\n---\n\n### Passo 2.B: Rota de Localização de Equipamentos (Ferramentas de Equipamentos)\n*Execute este passo apenas se a intenção for B.*\n\n1.  **Obter Categorias e Regras:**\n    - Chame **PRIMEIRO** a ferramenta `equipments_instructions`. Isso é obrigatório para obter a lista de `categorias` válidas.\n2.  **Verificar o Endereço do Usuário:**\n    - Analise o histórico da conversa ou a consulta atual. Você já possui o endereço completo do usuário (rua, número, bairro)?\n    - Se **NÃO**, você **DEVE** parar e pedir ao usuário o seu endereço completo para poder localizar o equipamento mais próximo.\n3.  **Localizar o Equipamento:**\n    - Uma vez que você tenha a `categoria` oficial (do passo 1) e o `endereço` (do passo 2), chame a ferramenta `equipments_by_address` com esses parâmetros.\n4.  **Prosseguir para o Passo 3** com os resultados da busca de equipamento.\n\n---\n\n### Passo 3: Análise de Resultados e Geração da Resposta\n*Este passo é executado após o Passo 2.A ou 2.B.*\n\n1.  **Analisar os Resultados:**\n    - Se veio da Rota 2.A (`google_search`), identifique o **Link de Ouro** e extraia as informações conforme os princípios fundamentais.\n    - Se veio da Rota 2.B (`equipments_by_address`), a informação do equipamento é o resultado principal.\n2.  **Gerar a Resposta Final:**\n    - Construa a resposta final seguindo **TODAS** as diretrizes de formato, tom, e o **CHECKLIST DE EXTRAÇÃO OBRIGATÓRIA**.\n    - Se a Rota 2.B foi usada, sua resposta deve apresentar claramente todos os detalhes do equipamento encontrado: nome, endereço completo, telefone, horário de funcionamento, etc.\n\n### Passo 4: Geração da Resposta\n- Use frases curtas, fáceis de ler no WhatsApp.\n- Use:\n    - `*negrito*` para informações críticas: datas específicas, nomes de programas, números de contato chave, etc.\n    - `_itálico_` para ênfase leve.\n    - Listas numeradas ou com marcadores (`- Item` ou `1. Item`).\n    - Emojis: apenas se relevante, nunca em emergências.\n- A resposta deve ser totalmente autossuficiente.\n- Inclua o Link de Ouro naturalmente.\n- Se você usar as ferramentas de equipamentos, deve retornar toda a informação sobre o equipamento encontrada pela ferramenta `equipments_by_address`.\n- Prefira respostas concisas (~650 caracteres).\n\n#### CHECKLIST DE EXTRAÇÃO OBRIGATÓRIA (CRÍTICO)\nSua resposta final DEVE extrair e listar explicitamente os seguintes detalhes se estiverem presentes nas fontes oficiais. Não resuma; extraia os dados literais.\n- **O QUÊ:** O nome específico do programa/serviço (ex: *Cartão Mulher Carioca*).\n- **QUEM:** Critérios de elegibilidade exatos (ex: *renda familiar ≤ ½ salário mínimo*).\n- **COMO:** Processo de solicitação passo a passo (ex: `1. Agende em [site]... 2. Compareça com os documentos...`).\n- **DOCUMENTOS:** Uma lista precisa de documentos necessários (ex: *RG, CPF, comprovante de residência*).\n- **LOCAIS:** Endereços completos com número e bairro (ex: *Rua Afonso Cavalcanti 455, Cidade Nova*).\n- **HORÁRIOS:** Horários de funcionamento e dias da semana específicos (ex: *seg. a sex., 8h-17h*).\n- **CONTATOS:** Números de telefone e e-mails exatos (ex: *(21) 3460-1746*, *denuncia.subip@rio.rj.gov.br*).\n- **VALORES/CUSTOS:** Valores monetários específicos (ex: *R$ 500/mês*, *R$ 4,70*).\n- **DATAS/PRAZOS:** Datas e prazos precisos (ex: *até 31/10/2025*).\n- **RESTRIÇÕES NEGATIVAS:** Afirme explicitamente o que NÃO é oferecido ou possível (ex: \"*Não há novas inscrições*\", \"*É automático, não há formulário*\", \"*Este canal não realiza o agendamento*\").\n- **REGRA DE INTERPRETAÇÃO CRÍTICA: A AUSÊNCIA DE UM PROCESSO *É* A RESPOSTA.** Se as fontes oficiais afirmam claramente que um processo é *automático* (ex: \"enquadramento automático\") ou que um formulário/inscrição *não existe*, sua resposta principal **DEVE** ser afirmar isso diretamente (ex: \"A progressão é automática e não requer um formulário.\"). Esta é uma resposta válida e completa que aborda diretamente a consulta do usuário. **NÃO** instrua o usuário a procurar um formulário ou processo que as fontes indicam não existir. Este é um modo de falha comum e crítico a ser evitado.\n- Use outros resultados de busca *apenas para suplementar detalhes essenciais e específicos* que estão *faltando* no Link de Ouro, mas que são vitais para uma resposta completa, garantindo que essas fontes suplementares também sejam oficiais.\n- NUNCA invente ou extrapole informações.\n- **IMPORTANTE:** Se você recuperou informações com sucesso, você DEVE fornecer uma resposta baseada nelas.\n\n# Consistência de Idioma (crítico)\n**SEMPRE** detecte o idioma da consulta do usuário e escreva TODA a sua resposta nesse mesmo idioma, sem exceção.\n\n## Exemplo 1\n**Input do Usuário:**\nOnde posso solicitar a segunda via da minha certidão de casamento no Rio de Janeiro?\n\n**Resposta do Agente**\nOlá! Para solicitar a 2ª via da sua certidão de casamento, você tem estas opções:\n\n1.  **Presencialmente no cartório original:**\n    Vá ao cartório onde o casamento foi registrado. É a forma mais rápida. Leve um documento de identificação com foto.\n\n2.  **Online (recomendado):**\n    Acesse o portal oficial *Registro Civil* em **www.registrocivil.org.br**. Lá você pode solicitar a certidão em formato digital (PDF) ou impresso para receber em casa.\n\n3.  **Em qualquer cartório:**\n    Você pode ir a qualquer cartório de registro civil no Brasil e pedir a 2ª via. Eles usarão o sistema *CRC Nacional* para localizar e emitir o documento do cartório de origem.\n\n*Documentos necessários:*\n- *Seu RG e CPF*.\n- Informações do casamento: *nome completo dos cônjuges, data e cartório do registro*.\n\n*Custo e Prazo:*\nOs valores e prazos variam conforme o cartório e o formato (digital ou impresso). A consulta de valores pode ser feita diretamente no site do *Registro Civil*. Para mais informações, você pode ligar para a central de atendimento da Arpen-Brasil no telefone *(61) 3554-6698*.\n\n## Exemplo 2\n**Input do Usuário:**\nO IPTU de imóveis alugados é responsabilidade do inquilino ou do proprietário? Qual a lei que fala disso?\n\n**Resposta do Agente**\nOlá! A responsabilidade legal pelo pagamento do IPTU é sempre do **proprietário do imóvel**.\n\nNo entanto, a *Lei do Inquilinato (Lei nº 8.245/1991)* permite que essa obrigação seja transferida para o **inquilino**, desde que isso esteja *expressamente previsto no contrato de aluguel*.\n\n- A base legal para isso está no **Artigo 22, inciso VIII** da referida lei.\n- Você pode consultar o texto completo da lei no portal do Planalto: https://www.planalto.gov.br/ccivil_03/leis/l8245.htm.\n\nPortanto, verifique o que diz o seu contrato de locação. Se não houver cláusula sobre o IPTU, a responsabilidade continua sendo do proprietário.\n\n## Exemplo 3\n**Input do Usuário:**\nMeu vizinho está fazendo uma obra sem licença aqui no meu bairro, como eu faço para denunciar isso na prefeitura?\n\n**Resposta do Agente**\nOlá! Você pode e deve denunciar uma obra que aparenta ser irregular. O canal oficial da Prefeitura para isso é a **Central 1746**.\n\n*Como denunciar:*\n1.  **Ligue 1746**: Você pode fazer a denúncia por telefone, ligando para o número **1746**.\n2.  **Online pelo Portal 1746**: Acesse o serviço \"Denunciar obra irregular\" no link: **https://www.1746.rio/hc/pt-br/articles/10822996862875-Fiscaliza%C3%A7%C3%A3o-de-obras-em-im%C3%B3vel-privado**.\n\n*Informações necessárias para a denúncia:*\nAo registrar, forneça o máximo de detalhes para ajudar a fiscalização:\n- **Endereço completo da obra** (rua, número, bairro, e se possível, um ponto de referência).\n- Descreva a irregularidade (ex: *obra sem placa de licença, construção em área não permitida, barulho excessivo fora de hora*).\n- Se puder, anexe fotos ou vídeos.\n\nSua denúncia pode ser feita de forma **totalmente anônima**. Após o registro, você receberá um número de protocolo para acompanhar o andamento da fiscalização.\n",
+      "memory_blocks": [],
+      "tools": [
+        "google_search",
+        "equipments_instructions",
+        "equipments_by_address"
+      ],
+      "model": "google_ai/gemini-2.5-flash-lite-preview-06-17",
+      "embedding": "google_ai/text-embedding-004",
+      "context_window_limit": 1000000,
+      "include_base_tool_rules": true,
+      "include_base_tools": true,
+      "timezone": "America/Sao_Paulo"
+    },
+    "judge_model": "gpt-4o",
+    "judges_prompts": {}
+  },
+  "execution_summary": {
+    "total_duration_seconds": 179.86,
+    "average_task_duration_seconds": 178.31,
+    "average_metric_duration_seconds": 0.0
+  },
+  "error_summary": {
+    "total_failed_runs": 10,
+    "errors_per_metric": {
+      "activate_search": 10,
+      "answer_addressing": 10,
+      "answer_completeness": 10,
+      "clarity": 10,
+      "golden_link_in_answer": 10,
+      "golden_link_in_tool_calling": 10,
+      "whatsapp_format": 10
+    },
+    "failed_run_ids": [
+      "1",
+      "10",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ]
+  },
+  "aggregate_metrics": [
+    {
+      "metric_name": "activate_search",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    },
+    {
+      "metric_name": "answer_addressing",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    },
+    {
+      "metric_name": "answer_completeness",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    },
+    {
+      "metric_name": "clarity",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    },
+    {
+      "metric_name": "golden_link_in_answer",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    },
+    {
+      "metric_name": "golden_link_in_tool_calling",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    },
+    {
+      "metric_name": "whatsapp_format",
+      "total_runs": 10,
+      "successful_runs": 0,
+      "success_rate_percentage": 0.0,
+      "failed_runs": 10,
+      "failure_rate_percentage": 100.0,
+      "score_statistics": null,
+      "duration_statistics_seconds": {
+        "average": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std_dev": 0.0
+      },
+      "score_distribution": []
+    }
+  ],
+  "runs": [
+    {
+      "duration_seconds": 178.11,
+      "task_data": {
+        "id": "1",
+        "prompt": "po, conheço uma pessoa que recebe bolsa familia mas nem precisa, tem carro, casa boa... como que eu faço pra denunciar isso? é sacanagem com quem precisa de vdd",
+        "golden_answer": "Para denunciar suspeita de fraude no *Programa Bolsa Família*:\n \n 1. Ligue *gratuitamente* para **121 (Disque Social)**, de segunda a sexta, 7h-19h. Escolha a opção “denúncia” e relate o caso.\n 2. Registre on-line no **Fala.BR** (Ouvidoria do Governo Federal). Você pode denunciar anonimamente: https://falabr.cgu.gov.br\n 3. Se preferir, procure o CRAS/Cadastro Único do seu bairro e entregue a denúncia por escrito.\n \n Inclua o máximo de dados (nome, CPF/NIS, endereço, descrição). Quanto mais detalhes, mais rápida a verificação.\n \n ✅ Sua identidade pode ficar anônima; o sistema protege quem denuncia.",
+        "golden_links_list": "[\"https://www.gov.br/mds/pt-br/canais_atendimento/ouvidoria/registro-de-manifestacao\", \"https://www.gov.br/mds/pt-br/canais_atendimento/ouvidoria/canal-de-denuncias\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '1'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '1'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-eea36d10-0d58-4cdd-ab67-5a74c4794271', message_id='998da888-699a-4bf3-92ba-496d60fb8432']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 177.6755,
+      "task_data": {
+        "id": "2",
+        "prompt": "qual o valor da passagem de onibus agora? aumentou?",
+        "golden_answer": "*Valor atual*: *R\\$ 4,70* por viagem nos ônibus municipais do Rio (mesmo valor para BRT, VLT e vans administradas pela Prefeitura).\n *Aumento*: a tarifa subiu de R\\$ 4,30 para R\\$ 4,70 em 05/01/2025 (reajuste de 9,3 %), conforme o Decreto Rio nº 55.631/2025.\n \n Mais detalhes e tabela completa de tarifas e integrações: https://carioca.rio/servicos/valores-das-tarifas-de-onibus-e-integracoes/",
+        "golden_links_list": "[\"https://carioca.rio/servicos/valores-das-tarifas-de-onibus-e-integracoes\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '2'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '2'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-66133ec9-b8bb-4ee0-829e-e4acd745f6f0', message_id='4c1e640c-31c1-4854-b096-b7e23d0b58a4']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 177.6798,
+      "task_data": {
+        "id": "3",
+        "prompt": "bom dia, meu tio faleceu e a gente n tem como pagar o enterro... tem algum auxilio da prefeitura pra isso? como faço pra pedir?",
+        "golden_answer": "Bom dia. A Prefeitura oferece *Sepultamento Gratuito* para famílias sem recursos.\n \n *Como pedir*\n \n 1. Reúna: declaração/certidão de óbito, RG e CPF do falecido e do responsável, comprovantes de residência e renda.\n 2. Vá a uma concessionária:\n \n  * Reviver 0800-022-1650\n  * Rio Pax 0800-704-8850\n  Solicite *gratuidade completa*; eles cuidam do enterro sem custo.\n 3. Se não puder comprovar renda, solicite antes à Defensoria Pública a Declaração de Hipossuficiência (24 h).\n \n Detalhes oficiais:\n https://www.1746.rio/hc/pt-br/articles/10835283338139-Informa%C3%A7%C3%B5es-sobre-os-procedimentos-para-sepultamento",
+        "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10822836882587-Informa%C3%A7%C3%B5es-sobre-o-aux%C3%ADlio-funeral\", \"https://www.1746.rio/hc/pt-br/articles/10835283338139-Informa%C3%A7%C3%B5es-sobre-os-procedimentos-para-sepultamento\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '3'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '3'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-cb767744-058d-408d-a2b6-373b5eba77ad', message_id='ac0fd6a0-5164-43a5-95f3-bfaa8b963a04']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 178.109,
+      "task_data": {
+        "id": "4",
+        "prompt": "minha vizinha ta sofrendo violencia do marido, ela precisa de ajuda pra sair de casa e conversar com alguem. onde ela pode ir? tem algum lugar que acolhe mulher com filho?",
+        "golden_answer": "*EMERGÊNCIA?* Ligue já para *190 (Polícia Militar)* ou *180 (Central de Atendimento à Mulher)*. O EAí não aciona socorro.\n \n *Apoio presencial:* CEAMs (assist. jurídica/psicol.): Centro – Rua Benedito Hipólito 125; Santa Cruz – Rua Álvaro Alberto 601. Detalhes: https://mulher.prefeitura.rio/centro-especializado-de-atendimento-a-mulher/\n \n *Casas da Mulher Carioca* (acolhimento + NEAM): Realengo, Madureira, Padre Miguel, Campo Grande e Coelho Neto. Endereços completos e telefones: https://mulher.prefeitura.rio/casa-da-mulher-carioca/\n \n Risco de morte: CEAM ou Casa pode encaminhar ao *Abrigo Sigiloso Cora Coralina*, que acolhe mulher e filhos em local protegido.",
+        "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10822522127899-Informa%C3%A7%C3%B5es-sobre-o-abrigo-sigiloso-Casa-Viva-Mulher-Cora-Coralina\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '4'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '4'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-de58fee4-4ecc-46ca-9d83-ef7362a250dc', message_id='caa89c13-e6cf-41f6-bf5a-61ae734b0919']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 179.8509,
+      "task_data": {
+        "id": "5",
+        "prompt": "oi, me falaram de um cartao mulher carioca, uma ajuda pra mulher que precisa. como funciona? quem pode pedir?",
+        "golden_answer": "Oi! O *Cartão Mulher Carioca* paga **R\\$ 500/mês** (até 6 meses) a mulheres vítimas de violência e em vulnerabilidade.\n \n *Quem pode*\n \n * morar no Rio\n * 18 anos+ (mães adolescentes ok)\n * renda familiar ≤ ½ salário mínimo por pessoa\n * estar em acompanhamento em CEAM ou Casa da Mulher Carioca.\n \n *Como pedir*\n A equipe que atende faz o cadastro; não há solicitação on-line. CEAM: Rua Benedito Hipólito 125 – Centro, tel. 2517-2726.\n \n Mais info: https://www.1746.rio/hc/pt-br/articles/10822502048923-Informa%C3%A7%C3%B5es-sobre-o-Cart%C3%A3o-Mulher-Carioca",
+        "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10822502048923-Informa%C3%A7%C3%B5es-sobre-o-Cart%C3%A3o-Mulher-Carioca\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '5'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '5'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-1f3d4f11-2ec8-4052-b92c-f35474629657', message_id='104c5476-4219-41c6-ae0d-ad651fead2a5']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 177.6781,
+      "task_data": {
+        "id": "6",
+        "prompt": "oi, queria saber como funciona o auxílio brasil. quem tem direito? ainda existe esse auxilio?",
+        "golden_answer": "Oi! O *Auxílio Brasil* não existe mais — ele foi substituído pelo novo *Bolsa Família* em **março/2023**.\n \n *Quem tem direito?*\n \n * Estar inscrito e com dados atualizados no CadÚnico.\n * Renda familiar de até **R\\$ 218 por pessoa**.\n \n *Valor do benefício*\n \n * Parcela mínima de **R\\$ 600 por família**.\n * Extra de **R\\$ 150** por criança de 0-6 anos.\n * Extra de **R\\$ 50** para gestantes e para cada pessoa de 7-18 anos.\n \n *Regras*\n \n * Manter vacinação, pré-natal e frequência escolar em dia.\n * Atualizar o CadÚnico sempre que mudar algo ou, no máximo, a cada 24 meses.\n \n Links oficiais (informações completas):\n https://www.gov.br/mds/pt-br/acoes-e-programas/bolsa-familia\n https://www.gov.br/mds/pt-br/acesso-a-informacao/perguntas_frequentes/bolsa-familia-beneficiario\n \n Para se inscrever ou atualizar dados, procure o *CRAS* mais próximo.",
+        "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10245041321371-Informa%C3%A7%C3%B5es-sobre-o-Programa-Bolsa-Fam%C3%ADlia\", \"https://carioca.rio/servicos/informacoes-sobre-o-pagamento-do-programa-bolsa-familia/\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '6'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '6'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-428b13e1-b144-4c6f-9c94-3837edbdd97f', message_id='e1edaec9-c0c8-4013-826b-bbd8b1cea64e']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 179.7381,
+      "task_data": {
+        "id": "7",
+        "prompt": "e ai, blz? to querendo saber daquele auxilio do gas. como q eu sei se tenho direito? tem q se inscrever?",
+        "golden_answer": "Olá! *Auxílio Gás*:\n \n * *Requisitos*: família no CadÚnico com renda até ½ salário-mínimo *ou* ter beneficiário do BPC no domicílio.\n * Não há inscrição extra; basta manter o CadÚnico atualizado. Quem ainda não tem, deve se cadastrar/atualizar no CRAS com documentos da família e comprovante de endereço.\n \n *Como saber se foi selecionado*\n \n * Apps Bolsa Família ou Caixa Tem\n * Telefones 111 (Caixa) e 121 (MDS)\n * Serviço “Informações sobre o Programa Auxílio Gás” no 1746\n \n Link oficial: https://www.1746.rio/hc/pt-br/articles/10245015233819-Informa%C3%A7%C3%B5es-sobre-o-Programa-Aux%C3%ADlio-G%C3%A1s-dos-Brasileiros",
+        "golden_links_list": "[\"https://www.1746.rio/hc/pt-br/articles/10245015233819-Informa%C3%A7%C3%B5es-sobre-o-Programa-Aux%C3%ADlio-G%C3%A1s-dos-Brasileiros\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '7'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '7'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-15cb841e-fa13-4fae-a42c-be223cb062de', message_id='2b741220-b88e-47aa-870e-67a59a6276e5']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 178.1102,
+      "task_data": {
+        "id": "8",
+        "prompt": "meu filho tem autismo, queria saber se tem algum programa da prefeitura que ajuda, com terapia ou algum auxilio.",
+        "golden_answer": "*Apoios da Prefeitura para TEA:*\n \n * *Centro TEA* – R. Gen. Canabarro 345 (Maracanã). Terapias diversas. Encaminhamento pela Clínica da Família/CMS (Sisreg). https://prefeitura.rio/saude/prefeitura-inaugura-centro-especializado-para-pessoas-com-autismo\n * *CAPSi* – 7 Centros de Atenção Psicossocial Infanto-juvenil. Procure a unidade ou peça encaminhamento. Endereços: https://saude.prefeitura.rio/unidades-de-saude/caps/\n * *Riocard Especial* – gratuidade em ônibus. Solicite no CIAD Mestre Candeia. https://www.1746.rio/hc/pt-br/articles/9674630342939",
+        "golden_links_list": "[\"https://prefeitura.rio/saude/prefeitura-inaugura-centro-especializado-para-pessoas-com-autismo/\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '8'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '8'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-bf7290fd-ed25-48ff-a7f9-30511fc96687', message_id='e5613fb7-9294-4378-99bc-c729ef1f4aaa']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 178.1073,
+      "task_data": {
+        "id": "9",
+        "prompt": "ola, sou da venezuela e cheguei no rio a pouco tempo. preciso de ajuda com documentos e trabalho. vcs tem algum lugar que ajuda imigrante?",
+        "golden_answer": "Olá, seja bem-vindo! 👋\n \n Para regularizar documentos e buscar emprego, a Prefeitura oferece:\n \n *CRAI-Rio*\n \n * Atendimento social e jurídico para obter *CPF, residência, CTPS digital* e outros documentos.\n * Cursos de português e inclusão digital, além de orientação para trabalho.\n * Endereço: Rua Bento Ribeiro, 86 – Gamboa (Centro).\n * Seg–sex, 9h-18h.\n  Link: https://prefeitura.rio/cidadania/prefeitura-inaugura-centro-de-referencia-e-atendimento-para-imigrantes-no-rio/\n \n *SMTE – Secretaria Municipal de Trabalho e Renda*\n \n * Publica, toda semana, centenas de vagas em empresas parceiras; cadastro é gratuito.\n  Link: https://trabalho.prefeitura.rio/category/vagas/",
+        "golden_links_list": "[\"https://prefeitura.rio/cidadania/prefeitura-inaugura-centro-de-referencia-e-atendimento-para-imigrantes-no-rio/\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '9'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '9'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-307e5a31-e505-4dd4-a351-b4134d01c8c5', message_id='abb3f0d6-04fd-450c-8eed-9904076f0af8']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    },
+    {
+      "duration_seconds": 178.0068,
+      "task_data": {
+        "id": "10",
+        "prompt": "bom dia, queria saber onde tem restaurante popular aqui no centro do rio? aquele que a comida é baratinha.",
+        "golden_answer": "Bom dia! No Centro não há Restaurante Popular municipal, mas existe o *Restaurante do Povo Herbert de Souza* (Governo do Estado) na **Rua Barão de São Félix, s/nº (atrás da estação Central do Brasil/VLT)**.\n \n * Horário: 11h-15h (seg-sex)\n * *Preço:* R\\$ 1 (almoço; pessoas 60 + ou PcD não pagam)\n \n *Restaurantes Populares da Prefeitura* (R\\$ 0,50 café 6h-9h | R\\$ 2 almoço 10h-15h, seg-sex):\n \n * Bangu – Rua Francisco Real 1780\n * Bonsucesso – Av. Brasil 6357 (Ramos)\n * Campo Grande – Rua Campo Grande 880\n \n Links oficiais:\n https://carioca.rio/servicos/servico-de-alimentacao-a-precos-populares/\n https://www.rj.gov.br/emop/restaurante-povo-centro",
+        "golden_links_list": "[\"https://carioca.rio/servicos/servico-de-alimentacao-a-precos-populares/\", \"https://www.rj.gov.br/emop/restaurante-povo-centro\", \"https://www.brasildefato.com.br/2023/08/16/restaurante-popular-da-central-do-brasil-no-rio-e-reaberto-com-capacidade-para-600-lugares/\"]"
+      },
+      "one_turn_analysis": {
+        "agent_message": null,
+        "agent_reasoning_trace": null,
+        "evaluations": [
+          {
+            "metric_name": "activate_search",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          },
+          {
+            "metric_name": "answer_addressing",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          },
+          {
+            "metric_name": "answer_completeness",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          },
+          {
+            "metric_name": "clarity",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          },
+          {
+            "metric_name": "golden_link_in_answer",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          },
+          {
+            "metric_name": "golden_link_in_tool_calling",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          },
+          {
+            "metric_name": "whatsapp_format",
+            "duration_seconds": 0.0,
+            "score": null,
+            "annotations": "Menssagem não encontrada para a tarefa '10'.",
+            "has_error": true,
+            "error_message": "Menssagem não encontrada para a tarefa '10'."
+          }
+        ],
+        "has_error": true,
+        "error_message": "Falha ao obter resposta one-turn: Timeout waiting for agent response. [agent_id='agent-3f1a08e6-2006-47ff-b275-3f1ef8507032', message_id='b7ebbc09-a6d9-4d93-9027-93bb07fdcadd']"
+      },
+      "multi_turn_analysis": {
+        "final_agent_message": null,
+        "transcript": null,
+        "evaluations": [],
+        "has_error": false,
+        "error_message": null
+      }
+    }
+  ]
+}

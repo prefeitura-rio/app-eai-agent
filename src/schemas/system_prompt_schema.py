@@ -53,6 +53,7 @@ class SystemPromptUpdateResponse(BaseModel):
         ..., description="Status da atualização dos agentes"
     )
     message: str = Field("", description="Mensagem adicional sobre a operação")
+    version: Optional[int] = Field(None, description="Versão do prompt")
 
     class Config:
         json_schema_extra = {
@@ -61,6 +62,7 @@ class SystemPromptUpdateResponse(BaseModel):
                 "prompt_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
                 "agents_updated": {"agt_123456789": True, "agt_987654321": True},
                 "message": "System prompt atualizado com sucesso para 2 agentes.",
+                "version": 1,
             }
         }
 

@@ -1,52 +1,200 @@
 from typing import List
+import httpx
+import uuid
+from loguru import logger
 
 from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
 )
-from src.services.letta.system_prompt_service import system_prompt_service
 from src.services.letta.letta_service import letta_service
-import uuid
-from loguru import logger
-
-from letta_client import ContinueToolRule
+from letta_client import ContinueToolRule, LlmConfig
 from src.config import env
 
 
-async def create_agentic_search_agent(tags: List[str] = None, name: str = None):
+async def _get_system_prompt_from_api(agent_type: str = "agentic_search") -> str:
+    """Obtém o system prompt via API"""
+    try:
+        base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
+        api_url = f"{base_url}api/v1/system-prompt?agent_type={agent_type}"
+
+        bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
+
+        headers = {}
+        if bearer_token:
+            headers["Authorization"] = f"Bearer {bearer_token}"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(api_url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+
+            logger.info(f"System prompt obtido via API para agent_type: {agent_type}")
+            return data
+
+    except Exception as e:
+        logger.warning(
+            f"Erro ao obter system prompt via API: {str(e)}. Usando fallback."
+        )
+        # Fallback para prompt padrão
+        return f"""You are an AI assistant for the {agent_type} role.
+Follow these guidelines:
+1. Answer concisely but accurately
+2. Use tools when necessary
+3. Focus on providing factual information
+4. Be helpful, harmless, and honest"""
+
+
+async def _update_system_prompt_from_api(
+    agent_type: str = "agentic_search", new_system_prompt: str = None
+) -> str:
+    """Atualiza o system prompt via API"""
+    try:
+        base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
+        api_url = f"{base_url}api/v1/system-prompt?agent_type={agent_type}"
+        bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
+
+        headers = {}
+        if bearer_token:
+            headers["Authorization"] = f"Bearer {bearer_token}"
+            headers["Content-Type"] = "application/json"
+        payload = {
+            "agent_type": agent_type,
+            "update_agents": True,
+            "new_prompt": new_system_prompt,
+        }
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(api_url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+            logger.info(
+                f"System prompt atualizado via API para agent_type: {agent_type}"
+            )
+            return data.get("prompt", data) if isinstance(data, dict) else data
+    except Exception as e:
+        logger.warning(f"Erro ao atualizar system prompt via API.")
+        raise e
+
+
+async def _get_agent_config_from_api(agent_type: str = "agentic_search") -> dict:
+    """Obtém a configuração do agente via API"""
+    try:
+        base_url = getattr(env, "EAI_AGENT_URL", "http://localhost:8000")
+        api_url = f"{base_url}api/v1/agent-config?agent_type={agent_type}"
+
+        bearer_token = getattr(env, "EAI_AGENT_TOKEN", "")
+
+        headers = {}
+        if bearer_token:
+            headers["Authorization"] = f"Bearer {bearer_token}"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(api_url, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+
+            logger.info(
+                f"Configuração do agente obtida via API para agent_type: {agent_type}"
+            )
+            return data
+
+    except Exception as e:
+        logger.warning(
+            f"Erro ao obter configuração via API: {str(e)}. Usando fallback."
+        )
+        # Fallback para configuração padrão
+        return {
+            "memory_blocks": get_agentic_search_memory_blocks(),
+            "tools": ["google_search", "public_services_grounded_search"],
+            "model_name": env.LLM_MODEL,
+            "embedding_name": env.EMBEDDING_MODEL,
+        }
+
+
+async def create_agentic_search_agent(
+    tags: List[str] = None,
+    username: str = None,
+    tools: list = None,
+    model_name: str = None,
+    system_prompt: str = None,
+    temperature: float = 0.7,
+    use_api_system_prompt: bool = True,
+):
     """Cria um novo agentic_search agent"""
     try:
         client = letta_service.get_client_async()
 
-        system_prompt = system_prompt_service.get_active_system_prompt_from_db(
-            agent_type="agentic_search"
+        # Obtém system prompt e configuração ativa via API
+        if system_prompt is None or use_api_system_prompt:
+            use_api_system_prompt = True
+            data = await _get_system_prompt_from_api(agent_type="agentic_search")
+            system_prompt = data.get("prompt", data) if isinstance(data, dict) else data
+        agent_cfg = await _get_agent_config_from_api(agent_type="agentic_search")
+
+        if tools is None:
+            tools = agent_cfg.get(
+                "tools", ["google_search", "public_services_grounded_search"]
+            )
+        if model_name is None:
+            model_name = agent_cfg.get("model_name", env.LLM_MODEL)
+
+        logger.info(
+            f"Model name: {model_name} | Temperature: {temperature} | Tools: {tools} | API System Prompt: {use_api_system_prompt}"
         )
 
-        agent = await client.agents.create(
-            agent_type="memgpt_agent",
-            name=f"agentic_search_{name if name else str(uuid.uuid4())}",
-            description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
-            context_window_limit=1048576,
-            include_base_tools=True,
-            include_base_tool_rules=False,
-            tools=[
-                "google_search",
-                "typesense_search",
-            ],
-            tool_rules=[
-                ContinueToolRule(tool_name="conversation_search"),
-                ContinueToolRule(tool_name="core_memory_append"),
-                ContinueToolRule(tool_name="core_memory_replace"),
-                ContinueToolRule(tool_name="archival_memory_search"),
-                ContinueToolRule(tool_name="archival_memory_insert"),
-                ContinueToolRule(tool_name="google_search"),
-                ContinueToolRule(tool_name="typesense_search"),
-            ],
-            tags=["agentic_search"] + (tags if tags else []),
-            model=env.LLM_MODEL,
-            embedding=env.EMBEDDING_MODEL,
-            system=system_prompt,
-            memory_blocks=get_agentic_search_memory_blocks(),
+        # Extrai valores com fallback já incluído nas funções API
+        memory_blocks = agent_cfg.get(
+            "memory_blocks", get_agentic_search_memory_blocks()
         )
+        embedding_name = agent_cfg.get("embedding_name", env.EMBEDDING_MODEL)
+
+        if "google_ai" in model_name:
+            agent = await client.agents.create(
+                agent_type="memgpt_agent",
+                name=f"agentic_search_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",
+                description="Agente pessoal de cada cidadão do Rio de Janeiro, que busca informações sobre os serviços públicos da Prefeitura do Rio de Janeiro.",
+                context_window_limit=20000,
+                include_base_tools=True,
+                include_base_tool_rules=True,
+                tools=tools,
+                tool_rules=[
+                    ContinueToolRule(tool_name="conversation_search"),
+                    ContinueToolRule(tool_name="core_memory_append"),
+                    ContinueToolRule(tool_name="core_memory_replace"),
+                    ContinueToolRule(tool_name="archival_memory_search"),
+                    ContinueToolRule(tool_name="archival_memory_insert"),
+                    ContinueToolRule(tool_name="google_search"),
+                ],
+                tags=["agentic_search"] + (tags if tags else []),
+                llm_config=LlmConfig(
+                    model=model_name.split("/")[-1],
+                    model_endpoint_type="google_ai",
+                    model_endpoint="https://generativelanguage.googleapis.com",
+                    model_wrapper=None,
+                    context_window=1048576,
+                    put_inner_thoughts_in_kwargs=True,
+                    handle=model_name,
+                    enable_reasoner=True,
+                    temperature=temperature,
+                ),
+                # model=model_name,
+                embedding=embedding_name,
+                system=system_prompt,
+                memory_blocks=memory_blocks,
+            )
+        elif "azure" in model_name:
+            agent = await client.agents.create(
+                model=model_name,
+                name=f"agentic_search_azure_{tags[0] if tags[0] != None else str(uuid.uuid4())}_{username.replace(' ', '') if username else str(uuid.uuid4())}",
+                embedding="azure/text-embedding-3-small",
+                # optional configuration
+                context_window_limit=16000,
+            )
+        else:
+            raise ValueError(
+                f"Invalid model: {model_name}. Current supported handles are: google_ai and azure."
+            )
         return agent
     except Exception as e:
         logger.error(f"Erro ao criar agente agentic_search: {str(e)}")

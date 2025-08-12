@@ -6,22 +6,35 @@ const agentTypeSelect = document.getElementById('agentType');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const contentArea = document.getElementById('contentArea');
 const promptText = document.getElementById('promptText');
-const authorInput = document.getElementById('author');
-const reasonInput = document.getElementById('reason');
 const updateAgentsCheckbox = document.getElementById('updateAgents');
-const saveButton = document.getElementById('saveButton');
 const copyButton = document.getElementById('copyButton');
 const historyList = document.getElementById('historyList');
 const logoutBtn = document.getElementById('logoutBtn');
 const errorMsg = document.getElementById('errorMsg');
 const themeToggle = document.getElementById('themeToggle');
 
+// Elementos DOM para Configuração
+
+const memoryBlocksText = document.getElementById('memoryBlocks');
+const toolsInput = document.getElementById('tools');
+const modelNameInput = document.getElementById('modelName');
+const embeddingNameInput = document.getElementById('embeddingName');
+const saveAllButton = document.getElementById('saveAllButton');
+const resetAllButton = document.getElementById('resetAllButton');
+const deleteTestsBtn = document.getElementById('deleteTestsBtn');
+
 // Variáveis globais
 let currentToken = localStorage.getItem('adminToken');
 let currentPromptId = null;
+let currentConfigId = null;
 let promptsData = []; // Array para armazenar todos os dados dos prompts
+let configsData = []; // Array para armazenar todos os dados das configurações
+let unifiedHistoryData = []; // Array para o histórico unificado
 let currentTheme = localStorage.getItem('theme') || 'light';
 let isHistoryItemView = false; // Nova variável para rastrear se estamos visualizando um item do histórico
+
+// API base URL - ajustar de acordo com o ambiente
+const API_BASE_URL = 'https://services.staging.app.dados.rio/eai-agent';
 
 // Configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
@@ -39,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     loginForm.addEventListener('submit', handleLogin);
     agentTypeSelect.addEventListener('change', loadData);
-    saveButton.addEventListener('click', handleSavePrompt);
+    saveAllButton.addEventListener('click', handleSaveAll);
     logoutBtn.addEventListener('click', handleLogout);
     copyButton.addEventListener('click', handleCopyPrompt);
     
@@ -52,16 +65,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         console.log('Clique detectado em:', e.target);
         
+        // Não interceptar cliques em editores/inputs para permitir seleção de texto
+        if (e.target.matches('.prompt-editor, #memoryBlocks, #tools, input[type="text"], textarea') || 
+            e.target.closest('.prompt-editor, #memoryBlocks, #tools')) {
+            return; // Permitir comportamento padrão
+        }
+        
         // Procurar pelo elemento .history-item mais próximo
         const historyItem = e.target.closest('.history-item');
-        if (historyItem && historyItem.dataset.promptId) {
+        if (historyItem) {
             console.log('Clique em item do histórico detectado via delegação de eventos');
-            console.log('Prompt ID:', historyItem.dataset.promptId);
-            console.log('Versão:', historyItem.dataset.version);
+            console.log('Item dataset:', historyItem.dataset);
+            
+            // Evitar duplo processamento - itens unificados são processados pelo listener específico
+            if (historyItem.dataset.itemType === 'unified') {
+                return;
+            }
             
             e.preventDefault();
             e.stopPropagation();
-            selectPromptById(historyItem.dataset.promptId);
         }
     });
     
@@ -73,6 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             console.log('Iniciando carregamento de dados após tipos de agentes carregados');
             loadData();
+            // Garantir que a interface esteja corretamente exibida
+            checkPromptInterface();
         }, 100);
     });
     
@@ -84,6 +108,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.error('Elemento historyList não encontrado no DOM');
+    }
+    
+    // Verificar interface ao carregar a página
+    window.addEventListener('load', function() {
+        setTimeout(checkPromptInterface, 500);
+    });
+
+
+
+    // Listeners botões
+    if (resetAllButton) {
+        resetAllButton.addEventListener('click', handleResetAll);
+    }
+
+    if (deleteTestsBtn) {
+        deleteTestsBtn.addEventListener('click', handleDeleteTestAgents);
     }
 });
 
@@ -152,7 +192,7 @@ function handleLogin(e) {
     }
     
     // Testar token fazendo uma requisição de verificação
-    fetch('/api/v1/system-prompt/history?agent_type=agentic_search', {
+    fetch(`${API_BASE_URL}/api/v1/system-prompt/history?agent_type=agentic_search`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => {
@@ -186,7 +226,7 @@ function handleLogout() {
     location.reload();
 }
 
-function handleSavePrompt() {
+function handleSaveAll() {
     const agentType = agentTypeSelect.value;
     const newPrompt = promptText.value;
     
@@ -196,15 +236,27 @@ function handleSavePrompt() {
         return;
     }
     
+    // Validar JSON dos memory blocks
+    let memoryBlocksValue = memoryBlocksText.value.trim();
+    let memoryBlocksArray = [];
+    if (memoryBlocksValue) {
+        try {
+            memoryBlocksArray = JSON.parse(memoryBlocksValue);
+        } catch (e) {
+            showAlert('Memory blocks devem ser JSON válido.', 'danger');
+            return;
+        }
+    }
+    
     // Criar e mostrar modal de confirmação antes de salvar
-    const saveConfirmModal = createConfirmationModal();
+    const saveConfirmModal = createUnifiedConfirmationModal();
     document.body.appendChild(saveConfirmModal);
     
     // Obter referências aos elementos do modal
-    const modalElement = document.getElementById('saveConfirmModal');
-    const authorModalInput = document.getElementById('modalAuthorInput');
-    const reasonModalInput = document.getElementById('modalReasonInput');
-    const confirmSaveBtn = document.getElementById('confirmSaveBtn');
+    const modalElement = document.getElementById('saveUnifiedConfirmModal');
+    const authorModalInput = document.getElementById('modalAuthorUnifiedInput');
+    const reasonModalInput = document.getElementById('modalReasonUnifiedInput');
+    const confirmSaveBtn = document.getElementById('confirmSaveUnifiedBtn');
     
     // Sempre iniciar os campos vazios para forçar o preenchimento
     authorModalInput.value = '';
@@ -218,22 +270,18 @@ function handleSavePrompt() {
     confirmSaveBtn.addEventListener('click', function() {
         // Verificar se os campos obrigatórios foram preenchidos
         if (!authorModalInput.value.trim()) {
-            document.getElementById('authorModalFeedback').classList.remove('d-none');
+            document.getElementById('authorUnifiedModalFeedback').classList.remove('d-none');
             return;
         } else {
-            document.getElementById('authorModalFeedback').classList.add('d-none');
+            document.getElementById('authorUnifiedModalFeedback').classList.add('d-none');
         }
         
         if (!reasonModalInput.value.trim()) {
-            document.getElementById('reasonModalFeedback').classList.remove('d-none');
+            document.getElementById('reasonUnifiedModalFeedback').classList.remove('d-none');
             return;
         } else {
-            document.getElementById('reasonModalFeedback').classList.add('d-none');
+            document.getElementById('reasonUnifiedModalFeedback').classList.add('d-none');
         }
-        
-        // Atualizar os valores dos inputs principais com os valores do modal
-        authorInput.value = authorModalInput.value.trim();
-        reasonInput.value = reasonModalInput.value.trim();
         
         // Fechar o modal
         modal.hide();
@@ -242,49 +290,55 @@ function handleSavePrompt() {
         modalElement.addEventListener('hidden.bs.modal', function () {
             saveConfirmModal.remove();
             
-            // Continuar com o processo de salvamento
-            proceedWithSave(agentType, newPrompt, authorInput.value, reasonInput.value);
+            // Continuar com o processo de salvamento unificado
+            proceedWithUnifiedSave(
+                agentType, 
+                newPrompt, 
+                memoryBlocksArray, 
+                authorModalInput.value.trim(), 
+                reasonModalInput.value.trim()
+            );
         }, { once: true });
     });
 }
 
-function createConfirmationModal() {
+function createUnifiedConfirmationModal() {
     const modalDiv = document.createElement('div');
     modalDiv.className = 'modal fade';
-    modalDiv.id = 'saveConfirmModal';
+    modalDiv.id = 'saveUnifiedConfirmModal';
     modalDiv.tabIndex = '-1';
-    modalDiv.setAttribute('aria-labelledby', 'saveConfirmModalLabel');
+    modalDiv.setAttribute('aria-labelledby', 'saveUnifiedConfirmModalLabel');
     modalDiv.setAttribute('aria-hidden', 'true');
     
     modalDiv.innerHTML = `
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="saveConfirmModalLabel">Confirmar alterações</h5>
+                    <h5 class="modal-title" id="saveUnifiedConfirmModalLabel">Confirmar alterações unificadas</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Preencha as informações abaixo para salvar as alterações:</p>
+                    <p>Preencha as informações abaixo para salvar as alterações em <strong>System Prompt E Configurações</strong> como uma única versão:</p>
                     
                     <div class="mb-3">
-                        <label for="modalAuthorInput" class="form-label">Autor <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="modalAuthorInput" required>
-                        <div id="authorModalFeedback" class="invalid-feedback d-none">
+                        <label for="modalAuthorUnifiedInput" class="form-label">Autor <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalAuthorUnifiedInput" required>
+                        <div id="authorUnifiedModalFeedback" class="invalid-feedback d-none">
                             O nome do autor é obrigatório.
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="modalReasonInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="modalReasonInput" required>
-                        <div id="reasonModalFeedback" class="invalid-feedback d-none">
+                        <label for="modalReasonUnifiedInput" class="form-label">Motivo da Atualização <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modalReasonUnifiedInput" required>
+                        <div id="reasonUnifiedModalFeedback" class="invalid-feedback d-none">
                             O motivo da atualização é obrigatório.
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="confirmSaveBtn">Salvar alterações</button>
+                    <button type="button" class="btn btn-primary" id="confirmSaveUnifiedBtn">Salvar tudo junto</button>
                 </div>
             </div>
         </div>
@@ -293,34 +347,45 @@ function createConfirmationModal() {
     return modalDiv;
 }
 
-function proceedWithSave(agentType, newPrompt, author, reason) {
+function proceedWithUnifiedSave(agentType, newPrompt, memoryBlocksArray, author, reason) {
     showLoading();
     
-    const metadata = {
+    const updateAgents = updateAgentsCheckbox.checked;
+    
+    // Usar novo endpoint unificado para salvar tudo em uma única versão
+    const unifiedPayload = {
+        agent_type: agentType,
+        prompt_content: newPrompt,
+        memory_blocks: memoryBlocksArray,
+        tools: toolsInput.value.split(',').map(t => t.trim()).filter(Boolean),
+        model_name: modelNameInput.value.trim() || null,
+        embedding_name: embeddingNameInput.value.trim() || null,
+        update_agents: updateAgents,
         author: author,
         reason: reason
     };
     
-    const updateAgents = updateAgentsCheckbox.checked;
+    console.log('Salvando alterações unificadas com novo endpoint:', unifiedPayload);
     
-    // Criar payload
-    const payload = {
-        new_prompt: newPrompt,
-        agent_type: agentType,
-        update_agents: updateAgents,
-        metadata: metadata
-    };
-    
-    // Enviar requisição
-    apiRequest('POST', '/api/v1/system-prompt', payload)
+    apiRequest('POST', `${API_BASE_URL}/api/v1/unified-save`, unifiedPayload)
         .then(response => {
             hideLoading();
-            showAlert(response.message || 'Prompt atualizado com sucesso!');
+            console.log('Salvamento unificado concluído:', response);
+            
+            let message = `${response.version_display} salva com sucesso!`;
+            const alertType = response.success ? 'success' : 'warning';
+            
+            if (response.message && response.message !== 'Alterações salvas com sucesso') {
+                message = response.message;
+            }
+            
+            showAlert(message, alertType);
             loadData(); // Recarregar dados
         })
         .catch(error => {
             hideLoading();
-            showAlert(error.message || 'Erro ao atualizar prompt', 'danger');
+            console.error('Erro no salvamento unificado:', error);
+            showAlert('Erro ao salvar alterações: ' + (error.message || 'Erro desconhecido'), 'danger');
         });
 }
 
@@ -374,77 +439,52 @@ function showCopyFeedback() {
 
 // Funções de dados
 function loadData() {
+
     showLoading();
     const agentType = agentTypeSelect.value;
     
     // Resetar o estado de visualização de histórico
     isHistoryItemView = false;
-    authorInput.disabled = false;
-    reasonInput.disabled = false;
     
-    // Remover classe visual de visualização
-    authorInput.classList.remove('viewing-history');
-    reasonInput.classList.remove('viewing-history');
-    
-    // Limpar campos de autor e motivo ao iniciar
-    authorInput.value = '';
-    reasonInput.value = '';
-    
-    // Carregar dados em paralelo
+    // Carregar todos os dados em paralelo
     Promise.all([
-        // Carregar prompt atual (pode falhar se não existir)
-        apiRequest('GET', `/api/v1/system-prompt?agent_type=${agentType}`)
+        // Carregar prompt atual
+        apiRequest('GET', `${API_BASE_URL}/api/v1/system-prompt?agent_type=${agentType}`)
             .catch(error => {
-                // Se for erro de "não encontrado", retornamos um objeto vazio
                 if (error.message && error.message.includes('Nenhum system prompt encontrado')) {
-                    console.log('Nenhum prompt encontrado ainda, preparando para criar o primeiro');
                     return { prompt: '', is_new: true };
                 }
-                throw error; // Para outros erros, propagamos
+                throw error;
             }),
-        // Carregar histórico (pode estar vazio)
-        apiRequest('GET', `/api/v1/system-prompt/history?agent_type=${agentType}`)
+        // Carregar configuração atual
+        apiRequest('GET', `${API_BASE_URL}/api/v1/agent-config?agent_type=${agentType}`)
+            .catch(err => ({ memory_blocks: '', tools: [], model_name: '', embedding_name: '' })),
+        // Carregar histórico unificado (novo endpoint)
+        apiRequest('GET', `${API_BASE_URL}/api/v1/unified-history?agent_type=${agentType}&limit=50`)
             .catch(error => {
-                // Se falhar, retornamos lista vazia
-                console.warn('Erro ao carregar histórico:', error);
-                return { prompts: [] };
+                console.warn('Erro ao carregar histórico unificado:', error);
+                return { items: [] };
             })
     ])
-    .then(([currentData, historyData]) => {
-        // Log dos dados recebidos para depuração
-        console.log('Dados atuais:', currentData);
-        console.log('Dados do histórico:', historyData);
+    .then(([currentPromptData, currentConfigData, unifiedHistoryResponse]) => {
+        console.log('Dados carregados:', { currentPromptData, currentConfigData, unifiedHistoryResponse });
         
         // Preencher dados do prompt atual
-        promptText.value = currentData.prompt || '';
-        currentPromptId = currentData.prompt_id;
+        promptText.value = currentPromptData.prompt || '';
+        currentPromptId = currentPromptData.prompt_id;
         
-        // Metadados iniciais são mantidos vazios para forçar preenchimento ao salvar
-        // Os campos já foram limpos no início da função loadData
+        // Preencher dados da configuração atual
+        memoryBlocksText.value = JSON.stringify(currentConfigData.memory_blocks || [], null, 2);
+        toolsInput.value = (currentConfigData.tools || []).join(', ');
+        modelNameInput.value = currentConfigData.model_name || '';
+        embeddingNameInput.value = currentConfigData.embedding_name || '';
+        currentConfigId = currentConfigData.config_id;
         
-        // Se for um prompt novo, mostramos mensagem de orientação
-        if (currentData.is_new) {
-            showAlert('Nenhum prompt configurado para este tipo de agente. Adicione o texto do prompt e clique em Salvar para criar o primeiro.', 'info');
-        }
+        // Usar histórico unificado do backend
+        unifiedHistoryData = unifiedHistoryResponse.items || [];
         
-        // Armazenar prompt atual no promptsData para fácil acesso
-        if (currentData.prompt && currentData.prompt_id && !historyData.prompts.some(p => p.prompt_id === currentData.prompt_id)) {
-            // Adicionar o prompt atual ao array caso ainda não esteja lá
-            historyData.prompts.unshift({
-                prompt_id: currentData.prompt_id,
-                version: currentData.version || 1,
-                content: currentData.prompt,
-                is_active: true,
-                created_at: currentData.created_at || new Date().toISOString(),
-                metadata: {}
-            });
-        }
-        
-        // Salvar os dados dos prompts globalmente para acesso fácil
-        promptsData = historyData.prompts || [];
-        
-        // Limpar e preencher o histórico
-        renderHistory(promptsData);
+        // Renderizar histórico unificado
+        renderBackendUnifiedHistory(unifiedHistoryData);
         
         hideLoading();
     })
@@ -455,85 +495,89 @@ function loadData() {
     });
 }
 
-function renderHistory(prompts) {
+// Funções de histórico unificado removidas - agora usamos dados do backend
+
+// Função para renderizar o histórico unificado (dados do backend)
+function renderBackendUnifiedHistory(historyItems) {
     historyList.innerHTML = '';
     
-    if (prompts.length === 0) {
+    if (historyItems.length === 0) {
         historyList.innerHTML = '<div class="text-muted p-3">Nenhum histórico disponível</div>';
         return;
     }
     
-    prompts.forEach(prompt => {
-        const isActive = prompt.is_active;
-        const dateObj = new Date(prompt.created_at);
-        
-        // Ajustando para o fuso horário do Brasil (UTC-3)
+    historyItems.forEach(item => {
+        const dateObj = new Date(item.created_at);
         const brazilDate = new Date(dateObj);
         brazilDate.setHours(brazilDate.getHours() - 3);
         
-        // Formatando data usando a data já ajustada para UTC-3
-        const options = { 
+        const date = brazilDate.toLocaleDateString('pt-BR', {
             day: '2-digit', 
             month: '2-digit', 
-            year: 'numeric' 
-        };
-        const date = brazilDate.toLocaleDateString('pt-BR', options);
+            year: 'numeric'
+        });
         
-        // Obtendo horas e minutos da data já ajustada
-        const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
+        const timeStr = new Intl.DateTimeFormat('pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        });
+        }).format(brazilDate);
         
-        // E usamos para formatar a data
-        const timeStr = timeFormatter.format(brazilDate);
+        // Determinar se está ativo baseado nos dados do backend
+        const isActive = item.is_active;
         
-        // Obter texto para preview - tentamos diferentes propriedades
-        let previewText = '(Sem conteúdo)';
-        if (typeof prompt.content === 'string') {
-            previewText = prompt.content.replace(/\n/g, ' ').trim();
+        const historyItem = document.createElement('div');
+        historyItem.className = `history-item ${isActive ? 'active' : ''}`;
+        historyItem.dataset.itemId = item.version_id;
+        historyItem.dataset.itemType = 'unified';
+        historyItem.dataset.versionNumber = item.version_number;
+        
+        // Criar badges baseados no tipo de alteração
+        let badges = '';
+        if (item.change_type === 'both') {
+            badges = '<span class="badge bg-primary me-1">Prompt + Config</span>';
+        } else if (item.change_type === 'prompt') {
+            badges = '<span class="badge bg-primary me-1">System Prompt</span>';
+        } else if (item.change_type === 'config') {
+            badges = '<span class="badge bg-info me-1">Configurações</span>';
         }
         
-        const item = document.createElement('div');
-        item.className = `history-item ${prompt.prompt_id === currentPromptId ? 'active' : ''}`;
-        item.dataset.promptId = prompt.prompt_id;
-        item.dataset.version = prompt.version;
+        // Usar nomenclatura correta da versão
+        const versionDisplay = item.version_display || `eai-${new Date(item.created_at).toISOString().split('T')[0]}-v${item.version_number}`;
         
-        // Adaptando para corresponder ao layout visualizado na captura de tela
-        item.innerHTML = `
+        historyItem.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
-                <span class="history-version">v${prompt.version}</span>
+                <span class="history-version">
+                    <i class="bi bi-bookmark me-1 text-primary"></i>
+                    ${versionDisplay}
+                </span>
                 <span class="history-date">${date} ${timeStr}</span>
             </div>
             <div class="my-2">
-                ${isActive ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
-                ${prompt.metadata && prompt.metadata.author ? 
-                    `<span class="metadata-badge">Autor: ${prompt.metadata.author}</span>` : ''}
-                ${prompt.metadata && prompt.metadata.reason ? 
-                    `<span class="metadata-badge">${prompt.metadata.reason}</span>` : ''}
+                ${badges}
+                ${item.is_active ? '<span class="badge bg-success me-1">Ativo</span>' : ''}
+                ${item.author ? 
+                    `<span class="metadata-badge">Autor: ${item.author}</span>` : ''}
+                ${item.reason ? 
+                    `<span class="metadata-badge">${item.reason}</span>` : ''}
             </div>
-            <div class="history-preview" title="${previewText.length > 150 ? previewText.substring(0, 150) + '...' : previewText}">
-                ${previewText.substring(0, 100)}${previewText.length > 100 ? '...' : ''}
+            <div class="history-preview" title="${item.preview}">
+                ${item.preview}
             </div>
         `;
         
-        // Readicionando o listener de clique diretamente, além da delegação de eventos
-        item.addEventListener('click', function(e) {
-            console.log('Clique direto no item do histórico:', prompt.prompt_id);
-            selectPromptById(prompt.prompt_id);
+        // Adicionar listener de clique para carregar a versão unificada
+        historyItem.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            
+            selectBackendUnifiedVersion(item);
         });
         
-        historyList.appendChild(item);
+        historyList.appendChild(historyItem);
     });
     
-    // Adiciona uma verificação para debugging
-    console.log(`Renderizados ${prompts.length} itens no histórico`);
-    document.querySelectorAll('.history-item').forEach(item => {
-        console.log(`Item: v${item.dataset.version}, ID: ${item.dataset.promptId}`);
-    });
+    console.log(`Renderizados ${historyItems.length} itens no histórico unificado do backend`);
 }
 
 // Nova função completamente reescrita para selecionar por ID
@@ -548,7 +592,7 @@ function selectPromptById(promptId) {
     showLoading();
     
     // Usar o novo endpoint para buscar o prompt pelo ID
-    const url = `/api/v1/system-prompt/by-id/${promptId}`;
+    const url = `${API_BASE_URL}/api/v1/system-prompt/by-id/${promptId}`;
     console.log('Buscando conteúdo completo na URL:', url);
     
     // Fazer requisição diretamente, sem passar por funções intermediárias
@@ -573,12 +617,7 @@ function selectPromptById(promptId) {
         promptText.value = data.prompt || '';
         currentPromptId = promptId;
         
-        // Encontrar o prompt no array local para obter metadados adicionais (apenas para visualização)
-        const localPrompt = promptsData.find(p => p.prompt_id === promptId);
-        if (localPrompt && localPrompt.metadata) {
-            authorInput.value = localPrompt.metadata.author || '(Não informado)';
-            reasonInput.value = localPrompt.metadata.reason || '(Não informado)';
-        }
+        // Metadados são exibidos apenas no histórico, não nos campos de edição
         
         // Atualizar a classe ativa nos itens do histórico
         updateActiveHistoryItem(promptId);
@@ -595,10 +634,7 @@ function selectPromptById(promptId) {
             promptText.value = localPrompt.content;
             currentPromptId = promptId;
             
-            if (localPrompt.metadata) {
-                authorInput.value = localPrompt.metadata.author || '(Não informado)';
-                reasonInput.value = localPrompt.metadata.reason || '(Não informado)';
-            }
+            // Metadados são exibidos apenas no histórico
             
             updateActiveHistoryItem(promptId);
             showAlert('Usando dados locais do prompt (podem estar incompletos)', 'warning');
@@ -612,26 +648,15 @@ function selectPromptById(promptId) {
 
 // Função auxiliar para atualizar o item ativo no histórico
 function updateActiveHistoryItem(promptId) {
-    // Remover ativo de todos os itens
-    const items = historyList.querySelectorAll('.history-item');
-    items.forEach(item => item.classList.remove('active'));
+    // Atualizar o item ativo no histórico unificado
+    currentPromptId = promptId;
     
-    // Encontrar e marcar o novo item ativo
-    const activeItem = historyList.querySelector(`.history-item[data-prompt-id="${promptId}"]`);
-    if (activeItem) {
-        activeItem.classList.add('active');
-    }
+    // Re-renderizar o histórico para refletir o novo item ativo
+    unifiedHistoryData = createUnifiedHistory(promptsData, configsData);
+    renderUnifiedHistory(unifiedHistoryData);
     
     // Definir que estamos visualizando um item do histórico
     isHistoryItemView = true;
-    
-    // Desabilitar edição dos campos de autor e motivo quando estiver visualizando histórico
-    authorInput.disabled = true;
-    reasonInput.disabled = true;
-    
-    // Adicionar classe visual para facilitar a percepção de que está em modo de visualização
-    authorInput.classList.add('viewing-history');
-    reasonInput.classList.add('viewing-history');
 }
 
 // Helper para fazer requisições API
@@ -678,5 +703,170 @@ function apiRequest(method, url, data = null) {
             }
             
             return response.json();
+        });
+}
+
+// Função para garantir que a interface do prompt seja exibida corretamente
+function checkPromptInterface() {
+    const contentArea = document.getElementById('contentArea');
+    const promptSection = document.querySelector('.prompt-section');
+    
+    if (contentArea && promptSection) {
+        console.log("Verificando interface do prompt");
+        
+        // Verificar se o contentArea está visível
+        if (contentArea.classList.contains('d-none')) {
+            console.log("contentArea está oculto, removendo classe d-none");
+            contentArea.classList.remove('d-none');
+        }
+    } else {
+        console.error("Elementos da interface não encontrados");
+    }
+}
+
+// Verificar a interface quando os tipos de agentes forem carregados
+document.addEventListener('agentTypesReady', function() {
+    // Aguardar um momento para garantir que a interface seja carregada
+    setTimeout(checkPromptInterface, 1000);
+});
+
+// Verificar novamente quando a página for totalmente carregada
+window.addEventListener('load', function() {
+    setTimeout(checkPromptInterface, 1500);
+});
+
+
+
+
+
+// Função handleSaveConfig removida - agora usamos handleSaveAll
+
+// Funções createConfigConfirmationModal e proceedWithConfigSave removidas - agora usamos versões unificadas
+
+
+
+// Função selectConfigById removida - agora usamos selectUnifiedVersion
+
+function selectBackendUnifiedVersion(item) {
+    console.log('Selecionando versão unificada do backend:', item);
+    showLoading();
+    
+    // Usar o endpoint de detalhes de versão para obter dados completos
+    apiRequest('GET', `${API_BASE_URL}/api/v1/unified-history/version/${item.version_number}?agent_type=${agentTypeSelect.value}`)
+        .then(versionDetails => {
+            console.log('Detalhes da versão carregados:', versionDetails);
+            
+            // Preencher dados do prompt se existir
+            if (versionDetails.prompt) {
+                promptText.value = versionDetails.prompt.content || '';
+                currentPromptId = versionDetails.prompt.prompt_id;
+            } else {
+                promptText.value = '';
+                currentPromptId = null;
+            }
+            
+            // Preencher dados da configuração se existir
+            if (versionDetails.config) {
+                memoryBlocksText.value = JSON.stringify(versionDetails.config.memory_blocks || [], null, 2);
+                toolsInput.value = (versionDetails.config.tools || []).join(', ');
+                modelNameInput.value = versionDetails.config.model_name || '';
+                embeddingNameInput.value = versionDetails.config.embedding_name || '';
+                currentConfigId = versionDetails.config.config_id;
+            } else {
+                memoryBlocksText.value = '[]';
+                toolsInput.value = '';
+                modelNameInput.value = '';
+                embeddingNameInput.value = '';
+                currentConfigId = null;
+            }
+            
+            // Atualizar interface para mostrar que esta versão está selecionada
+            updateActiveBackendHistoryItem(item);
+            
+            // Definir que estamos visualizando um item do histórico
+            isHistoryItemView = true;
+            
+            hideLoading();
+            console.log('Versão unificada carregada com sucesso');
+        })
+        .catch(error => {
+            console.error('Erro ao carregar versão unificada:', error);
+            hideLoading();
+            showAlert('Erro ao carregar versão: ' + error.message, 'danger');
+        });
+}
+
+function updateActiveBackendHistoryItem(selectedItem) {
+    // Marcar o item selecionado como ativo no histórico
+    document.querySelectorAll('.history-item').forEach(item => {
+        if (item.dataset.versionNumber === selectedItem.version_number.toString()) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    // Definir que estamos visualizando um item do histórico
+    isHistoryItemView = true;
+}
+
+// ---------------------- RESET ALL ----------------------
+function handleResetAll() {
+    const agentType = agentTypeSelect.value;
+
+    if (!confirm('Tem certeza que deseja resetar COMPLETAMENTE o banco de dados para este tipo de agente? Esta ação removerá TODO o histórico e recriará versões padrão. Esta ação NÃO pode ser desfeita.')) {
+        return;
+    }
+
+    showLoading();
+
+    const updateAgents = updateAgentsCheckbox.checked;
+
+    // Usar o novo endpoint de reset unificado
+    apiRequest('DELETE', `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}&update_agents=${updateAgents}`)
+        .then(response => {
+            hideLoading();
+            console.log('Reset unificado concluído:', response);
+            
+            let message = response.message || 'Reset unificado concluído com sucesso!';
+            if (response.version_display) {
+                message = `Reset concluído! Nova versão ${response.version_display} criada.`;
+                if (response.message.includes('agentes foram atualizados')) {
+                    const agentInfo = response.message.split(',')[1];
+                    if (agentInfo) {
+                        message += ` ${agentInfo.trim()}`;
+                    }
+                }
+            }
+            const alertType = response.success ? 'success' : 'warning';
+            
+            showAlert(message, alertType);
+            
+            // Recarregar dados
+            loadData();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Erro no reset unificado:', error);
+            showAlert('Erro ao executar reset unificado: ' + (error.message || 'Erro desconhecido'), 'danger');
+        });
+}
+
+// ---------------------- DELETE TEST AGENTS ----------------------
+function handleDeleteTestAgents() {
+    if (!confirm('Remover TODOS os agentes com tag "test"?')) {
+        return;
+    }
+
+    showLoading();
+
+    apiRequest('DELETE', `${API_BASE_URL}/api/v1/agents/tests`)
+        .then(resp => {
+            hideLoading();
+            showAlert(resp.message || 'Agentes de teste removidos');
+        })
+        .catch(err => {
+            hideLoading();
+            showAlert(err.message || 'Erro ao remover agentes de teste', 'danger');
         });
 } 

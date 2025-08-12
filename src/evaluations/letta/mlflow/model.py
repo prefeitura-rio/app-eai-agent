@@ -15,7 +15,7 @@ mlflow.gemini.autolog()
 
 from src.evaluations.letta.agents.final_response import (
     CLARITY_LLM_JUDGE_PROMPT,
-    GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
+    GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
     GROUNDEDNESS_LLM_JUDGE_PROMPT,
     LOCATION_POLICY_COMPLIANCE_JUDGE_PROMPT,
     EMERGENCY_HANDLING_COMPLIANCE_JUDGE_PROMPT,
@@ -112,7 +112,7 @@ class Model:
             "whatsapp_formating",
             "answer_completness",
             "entity_presence",
-            "gold_standart",
+            "gold_standard",
             "groundness",
             "tool_calling",
             "search_query_effectiveness",
@@ -173,8 +173,8 @@ class Model:
                 "system_prompt": ENTITY_PRESENCE_LLM_JUDGE_PROMPT,
                 "prompt": prompt_basic,
             },
-            "gold_standart": {
-                "system_prompt": GOLD_STANDART_SIMILARITY_LLM_JUDGE_PROMPT,
+            "gold_standard": {
+                "system_prompt": GOLD_STANDARD_SIMILARITY_LLM_JUDGE_PROMPT,
                 "prompt": self.dedent(
                     f"""
                         Query: {query}

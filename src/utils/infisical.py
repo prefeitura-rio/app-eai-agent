@@ -2,7 +2,7 @@
 from os import getenv
 from typing import List, Dict
 from pathlib import Path
-from loguru import logger
+from src.utils.log import logger
 
 
 _env_cache: Dict[str, str] = {}

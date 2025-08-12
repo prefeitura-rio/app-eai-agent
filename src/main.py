@@ -5,9 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from loguru import logger
 import os
-import logging
 import sys
 
 from src.api import router as api_router
@@ -15,6 +13,10 @@ from src.admin import router as admin_router
 from src.core.middlewares.logging import LoggingMiddleware
 from src.core.middlewares.static_cache import NoCacheStaticFilesMiddleware
 from src.db import Base, engine
+from src.config import env
+import logging
+
+from src.utils.log import logger
 
 Base.metadata.create_all(bind=engine)
 
@@ -25,7 +27,26 @@ class InterceptHandler(logging.Handler):
         logger_opt.log(record.levelname, record.getMessage())
 
 
-logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG)
+
+for _log in ["uvicorn", "uvicorn.error", "fastapi"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.DEBUG)
+
+for _log in ["httpcore._trace", "httpx._client"]:
+    _logger = logging.getLogger(_log)
+    _logger.handlers = [InterceptHandler()]
+    _logger.propagate = False
+    _logger.setLevel(logging.DEBUG)
+
+_logger = logging.getLogger("src.services.letta")
+_logger.handlers = [InterceptHandler()]
+_logger.propagate = False
+_logger.setLevel(logging.DEBUG)
+
+# Configurar loguru
 logger.configure(
     handlers=[
         {
@@ -45,27 +66,21 @@ logger.configure(
     ]
 )
 
-for _log in ["uvicorn", "uvicorn.error", "fastapi"]:
-    _logger = logging.getLogger(_log)
-    _logger.handlers = [InterceptHandler()]
-    _logger.propagate = False
-    _logger.setLevel(logging.INFO)
-
-for _log in ["httpcore._trace", "httpx._client"]:
-    _logger = logging.getLogger(_log)
-    _logger.handlers = [InterceptHandler()]
-    _logger.propagate = False
-    _logger.setLevel(logging.WARNING)
-
-_logger = logging.getLogger("src.services.letta")
-_logger.handlers = [InterceptHandler()]
-_logger.propagate = False
-_logger.setLevel(logging.INFO)
 
 app = FastAPI(
     title="Agentic Search API",
     description="API que gerencia os fluxos e ferramentas dos agentes de IA da Prefeitura do Rio de Janeiro",
     version="0.1.0",
+    servers=[
+        {
+            "url": (
+                "http://localhost:8089"
+                if env.USE_LOCAL_API
+                else "https://services.staging.app.dados.rio/eai-agent"
+            ),
+            "description": "Staging",
+        }
+    ],
     docs_url=None,
     redoc_url=None,
 )

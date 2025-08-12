@@ -5,6 +5,7 @@ from loguru import logger
 
 from src.db import get_db_session
 from src.repositories.system_prompt_repository import SystemPromptRepository
+from src.repositories.unified_version_repository import UnifiedVersionRepository
 from src.services.letta.letta_service import letta_service
 from src.models.system_prompt_model import SystemPrompt, SystemPromptDeployment
 
@@ -222,13 +223,37 @@ class SystemPromptService:
         Returns:
             Dict: Resultado das operações atualizado
         """
-        prompt = SystemPromptRepository.create_prompt(
-            db=db,
-            agent_type=agent_type,
-            content=new_prompt,
-            metadata=metadata or {"source": "api"},
-        )
-        result["prompt_id"] = prompt.prompt_id
+        # Obter próximo número de versão do controle unificado
+        version_number = UnifiedVersionRepository.get_next_version_number(db, agent_type)
+        
+        logger.info(f"Criando system prompt para {agent_type} com versão unificada: {version_number}")
+        
+        try:
+            prompt = SystemPromptRepository.create_prompt(
+                db=db,
+                agent_type=agent_type,
+                content=new_prompt,
+                version=version_number,
+                metadata=metadata or {"source": "api"},
+            )
+            
+            # Registrar no controle de versões unificado
+            unified_version = UnifiedVersionRepository.create_version(
+                db=db,
+                agent_type=agent_type,
+                change_type="prompt",
+                prompt_id=prompt.prompt_id,
+                author=metadata.get("author") if metadata else None,
+                reason=metadata.get("reason") if metadata else None,
+                metadata=metadata,
+            )
+            
+            result["prompt_id"] = prompt.prompt_id
+            result["unified_version"] = unified_version.version_number
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar prompt com versão {version_number}: {str(e)}")
+            raise
 
         if update_agents:
             agents_result = await self.update_all_agents_system_prompt(
@@ -336,11 +361,16 @@ class SystemPromptService:
                 SystemPromptRepository.delete_deployments_by_prompt_ids(db, prompt_ids)
 
             SystemPromptRepository.delete_prompts_by_agent_type(db, agent_type)
+            
+            # Remover do controle de versões unificado também
+            UnifiedVersionRepository.delete_versions_by_agent_type(db, agent_type)
 
+            # Força commit da deleção antes de criar o novo prompt
             db.commit()
 
             default_prompt = self._get_default_prompt(agent_type)
 
+            # Para reset, sempre usar versão 1 - começamos do zero
             new_prompt = SystemPromptRepository.create_prompt(
                 db=db,
                 agent_type=agent_type,
@@ -348,6 +378,19 @@ class SystemPromptService:
                 version=1,
                 metadata={"author": "System", "reason": "Resetado automaticamente"},
             )
+            
+            # Registrar no controle de versões unificado
+            unified_version = UnifiedVersionRepository.create_version(
+                db=db,
+                agent_type=agent_type,
+                change_type="prompt",
+                prompt_id=new_prompt.prompt_id,
+                author="System",
+                reason="Resetado automaticamente",
+                metadata={"author": "System", "reason": "Resetado automaticamente"},
+            )
+            
+            result["unified_version"] = unified_version.version_number
 
             if update_agents:
                 agents_result = await self.update_all_agents_system_prompt(
