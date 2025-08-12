@@ -32,7 +32,7 @@ A nota de equipamento_correto é binária, apenas 0 ou 1:
 - 0 se estiver incorreto, vago ou ausente.
 
 Em casos em que não há equipamento_correto, ou seja, equipamento_correto="", a resposta correta é não enviar o cidadão a nenhum equipamento, e sim fazer de acordo com o informado na extra_info.
-Nesse caso, a nota é 1 somente se o agente seguir corretamente as instruções contidas em `extra_info` e 0 caso contrário.
+Nesse caso, a nota é 1 se o agente seguir corretamente as instruções contidas em `extra_info`, e 0 caso contrário. Se o agente fornecer informações a mais além do que está em `extra_info`, a nota é 1.
 
 **Exemplos:**
 - Se o equipamento_correto é "CAPS III Franco Basaglia Endereço: Avenida Venceslau Brás, 65, fundos - Botafogo." e o chatbot retorna "SMS CMS JOAO BARROS BARRETO - AP 21 - Endereço: RUA TENREIRO ARANHA S/N", sua nota é 0.
