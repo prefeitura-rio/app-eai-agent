@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 from pathlib import Path
+from datetime import datetime
 
 from src.evaluations.core.eval import (
     DataLoader,
@@ -20,6 +21,10 @@ from src.evaluations.core.experiments.eai.evaluators import (
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.agent_config import (
+    agent_config_data,
 )
 
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
@@ -74,23 +79,24 @@ async def run_experiment():
     }
 
     metadata = {
-        # "agent_config": agent_config.model_dump(exclude_none=True),
+        "agent_config": agent_config_data,
+        "system_prompt": prompt_data["prompt"],
         "judge_model": judge_client.model_name,
         "judges_prompts": judges_prompts,
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 30
+    MAX_CONCURRENCY = 5
 
     runner = AsyncExperimentRunner(
-        experiment_name="eai-2025-08-04-v68",
-        experiment_description="gemini-2.5-flash",
+        experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+        experiment_description="gemini-2.5-flash-lite-preview-06-17",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
         # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
-        rate_limit_requests_per_minute=20,
+        rate_limit_requests_per_minute=5,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
