@@ -11,15 +11,26 @@ from langchain_core.messages import BaseMessage
 
 
 async def get_checkpointer() -> PostgresSaver:
-    # Conexão direta TCP usando asyncpg (não chama SQL Admin API)
-    url = (
-        f"postgresql+asyncpg://{env.DATABASE_USER}:{env.DATABASE_PASSWORD}"
-        f"@{env.DB_HOST}:{env.DB_PORT}/{env.DATABASE}"
-    )
+    if env.PG_URI_GOOGLE_AGENT_ENGINE:
+        url = env.PG_URI_GOOGLE_AGENT_ENGINE
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    else:
+        url = (
+            f"postgresql+asyncpg://{env.DATABASE_USER}:{env.DATABASE_PASSWORD}"
+            f"@{env.DB_HOST}:{env.DB_PORT}/{env.DATABASE}"
+        )
+    connect_args = {}
+    if env.DB_SSL.lower() in ("false", "0", "no"):
+        connect_args = {"ssl": False}
+
     engine = PostgresEngine.from_engine_args(
         url=url,
         pool_pre_ping=True,
         pool_recycle=300,
+        connect_args=connect_args,
     )
     return await PostgresSaver.create(engine=engine)
 

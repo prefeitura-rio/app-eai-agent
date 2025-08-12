@@ -87,3 +87,6 @@ DATABASE_PASSWORD = getenv_or_action("DATABASE_PASSWORD")
 # Usado quando não queremos depender da SQL Admin API/Connector
 DB_HOST = getenv_or_action("DB_HOST")
 DB_PORT = getenv_or_action("DB_PORT", default="5432")
+DB_SSL = getenv_or_action("DB_SSL", default="true")
+
+PG_URI_GOOGLE_AGENT_ENGINE = getenv_or_action("PG_URI_GOOGLE_AGENT_ENGINE")
