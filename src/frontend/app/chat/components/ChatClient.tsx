@@ -533,7 +533,32 @@ export default function ChatClient() {
                         </div>
                       <div
                         className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${msg.message_type === 'user_message' ? 'text-primary-foreground' : ''}`}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content || '', { breaks: true }) as string) }}
+                        style={{
+                          '--tw-prose-pre-bg': 'rgb(31 41 55)',
+                          '--tw-prose-pre-code': 'rgb(209 213 219)',
+                        } as React.CSSProperties}
+                        dangerouslySetInnerHTML={{ 
+                          __html: (() => {
+                            const content = msg.content || '';
+                            const hasCodeBlock = content.includes('```');
+                            const parsed = marked.parse(content, { breaks: true }) as string;
+                            
+                            if (hasCodeBlock) {
+                              console.log('🔍 MARKDOWN DEBUG:');
+                              console.log('Has code block:', hasCodeBlock);
+                              console.log('Original (first 200 chars):', content.substring(0, 200));
+                              console.log('Parsed (first 500 chars):', parsed.substring(0, 500));
+                            }
+                            
+                            // Adicionar estilos inline para blocos de código
+                            const styledHTML = parsed.replace(
+                              /<pre><code class="language-json">/g,
+                              '<pre style="background-color: rgb(31, 41, 55); padding: 1rem; border-radius: 0.375rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"><code class="language-json" style="color: rgb(209, 213, 219); font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">'
+                            );
+                            
+                            return DOMPurify.sanitize(styledHTML);
+                          })()
+                        }}
                       />
                       <TooltipProvider>
                         <Tooltip>
@@ -725,7 +750,28 @@ export default function ChatClient() {
                     <div className="relative group">
                       <div
                         className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${msg.sender === 'user' ? 'text-primary-foreground' : ''}`}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: (() => {
+                            const content = msg.content;
+                            const hasCodeBlock = content.includes('```');
+                            const parsed = marked.parse(content, { breaks: true }) as string;
+                            
+                            if (hasCodeBlock) {
+                              console.log('🔍 CURRENT CHAT MARKDOWN DEBUG:');
+                              console.log('Has code block:', hasCodeBlock);
+                              console.log('Original (first 200 chars):', content.substring(0, 200));
+                              console.log('Parsed (first 500 chars):', parsed.substring(0, 500));
+                            }
+                            
+                            // Adicionar estilos inline para blocos de código
+                            const styledHTML = parsed.replace(
+                              /<pre><code class="language-json">/g,
+                              '<pre style="background-color: rgb(31, 41, 55); padding: 1rem; border-radius: 0.375rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"><code class="language-json" style="color: rgb(209, 213, 219); font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">'
+                            );
+                            
+                            return DOMPurify.sanitize(styledHTML);
+                          })()
+                        }}
                       />
                       <TooltipProvider>
                         <Tooltip>
