@@ -34,6 +34,10 @@ ISSUE_AGENT_ENABLE_SLEEPTIME = (
 )
 
 PG_URI = getenv_or_action("PG_URI")
+# --- Conexão direta (TCP) ao Postgres ---
+# Usado quando não queremos depender da SQL Admin API/Connector
+DB_SSL = getenv_or_action("DB_SSL", default="true")
+
 
 PHOENIX_HOST = getenv_or_action("PHOENIX_HOST")
 PHOENIX_PORT = getenv_or_action("PHOENIX_PORT")
@@ -73,20 +77,3 @@ EAI_GATEWAY_API_TOKEN = getenv_or_action("EAI_GATEWAY_API_TOKEN")
 
 MCP_SERVER_URL = getenv_or_action("MCP_SERVER_URL", action="ignore")
 MCP_API_TOKEN = getenv_or_action("MCP_API_TOKEN", action="ignore")
-
-# --- Cloud SQL (Postgres) via SQL Proxy ---
-# Necessário para o checkpointer LangGraph/LangChain no Cloud SQL
-PROJECT_ID = getenv_or_action("PROJECT_ID")
-LOCATION = getenv_or_action("LOCATION")
-INSTANCE = getenv_or_action("INSTANCE")
-DATABASE = getenv_or_action("DATABASE")
-DATABASE_USER = getenv_or_action("DATABASE_USER")
-DATABASE_PASSWORD = getenv_or_action("DATABASE_PASSWORD")
-
-# --- Conexão direta (TCP) ao Postgres ---
-# Usado quando não queremos depender da SQL Admin API/Connector
-DB_HOST = getenv_or_action("DB_HOST")
-DB_PORT = getenv_or_action("DB_PORT", default="5432")
-DB_SSL = getenv_or_action("DB_SSL", default="true")
-
-PG_URI_GOOGLE_AGENT_ENGINE = getenv_or_action("PG_URI_GOOGLE_AGENT_ENGINE")
