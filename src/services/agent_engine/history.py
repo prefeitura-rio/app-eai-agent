@@ -3,12 +3,11 @@ import asyncio
 
 from src.utils.log import logger
 from src.config import env
-from src.utils.format_messages_gateway import to_gateway_format
+from src.services.agent_engine.message_formatter import to_gateway_format
 
 from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import BaseMessage
-from langchain_core.load.dump import dumpd
 
 
 class GoogleAgentEngineHistory:
@@ -41,16 +40,6 @@ class GoogleAgentEngineHistory:
     async def get_checkpointer(self) -> PostgresSaver:
         return self._checkpointer
 
-    def serialize_message(self, message: BaseMessage) -> dict:
-        """Serializa mensagem usando dumpd do langchain para preservar todas as informações"""
-        raw = dumpd(message)
-
-        # Adicionar usage_metadata se existir no response_metadata
-        response_metadata = getattr(message, "response_metadata", None)
-        if response_metadata and "usage_metadata" in response_metadata:
-            raw["usage_metadata"] = response_metadata["usage_metadata"]
-
-        return raw
 
     async def _get_single_user_history(
         self,
@@ -67,8 +56,6 @@ class GoogleAgentEngineHistory:
 
         messages = state.get("channel_values", {}).get("messages", [])
         # logger.info(messages)
-
-        serialized = [self.serialize_message(msg) for msg in messages]
 
         letta_payload = to_gateway_format(
             messages=messages,
