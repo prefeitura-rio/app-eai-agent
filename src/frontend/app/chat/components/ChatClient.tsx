@@ -538,7 +538,6 @@ export default function ChatClient() {
                         dangerouslySetInnerHTML={{ 
                           __html: (() => {
                             const content = msg.content || '';
-                            const hasCodeBlock = content.includes('```');
                             const parsed = marked.parse(content, { breaks: true }) as string;
                             
                             // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
@@ -747,7 +746,6 @@ export default function ChatClient() {
                         dangerouslySetInnerHTML={{ 
                           __html: (() => {
                             const content = msg.content;
-                            const hasCodeBlock = content.includes('```');
                             const parsed = marked.parse(content, { breaks: true }) as string;
                             
                             // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
