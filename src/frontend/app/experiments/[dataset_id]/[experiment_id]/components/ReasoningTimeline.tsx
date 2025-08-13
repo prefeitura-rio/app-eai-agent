@@ -139,14 +139,28 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                     // Special handling for equipments_instructions
                                                     const toolReturn = obj.tool_return as {
                                                         tema?: string;
+                                                        next_tool_instructions?: string;
+                                                        next_too_instructions?: string;
                                                         instrucoes?: Array<{
                                                             tema?: string;
                                                             instrucoes?: string;
                                                         }>;
+                                                        categorias?: any;
                                                     };
                                                     
                                                     return (
                                                         <div className="space-y-4">
+                                                            {(toolReturn.next_tool_instructions || toolReturn.next_too_instructions) && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Próximas Instruções</h5>
+                                                                    <div className="pl-4">
+                                                                        <div
+                                                                            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(toolReturn.next_tool_instructions || toolReturn.next_too_instructions || '') as string) }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                             {toolReturn.tema && (
                                                                 <div className="space-y-1">
                                                                     <h5 className="font-medium text-sm capitalize text-muted-foreground">Tema</h5>
@@ -178,6 +192,16 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                                                 )}
                                                                             </div>
                                                                         ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {toolReturn.categorias && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Categorias</h5>
+                                                                    <div className="pl-4">
+                                                                        <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                            {JSON.stringify(toolReturn.categorias, null, 2)}
+                                                                        </pre>
                                                                     </div>
                                                                 </div>
                                                             )}
