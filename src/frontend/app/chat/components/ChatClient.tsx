@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryResponseData, HistoryMessage } from '../services/api';
+import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryMessage } from '../services/api';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -121,7 +121,7 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
           tema?: string;
           instrucoes?: string;
         }>;
-        categorias?: any;
+        categorias?: unknown;
       };
       
       return (
@@ -174,11 +174,11 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
             </div>
           )}
           
-          {toolReturnData.categorias && (
+          {Boolean(toolReturnData.categorias) && (
             <div className="space-y-1">
               <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Categorias</h5>
               <div className="pl-4">
-                <JsonViewer data={toolReturnData.categorias} />
+                <JsonViewer data={toolReturnData.categorias as object} />
               </div>
             </div>
           )}
@@ -216,11 +216,13 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
   }
 };
 
-const getStepIcon = (messageType: AgentMessage['message_type']) => {
+const getStepIcon = (messageType: AgentMessage['message_type'] | HistoryMessage['message_type']) => {
   switch (messageType) {
     case 'reasoning_message': return <Lightbulb className="h-4 w-4 text-yellow-500" />;
     case 'tool_call_message': return <Wrench className="h-4 w-4 text-blue-500" />;
     case 'tool_return_message': return <LogIn className="h-4 w-4 text-green-500" />;
+    case 'user_message': return <User className="h-4 w-4 text-blue-600" />;
+    case 'assistant_message': return <Bot className="h-4 w-4 text-green-600" />;
     default: return null;
   }
 };
@@ -495,11 +497,11 @@ export default function ChatClient() {
                 // Agrupar mensagens por sessão
                 const groupedBySessions = uniqueSessionIds.map(sessionId => ({
                   sessionId,
-                  sessionNumber: sessionIdToNumber[sessionId],
+                  sessionNumber: sessionIdToNumber[sessionId || ''],
                   messages: conversationMessages.filter(msg => msg.session_id === sessionId)
                 }));
 
-                return groupedBySessions.map((session, sessionIndex) => (
+                return groupedBySessions.map((session) => (
                   <div key={`session-${session.sessionId}`}>
                     {/* Separador da Sessão */}
                     <div className="flex items-center gap-4 py-4">
@@ -521,7 +523,7 @@ export default function ChatClient() {
                         <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
                           <History className="h-3 w-3" />
                           <span className="text-xs font-mono">
-                            Sessão {sessionIdToNumber[msg.session_id]} • {new Date(msg.date).toLocaleDateString('pt-BR')} {new Date(msg.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            Sessão {sessionIdToNumber[msg.session_id || '']} • {new Date(msg.date).toLocaleDateString('pt-BR')} {new Date(msg.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </span>
                           {msg.time_since_last_message && (
                             <span className="text-xs text-muted-foreground">
@@ -599,7 +601,6 @@ export default function ChatClient() {
                                 
                                 // Extrair todas as mensagens da interação
                                 const interactionMessages = historyMessages.slice(interactionStart, interactionEnd + 1);
-                                const userMessage = interactionMessages[0]; // Primeira é sempre user_message
                                 
                                 // Filtrar apenas os steps (não user e não assistant final)
                                 const interactionSteps = interactionMessages.filter(step => 

@@ -145,7 +145,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                             tema?: string;
                                                             instrucoes?: string;
                                                         }>;
-                                                        categorias?: any;
+                                                        categorias?: unknown;
                                                     };
                                                     
                                                     return (
@@ -195,7 +195,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {toolReturn.categorias && (
+                                                            {Boolean(toolReturn.categorias) && (
                                                                 <div className="space-y-1">
                                                                     <h5 className="font-medium text-sm capitalize text-muted-foreground">Categorias</h5>
                                                                     <div className="pl-4">

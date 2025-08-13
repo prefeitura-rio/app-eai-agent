@@ -71,19 +71,19 @@ export interface HistoryMessage {
   model_name?: string | null;
   finish_reason?: string | null;
   avg_logprobs?: number | null;
-  usage_metadata?: any;
+  usage_metadata?: Record<string, unknown>;
   // Campos específicos para tool_return_message
   status?: string;
   tool_call_id?: string;
-  stdout?: any;
-  stderr?: any;
+  stdout?: unknown;
+  stderr?: unknown;
   // Campos específicos para usage_statistics
   completion_tokens?: number;
   prompt_tokens?: number;
   total_tokens?: number;
   step_count?: number;
-  steps_messages?: any;
-  run_ids?: any;
+  steps_messages?: unknown;
+  run_ids?: unknown;
   agent_id?: string;
   processed_at?: string;
   model_names?: string[];
