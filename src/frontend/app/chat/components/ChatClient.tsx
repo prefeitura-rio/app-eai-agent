@@ -550,10 +550,13 @@ export default function ChatClient() {
                               console.log('Parsed (first 500 chars):', parsed.substring(0, 500));
                             }
                             
-                            // Adicionar estilos inline para blocos de código
+                            // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
+                            const isUserMessage = msg.message_type === 'user_message';
+                            const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
+                            
                             const styledHTML = parsed.replace(
                               /<pre><code class="language-json">/g,
-                              '<pre style="background-color: rgb(31, 41, 55); padding: 1rem; border-radius: 0.375rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"><code class="language-json" style="color: rgb(209, 213, 219); font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">'
+                              `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
                             );
                             
                             return DOMPurify.sanitize(styledHTML);
@@ -763,10 +766,13 @@ export default function ChatClient() {
                               console.log('Parsed (first 500 chars):', parsed.substring(0, 500));
                             }
                             
-                            // Adicionar estilos inline para blocos de código
+                            // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
+                            const isUserMessage = msg.sender === 'user';
+                            const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
+                            
                             const styledHTML = parsed.replace(
                               /<pre><code class="language-json">/g,
-                              '<pre style="background-color: rgb(31, 41, 55); padding: 1rem; border-radius: 0.375rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"><code class="language-json" style="color: rgb(209, 213, 219); font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">'
+                              `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
                             );
                             
                             return DOMPurify.sanitize(styledHTML);
