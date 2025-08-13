@@ -116,7 +116,7 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
           <CardHeader className="flex-shrink-0">
             <CardTitle>Runs ({filteredRuns.length})</CardTitle>
           </CardHeader>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 max-h-96 overflow-y-auto">
             <Filters runs={experimentData.runs} onFilterChange={handleFilterChange} />
           </div>
           <CardContent className="flex-1 overflow-y-auto p-2 min-h-0">

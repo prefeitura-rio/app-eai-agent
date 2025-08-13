@@ -77,3 +77,11 @@ EAI_GATEWAY_API_TOKEN = getenv_or_action("EAI_GATEWAY_API_TOKEN")
 
 MCP_SERVER_URL = getenv_or_action("MCP_SERVER_URL", action="ignore")
 MCP_API_TOKEN = getenv_or_action("MCP_API_TOKEN", action="ignore")
+
+
+CIDADAO_ISSUER = getenv_or_action("CIDADAO_ISSUER", action="ignore")
+CIDADAO_CLIENT_ID = getenv_or_action("CIDADAO_CLIENT_ID", action="ignore")
+CIDADAO_CLIENT_SECRET = getenv_or_action("CIDADAO_CLIENT_SECRET", action="ignore")
+CIDADAO_GROUP_NAME = getenv_or_action("CIDADAO_GROUP_NAME", action="ignore")
+CIDADAO_API_BASE_URL = getenv_or_action("CIDADAO_API_BASE_URL", action="ignore")
+CIDADAO_GOOGLE_SHEET = getenv_or_action("CIDADAO_GOOGLE_SHEET", action="ignore")
