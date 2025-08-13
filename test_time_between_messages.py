@@ -78,34 +78,38 @@ test_messages = [
     }
 ]
 
-print("=== Teste: Tempo entre mensagens ===")
+print("=== Teste: Tempo entre mensagens com Session ID ===")
 result = to_letta(test_messages, "test_thread_id", session_timeout_seconds=3600)
 
 for i, msg in enumerate(result["data"]["messages"]):
     if msg.get("message_type") != "usage_statistics":
         time_diff = msg.get("time_since_last_message")
-        content = msg.get("content", "")[:50]
+        content = msg.get("content", "")[:40]
+        session_id = msg.get("session_id")
         
         print(f"Msg {i+1}: {msg.get('message_type')}")
         print(f"  Conteúdo: {content}...")
-        print(f"  Timestamp: {msg.get('date')}")
-        print(f"  Tempo desde última msg: {time_diff} segundos")
-        print(f"  Session ID: {msg.get('session_id')}")
+        print(f"  Tempo desde última: {time_diff} seg")
+        print(f"  Session ID: {session_id}")
         print("---")
 
-print("\n=== Verificação dos tempos calculados ===")
-print("✅ Msg 1: time_since_last_message = None (primeira mensagem)")
-print("✅ Msg 2: time_since_last_message ≈ 2.247 segundos")
-print("✅ Msg 3: time_since_last_message ≈ 472.47 segundos (7min 52s)")
-print("✅ Msg 4: time_since_last_message ≈ 3.76 segundos")
-print("✅ Msg 5: time_since_last_message ≈ 7260 segundos (2h 1min)")
+print("\n=== Análise das sessões ===")
+print("Com timeout de 3600s (1 hora):")
+print("- Msgs 1-4: Mesma sessão (intervalos < 1h)")
+print("- Msg 5: Nova sessão (2h > 1h)")
 
-print("\n=== Teste: API mode (session_timeout_seconds=None) ===")
-result_api = to_letta(test_messages, "test_thread_id", session_timeout_seconds=None)
+print("\n=== Teste: Timeout menor (30 min) ===")
+result_30min = to_letta(test_messages, "test_thread_id", session_timeout_seconds=1800)
 
-for i, msg in enumerate(result_api["data"]["messages"]):
+sessions = {}
+for i, msg in enumerate(result_30min["data"]["messages"]):
     if msg.get("message_type") != "usage_statistics":
+        session_id = msg.get("session_id")
         time_diff = msg.get("time_since_last_message")
-        content = msg.get("content", "")[:50]
-        
-        print(f"API Msg {i+1}: time_diff={time_diff}s, session_id={msg.get('session_id')}")
+        if session_id not in sessions:
+            sessions[session_id] = []
+        sessions[session_id].append(f"Msg{i+1}({time_diff}s)")
+
+print(f"Sessões encontradas: {len(sessions)}")
+for session_id, msgs in sessions.items():
+    print(f"  {session_id}: {msgs}")

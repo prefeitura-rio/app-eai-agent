@@ -3,7 +3,7 @@ import asyncio
 
 from src.utils.log import logger
 from src.config import env
-from src.utils.letta_format_messages import to_letta
+from src.utils.gateway_format_messages import to_gateway
 
 from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine
 from langchain_core.runnables import RunnableConfig
@@ -59,7 +59,7 @@ class GoogleAgentEngineHistory:
         session_timeout_seconds: Optional[int] = 3600,
     ) -> dict:
         """Método para formatação de mensagens no formato Letta"""
-        return to_letta(
+        return to_gateway(
             messages=messages,
             thread_id=agent_id,
             session_timeout_seconds=session_timeout_seconds,

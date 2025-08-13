@@ -6,7 +6,7 @@ import hashlib
 from src.utils.md_to_wpp import markdown_to_whatsapp
 
 
-def to_letta(
+def to_gateway(
     messages: List[dict],
     thread_id: str | None = None,
     session_timeout_seconds: Optional[int] = None,
@@ -32,7 +32,6 @@ def to_letta(
     # Controle de sessão - baseado na primeira mensagem de cada sessão
     current_session_id = None
     current_session_start_time = None
-    last_message_time = None
     last_message_timestamp = None
 
     def generate_deterministic_session_id(timestamp_str, thread_id=None):
@@ -44,19 +43,12 @@ def to_letta(
         # Usar os primeiros 8 caracteres para formar um ID mais curto
         return f"{hash_hex[:16]}"
 
-    def should_create_new_session(current_time, last_time, timeout_seconds):
-        """Determina se deve criar uma nova sessão baseado no tempo"""
-        if last_time is None or timeout_seconds is None:
+    def should_create_new_session(time_since_last_message, timeout_seconds):
+        """Determina se deve criar uma nova sessão baseado no tempo desde a última mensagem"""
+        if time_since_last_message is None or timeout_seconds is None:
             return False
 
-        current_dt = parse_timestamp(current_time)
-        last_dt = parse_timestamp(last_time)
-
-        if current_dt is None or last_dt is None:
-            return False
-
-        time_diff = (current_dt - last_dt).total_seconds()
-        return time_diff > timeout_seconds
+        return time_since_last_message > timeout_seconds
 
     def now_utc():
         return datetime.now(timezone.utc).isoformat()
@@ -83,21 +75,6 @@ def to_letta(
         additional_kwargs = kwargs.get("additional_kwargs", {})
         message_timestamp = additional_kwargs.get("timestamp", None)
 
-        # Verificar se deve gerar session_id (só se timeout não for None)
-        if session_timeout_seconds is None:
-            # Para API: session_id sempre None
-            current_session_id = None
-        else:
-            # Para histórico completo: verificar se deve criar nova sessão
-            if current_session_id is None or should_create_new_session(
-                message_timestamp, last_message_time, session_timeout_seconds
-            ):
-                # Nova sessão: usar o timestamp atual como base para gerar o ID determinístico
-                current_session_start_time = message_timestamp or now_utc()
-                current_session_id = generate_deterministic_session_id(
-                    current_session_start_time, thread_id
-                )
-
         # Calcular tempo entre mensagens em segundos
         time_since_last_message = None
         if message_timestamp and last_message_timestamp:
@@ -106,9 +83,23 @@ def to_letta(
             if current_dt and last_dt:
                 time_since_last_message = (current_dt - last_dt).total_seconds()
 
+        # Verificar se deve gerar session_id (só se timeout não for None)
+        if session_timeout_seconds is None:
+            # Para API: session_id sempre None
+            current_session_id = None
+        else:
+            # Para histórico completo: verificar se deve criar nova sessão
+            if current_session_id is None or should_create_new_session(
+                time_since_last_message, session_timeout_seconds
+            ):
+                # Nova sessão: usar o timestamp atual como base para gerar o ID determinístico
+                current_session_start_time = message_timestamp
+                current_session_id = generate_deterministic_session_id(
+                    current_session_start_time, thread_id
+                )
+
         # Atualizar o último timestamp de mensagem
         if message_timestamp:
-            last_message_time = message_timestamp
             last_message_timestamp = message_timestamp
 
         # Determinar metadados baseado no tipo de mensagem
