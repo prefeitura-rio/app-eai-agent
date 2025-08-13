@@ -3,7 +3,7 @@ import asyncio
 
 from src.utils.log import logger
 from src.config import env
-from src.utils.gateway_format_messages import to_gateway
+from src.utils.format_messages_gateway import to_gateway_format
 
 from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine
 from langchain_core.runnables import RunnableConfig
@@ -52,21 +52,11 @@ class GoogleAgentEngineHistory:
 
         return raw
 
-    def message_formatter(
-        self,
-        messages: List[dict],
-        agent_id: str,
-        session_timeout_seconds: Optional[int] = 3600,
-    ) -> dict:
-        """Método para formatação de mensagens no formato Letta"""
-        return to_gateway(
-            messages=messages,
-            thread_id=agent_id,
-            session_timeout_seconds=session_timeout_seconds,
-        )
-
     async def _get_single_user_history(
-        self, user_id: str, session_timeout_seconds: Optional[int] = 3600
+        self,
+        user_id: str,
+        session_timeout_seconds: Optional[int] = 3600,
+        use_whatsapp_format: bool = True,
     ) -> tuple[str, list]:
         """Método auxiliar para processar histórico de um único usuário"""
         config = RunnableConfig(configurable={"thread_id": user_id})
@@ -80,19 +70,27 @@ class GoogleAgentEngineHistory:
 
         serialized = [self.serialize_message(msg) for msg in messages]
 
-        letta_payload = self.message_formatter(
-            serialized, user_id, session_timeout_seconds=session_timeout_seconds
+        letta_payload = to_gateway_format(
+            messages=messages,
+            thread_id=user_id,
+            session_timeout_seconds=session_timeout_seconds,
+            use_whatsapp_format=use_whatsapp_format,
         )
 
         return user_id, letta_payload.get("data", {}).get("messages", [])
 
     async def get_history_bulk(
-        self, user_ids: List[str], session_timeout_seconds: Optional[int] = 3600
+        self,
+        user_ids: List[str],
+        session_timeout_seconds: Optional[int] = 3600,
+        use_whatsapp_format: bool = True,
     ) -> Dict[str, list]:
         """Método otimizado com async concorrente para buscar histórico de múltiplos usuários"""
         tasks = [
             self._get_single_user_history(
-                user_id=user_id, session_timeout_seconds=session_timeout_seconds
+                user_id=user_id,
+                session_timeout_seconds=session_timeout_seconds,
+                use_whatsapp_format=use_whatsapp_format,
             )
             for user_id in user_ids
         ]

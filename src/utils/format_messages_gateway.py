@@ -6,22 +6,24 @@ import hashlib
 from src.utils.md_to_wpp import markdown_to_whatsapp
 
 
-def to_gateway(
+def to_gateway_format(
     messages: List[dict],
     thread_id: str | None = None,
     session_timeout_seconds: Optional[int] = None,
+    use_whatsapp_format: bool = True,
 ) -> dict:
     """
-    Converte uma lista de mensagens para o formato Letta.
+    Converte uma lista de mensagens para o formato Gateway.
 
     Args:
         messages: Lista de mensagens serializadas
         thread_id: ID do thread/agente (opcional)
         session_timeout_seconds: Tempo limite em segundos para nova sessão (padrão: 3600 = 1 hora)
                                 Se for None, todos os session_id serão None (para uso em API)
+        use_whatsapp_format: Define se deve usar o markdown_to_whatsapp (opcional)
 
     Returns:
-        Dict no formato Letta com status, data, mensagens e estatísticas de uso
+        Dict no formato Gateway com status, data, mensagens e estatísticas de uso
     """
     serialized_messages: List[dict] = []
     current_step_id = f"step-{uuid.uuid4()}"
@@ -255,7 +257,11 @@ def to_gateway(
                         "sender_id": None,
                         "step_id": current_step_id,
                         "is_err": None,
-                        "content": markdown_to_whatsapp(text=content),
+                        "content": (
+                            markdown_to_whatsapp(content)
+                            if use_whatsapp_format
+                            else content
+                        ),
                         "model_name": model_name,
                         "finish_reason": finish_reason,
                         "avg_logprobs": avg_logprobs,
