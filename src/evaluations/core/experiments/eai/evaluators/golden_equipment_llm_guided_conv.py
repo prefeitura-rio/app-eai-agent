@@ -52,13 +52,19 @@ Siga o objetivo que está no seu roteiro, considerando os detalhes que estão ne
 4.  **FINALIZE A CONVERSA CORRETAMENTE:**
     *   Se o seu problema foi resolvido (você conseguiu a informação que precisava) envie o sinal `{stop_signal}` para terminar a avaliação. Não continue enviando o sinal repetidamente.
 
+
+### REGRA MÁXIMA IMPORTANTE ###
+
+# **SIGA AS INSTRUÇÕES DO AGENTE:**
+    *   Se o agente de atendimento virtual te der uma instrução ou endereço que atenda ao seu objetivo, retorne que vai seguir a instrução.
+    *   **NÃO QUESTIONE** o resultado dado pelo agente. Se ele te deu uma instrução ou endereço que atende ao seu objetivo, mande o sinal `{stop_signal}`.
+
 **Sua Próxima Fala ou Sinal de Parada:**
 """
 
     def get_judge_prompt(self, task: EvaluationTask, history: List[str]) -> str:
         """
-        Implementa a lógica para formatar o prompt que guia o juiz
-        com base no roteiro do Batman.
+        Gera o prompt para o juiz com base na tarefa e no histórico da conversa.
         """
         history_str = "\n".join(history)
         task_dict = task.model_dump(exclude_none=True)
