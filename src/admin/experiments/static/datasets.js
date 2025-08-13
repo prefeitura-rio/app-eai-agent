@@ -27,8 +27,6 @@ const themeIcon = document.getElementById("themeIcon");
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM carregado - Inicializando aplicação de datasets");
-
   // Inicializar tema
   initializeTheme();
 
@@ -89,7 +87,6 @@ async function loadDatasets() {
   clearAlerts();
 
   try {
-    console.log("Carregando datasets...");
     const response = await axios.get(
       `${API_BASE_URL}/admin/experiments/data`,
       {
@@ -220,7 +217,6 @@ function createDatasetRow(dataset) {
 }
 
 function viewDatasetExperiments(datasetId) {
-  console.log("Navegando para experimentos do dataset:", datasetId);
   window.location.href = `/eai-agent/admin/experiments/${datasetId}`;
 }
 

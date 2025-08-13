@@ -43,7 +43,6 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
     const data = typeof toolReturn === 'string' ? JSON.parse(toolReturn) : toolReturn;
     
     // Debug log para verificar a estrutura
-    console.log('ToolReturnViewer Debug:', { toolName, data, keys: Object.keys(data || {}) });
     
     if (typeof data !== 'object' || data === null) {
       return <p className="p-2 bg-muted/50 rounded-md text-base-custom whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
@@ -264,7 +263,6 @@ const retryWithBackoff = async <T,>(
       
       // Calcula delay com backoff exponencial
       const delay = baseDelay * Math.pow(2, attempt);
-      console.log(`Tentativa ${attempt + 1} falhou. Tentando novamente em ${delay}ms...`);
       
       // Notifica sobre o retry se callback fornecido
       if (onRetry) {
@@ -543,13 +541,6 @@ export default function ChatClient() {
                             const hasCodeBlock = content.includes('```');
                             const parsed = marked.parse(content, { breaks: true }) as string;
                             
-                            if (hasCodeBlock) {
-                              console.log('🔍 MARKDOWN DEBUG:');
-                              console.log('Has code block:', hasCodeBlock);
-                              console.log('Original (first 200 chars):', content.substring(0, 200));
-                              console.log('Parsed (first 500 chars):', parsed.substring(0, 500));
-                            }
-                            
                             // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
                             const isUserMessage = msg.message_type === 'user_message';
                             const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
@@ -758,13 +749,6 @@ export default function ChatClient() {
                             const content = msg.content;
                             const hasCodeBlock = content.includes('```');
                             const parsed = marked.parse(content, { breaks: true }) as string;
-                            
-                            if (hasCodeBlock) {
-                              console.log('🔍 CURRENT CHAT MARKDOWN DEBUG:');
-                              console.log('Has code block:', hasCodeBlock);
-                              console.log('Original (first 200 chars):', content.substring(0, 200));
-                              console.log('Parsed (first 500 chars):', parsed.substring(0, 500));
-                            }
                             
                             // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
                             const isUserMessage = msg.sender === 'user';
