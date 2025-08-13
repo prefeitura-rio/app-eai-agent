@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 import asyncio
 
 from src.utils.log import logger
@@ -52,11 +52,22 @@ class GoogleAgentEngineHistory:
 
         return raw
 
-    def message_formatter(self, messages: List[dict], agent_id: str) -> dict:
+    def message_formatter(
+        self,
+        messages: List[dict],
+        agent_id: str,
+        session_timeout_seconds: Optional[int] = 3600,
+    ) -> dict:
         """Método para formatação de mensagens no formato Letta"""
-        return to_letta(messages, agent_id)
+        return to_letta(
+            messages=messages,
+            thread_id=agent_id,
+            session_timeout_seconds=session_timeout_seconds,
+        )
 
-    async def _get_single_user_history(self, user_id: str) -> tuple[str, list]:
+    async def _get_single_user_history(
+        self, user_id: str, session_timeout_seconds: Optional[int] = 3600
+    ) -> tuple[str, list]:
         """Método auxiliar para processar histórico de um único usuário"""
         config = RunnableConfig(configurable={"thread_id": user_id})
 
@@ -69,13 +80,22 @@ class GoogleAgentEngineHistory:
 
         serialized = [self.serialize_message(msg) for msg in messages]
 
-        letta_payload = self.message_formatter(serialized, user_id)
+        letta_payload = self.message_formatter(
+            serialized, user_id, session_timeout_seconds=session_timeout_seconds
+        )
 
         return user_id, letta_payload.get("data", {}).get("messages", [])
 
-    async def get_history_bulk(self, user_ids: List[str]) -> Dict[str, list]:
+    async def get_history_bulk(
+        self, user_ids: List[str], session_timeout_seconds: Optional[int] = 3600
+    ) -> Dict[str, list]:
         """Método otimizado com async concorrente para buscar histórico de múltiplos usuários"""
-        tasks = [self._get_single_user_history(user_id) for user_id in user_ids]
+        tasks = [
+            self._get_single_user_history(
+                user_id=user_id, session_timeout_seconds=session_timeout_seconds
+            )
+            for user_id in user_ids
+        ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         result = {}

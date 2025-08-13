@@ -1,17 +1,24 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone
 import uuid
 import json
+import hashlib
 from src.utils.md_to_wpp import markdown_to_whatsapp
 
 
-def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
+def to_letta(
+    messages: List[dict],
+    thread_id: str | None = None,
+    session_timeout_seconds: Optional[int] = None,
+) -> dict:
     """
     Converte uma lista de mensagens para o formato Letta.
 
     Args:
         messages: Lista de mensagens serializadas
         thread_id: ID do thread/agente (opcional)
+        session_timeout_seconds: Tempo limite em segundos para nova sessão (padrão: 3600 = 1 hora)
+                                Se for None, todos os session_id serão None (para uso em API)
 
     Returns:
         Dict no formato Letta com status, data, mensagens e estatísticas de uso
@@ -22,8 +29,49 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
     # Mapeamento de tool_call_id para nome da ferramenta
     tool_call_to_name = {}
 
+    # Controle de sessão - baseado na primeira mensagem de cada sessão
+    current_session_id = None
+    current_session_start_time = None
+    last_message_time = None
+    last_message_timestamp = None
+
+    def generate_deterministic_session_id(timestamp_str, thread_id=None):
+        """Gera um session_id determinístico baseado no timestamp e thread_id"""
+        # Usar timestamp + thread_id como base para o hash
+        base_string = f"{timestamp_str}_{thread_id}"
+        hash_object = hashlib.md5(base_string.encode())
+        hash_hex = hash_object.hexdigest()
+        # Usar os primeiros 8 caracteres para formar um ID mais curto
+        return f"{hash_hex[:16]}"
+
+    def should_create_new_session(current_time, last_time, timeout_seconds):
+        """Determina se deve criar uma nova sessão baseado no tempo"""
+        if last_time is None or timeout_seconds is None:
+            return False
+
+        current_dt = parse_timestamp(current_time)
+        last_dt = parse_timestamp(last_time)
+
+        if current_dt is None or last_dt is None:
+            return False
+
+        time_diff = (current_dt - last_dt).total_seconds()
+        return time_diff > timeout_seconds
+
     def now_utc():
-        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S+00:00")
+        return datetime.now(timezone.utc).isoformat()
+
+    def parse_timestamp(timestamp_str):
+        """Converte string de timestamp para datetime object"""
+        if not timestamp_str:
+            return None
+        try:
+            # Remove 'Z' se presente e substitui por '+00:00'
+            if timestamp_str.endswith("Z"):
+                timestamp_str = timestamp_str[:-1] + "+00:00"
+            return datetime.fromisoformat(timestamp_str)
+        except:
+            return None
 
     for msg in messages:
         # Extrair dados do formato dumpd do langchain
@@ -31,10 +79,42 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
         msg_type = kwargs.get("type")
         original_id = kwargs.get("id").replace("run--", "")
 
+        # Extrair timestamp do additional_kwargs se disponível
+        additional_kwargs = kwargs.get("additional_kwargs", {})
+        message_timestamp = additional_kwargs.get("timestamp", None)
+
+        # Verificar se deve gerar session_id (só se timeout não for None)
+        if session_timeout_seconds is None:
+            # Para API: session_id sempre None
+            current_session_id = None
+        else:
+            # Para histórico completo: verificar se deve criar nova sessão
+            if current_session_id is None or should_create_new_session(
+                message_timestamp, last_message_time, session_timeout_seconds
+            ):
+                # Nova sessão: usar o timestamp atual como base para gerar o ID determinístico
+                current_session_start_time = message_timestamp or now_utc()
+                current_session_id = generate_deterministic_session_id(
+                    current_session_start_time, thread_id
+                )
+
+        # Calcular tempo entre mensagens em segundos
+        time_since_last_message = None
+        if message_timestamp and last_message_timestamp:
+            current_dt = parse_timestamp(message_timestamp)
+            last_dt = parse_timestamp(last_message_timestamp)
+            if current_dt and last_dt:
+                time_since_last_message = (current_dt - last_dt).total_seconds()
+
+        # Atualizar o último timestamp de mensagem
+        if message_timestamp:
+            last_message_time = message_timestamp
+            last_message_timestamp = message_timestamp
+
         # Determinar metadados baseado no tipo de mensagem
         response_metadata = kwargs.get("response_metadata", {})
         usage_md = response_metadata.get("usage_metadata", {})
-        
+
         if msg_type in ["human", "tool"]:
             # user_message e tool_return_message: campos null
             model_name = None
@@ -51,14 +131,18 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                 "candidates_token_count": usage_md.get("candidates_token_count", 0),
                 "total_token_count": usage_md.get("total_token_count", 0),
                 "thoughts_token_count": usage_md.get("thoughts_token_count", 0),
-                "cached_content_token_count": usage_md.get("cached_content_token_count", 0)
+                "cached_content_token_count": usage_md.get(
+                    "cached_content_token_count", 0
+                ),
             }
 
         if msg_type == "human":
             serialized_messages.append(
                 {
                     "id": original_id or f"message-{uuid.uuid4()}",
-                    "date": now_utc(),
+                    "date": message_timestamp,
+                    "session_id": current_session_id,
+                    "time_since_last_message": time_since_last_message,
                     "name": None,
                     "message_type": "user_message",
                     "otid": str(uuid.uuid4()),
@@ -91,7 +175,9 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                     serialized_messages.append(
                         {
                             "id": original_id or f"{uuid.uuid4()}",
-                            "date": now_utc(),
+                            "date": message_timestamp,
+                            "session_id": current_session_id,
+                            "time_since_last_message": time_since_last_message,
                             "name": None,
                             "message_type": "reasoning_message",
                             "otid": str(uuid.uuid4()),
@@ -109,7 +195,7 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                     )
                 for tc in tool_calls:
                     tool_call_id = tc.get("id", str(uuid.uuid4()))
-                    
+
                     # Tentar parsear arguments como JSON
                     args = tc.get("args", {})
                     try:
@@ -119,11 +205,13 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                             parsed_args = args
                     except (json.JSONDecodeError, TypeError):
                         parsed_args = str(args)
-                    
+
                     serialized_messages.append(
                         {
                             "id": f"{tool_call_id}",
-                            "date": now_utc(),
+                            "date": message_timestamp,
+                            "session_id": current_session_id,
+                            "time_since_last_message": time_since_last_message,
                             "name": None,
                             "message_type": "tool_call_message",
                             "otid": str(uuid.uuid4()),
@@ -146,7 +234,9 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                     serialized_messages.append(
                         {
                             "id": f"{original_id or uuid.uuid4()}",
-                            "date": now_utc(),
+                            "date": message_timestamp,
+                            "session_id": current_session_id,
+                            "time_since_last_message": time_since_last_message,
                             "name": None,
                             "message_type": "reasoning_message",
                             "otid": str(uuid.uuid4()),
@@ -165,7 +255,9 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                 serialized_messages.append(
                     {
                         "id": original_id or f"{uuid.uuid4()}",
-                        "date": now_utc(),
+                        "date": message_timestamp,
+                        "session_id": current_session_id,
+                        "time_since_last_message": time_since_last_message,
                         "name": None,
                         "message_type": "assistant_message",
                         "otid": str(uuid.uuid4()),
@@ -189,11 +281,13 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
                 or kwargs.get("name")
                 or "unknown_tool"
             )
-            
+
             # Tentar parsear tool_return como JSON
             tool_content = kwargs.get("content", "")
             try:
-                if isinstance(tool_content, str) and tool_content.strip().startswith(('{', '[')):
+                if isinstance(tool_content, str) and tool_content.strip().startswith(
+                    ("{", "[")
+                ):
                     parsed_tool_return = json.loads(tool_content)
                 else:
                     parsed_tool_return = tool_content
@@ -203,7 +297,9 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
             serialized_messages.append(
                 {
                     "id": original_id or f"tool-return-{tool_call_id}",
-                    "date": now_utc(),
+                    "date": message_timestamp,
+                    "session_id": current_session_id,
+                    "time_since_last_message": time_since_last_message,
                     "name": tool_name,
                     "message_type": "tool_return_message",
                     "otid": str(uuid.uuid4()),
@@ -228,7 +324,7 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
     output_tokens = 0
     total_tokens = 0
     model_names = set()
-    
+
     for msg in messages:
         kwargs = msg.get("kwargs", {})
         response_metadata = kwargs.get("response_metadata", {})
@@ -238,7 +334,7 @@ def to_letta(messages: List[dict], thread_id: str | None = None) -> dict:
         input_tokens += int(usage_md.get("prompt_token_count", 0) or 0)
         output_tokens += int(usage_md.get("candidates_token_count", 0) or 0)
         total_tokens += int(usage_md.get("total_token_count", 0) or 0)
-        
+
         # Coletar model_names
         model_name = response_metadata.get("model_name")
         if model_name:
