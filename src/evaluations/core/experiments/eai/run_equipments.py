@@ -79,7 +79,7 @@ async def run_experiment():
     }
 
     metadata = {
-        "agent_config": agent_config_data,
+        # "agent_config": agent_config_data,
         "system_prompt": prompt_data["prompt"],
         "judge_model": judge_client.model_name,
         "judges_prompts": judges_prompts,
@@ -90,7 +90,7 @@ async def run_experiment():
 
     runner = AsyncExperimentRunner(
         experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
-        experiment_description="gemini-2.5-flash-lite-preview-06-17",
+        experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
