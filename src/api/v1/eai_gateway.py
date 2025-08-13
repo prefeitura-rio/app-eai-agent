@@ -27,11 +27,13 @@ class ChatResponse(BaseModel):
 class HistoryRequest(BaseModel):
     user_id: str
     session_timeout_seconds: int = 3600
+    use_whatsapp_format: bool = False
 
 
 class BulkHistoryRequest(BaseModel):
     user_ids: List[str]
     session_timeout_seconds: int = 3600
+    use_whatsapp_format: bool = False
 
 
 class HistoryResponse(BaseModel):
@@ -108,6 +110,7 @@ async def get_user_history(
         _, messages = await history_service._get_single_user_history(
             user_id=request.user_id,
             session_timeout_seconds=request.session_timeout_seconds,
+            use_whatsapp_format=request.use_whatsapp_format,
         )
 
         return HistoryResponse(data=messages)
@@ -138,6 +141,7 @@ async def get_bulk_user_history(
         bulk_history = await history_service.get_history_bulk(
             user_ids=request.user_ids,
             session_timeout_seconds=request.session_timeout_seconds,
+            use_whatsapp_format=request.use_whatsapp_format,
         )
 
         return BulkHistoryResponse(data=bulk_history)
