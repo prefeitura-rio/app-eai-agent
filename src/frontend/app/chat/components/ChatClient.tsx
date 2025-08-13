@@ -477,21 +477,46 @@ export default function ChatClient() {
             <div className="space-y-4">
               {/* Mensagens do Histórico */}
               {(() => {
+                // Filtrar mensagens de conversa
+                const conversationMessages = historyMessages.filter(msg => 
+                  msg.message_type === 'user_message' || msg.message_type === 'assistant_message'
+                );
+                
+                if (conversationMessages.length === 0) return null;
+
                 // Criar mapeamento de session_id para número sequencial
                 const uniqueSessionIds = Array.from(new Set(
-                  historyMessages
-                    .filter(msg => msg.message_type === 'user_message' || msg.message_type === 'assistant_message')
-                    .map(msg => msg.session_id)
-                    .filter(Boolean)
+                  conversationMessages.map(msg => msg.session_id).filter(Boolean)
                 ));
                 const sessionIdToNumber = Object.fromEntries(
                   uniqueSessionIds.map((sessionId, index) => [sessionId, index + 1])
                 );
 
-                return historyMessages.filter(msg => msg.message_type === 'user_message' || msg.message_type === 'assistant_message').map((msg, index) => (
-                  <div key={`history-${msg.id}-${index}`} className={`flex items-start gap-3 ${msg.message_type === 'user_message' ? 'justify-end' : ''} opacity-70`}>
+                // Agrupar mensagens por sessão
+                const groupedBySessions = uniqueSessionIds.map(sessionId => ({
+                  sessionId,
+                  sessionNumber: sessionIdToNumber[sessionId],
+                  messages: conversationMessages.filter(msg => msg.session_id === sessionId)
+                }));
+
+                return groupedBySessions.map((session, sessionIndex) => (
+                  <div key={`session-${session.sessionId}`}>
+                    {/* Separador da Sessão */}
+                    <div className="flex items-center gap-4 py-4">
+                      <div className="flex-1 border-t border-border"></div>
+                      <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-full border">
+                        <History className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">Sessão {session.sessionNumber}</span>
+                      </div>
+                      <div className="flex-1 border-t border-border"></div>
+                    </div>
+                    
+                    {/* Mensagens da Sessão */}
+                    <div className="space-y-4">
+                      {session.messages.map((msg, msgIndex) => (
+                        <div key={`history-${msg.id}-${msgIndex}`} className={`flex items-start gap-3 ${msg.message_type === 'user_message' ? 'justify-end' : ''}`}>
                     {msg.message_type === 'assistant_message' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                    <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.message_type === 'user_message' ? 'bg-primary/70 text-primary-foreground' : 'bg-muted/70'}`}>
+                    <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.message_type === 'user_message' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                       <div className="relative group">
                         <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
                           <History className="h-3 w-3" />
@@ -670,9 +695,12 @@ export default function ChatClient() {
                         </Accordion>
                       </div>
                     )}
+                          </div>
+                          {msg.message_type === 'user_message' && <User className="h-6 w-6 flex-shrink-0" />}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  {msg.message_type === 'user_message' && <User className="h-6 w-6 flex-shrink-0" />}
-                </div>
                 ));
               })()}
 
@@ -948,44 +976,26 @@ export default function ChatClient() {
             )}
 
             {historyMessages.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">
-                      {historyMessages.filter(m => m.message_type !== 'usage_statistics').length} mensagens carregadas
-                    </span>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setHistoryMessages([]);
-                      setMessages([]);
-                      setHistoryError(null);
-                      toast.info("Histórico e chat atual limpos!");
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs"
-                  >
-                    Limpar Tudo
-                  </Button>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600">
+                    {historyMessages.filter(m => m.message_type !== 'usage_statistics').length} mensagens carregadas
+                  </span>
                 </div>
-                
-                <div className="space-y-1">
-                  {(() => {
-                    const uniqueSessionIds = Array.from(new Set(historyMessages.map(m => m.session_id).filter(Boolean)));
-                    return uniqueSessionIds.map((sessionId, index) => (
-                      <div key={sessionId} className="text-xs p-2 bg-muted/50 rounded border">
-                        <div className="font-mono text-muted-foreground">
-                          Sessão {index + 1}
-                        </div>
-                        <div className="text-muted-foreground">
-                          {historyMessages.filter(m => m.session_id === sessionId && m.message_type !== 'usage_statistics').length} mensagens
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
+                <Button
+                  onClick={() => {
+                    setHistoryMessages([]);
+                    setMessages([]);
+                    setHistoryError(null);
+                    toast.info("Histórico e chat atual limpos!");
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-xs"
+                >
+                  Limpar Tudo
+                </Button>
               </div>
             )}
           </div>
