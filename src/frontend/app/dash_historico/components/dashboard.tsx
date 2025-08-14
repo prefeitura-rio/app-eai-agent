@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import TableMessages from './table-messages';
 import TableMetricUserMessages from './table-metric-user-messages';
 import MetricsScoreCard from './metrics-scorecard';
+import MetricsScoreCardDAUMAU from './metrics-scorecard-dau-mau';
 
 interface MetricsDashboardProps {
   whitelist?: { [groupName: string]: string[] };
@@ -96,6 +97,7 @@ export default function MetricsDashboard({ whitelist, historyData }: MetricsDash
   return (
     <div className="space-y-6">
       <MetricsScoreCard flatMessages={flatMessages} />
+      <MetricsScoreCardDAUMAU flatMessages={flatMessages} />
       <TableMetricUserMessages flatMessages={flatMessages} />
       <TableMessages flatMessages={flatMessages} />
     </div>
