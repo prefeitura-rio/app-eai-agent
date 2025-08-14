@@ -280,7 +280,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
                   <div className="flex items-center gap-2 w-full" style={{ width: '100%' }}>
                     <Checkbox
                       checked={isGroupFullySelected(groupName)}
-                      {...(isGroupPartiallySelected(groupName) ? { indeterminate: true } : {})}
+                      {...(isGroupPartiallySelected(groupName) ? { indeterminate: "true" } : {})}
                       onCheckedChange={() => toggleGroupSelection(groupName)}
                       className="flex-shrink-0 w-4 h-4"
                     />
