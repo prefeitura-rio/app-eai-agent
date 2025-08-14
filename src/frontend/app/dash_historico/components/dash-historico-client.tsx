@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, RefreshCw, Users, Phone, BarChart3, Loader2 } from 'lucide-react';
+import { RefreshCw, Users, Phone, BarChart3, Loader2 } from 'lucide-react';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { API_BASE_URL } from '@/app/components/config';
@@ -32,7 +32,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
   const { token } = useAuth();
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedPhones, setSelectedPhones] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [historyData, setHistoryData] = useState<HistoryData>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState<number>(3600); // 1 hour default
@@ -95,10 +95,10 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
     setSelectedPhones(newSelection);
   };
 
-  const selectAllPhones = () => {
-    if (selectedGroup) {
-      setSelectedPhones(new Set(selectedGroupPhones));
-    }
+
+  const selectAllGroups = () => {
+    const allPhones = Object.values(whitelist).flat();
+    setSelectedPhones(new Set(allPhones));
   };
 
   const selectAllPhonesFromGroup = (groupName: string) => {
@@ -255,45 +255,53 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
                 )}
               </Button>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Filtrar grupos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {selectedPhones.size} telefones selecionados
-            </p>
           </div>
         </div>
 
         <CardContent className="flex-1 overflow-y-auto p-4 min-h-0">
+          <div className="space-y-3 mb-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={selectAllGroups}
+              className="text-xs w-full"
+            >
+              Selecionar Todos os Grupos
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {selectedPhones.size} telefones selecionados
+            </p>
+          </div>
+          
           <Accordion type="single" collapsible className="w-full">
             {filteredGroups.length > 0 ? (
               filteredGroups.map((groupName) => (
-                <AccordionItem key={groupName} value={groupName} className="border-none">
-                  <div className="flex items-center gap-2">
+                <AccordionItem key={groupName} value={groupName} className="border-none w-full" style={{ width: '100%', maxWidth: '100%' }}>
+                  <div className="flex items-center gap-2 w-full" style={{ width: '100%' }}>
                     <Checkbox
                       checked={isGroupFullySelected(groupName)}
                       {...(isGroupPartiallySelected(groupName) ? { indeterminate: true } : {})}
                       onCheckedChange={() => toggleGroupSelection(groupName)}
+                      className="flex-shrink-0 w-4 h-4"
                     />
                     <AccordionTrigger 
-                      className={`flex h-auto w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:no-underline ${
+                      className={`flex h-16 items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors hover:no-underline ${
                         selectedGroup === groupName 
                           ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
                           : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       }`}
+                      style={{ 
+                        width: '234px', // 266px container - 16px checkbox - 8px gap - 8px padding = 234px
+                        maxWidth: '234px',
+                        minWidth: '234px',
+                        flexShrink: 0
+                      }}
                       onClick={() => setSelectedGroup(groupName)}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="font-medium truncate">{groupName}</p>
-                          <div className="text-xs opacity-70 h-4">
+                      <div className="flex items-center justify-between w-full min-w-0">
+                        <div className="flex-1 min-w-0 text-left pr-2">
+                          <p className="font-medium break-words leading-tight">{groupName}</p>
+                          <div className="text-xs opacity-70 h-4 mt-1">
                             {(isGroupFullySelected(groupName) || isGroupPartiallySelected(groupName)) && (
                               <span>
                                 {whitelist[groupName].filter(phone => selectedPhones.has(phone)).length} selecionados
@@ -301,7 +309,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
                             )}
                           </div>
                         </div>
-                        <Badge variant="outline" className="ml-5.5">
+                        <Badge variant="outline" className="ml-2 flex-shrink-0">
                           {whitelist[groupName].length}
                         </Badge>
                       </div>

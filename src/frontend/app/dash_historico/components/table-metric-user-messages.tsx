@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FlatMessage } from './dashboard';
+import { formatDate, extractDateKey } from '@/app/utils/date-formatter';
 
 interface TableMetricUserMessagesProps {
   flatMessages: FlatMessage[];
@@ -19,8 +20,6 @@ interface UserMessageMetrics {
 
 export default function TableMetricUserMessages({ flatMessages }: TableMetricUserMessagesProps) {
 
-  // DEBUG: Log dates received in table-metric
-
   // Calculate metrics grouped by group_name and date for user_messages only
   const userMessageMetrics = useMemo(() => {
     const metricsMap = new Map<string, UserMessageMetrics>();
@@ -30,7 +29,7 @@ export default function TableMetricUserMessages({ flatMessages }: TableMetricUse
     
     userMessages.forEach(msg => {
       if (msg.date) {
-        const dateKey = msg.date.split('T')[0];
+        const dateKey = extractDateKey(msg.date);
         
 
         
@@ -56,8 +55,7 @@ export default function TableMetricUserMessages({ flatMessages }: TableMetricUse
     
     flatMessages.forEach(msg => {
       if (msg.date && msg.session_id) {
-        // Date is already normalized to São Paulo timezone at the highest level
-        const dateKey = msg.date.split('T')[0];
+        const dateKey = extractDateKey(msg.date);
         
         const key = `${msg.group_name}-${dateKey}`;
         
@@ -92,10 +90,6 @@ export default function TableMetricUserMessages({ flatMessages }: TableMetricUse
     return result;
   }, [flatMessages]);
 
-  const formatDate = (dateString: string): string => {
-    // Use same format as table-messages
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
 
   return (
     <Card>

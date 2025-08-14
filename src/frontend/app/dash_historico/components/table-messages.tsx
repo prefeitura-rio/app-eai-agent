@@ -4,14 +4,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FlatMessage } from './dashboard';
+import { formatDateTime } from '@/app/utils/date-formatter';
 
 interface TableMessagesProps {
   flatMessages: FlatMessage[];
 }
 
 export default function TableMessages({ flatMessages }: TableMessagesProps) {
-  
-  // DEBUG: Log dates received in table-messages
   
   const formatValue = (value: any): string => {
     if (value === null || value === undefined) return '-';
@@ -74,7 +73,7 @@ export default function TableMessages({ flatMessages }: TableMessagesProps) {
                     {formatValue(message.id)}
                   </TableCell>
                   <TableCell className="text-xs max-w-[140px]">
-                    {message.date ? new Date(message.date).toLocaleString('pt-BR') : '-'}
+                    {formatDateTime(message.date)}
                   </TableCell>
                   <TableCell className="font-mono text-xs max-w-[100px] truncate">
                     {formatValue(message.session_id)}
