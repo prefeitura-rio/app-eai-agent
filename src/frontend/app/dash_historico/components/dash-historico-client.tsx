@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
   const [searchTerm, setSearchTerm] = useState('');
   const [historyData, setHistoryData] = useState<HistoryData>({});
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [sessionTimeout, setSessionTimeout] = useState<number>(3600); // 1 hour default
 
   useEffect(() => {
     setTitle('Dashboard Histórico');
@@ -65,7 +66,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
         },
         body: JSON.stringify({
           user_ids: phoneNumbers,
-          session_timeout_seconds: 43200, // 12 hours
+          session_timeout_seconds: sessionTimeout,
           use_whatsapp_format: true
         }),
       });
@@ -147,8 +148,23 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
 
   const selectedGroupPhones = selectedGroup ? whitelist[selectedGroup] || [] : [];
   
-  // Calculate metrics from history data
-  const metrics = useMetricsCalculator(historyData);
+  // Filter history data by selected phones
+  const filteredHistoryData = useMemo(() => {
+    if (selectedPhones.size === 0) {
+      return historyData;
+    }
+    
+    const filtered: HistoryData = {};
+    selectedPhones.forEach(phone => {
+      if (historyData[phone]) {
+        filtered[phone] = historyData[phone];
+      }
+    });
+    return filtered;
+  }, [historyData, selectedPhones]);
+
+  // Calculate metrics from filtered history data
+  const metrics = useMetricsCalculator(filteredHistoryData);
   const hasHistoryData = Object.keys(historyData).length > 0;
 
   return (
@@ -176,18 +192,42 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
         </CardHeader>
         
         <div className="flex-shrink-0 p-4 space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Filtrar grupos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          
           <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">
+                Timeout de Sessão
+              </label>
+              <div className="flex gap-1 mb-2">
+                {[
+                  { label: '1h', value: 3600 },
+                  { label: '6h', value: 21600 },
+                  { label: '12h', value: 43200 },
+                  { label: '24h', value: 86400 }
+                ].map(preset => (
+                  <Button
+                    key={preset.value}
+                    variant={sessionTimeout === preset.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSessionTimeout(preset.value)}
+                    className="text-xs h-7 px-2"
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+              <Input
+                type="number"
+                value={sessionTimeout}
+                onChange={(e) => setSessionTimeout(Number(e.target.value))}
+                placeholder="43200"
+                className="text-xs h-8"
+                min="60"
+                max="86400"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {Math.floor(sessionTimeout / 3600)}h {Math.floor((sessionTimeout % 3600) / 60)}min
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -217,6 +257,16 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
                 )}
               </Button>
             </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Filtrar grupos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               {selectedPhones.size} telefones selecionados
             </p>
@@ -231,7 +281,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={isGroupFullySelected(groupName)}
-                      indeterminate={isGroupPartiallySelected(groupName)}
+                      {...(isGroupPartiallySelected(groupName) ? { indeterminate: true } : {})}
                       onCheckedChange={() => toggleGroupSelection(groupName)}
                     />
                     <AccordionTrigger 
@@ -304,7 +354,16 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
       <div className="h-full overflow-y-auto max-h-full">
         <div className="space-y-6 p-6">
           {hasHistoryData ? (
-            <MetricsDashboard metrics={metrics} />
+            <>
+              {selectedPhones.size > 0 && (
+                <div className="bg-accent/50 border border-accent rounded-lg p-3 mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando métricas para {selectedPhones.size} telefone{selectedPhones.size !== 1 ? 's' : ''} selecionado{selectedPhones.size !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+              <MetricsDashboard metrics={metrics} whitelist={whitelist} historyData={filteredHistoryData} />
+            </>
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-muted-foreground">

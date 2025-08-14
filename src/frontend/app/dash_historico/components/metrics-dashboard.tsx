@@ -1,293 +1,404 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { CalculatedMetrics } from './metrics-calculator';
-import { BarChart3, Clock, MessageSquare, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { BarChart3, MessageSquare, DollarSign, TrendingUp, Users } from 'lucide-react';
 
 interface MetricsDashboardProps {
   metrics: CalculatedMetrics;
+  whitelist?: { [groupName: string]: string[] };
+  historyData: { [phoneNumber: string]: any[] };
 }
 
-export default function MetricsDashboard({ metrics }: MetricsDashboardProps) {
-  const messagesChartRef = useRef<SVGSVGElement>(null);
-  const engagementChartRef = useRef<SVGSVGElement>(null);
-  const costChartRef = useRef<SVGSVGElement>(null);
-  const responseTimeChartRef = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    if (metrics.sessions.length === 0) return;
-
-    // Messages per session chart
-    if (messagesChartRef.current) {
-      drawMessagesChart();
+export default function MetricsDashboard({ metrics, whitelist, historyData }: MetricsDashboardProps) {
+  // Create phone to group mapping
+  const phoneToGroup: { [phone: string]: string } = useMemo(() => {
+    const mapping: { [phone: string]: string } = {};
+    if (whitelist) {
+      Object.entries(whitelist).forEach(([groupName, phones]) => {
+        phones.forEach(phone => {
+          mapping[phone] = groupName;
+        });
+      });
     }
+    return mapping;
+  }, [whitelist]);
 
-    // Engagement timeline chart
-    if (engagementChartRef.current) {
-      drawEngagementChart();
+  // Format large numbers function
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
     }
-
-    // Cost distribution chart
-    if (costChartRef.current) {
-      drawCostChart();
-    }
-
-    // Response time chart
-    if (responseTimeChartRef.current) {
-      drawResponseTimeChart();
-    }
-  }, [metrics]);
-
-  const drawMessagesChart = () => {
-    const svg = d3.select(messagesChartRef.current);
-    svg.selectAll("*").remove();
-
-    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-    const width = 400 - margin.left - margin.right;
-    const height = 200 - margin.bottom - margin.top;
-
-    const g = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // Group sessions by message count ranges
-    const messageCounts = metrics.sessions.map(s => s.messageCount);
-    const bins = d3.bin().thresholds(10)(messageCounts);
-
-    const x = d3.scaleLinear()
-      .domain(d3.extent(messageCounts) as [number, number])
-      .range([0, width]);
-
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(bins, d => d.length) as number])
-      .range([height, 0]);
-
-    // Draw bars
-    g.selectAll(".bar")
-      .data(bins)
-      .enter().append("rect")
-      .attr("class", "bar")
-      .attr("x", d => x(d.x0 as number))
-      .attr("width", d => Math.max(0, x(d.x1 as number) - x(d.x0 as number) - 1))
-      .attr("y", d => y(d.length))
-      .attr("height", d => height - y(d.length))
-      .attr("fill", "hsl(var(--primary))")
-      .attr("opacity", 0.7);
-
-    // Add axes
-    g.append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x));
-
-    g.append("g")
-      .call(d3.axisLeft(y));
-
-    // Add labels
-    g.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left)
-      .attr("x", 0 - (height / 2))
-      .attr("dy", "1em")
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .text("Frequência");
-
-    g.append("text")
-      .attr("transform", `translate(${width / 2}, ${height + margin.bottom - 5})`)
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .text("Mensagens por Sessão");
+    return num.toString();
   };
 
-  const drawEngagementChart = () => {
-    const svg = d3.select(engagementChartRef.current);
-    svg.selectAll("*").remove();
+  // Process efficiency data
+  const efficiencyData = useMemo(() => {
+    const messagesByDateAndGroup: Map<string, Map<string, any[]>> = new Map();
+    
+    Object.entries(historyData).forEach(([phoneNumber, messages]) => {
+      const group = phoneToGroup[phoneNumber] || 'Sem Grupo';
+      
+      messages.forEach(message => {
+        if (message.date) {
+          const messageDate = new Date(message.date);
+          // Convert to São Paulo timezone (UTC-3)
+          const saoPauloDate = new Date(messageDate.getTime() - (3 * 60 * 60 ));
+          const dateKey = saoPauloDate.toISOString().split('T')[0];
+          
+          if (!messagesByDateAndGroup.has(dateKey)) {
+            messagesByDateAndGroup.set(dateKey, new Map());
+          }
+          
+          if (!messagesByDateAndGroup.get(dateKey)!.has(group)) {
+            messagesByDateAndGroup.get(dateKey)!.set(group, []);
+          }
+          
+          messagesByDateAndGroup.get(dateKey)!.get(group)!.push({ ...message, phoneNumber });
+        }
+      });
+    });
 
-    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-    const width = 400 - margin.left - margin.right;
-    const height = 200 - margin.bottom - margin.top;
+    const result: any[] = [];
+    const groupColors: { [key: string]: string } = {};
+    let colorIndex = 0;
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
 
-    const g = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    messagesByDateAndGroup.forEach((groupsOnDate, dateKey) => {
+      const dataPoint: any = { date: dateKey };
+      
+      groupsOnDate.forEach((messages, group) => {
+        if (!groupColors[group]) {
+          groupColors[group] = colors[colorIndex % colors.length];
+          colorIndex++;
+        }
 
-    // Engagement over time
-    const engagementData = metrics.engagement.map(e => ({
-      date: new Date(e.firstInteraction),
-      returned: e.returnedWithinWeek ? 1 : 0
-    })).sort((a, b) => a.date.getTime() - b.date.getTime());
+        const sessionGroups: { [sessionId: string]: any[] } = {};
+        messages.forEach(msg => {
+          const sessionId = msg.session_id || 'default';
+          if (!sessionGroups[sessionId]) {
+            sessionGroups[sessionId] = [];
+          }
+          sessionGroups[sessionId].push(msg);
+        });
 
-    if (engagementData.length === 0) return;
+        const sessions = Object.values(sessionGroups);
+        const avgMessagesPerSession = sessions.length > 0 ? 
+          sessions.reduce((sum, session) => sum + session.length, 0) / sessions.length : 0;
+        
+        dataPoint[group] = sessions.length > 0 ? avgMessagesPerSession / sessions.length : 0;
+      });
+      
+      result.push(dataPoint);
+    });
 
-    const x = d3.scaleTime()
-      .domain(d3.extent(engagementData, d => d.date) as [Date, Date])
-      .range([0, width]);
+    return { data: result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), colors: groupColors };
+  }, [historyData, phoneToGroup]);
 
-    const y = d3.scaleLinear()
-      .domain([0, 1])
-      .range([height, 0]);
+  // Process message count data
+  const messageCountData = useMemo(() => {
+    const messageCountByDateAndGroup: Map<string, Map<string, number>> = new Map();
+    
+    Object.entries(historyData).forEach(([phoneNumber, messages]) => {
+      const group = phoneToGroup[phoneNumber] || 'Sem Grupo';
+      
+      messages.forEach(message => {
+        if (message.date && (message.message_type === 'user_message' || message.message_type === 'assistant_message')) {
+          const messageDate = new Date(message.date);
+          // Convert to São Paulo timezone (UTC-3)
+          const saoPauloDate = new Date(messageDate.getTime() - (3 * 60 * 60 * 1000));
+          const dateKey = saoPauloDate.toISOString().split('T')[0];
+          
+          if (!messageCountByDateAndGroup.has(dateKey)) {
+            messageCountByDateAndGroup.set(dateKey, new Map());
+          }
+          
+          if (!messageCountByDateAndGroup.get(dateKey)!.has(group)) {
+            messageCountByDateAndGroup.get(dateKey)!.set(group, 0);
+          }
+          
+          messageCountByDateAndGroup.get(dateKey)!.set(
+            group, 
+            messageCountByDateAndGroup.get(dateKey)!.get(group)! + 1
+          );
+        }
+      });
+    });
 
-    const line = d3.line<any>()
-      .x(d => x(d.date))
-      .y(d => y(d.returned))
-      .curve(d3.curveStepAfter);
+    const result: any[] = [];
+    const groupColors: { [key: string]: string } = {};
+    let colorIndex = 0;
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
 
-    g.append("path")
-      .datum(engagementData)
-      .attr("fill", "none")
-      .attr("stroke", "hsl(var(--primary))")
-      .attr("stroke-width", 2)
-      .attr("d", line);
+    messageCountByDateAndGroup.forEach((groupsOnDate, dateKey) => {
+      const dataPoint: any = { date: dateKey };
+      
+      groupsOnDate.forEach((totalMessages, group) => {
+        if (!groupColors[group]) {
+          groupColors[group] = colors[colorIndex % colors.length];
+          colorIndex++;
+        }
+        dataPoint[group] = totalMessages;
+      });
+      
+      result.push(dataPoint);
+    });
 
-    // Add dots
-    g.selectAll(".dot")
-      .data(engagementData)
-      .enter().append("circle")
-      .attr("class", "dot")
-      .attr("cx", d => x(d.date))
-      .attr("cy", d => y(d.returned))
-      .attr("r", 3)
-      .attr("fill", d => d.returned ? "hsl(var(--primary))" : "hsl(var(--muted))");
+    return { data: result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), colors: groupColors };
+  }, [historyData, phoneToGroup]);
 
-    // Add axes
-    g.append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%m/%d")));
+  // Process model calls data
+  const modelCallsData = useMemo(() => {
+    const modelCallsByDateAndGroup: Map<string, Map<string, number>> = new Map();
+    
+    Object.entries(historyData).forEach(([phoneNumber, messages]) => {
+      const group = phoneToGroup[phoneNumber] || 'Sem Grupo';
+      
+      messages.forEach(message => {
+        if (message.date && message.model_name && message.usage_metadata) {
+          const messageDate = new Date(message.date);
+          // Convert to São Paulo timezone (UTC-3)
+          const saoPauloDate = new Date(messageDate.getTime() - (3 * 60 * 60 * 1000));
+          const dateKey = saoPauloDate.toISOString().split('T')[0];
+          
+          if (!modelCallsByDateAndGroup.has(dateKey)) {
+            modelCallsByDateAndGroup.set(dateKey, new Map());
+          }
+          
+          if (!modelCallsByDateAndGroup.get(dateKey)!.has(group)) {
+            modelCallsByDateAndGroup.get(dateKey)!.set(group, 0);
+          }
+          
+          modelCallsByDateAndGroup.get(dateKey)!.set(
+            group, 
+            modelCallsByDateAndGroup.get(dateKey)!.get(group)! + 1
+          );
+        }
+      });
+    });
 
-    g.append("g")
-      .call(d3.axisLeft(y).tickFormat(d => d === 1 ? "Retornou" : "Não retornou"));
+    const result: any[] = [];
+    const groupColors: { [key: string]: string } = {};
+    let colorIndex = 0;
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
+
+    modelCallsByDateAndGroup.forEach((groupsOnDate, dateKey) => {
+      const dataPoint: any = { date: dateKey };
+      
+      groupsOnDate.forEach((totalCalls, group) => {
+        if (!groupColors[group]) {
+          groupColors[group] = colors[colorIndex % colors.length];
+          colorIndex++;
+        }
+        dataPoint[group] = totalCalls;
+      });
+      
+      result.push(dataPoint);
+    });
+
+    return { data: result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), colors: groupColors };
+  }, [historyData, phoneToGroup]);
+
+  // Process tokens data
+  const tokensData = useMemo(() => {
+    const tokensByDateAndGroup: Map<string, Map<string, number>> = new Map();
+    
+    Object.entries(historyData).forEach(([phoneNumber, messages]) => {
+      const group = phoneToGroup[phoneNumber] || 'Sem Grupo';
+      
+      messages.forEach(message => {
+        if (message.date && message.model_name && message.usage_metadata) {
+          const messageDate = new Date(message.date);
+          // Convert to São Paulo timezone (UTC-3)
+          const saoPauloDate = new Date(messageDate.getTime() - (3 * 60 * 60 * 1000));
+          const dateKey = saoPauloDate.toISOString().split('T')[0];
+          
+          if (!tokensByDateAndGroup.has(dateKey)) {
+            tokensByDateAndGroup.set(dateKey, new Map());
+          }
+          
+          if (!tokensByDateAndGroup.get(dateKey)!.has(group)) {
+            tokensByDateAndGroup.get(dateKey)!.set(group, 0);
+          }
+          
+          const usage = message.usage_metadata;
+          const totalTokens = (usage.prompt_token_count || 0) + 
+                             (usage.candidates_token_count || 0) + 
+                             (usage.thoughts_token_count || 0) + 
+                             (usage.cached_content_token_count || 0);
+          
+          tokensByDateAndGroup.get(dateKey)!.set(
+            group, 
+            tokensByDateAndGroup.get(dateKey)!.get(group)! + totalTokens
+          );
+        }
+      });
+    });
+
+    const result: any[] = [];
+    const groupColors: { [key: string]: string } = {};
+    let colorIndex = 0;
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
+
+    tokensByDateAndGroup.forEach((groupsOnDate, dateKey) => {
+      const dataPoint: any = { date: dateKey };
+      
+      groupsOnDate.forEach((totalTokens, group) => {
+        if (!groupColors[group]) {
+          groupColors[group] = colors[colorIndex % colors.length];
+          colorIndex++;
+        }
+        dataPoint[group] = totalTokens;
+      });
+      
+      result.push(dataPoint);
+    });
+
+    return { data: result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), colors: groupColors };
+  }, [historyData, phoneToGroup]);
+
+  // Create chart configs
+  const createChartConfig = (colors: { [key: string]: string }): ChartConfig => {
+    const config: ChartConfig = {};
+    Object.entries(colors).forEach(([group, color]) => {
+      config[group] = {
+        label: group,
+        color: color,
+      };
+    });
+    return config;
   };
 
-  const drawCostChart = () => {
-    const svg = d3.select(costChartRef.current);
-    svg.selectAll("*").remove();
-
-    const margin = { top: 20, right: 30, bottom: 40, left: 60 };
-    const width = 400 - margin.left - margin.right;
-    const height = 200 - margin.bottom - margin.top;
-
-    const g = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const costs = metrics.sessions.map(s => s.totalCost).filter(c => c > 0);
-    if (costs.length === 0) return;
-
-    const bins = d3.bin().thresholds(8)(costs);
-
-    const x = d3.scaleLinear()
-      .domain(d3.extent(costs) as [number, number])
-      .range([0, width]);
-
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(bins, d => d.length) as number])
-      .range([height, 0]);
-
-    // Draw bars
-    g.selectAll(".bar")
-      .data(bins)
-      .enter().append("rect")
-      .attr("class", "bar")
-      .attr("x", d => x(d.x0 as number))
-      .attr("width", d => Math.max(0, x(d.x1 as number) - x(d.x0 as number) - 1))
-      .attr("y", d => y(d.length))
-      .attr("height", d => height - y(d.length))
-      .attr("fill", "hsl(var(--destructive))")
-      .attr("opacity", 0.7);
-
-    // Add axes
-    g.append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(d => `$${d.toFixed(3)}`));
-
-    g.append("g")
-      .call(d3.axisLeft(y));
-
-    // Add labels
-    g.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left)
-      .attr("x", 0 - (height / 2))
-      .attr("dy", "1em")
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .text("Frequência");
-
-    g.append("text")
-      .attr("transform", `translate(${width / 2}, ${height + margin.bottom - 5})`)
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .text("Custo por Sessão ($)");
-  };
-
-  const drawResponseTimeChart = () => {
-    const svg = d3.select(responseTimeChartRef.current);
-    svg.selectAll("*").remove();
-
-    const margin = { top: 20, right: 30, bottom: 40, left: 60 };
-    const width = 400 - margin.left - margin.right;
-    const height = 200 - margin.bottom - margin.top;
-
-    const g = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const responseTimes = metrics.sessions
-      .map(s => s.avgResponseTime / 1000) // Convert to seconds
-      .filter(t => t > 0);
-
-    if (responseTimes.length === 0) return;
-
-    const bins = d3.bin().thresholds(10)(responseTimes);
-
-    const x = d3.scaleLinear()
-      .domain(d3.extent(responseTimes) as [number, number])
-      .range([0, width]);
-
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(bins, d => d.length) as number])
-      .range([height, 0]);
-
-    // Draw bars
-    g.selectAll(".bar")
-      .data(bins)
-      .enter().append("rect")
-      .attr("class", "bar")
-      .attr("x", d => x(d.x0 as number))
-      .attr("width", d => Math.max(0, x(d.x1 as number) - x(d.x0 as number) - 1))
-      .attr("y", d => y(d.length))
-      .attr("height", d => height - y(d.length))
-      .attr("fill", "hsl(var(--warning))")
-      .attr("opacity", 0.7);
-
-    // Add axes
-    g.append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(d => `${d.toFixed(1)}s`));
-
-    g.append("g")
-      .call(d3.axisLeft(y));
-
-    // Add labels
-    g.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left)
-      .attr("x", 0 - (height / 2))
-      .attr("dy", "1em")
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .text("Frequência");
-
-    g.append("text")
-      .attr("transform", `translate(${width / 2}, ${height + margin.bottom - 5})`)
-      .style("text-anchor", "middle")
-      .style("font-size", "12px")
-      .text("Tempo de Resposta (s)");
-  };
-
-  const formatDuration = (ms: number) => {
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
+  const renderTimeSeriesChart = (
+    data: any[], 
+    colors: { [key: string]: string }, 
+    yAxisFormatter?: (value: any) => string,
+    chartType?: 'efficiency' | 'messages' | 'calls' | 'tokens'
+  ) => {
+    const groups = Object.keys(colors);
+    
+    // Calculate additional analytics
+    const getAnalytics = (payload: any[], label: string) => {
+      const totalForDay = payload.reduce((sum, entry) => sum + entry.value, 0);
+      const avgValue = totalForDay / payload.length;
+      
+      // Get previous day data for comparison
+      const currentIndex = data.findIndex(d => d.date === label);
+      const previousDay = currentIndex > 0 ? data[currentIndex - 1] : null;
+      
+      let trends: { [key: string]: number } = {};
+      if (previousDay) {
+        payload.forEach(entry => {
+          const prevValue = previousDay[entry.dataKey] || 0;
+          const change = ((entry.value - prevValue) / prevValue) * 100;
+          trends[entry.dataKey] = change;
+        });
+      }
+      
+      return { totalForDay, avgValue, trends };
+    };
+    
+    return (
+      <ChartContainer config={createChartConfig(colors)} className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis 
+              dataKey="date" 
+              tickFormatter={(value) => new Date(value).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })}
+              className="text-xs"
+            />
+            <YAxis 
+              tickFormatter={yAxisFormatter || ((value) => value.toString())}
+              className="text-xs"
+            />
+            <ChartTooltip 
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const analytics = getAnalytics(payload, label);
+                  
+                  return (
+                    <div className="rounded-lg border bg-background p-3 shadow-lg min-w-[280px]">
+                      <div className="grid gap-3">
+                        <div className="border-b pb-2">
+                          <div className="font-semibold text-sm">
+                            {new Date(label).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Total: {yAxisFormatter ? yAxisFormatter(analytics.totalForDay) : analytics.totalForDay.toLocaleString()}
+                            {payload.length > 1 && ` • Média: ${yAxisFormatter ? yAxisFormatter(analytics.avgValue) : analytics.avgValue.toFixed(1)}`}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {payload.map((entry: any) => {
+                            const trend = analytics.trends[entry.dataKey];
+                            const trendIcon = trend > 0 ? '↗️' : trend < 0 ? '↘️' : '➡️';
+                            const trendColor = trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : 'text-gray-500';
+                            
+                            return (
+                              <div key={entry.dataKey} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="h-3 w-3 rounded-full border border-white shadow-sm" 
+                                    style={{ backgroundColor: entry.color }}
+                                  />
+                                  <span className="font-medium text-sm">
+                                    {entry.dataKey}
+                                  </span>
+                                </div>
+                                
+                                <div className="text-right">
+                                  <div className="font-semibold text-sm">
+                                    {yAxisFormatter ? yAxisFormatter(entry.value) : entry.value}
+                                  </div>
+                                  {!isNaN(trend) && (
+                                    <div className={`text-xs ${trendColor} flex items-center gap-1`}>
+                                      <span>{trendIcon}</span>
+                                      <span>{Math.abs(trend).toFixed(1)}%</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {payload.length > 1 && (
+                          <div className="border-t pt-2 text-xs text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Maior: {payload.reduce((max, p) => p.value > max.value ? p : max).dataKey}</span>
+                              <span>Menor: {payload.reduce((min, p) => p.value < min.value ? p : min).dataKey}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            {groups.map((group) => (
+              <Line
+                key={group}
+                type="monotone"
+                dataKey={group}
+                stroke={colors[group]}
+                strokeWidth={2}
+                dot={{ fill: colors[group], strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, strokeWidth: 2 }}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+    );
   };
 
   return (
@@ -367,95 +478,102 @@ export default function MetricsDashboard({ metrics }: MetricsDashboardProps) {
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Distribuição de Mensagens por Sessão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <svg ref={messagesChartRef} width="400" height="200"></svg>
-          </CardContent>
-        </Card>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* First Row - Messages Charts Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Messages Efficiency Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Evolução da Eficiência de Mensagens ao Longo do Tempo
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Série temporal da eficiência de mensagens por grupo (linhas coloridas por grupo)
+              </p>
+            </CardHeader>
+            <CardContent>
+              {efficiencyData.data.length > 0 ? (
+                renderTimeSeriesChart(efficiencyData.data, efficiencyData.colors, (value) => value.toFixed(1), 'efficiency')
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Curva de Engajamento
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <svg ref={engagementChartRef} width="400" height="200"></svg>
-          </CardContent>
-        </Card>
+          {/* Messages Count Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Evolução do Número de Mensagens ao Longo do Tempo
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Série temporal do total de mensagens (user + assistant) por grupo
+              </p>
+            </CardHeader>
+            <CardContent>
+              {messageCountData.data.length > 0 ? (
+                renderTimeSeriesChart(messageCountData.data, messageCountData.colors, undefined, 'messages')
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Distribuição de Custos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <svg ref={costChartRef} width="400" height="200"></svg>
-          </CardContent>
-        </Card>
+        {/* Second Row - Model Calls and Tokens Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Model Calls Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Evolução de Chamadas ao Modelo ao Longo do Tempo
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Série temporal do total de chamadas aos modelos por grupo
+              </p>
+            </CardHeader>
+            <CardContent>
+              {modelCallsData.data.length > 0 ? (
+                renderTimeSeriesChart(modelCallsData.data, modelCallsData.colors, undefined, 'calls')
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Tempos de Resposta
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <svg ref={responseTimeChartRef} width="400" height="200"></svg>
-          </CardContent>
-        </Card>
+          {/* Tokens Usage Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Evolução do Consumo de Tokens ao Longo do Tempo
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Série temporal do total de tokens consumidos por grupo
+              </p>
+            </CardHeader>
+            <CardContent>
+              {tokensData.data.length > 0 ? (
+                renderTimeSeriesChart(tokensData.data, tokensData.colors, formatNumber, 'tokens')
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Sessions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sessões Detalhadas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="max-h-96 overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background">
-                <tr className="border-b">
-                  <th className="text-left p-2">Telefone</th>
-                  <th className="text-left p-2">Duração</th>
-                  <th className="text-center p-2">Mensagens</th>
-                  <th className="text-center p-2">Usuário</th>
-                  <th className="text-center p-2">Agente</th>
-                  <th className="text-center p-2">Resp. Média</th>
-                  <th className="text-center p-2">Custo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {metrics.sessions.map((session, index) => (
-                  <tr key={index} className="border-b hover:bg-accent">
-                    <td className="p-2 font-mono text-xs">+{session.phoneNumber}</td>
-                    <td className="p-2">{formatDuration(session.duration)}</td>
-                    <td className="text-center p-2">
-                      <Badge variant="outline">{session.messageCount}</Badge>
-                    </td>
-                    <td className="text-center p-2">{session.userMessages}</td>
-                    <td className="text-center p-2">{session.agentMessages}</td>
-                    <td className="text-center p-2">{(session.avgResponseTime / 1000).toFixed(1)}s</td>
-                    <td className="text-center p-2">${session.totalCost.toFixed(3)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
