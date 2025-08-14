@@ -99,7 +99,6 @@ export default function MetricsDashboard({ whitelist, historyData }: MetricsDash
       <MetricsScoreCard flatMessages={flatMessages} />
       <MetricsScoreCardDAUMAU flatMessages={flatMessages} />
       <TableMetricUserMessages flatMessages={flatMessages} />
-      <TableMessages flatMessages={flatMessages} />
     </div>
   );
 }
