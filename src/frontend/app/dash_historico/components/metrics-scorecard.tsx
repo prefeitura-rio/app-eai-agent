@@ -83,12 +83,20 @@ export default function MetricsScoreCard({ flatMessages }: MetricsScoreCardProps
               <Table className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-[98vw] max-h-[95vh] overflow-hidden">
-            <DialogHeader>
+          <DialogContent 
+            className="overflow-hidden p-6" 
+            style={{ 
+              width: '95vw', 
+              maxWidth: '95vw', 
+              height: '95vh', 
+              maxHeight: '95vh' 
+            }}
+          >
+            <DialogHeader className="pb-4">
               <DialogTitle>Tabela de Mensagens - Dados Completos</DialogTitle>
             </DialogHeader>
-            <div className="overflow-auto max-h-[calc(95vh-120px)]">
-              <TableMessages flatMessages={flatMessages} />
+            <div className="overflow-auto" style={{ height: '95vh' }}>
+              {isModalOpen && <TableMessages flatMessages={flatMessages} />}
             </div>
           </DialogContent>
         </Dialog>
