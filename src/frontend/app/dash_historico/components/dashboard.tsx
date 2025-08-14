@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import TableMessages from './table-messages';
 import TableMetricUserMessages from './table-metric-user-messages';
 import MetricsScoreCard from './metrics-scorecard';
 import MetricsScoreCardDAUMAU from './metrics-scorecard-dau-mau';
 
 interface MetricsDashboardProps {
   whitelist?: { [groupName: string]: string[] };
-  historyData: { [phoneNumber: string]: any[] };
+  historyData: { [phoneNumber: string]: Record<string, unknown>[] };
 }
 
 export interface FlatMessage {
@@ -26,11 +25,11 @@ export interface FlatMessage {
   model_name: string | null;
   finish_reason: string | null;
   avg_logprobs: number | null;
-  usage_metadata: any;
+  usage_metadata: Record<string, unknown>;
   message_type: string;
   content: string;
-  tool_call: any;
-  tool_return: any;
+  tool_call: Record<string, unknown> | null;
+  tool_return: Record<string, unknown> | null;
   status: string | null;
   tool_call_id: string | null;
   stdout: string | null;
@@ -60,32 +59,32 @@ export default function MetricsDashboard({ whitelist, historyData }: MetricsDash
       
       userMessages.forEach(msg => {
         // Use original date without timezone conversion
-        let normalizedDate = msg.date || '';
+        const normalizedDate = String(msg.date) || '';
 
         messages.push({
           user_id: phoneNumber,
           group_name: group,
-          id: msg.id || '',
+          id: String(msg.id) || '',
           date: normalizedDate,
-          session_id: msg.session_id || '',
-          time_since_last_message: msg.time_since_last_message,
-          name: msg.name,
-          otid: msg.otid || '',
-          sender_id: msg.sender_id,
-          step_id: msg.step_id || '',
-          is_err: msg.is_err,
-          model_name: msg.model_name,
-          finish_reason: msg.finish_reason,
-          avg_logprobs: msg.avg_logprobs,
-          usage_metadata: msg.usage_metadata,
-          message_type: msg.message_type || '',
-          content: msg.content || '',
-          tool_call: msg.tool_call,
-          tool_return: msg.tool_return,
-          status: msg.status,
-          tool_call_id: msg.tool_call_id,
-          stdout: msg.stdout,
-          stderr: msg.stderr
+          session_id: String(msg.session_id) || '',
+          time_since_last_message: typeof msg.time_since_last_message === 'number' ? msg.time_since_last_message : null,
+          name: typeof msg.name === 'string' ? msg.name : null,
+          otid: String(msg.otid) || '',
+          sender_id: typeof msg.sender_id === 'string' ? msg.sender_id : null,
+          step_id: String(msg.step_id) || '',
+          is_err: typeof msg.is_err === 'boolean' ? msg.is_err : null,
+          model_name: typeof msg.model_name === 'string' ? msg.model_name : null,
+          finish_reason: typeof msg.finish_reason === 'string' ? msg.finish_reason : null,
+          avg_logprobs: typeof msg.avg_logprobs === 'number' ? msg.avg_logprobs : null,
+          usage_metadata: (typeof msg.usage_metadata === 'object' && msg.usage_metadata !== null) ? msg.usage_metadata as Record<string, unknown> : {},
+          message_type: String(msg.message_type) || '',
+          content: String(msg.content) || '',
+          tool_call: (typeof msg.tool_call === 'object') ? msg.tool_call as Record<string, unknown> | null : null,
+          tool_return: (typeof msg.tool_return === 'object') ? msg.tool_return as Record<string, unknown> | null : null,
+          status: typeof msg.status === 'string' ? msg.status : null,
+          tool_call_id: typeof msg.tool_call_id === 'string' ? msg.tool_call_id : null,
+          stdout: typeof msg.stdout === 'string' ? msg.stdout : null,
+          stderr: typeof msg.stderr === 'string' ? msg.stderr : null
         });
       });
     });

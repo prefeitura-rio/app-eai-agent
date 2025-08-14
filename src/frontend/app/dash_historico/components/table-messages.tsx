@@ -15,7 +15,7 @@ interface TableMessagesProps {
 export default function TableMessages({ flatMessages, showCard = true }: TableMessagesProps) {
   const [filters, setFilters] = useState<{ [key: string]: string }>({});
   
-  const formatValue = (value: any): string => {
+  const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return '-';
     if (typeof value === 'object') return JSON.stringify(value);
     if (typeof value === 'boolean') return value ? 'true' : 'false';

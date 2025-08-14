@@ -24,7 +24,7 @@ interface DashHistoricoClientProps {
 }
 
 interface HistoryData {
-  [phoneNumber: string]: any[];
+  [phoneNumber: string]: Record<string, unknown>[];
 }
 
 export default function DashHistoricoClient({ whitelist }: DashHistoricoClientProps) {

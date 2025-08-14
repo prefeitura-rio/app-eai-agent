@@ -36,7 +36,7 @@ export default function MetricsScoreCard({ flatMessages }: MetricsScoreCardProps
   }: { 
     title: string; 
     value: number; 
-    icon: any; 
+    icon: React.ComponentType<{ className?: string }>; 
     description: string;
   }) => (
     <Card>

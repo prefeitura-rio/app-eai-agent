@@ -104,7 +104,7 @@ export default function TableMetricUserMessages({ flatMessages }: TableMetricUse
     
     // Create chart data structure
     return allDates.map(date => {
-      const dataPoint: any = { date: formatDate(date) };
+      const dataPoint: Record<string, string | number> = { date: formatDate(date) };
       
       allGroups.forEach(group => {
         const metric = userMessageMetrics.find(m => m.date === date && m.group_name === group);
