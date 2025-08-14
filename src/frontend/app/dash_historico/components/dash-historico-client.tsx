@@ -13,8 +13,7 @@ import { useHeader } from '@/app/contexts/HeaderContext';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { API_BASE_URL } from '@/app/components/config';
 import { toast } from 'sonner';
-import { useMetricsCalculator } from './metrics-calculator';
-import MetricsDashboard from './metrics-dashboard';
+import MetricsDashboard from './dashboard';
 
 interface WhitelistData {
   [groupName: string]: string[];
@@ -164,7 +163,6 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
   }, [historyData, selectedPhones]);
 
   // Calculate metrics from filtered history data
-  const metrics = useMetricsCalculator(filteredHistoryData);
   const hasHistoryData = Object.keys(historyData).length > 0;
 
   return (
@@ -362,7 +360,7 @@ export default function DashHistoricoClient({ whitelist }: DashHistoricoClientPr
                   </p>
                 </div>
               )}
-              <MetricsDashboard metrics={metrics} whitelist={whitelist} historyData={filteredHistoryData} />
+              <MetricsDashboard whitelist={whitelist} historyData={filteredHistoryData} />
             </>
           ) : (
             <div className="flex items-center justify-center h-full">
