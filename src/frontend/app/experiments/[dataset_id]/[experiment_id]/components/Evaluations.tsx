@@ -111,7 +111,7 @@ export default function Evaluations({ evaluations }: EvaluationsProps) {
 
     return (
         <Accordion type="multiple" defaultValue={evaluations.map(e => e.metric_name)}>
-            {evaluations.map((ev, index) => {
+            {evaluations.map((ev) => {
                 return (
                     <AccordionItem value={ev.metric_name} key={ev.metric_name}>
                         <AccordionTrigger className="hover:no-underline">

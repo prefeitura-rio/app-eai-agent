@@ -4,12 +4,10 @@ from sqlalchemy.orm import Session
 
 from src.core.security.dependencies import validar_token
 from src.services.eai_gateway.api import EAIClient, CreateAgentRequest, EAIClientError
+from src.services.agent_engine.history import GoogleAgentEngineHistory
 from pydantic import BaseModel
-from typing import Dict, Any
-from src.utils.log import logger
-
-
 from typing import Dict, Any, Optional, List
+from src.utils.log import logger
 
 # --- Pydantic Models ---
 
@@ -24,6 +22,26 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: Dict[str, Any]
+
+
+class HistoryRequest(BaseModel):
+    user_id: str
+    session_timeout_seconds: int = 3600
+    use_whatsapp_format: bool = False
+
+
+class BulkHistoryRequest(BaseModel):
+    user_ids: List[str]
+    session_timeout_seconds: int = 3600
+    use_whatsapp_format: bool = False
+
+
+class HistoryResponse(BaseModel):
+    data: List[Dict[str, Any]]
+
+
+class BulkHistoryResponse(BaseModel):
+    data: Dict[str, List[Dict[str, Any]]]
 
 
 # --- Router Setup ---
@@ -68,4 +86,66 @@ async def handle_chat(
         raise HTTPException(status_code=504, detail="Timeout waiting for EAI response.")
     except Exception as e:
         logger.exception("An unexpected error occurred in the chat endpoint.")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+@router.post("/history", response_model=HistoryResponse)
+async def get_user_history(
+    request: HistoryRequest,
+):
+    """
+    Retrieves the conversation history for a single user.
+
+    Args:
+        request: Contains user_id and optional session_timeout_seconds (default: 3600)
+
+    Returns:
+        HistoryResponse: List of formatted messages for the user
+    """
+    try:
+        # Initialize the history service
+        history_service = await GoogleAgentEngineHistory.create()
+
+        # Get the history for the single user
+        _, messages = await history_service._get_single_user_history(
+            user_id=request.user_id,
+            session_timeout_seconds=request.session_timeout_seconds,
+            use_whatsapp_format=request.use_whatsapp_format,
+        )
+
+        return HistoryResponse(data=messages)
+
+    except Exception as e:
+        logger.exception(f"Error retrieving history for user {request.user_id}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+@router.post("/history/bulk", response_model=BulkHistoryResponse)
+async def get_bulk_user_history(
+    request: BulkHistoryRequest,
+):
+    """
+    Retrieves the conversation history for multiple users in bulk.
+
+    Args:
+        request: Contains user_ids list and optional session_timeout_seconds (default: 3600)
+
+    Returns:
+        BulkHistoryResponse: Dictionary mapping user_id to their message history
+    """
+    try:
+        # Initialize the history service
+        history_service = await GoogleAgentEngineHistory.create()
+
+        # Get the history for multiple users
+        bulk_history = await history_service.get_history_bulk(
+            user_ids=request.user_ids,
+            session_timeout_seconds=request.session_timeout_seconds,
+            use_whatsapp_format=request.use_whatsapp_format,
+        )
+
+        return BulkHistoryResponse(data=bulk_history)
+
+    except Exception as e:
+        logger.exception(f"Error retrieving bulk history for users {request.user_ids}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

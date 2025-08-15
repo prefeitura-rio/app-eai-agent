@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/app/utils/utils';
-import { Home, FlaskConical, Settings, PanelLeftClose, PanelRightClose, Moon, Sun, LogOut, Bot, MessageSquare } from 'lucide-react';
+import { Home, FlaskConical, Settings, PanelLeftClose, PanelRightClose, Moon, Sun, LogOut, Bot, MessageSquare, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,7 @@ const mainNavigation: NavItem[] = [
   { name: 'Experimentos', href: '/experiments', icon: FlaskConical },
   { name: 'Chat EAI', href: '/chat', icon: MessageSquare },
   { name: 'Configurações EAI', href: '/eai_settings', icon: Bot },
+  { name: 'Dashboard Histórico', href: '/dash_historico', icon: BarChart3 },
 ];
 
 const disabledNavigation: DisabledNavItem[] = [];

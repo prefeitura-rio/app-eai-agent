@@ -64,11 +64,6 @@ const downloadExperimentsCsvBtn = document.getElementById(
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", function () {
-  console.log(
-    "DOM carregado - Inicializando página de experimentos do dataset:",
-    DATASET_ID
-  );
-
   if (!DATASET_ID || DATASET_ID === "{{DATASET_ID}}") {
     showAlert(
       "ID do dataset não encontrado. Redirecionando para a página de datasets...",
@@ -169,7 +164,6 @@ async function loadExperimentsData() {
   clearAlerts();
 
   try {
-    console.log("Carregando experimentos do dataset:", DATASET_ID);
     const response = await axios.get(
       `${API_BASE_URL}/admin/experiments/${DATASET_ID}/data`,
       {
@@ -609,7 +603,6 @@ function getShortMetricName(fullName) {
 }
 
 function viewExperiment(experimentId) {
-  console.log("Navegando para experimento:", experimentId);
   window.location.href = `/eai-agent/admin/experiments/${DATASET_ID}/${encodeURIComponent(
     experimentId
   )}`;
@@ -845,12 +838,6 @@ async function loadExamplesData(loadMore = false) {
   clearAlerts();
 
   try {
-    console.log(
-      "Carregando examples do dataset:",
-      DATASET_ID,
-      loadMore ? "(carregando mais)" : "(primeira carga)"
-    );
-
     // Construir URL com parâmetros de paginação
     let url = `${API_BASE_URL}/admin/experiments/${DATASET_ID}/examples?first=1000`;
     if (loadMore && examplesEndCursor) {
@@ -888,17 +875,10 @@ async function loadExamplesData(loadMore = false) {
         examplesEndCursor = pageInfo.endCursor;
       }
 
-      console.log(
-        `🔄 Carregados ${newExamples.length} novos examples. Total: ${allLoadedExamples.length}/${examplesData.exampleCount}. HasNextPage: ${examplesHasNextPage}`
-      );
-
       // Aplicar filtro sempre para atualizar a UI
       // Mas resetar o estado de loading antes se for loadMore
       if (loadMore) {
         isLoadingMoreExamples = false;
-        console.log(
-          "🔄 isLoadingMoreExamples resetado para false ANTES do applyExampleFilter"
-        );
       }
       applyExampleFilter();
     } else {
@@ -953,15 +933,10 @@ function displayExamples() {
   if (examplesData && examplesData.exampleCount) {
     const statusRow = document.createElement("tr");
 
-    console.log(
-      `🔍 Debug displayExamples: isLoadingMoreExamples=${isLoadingMoreExamples}, examplesHasNextPage=${examplesHasNextPage}, allLoadedExamples.length=${allLoadedExamples.length}, exampleCount=${examplesData.exampleCount}`
-    );
-
     // Correção: Se não estamos carregando mais E há próxima página, mostrar botão
     // Se estivermos carregando mais, mostrar loading
     if (isLoadingMoreExamples) {
       // Mostra indicador de carregamento
-      console.log("📝 Mostrando indicador de carregamento");
       statusRow.innerHTML = `
         <td colspan="4" class="text-center py-3">
           <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
@@ -972,10 +947,7 @@ function displayExamples() {
       `;
     } else if (examplesHasNextPage) {
       // Mostra botão para carregar mais
-      console.log("🔘 Mostrando botão 'Carregar Mais'");
-      console.log(
-        `🔘 Condições: isLoadingMoreExamples=${isLoadingMoreExamples}, examplesHasNextPage=${examplesHasNextPage}`
-      );
+
       statusRow.innerHTML = `
         <td colspan="4" class="text-center text-info py-3">
           <i class="bi bi-info-circle me-2"></i>
@@ -987,7 +959,6 @@ function displayExamples() {
       `;
     } else if (allLoadedExamples.length > 0) {
       // Mostra mensagem de conclusão
-      console.log("✅ Mostrando mensagem de conclusão");
       statusRow.innerHTML = `
         <td colspan="4" class="text-center text-success py-3">
           <i class="bi bi-check-circle me-2"></i>
@@ -1202,10 +1173,6 @@ function viewExampleDetails(exampleId) {
 function applyExampleFilter() {
   if (!allLoadedExamples || allLoadedExamples.length === 0) return;
 
-  console.log(
-    `🔍 applyExampleFilter chamado - allLoadedExamples: ${allLoadedExamples.length}, isLoadingMoreExamples: ${isLoadingMoreExamples}`
-  );
-
   // Filtrar examples dos carregados
   if (exampleSearchTerm) {
     filteredExamples = allLoadedExamples.filter((example) => {
@@ -1221,10 +1188,6 @@ function applyExampleFilter() {
   } else {
     filteredExamples = [...allLoadedExamples];
   }
-
-  console.log(
-    `🔍 filteredExamples: ${filteredExamples.length}, chamando displayExamples()`
-  );
 
   // Re-render the table
   displayExamples();
@@ -1343,7 +1306,6 @@ async function downloadExamplesCsv() {
 
     while (hasNextPage) {
       pageCount++;
-      console.log(`📥 Carregando página ${pageCount} para download CSV...`);
 
       // Atualizar texto do botão com progresso
       downloadExamplesCsvBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Carregando página ${pageCount}...`;
@@ -1364,10 +1326,6 @@ async function downloadExamplesCsv() {
         const pageInfo = datasetData.examples?.pageInfo;
         hasNextPage = pageInfo?.hasNextPage || false;
         cursor = pageInfo?.endCursor;
-
-        console.log(
-          `✅ Página ${pageCount}: ${newExamples.length} examples. Total: ${allExamples.length}/${examplesData.exampleCount}`
-        );
       } else {
         break;
       }
@@ -1404,9 +1362,6 @@ async function downloadExamplesCsv() {
       ]);
     });
 
-    console.log(
-      `📊 Gerando arquivo CSV com ${allExamples.length} examples...`
-    );
     downloadExamplesCsvBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Gerando CSV...`;
 
     // Converter para CSV

@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage } from '../services/api';
+import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryMessage } from '../services/api';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -18,6 +18,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 interface DisplayMessage {
   sender: 'user' | 'bot';
@@ -39,6 +41,8 @@ const JsonViewer = ({ data }: { data: object }) => (
 const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolName?: string }) => {
   try {
     const data = typeof toolReturn === 'string' ? JSON.parse(toolReturn) : toolReturn;
+    
+    // Debug log para verificar a estrutura
     
     if (typeof data !== 'object' || data === null) {
       return <p className="p-2 bg-muted/50 rounded-md text-base-custom whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
@@ -110,24 +114,40 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
       // Special handling for equipments_instructions
       const toolReturnData = data as {
         tema?: string;
+        next_tool_instructions?: string;
+        next_too_instructions?: string;
         instrucoes?: Array<{
           tema?: string;
           instrucoes?: string;
         }>;
+        categorias?: unknown;
       };
       
       return (
         <div className="space-y-4">
+          {(toolReturnData.next_tool_instructions || toolReturnData.next_too_instructions) && (
+            <div className="space-y-1">
+              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Próximas Instruções</h5>
+              <div className="pl-4">
+                <div
+                  className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(toolReturnData.next_tool_instructions || toolReturnData.next_too_instructions || '', { breaks: true }) as string) }}
+                />
+              </div>
+            </div>
+          )}
+          
           {toolReturnData.tema && (
             <div className="space-y-1">
               <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Tema</h5>
               <div className="pl-4">
-                                  <div className="text-base-custom font-medium text-foreground">
+                <div className="text-base-custom font-medium text-foreground">
                   {toolReturnData.tema}
                 </div>
               </div>
             </div>
           )}
+          
           {toolReturnData.instrucoes && Array.isArray(toolReturnData.instrucoes) && (
             <div className="space-y-1">
               <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Instruções</h5>
@@ -152,12 +172,24 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
               </div>
             </div>
           )}
+          
+          {Boolean(toolReturnData.categorias) && (
+            <div className="space-y-1">
+              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Categorias</h5>
+              <div className="pl-4">
+                <JsonViewer data={toolReturnData.categorias as object} />
+              </div>
+            </div>
+          )}
         </div>
       );
     } else {
       // Default behavior for other tools
       return (
         <div className="space-y-2">
+          <div className="text-xs bg-yellow-100 dark:bg-yellow-900/20 p-2 rounded border">
+            <strong>Debug Info:</strong> Tool: {toolName || 'unknown'}, Keys: {Object.keys(data).join(', ')}
+          </div>
           {Object.entries(data).map(([key, value]) => (
             <div key={key}>
               <p className="font-semibold text-base-custom capitalize">{key.replace(/_/g, ' ')}:</p>
@@ -183,11 +215,13 @@ const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolN
   }
 };
 
-const getStepIcon = (messageType: AgentMessage['message_type']) => {
+const getStepIcon = (messageType: AgentMessage['message_type'] | HistoryMessage['message_type']) => {
   switch (messageType) {
     case 'reasoning_message': return <Lightbulb className="h-4 w-4 text-yellow-500" />;
     case 'tool_call_message': return <Wrench className="h-4 w-4 text-blue-500" />;
     case 'tool_return_message': return <LogIn className="h-4 w-4 text-green-500" />;
+    case 'user_message': return <User className="h-4 w-4 text-blue-600" />;
+    case 'assistant_message': return <Bot className="h-4 w-4 text-green-600" />;
     default: return null;
   }
 };
@@ -229,7 +263,6 @@ const retryWithBackoff = async <T,>(
       
       // Calcula delay com backoff exponencial
       const delay = baseDelay * Math.pow(2, attempt);
-      console.log(`Tentativa ${attempt + 1} falhou. Tentando novamente em ${delay}ms...`);
       
       // Notifica sobre o retry se callback fornecido
       if (onRetry) {
@@ -273,6 +306,15 @@ export default function ChatClient() {
   }, []);
   
   const [provider] = useState('google_agent_engine'); // Provider fixo, não editável
+
+  // History States
+  const [historyMessages, setHistoryMessages] = useState<HistoryMessage[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  
+  // History Parameters
+  const [sessionTimeoutSeconds, setSessionTimeoutSeconds] = useState(3600); // 1 hora default
+  const [useWhatsappFormat, setUseWhatsappFormat] = useState(false);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -386,6 +428,44 @@ export default function ChatClient() {
     }
   };
 
+  const handleLoadHistory = async () => {
+    if (!token) {
+      toast.error("Token de autenticação não encontrado!");
+      return;
+    }
+
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+
+    try {
+      const payload: HistoryRequestPayload = {
+        user_id: userNumber,
+        session_timeout_seconds: sessionTimeoutSeconds,
+        use_whatsapp_format: useWhatsappFormat,
+      };
+
+      const historyData = await getUserHistory(payload, token);
+      setHistoryMessages(historyData.data);
+      
+      // Limpar chat atual quando carregar histórico
+      setMessages([]);
+      
+      // Filtrar apenas mensagens de conversa (não usage_statistics)
+      const conversationMessages = historyData.data.filter(
+        msg => msg.message_type !== 'usage_statistics'
+      );
+      
+      toast.success(`Histórico carregado! ${conversationMessages.length} mensagens encontradas.`);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao carregar histórico.";
+      setHistoryError(errorMessage);
+      toast.error(`Erro ao carregar histórico: ${errorMessage}`);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
   return (
     <div className="grid md:grid-cols-[1fr_350px] gap-6 h-full">
       {/* Painel do Chat (Esquerda) */}
@@ -395,6 +475,267 @@ export default function ChatClient() {
         </CardHeader>
         <CardContent ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
+              {/* Mensagens do Histórico */}
+              {(() => {
+                // Filtrar mensagens de conversa
+                const conversationMessages = historyMessages.filter(msg => 
+                  msg.message_type === 'user_message' || msg.message_type === 'assistant_message'
+                );
+                
+                if (conversationMessages.length === 0) return null;
+
+                // Criar mapeamento de session_id para número sequencial
+                const uniqueSessionIds = Array.from(new Set(
+                  conversationMessages.map(msg => msg.session_id).filter(Boolean)
+                ));
+                const sessionIdToNumber = Object.fromEntries(
+                  uniqueSessionIds.map((sessionId, index) => [sessionId, index + 1])
+                );
+
+                // Agrupar mensagens por sessão
+                const groupedBySessions = uniqueSessionIds.map(sessionId => ({
+                  sessionId,
+                  sessionNumber: sessionIdToNumber[sessionId || ''],
+                  messages: conversationMessages.filter(msg => msg.session_id === sessionId)
+                }));
+
+                return groupedBySessions.map((session) => (
+                  <div key={`session-${session.sessionId}`}>
+                    {/* Separador da Sessão */}
+                    <div className="flex items-center gap-4 py-4">
+                      <div className="flex-1 border-t border-border"></div>
+                      <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-full border">
+                        <History className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">Sessão {session.sessionNumber}</span>
+                      </div>
+                      <div className="flex-1 border-t border-border"></div>
+                    </div>
+                    
+                    {/* Mensagens da Sessão */}
+                    <div className="space-y-4">
+                      {session.messages.map((msg, msgIndex) => (
+                        <div key={`history-${msg.id}-${msgIndex}`} className={`flex items-start gap-3 ${msg.message_type === 'user_message' ? 'justify-end' : ''}`}>
+                    {msg.message_type === 'assistant_message' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
+                    <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.message_type === 'user_message' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                      <div className="relative group">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
+                          <History className="h-3 w-3" />
+                          <span className="text-xs font-mono">
+                            Sessão {sessionIdToNumber[msg.session_id || '']} • {new Date(msg.date).toLocaleDateString('pt-BR')} {new Date(msg.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                          {msg.time_since_last_message && (
+                            <span className="text-xs text-muted-foreground">
+                              +{Math.round(msg.time_since_last_message)}s
+                            </span>
+                          )}
+                        </div>
+                      <div
+                        className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${msg.message_type === 'user_message' ? 'text-primary-foreground' : ''}`}
+                        style={{
+                          '--tw-prose-pre-bg': 'rgb(31 41 55)',
+                          '--tw-prose-pre-code': 'rgb(209 213 219)',
+                        } as React.CSSProperties}
+                        dangerouslySetInnerHTML={{ 
+                          __html: (() => {
+                            const content = msg.content || '';
+                            const parsed = marked.parse(content, { breaks: true }) as string;
+                            
+                            // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
+                            const isUserMessage = msg.message_type === 'user_message';
+                            const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
+                            
+                            const styledHTML = parsed.replace(
+                              /<pre><code class="language-json">/g,
+                              `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
+                            );
+                            
+                            return DOMPurify.sanitize(styledHTML);
+                          })()
+                        }}
+                      />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`absolute top-8 right-2 border ${
+                                msg.message_type === 'user_message' 
+                                  ? 'bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white' 
+                                  : 'bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary'
+                              }`}
+                              onClick={() => copyToClipboard(msg.content || '')}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copiar mensagem do histórico</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    {msg.message_type === 'assistant_message' && (
+                      <div className="mt-3 pt-3 border-t border-muted/30">
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value={`history-details-${msg.id}`} className="border-none">
+                            <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <span className="text-blue-600 dark:text-blue-400">Ver Detalhes (Histórico)</span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 space-y-4">
+                              {/* Buscar todas as mensagens da interação (entre user_message anterior e próxima user_message) */}
+                              {(() => {
+                                // Encontrar o índice da mensagem atual na lista completa
+                                const currentIndex = historyMessages.findIndex(m => m.id === msg.id);
+                                
+                                if (currentIndex === -1) return null;
+                                
+                                // Procurar a user_message que inicia esta interação (indo para trás)
+                                let interactionStart = currentIndex;
+                                while (interactionStart > 0) {
+                                  interactionStart--;
+                                  if (historyMessages[interactionStart].message_type === 'user_message') {
+                                    break;
+                                  }
+                                }
+                                
+                                // Se não encontrou uma user_message antes, usar o início
+                                if (historyMessages[interactionStart].message_type !== 'user_message') {
+                                  return null;
+                                }
+                                
+                                // Procurar a próxima user_message para definir o fim da interação (indo para frente)
+                                let interactionEnd = currentIndex;
+                                while (interactionEnd < historyMessages.length - 1) {
+                                  interactionEnd++;
+                                  if (historyMessages[interactionEnd].message_type === 'user_message') {
+                                    interactionEnd--; // Não incluir a próxima user_message
+                                    break;
+                                  }
+                                }
+                                
+                                // Extrair todas as mensagens da interação
+                                const interactionMessages = historyMessages.slice(interactionStart, interactionEnd + 1);
+                                
+                                // Filtrar apenas os steps (não user e não assistant final)
+                                const interactionSteps = interactionMessages.filter(step => 
+                                  step.message_type !== 'usage_statistics' &&
+                                  step.message_type !== 'user_message' &&
+                                  step.id !== msg.id && // Não incluir a própria mensagem assistant atual
+                                  (step.message_type === 'tool_call_message' || 
+                                   step.message_type === 'tool_return_message' ||
+                                   step.message_type === 'reasoning_message' ||
+                                   step.message_type === 'assistant_message')
+                                );
+                                
+                                return (
+                                  <div className="space-y-2">
+                                    {interactionSteps.length > 0 ? (
+                                      interactionSteps.map((step, stepIndex) => (
+                                        <div key={`step-${step.id}-${stepIndex}`} className="space-y-2 border-l-2 border-muted pl-3">
+                                          <div className="flex items-center gap-2">
+                                            {getStepIcon(step.message_type)}
+                                            <h5 className="font-semibold text-sm">{step.message_type.replace(/_/g, ' ')}</h5>
+                                            {step.name && <Badge variant="secondary">{step.name}</Badge>}
+                                          </div>
+                                          {step.reasoning && (
+                                            <p className="italic text-muted-foreground text-sm">{step.reasoning}</p>
+                                          )}
+                                          {step.tool_call && (
+                                            <div>
+                                              <p className="font-semibold text-sm capitalize mb-2">Tool Call Arguments:</p>
+                                              <JsonViewer data={(() => {
+                                                try {
+                                                  return typeof step.tool_call.arguments === 'string' 
+                                                    ? JSON.parse(step.tool_call.arguments)
+                                                    : step.tool_call.arguments;
+                                                } catch {
+                                                  return { raw: step.tool_call.arguments };
+                                                }
+                                              })()} />
+                                            </div>
+                                          )}
+                                          {step.tool_return && (
+                                            <ToolReturnViewer toolReturn={step.tool_return} toolName={step.name || undefined} />
+                                          )}
+                                          {step.content && step.message_type === 'assistant_message' && (
+                                            <div>
+                                              <p className="font-semibold text-sm capitalize mb-2">Resposta Intermediária:</p>
+                                              <div 
+                                                className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-2 rounded"
+                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(step.content, { breaks: true }) as string) }}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="text-sm text-muted-foreground italic">
+                                        Resposta direta sem uso de ferramentas
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                              
+                              <div className="space-y-2 pt-2 border-t">
+                                <h4 className="font-semibold">Informações da Mensagem</h4>
+                                <div className="text-sm space-y-1">
+                                  <div><span className="font-medium">ID:</span> {msg.id}</div>
+                                  <div><span className="font-medium">Session ID:</span> {msg.session_id}</div>
+                                  <div><span className="font-medium">Data:</span> {new Date(msg.date).toLocaleString('pt-BR')}</div>
+                                  <div><span className="font-medium">Tipo:</span> {msg.message_type}</div>
+                                  {msg.time_since_last_message && (
+                                    <div><span className="font-medium">Tempo desde última:</span> {Math.round(msg.time_since_last_message)}s</div>
+                                  )}
+                                  {msg.model_name && (
+                                    <div><span className="font-medium">Modelo:</span> {msg.model_name}</div>
+                                  )}
+                                  {msg.finish_reason && (
+                                    <div><span className="font-medium">Finish Reason:</span> {msg.finish_reason}</div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {msg.usage_metadata && (
+                                <div className="space-y-2 pt-2 border-t">
+                                  <div className="flex items-center gap-2">
+                                    <BarChart2 className="h-4 w-4 text-purple-500" />
+                                    <h4 className="font-semibold">Usage Metadata</h4>
+                                  </div>
+                                  <JsonViewer data={msg.usage_metadata} />
+                                </div>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      </div>
+                    )}
+                          </div>
+                          {msg.message_type === 'user_message' && <User className="h-6 w-6 flex-shrink-0" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+
+              {/* Separador entre histórico e chat atual */}
+              {historyMessages.length > 0 && messages.length > 0 && (
+                <div className="flex items-center gap-4 py-4">
+                  <div className="flex-1 border-t border-border"></div>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">Nova Conversa</span>
+                  </div>
+                  <div className="flex-1 border-t border-border"></div>
+                </div>
+              )}
+
+              {/* Mensagens do Chat Atual */}
               {messages.map((msg, index) => (
                 <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                   {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
@@ -402,7 +743,23 @@ export default function ChatClient() {
                     <div className="relative group">
                       <div
                         className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${msg.sender === 'user' ? 'text-primary-foreground' : ''}`}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content, { breaks: true }) as string) }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: (() => {
+                            const content = msg.content;
+                            const parsed = marked.parse(content, { breaks: true }) as string;
+                            
+                            // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
+                            const isUserMessage = msg.sender === 'user';
+                            const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
+                            
+                            const styledHTML = parsed.replace(
+                              /<pre><code class="language-json">/g,
+                              `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
+                            );
+                            
+                            return DOMPurify.sanitize(styledHTML);
+                          })()
+                        }}
                       />
                       <TooltipProvider>
                         <Tooltip>
@@ -591,6 +948,91 @@ export default function ChatClient() {
               disabled
               className="bg-muted"
             />
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">Histórico</h3>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="session-timeout">Session Timeout (segundos)</Label>
+              <Input
+                id="session-timeout"
+                type="number"
+                value={sessionTimeoutSeconds}
+                onChange={(e) => setSessionTimeoutSeconds(parseInt(e.target.value) || 3600)}
+                min="60"
+                max="86400"
+                placeholder="3600"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tempo limite para agrupar mensagens na mesma sessão
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="whatsapp-format"
+                checked={useWhatsappFormat}
+                onCheckedChange={(checked) => setUseWhatsappFormat(checked as boolean)}
+              />
+              <Label htmlFor="whatsapp-format" className="text-sm">
+                Formato WhatsApp
+              </Label>
+            </div>
+
+            <Button
+              onClick={handleLoadHistory}
+              disabled={isLoadingHistory || !isMounted}
+              className="w-full"
+              variant="outline"
+            >
+              {isLoadingHistory ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Carregando...
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Carregar Histórico
+                </>
+              )}
+            </Button>
+
+            {historyError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-sm text-destructive">{historyError}</p>
+              </div>
+            )}
+
+            {historyMessages.length > 0 && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600">
+                    {historyMessages.filter(m => m.message_type !== 'usage_statistics').length} mensagens carregadas
+                  </span>
+                </div>
+                <Button
+                  onClick={() => {
+                    setHistoryMessages([]);
+                    setMessages([]);
+                    setHistoryError(null);
+                    toast.info("Histórico e chat atual limpos!");
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-xs"
+                >
+                  Limpar Tudo
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
