@@ -10,4 +10,4 @@ ADD . /app
 
 RUN uv sync
 
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run gunicorn -c gunicorn_config.py src.main:app"]
+CMD ["uv", "run", "gunicorn", "-c", "gunicorn_config.py", "src.main:app"]
