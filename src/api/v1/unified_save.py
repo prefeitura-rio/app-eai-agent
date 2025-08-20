@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from loguru import logger
 
 from src.core.security.dependencies import validar_token
 from src.db import get_db_session
@@ -10,6 +11,7 @@ from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.services.letta.system_prompt_service import system_prompt_service
 from src.services.letta.agent_config_service import agent_config_service
+from src.services.discord.notification_service import discord_service
 
 router = APIRouter(
     prefix="/unified-save",
@@ -205,6 +207,21 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                     updated_count = sum(1 for success in agents_results.values() if success)
                     total_count = len(agents_results)
                     result["message"] += f", {updated_count}/{total_count} agentes foram atualizados"
+
+            # Send Discord notification for production environment
+            try:
+                await discord_service.send_prompt_version_notification(
+                    agent_type=request.agent_type,
+                    version_number=version_number,
+                    version_display=version_display,
+                    author=request.author or "API",
+                    reason=request.reason or "Alteração via API",
+                    change_type=change_type,
+                    prompt_content_preview=request.prompt_content[:200] if request.prompt_content else None
+                )
+            except Exception as e:
+                # Don't fail the main operation if Discord notification fails
+                logger.error(f"Failed to send Discord notification: {str(e)}")
 
             return UnifiedSaveResponse(**result)
 
