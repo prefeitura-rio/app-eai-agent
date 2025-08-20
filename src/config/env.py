@@ -91,3 +91,16 @@ DISCORD_BOT_NAME = getenv_or_action("DISCORD_BOT_NAME", action="ignore")
 DISCORD_BOT_AVATAR_URL = getenv_or_action("DISCORD_BOT_AVATAR_URL", action="ignore")
 DISCORD_ENABLE_DEV_TESTING = getenv_or_action("DISCORD_ENABLE_DEV_TESTING", default="false", action="ignore").lower() == "true"
 ENVIRONMENT = getenv_or_action("ENVIRONMENT", default="development", action="ignore")
+
+# Beta Group / Whitelist Configuration
+WHITELIST_API_BASE_URL_STAGING = getenv_or_action("WHITELIST_API_BASE_URL_STAGING", action="ignore")
+WHITELIST_ISSUER_STAGING = getenv_or_action("WHITELIST_ISSUER_STAGING", action="ignore")
+WHITELIST_CLIENT_ID_STAGING = getenv_or_action("WHITELIST_CLIENT_ID_STAGING", action="ignore")
+WHITELIST_CLIENT_SECRET_STAGING = getenv_or_action("WHITELIST_CLIENT_SECRET_STAGING", action="ignore")
+
+WHITELIST_API_BASE_URL_PROD = getenv_or_action("WHITELIST_API_BASE_URL_PROD", action="ignore")
+WHITELIST_ISSUER_PROD = getenv_or_action("WHITELIST_ISSUER_PROD", action="ignore")
+WHITELIST_CLIENT_ID_PROD = getenv_or_action("WHITELIST_CLIENT_ID_PROD", action="ignore")
+WHITELIST_CLIENT_SECRET_PROD = getenv_or_action("WHITELIST_CLIENT_SECRET_PROD", action="ignore")
+
+WHITELIST_GOOGLE_SHEET = getenv_or_action("WHITELIST_GOOGLE_SHEET", action="ignore")
