@@ -80,3 +80,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Personal
+README_BRUNO.md

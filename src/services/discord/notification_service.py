@@ -100,29 +100,57 @@ class DiscordNotificationService:
         if not reason:
             return reason
             
-        # Handle different dash patterns and convert to bullet points
-        formatted = reason
+        # First, handle the case where text starts with a dash
+        formatted = reason.strip()
         
-        # Replace various dash patterns with line breaks and bullet points
-        patterns = [
-            " - ",  # space-dash-space
-            "- ",   # dash-space at start of sentences
-            " -",   # space-dash at end (less common)
-        ]
-        
-        for pattern in patterns:
-            if pattern in formatted:
-                # Split by the pattern and rejoin with line breaks and bullets
-                parts = formatted.split(pattern)
-                if len(parts) > 1:
-                    # First part stays as is, subsequent parts get bullet points
-                    formatted = parts[0]
-                    for part in parts[1:]:
-                        if part.strip():  # Only add non-empty parts
-                            formatted += f"\n• {part.strip()}"
-                    break  # Use first matching pattern
+        # If text starts with a dash, we'll treat everything as bullet points
+        if formatted.startswith("- "):
+            # Split by " - " (space-dash-space) to separate items
+            items = []
+            
+            # First try splitting by " - " (space-dash-space)
+            if " - " in formatted:
+                parts = formatted.split(" - ")
+                # The first part starts with "- ", so we clean it
+                if parts[0].startswith("- "):
+                    parts[0] = parts[0][2:]  # Remove the "- " prefix
+                items = parts
+            else:
+                # If no " - " pattern, try splitting by newlines and clean dashes
+                lines = formatted.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if line.startswith("- "):
+                        items.append(line[2:])  # Remove "- " prefix
+                    elif line.startswith("-"):
+                        items.append(line[1:].strip())  # Remove "-" prefix
+                    elif line:
+                        items.append(line)
+            
+            # Join all items with bullet points
+            formatted = "\n".join([f"• {item.strip()}" for item in items if item.strip()])
+        else:
+            # Handle cases where dashes are used mid-sentence
+            patterns = [
+                " - ",  # space-dash-space
+                "- ",   # dash-space (less likely in middle)
+            ]
+            
+            for pattern in patterns:
+                if pattern in formatted:
+                    # Split by the pattern and rejoin with line breaks and bullets
+                    parts = formatted.split(pattern)
+                    if len(parts) > 1:
+                        # First part stays as is, subsequent parts get bullet points
+                        formatted = parts[0].strip()
+                        for part in parts[1:]:
+                            if part.strip():  # Only add non-empty parts
+                                formatted += f"\n• {part.strip()}"
+                        break  # Use first matching pattern
         
         return formatted
+    
+    def get_webhook_url(self) -> str:
         """
         Get the webhook URL, optionally with thread ID parameter.
         
@@ -210,8 +238,8 @@ class DiscordNotificationService:
         
         # Create embed with simplified version information (only requested fields)
         embed = DiscordEmbed(
-            title="🚀 Nova Versão do Prompt Implantada",
-            description=f"Uma nova versão do prompt subiu para **produção**",
+            title="🚀 Nova versão do EAí lançada!",
+            description=f"Uma nova versão do chatbot EAí subiu para **produção**",
             color=0x00ff00,  # Green color for production deployments
             timestamp=datetime.utcnow().isoformat(),
             fields=[
@@ -231,12 +259,7 @@ class DiscordNotificationService:
                     "inline": True
                 },
                 {
-                    "name": "🔄 Tipo de Mudança",
-                    "value": f"`{change_type}`",
-                    "inline": True
-                },
-                {
-                    "name": "📝 Motivo",
+                    "name": " Mudanças",
                     "value": formatted_reason[:1000] if len(formatted_reason) > 1000 else formatted_reason,  # Discord field limit
                     "inline": False
                 }
@@ -247,7 +270,7 @@ class DiscordNotificationService:
             }
         )
         
-        # No longer including prompt preview - only the 5 requested fields
+        # No longer including prompt preview or change type - only the 4 requested fields
         message = DiscordMessage(
             embeds=[embed],
             username=self.bot_name,
