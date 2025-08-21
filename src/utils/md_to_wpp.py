@@ -1,11 +1,3 @@
-"""
-i am working in a markdon to whatsapp converter it is
-almost perfect, only need to work in the break lines lost
-and include a removal for the bars patern, sometimes it include before and after the text example \"Samba & Feijoada"\ or \Samba & Feijoada\
-run the code to see the results of the tests, and them fix it, run again to se if not break anything, do this untill solved my last problems    
-
-"""
-
 import re
 
 
@@ -140,6 +132,7 @@ def markdown_to_whatsapp(text):
 
     # FIX 2: Clean up the specific escaped quote pattern.
     converted_text = re.sub(r"\{r'\\\"(.*?)\\\"\'\}", r'"\1"', converted_text)
+    converted_text = re.sub(r'"', "'", converted_text)
 
     # Clean up excess newlines
     converted_text = re.sub(r"\n{3,}", "\n\n", converted_text)
