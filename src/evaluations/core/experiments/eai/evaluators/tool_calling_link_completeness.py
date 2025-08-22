@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 from urllib.parse import urlparse
-from src.evaluations.core.eval import EvaluationTask, EvaluationResult
-from src.evaluations.core.eval.evaluators.base import BaseOneTurnEvaluator
-from src.evaluations.core.eval.schemas import AgentResponse
-from src.evaluations.core.experiments.eai.evaluators.utils import extract_links_from_text
+from src.evaluations.core.eval import (
+    AgentResponse,
+    BaseOneTurnEvaluator,
+    EvaluationResult,
+    EvaluationTask,
+)
 
 
-class LinkCompletenessEvaluator(BaseOneTurnEvaluator):
+class ToolCallingLinkCompletenessEvaluator(BaseOneTurnEvaluator):
     """
-    Avalia se os links na resposta do agente são completos (têm domínio e subdomínio/caminho).
+    Avalia se os links nas fontes do tool calling são completos (têm domínio e subdomínio/caminho).
     Links genéricos como "https://1746.rio/" são considerados incompletos.
     Links específicos como "https://www.1746.rio/hc/pt-br/articles/..." são considerados completos.
     """
 
-    name = "link_completeness"
+    name = "tool_calling_link_completeness"
 
     def _is_link_complete(self, url: str) -> bool:
         """
@@ -55,16 +57,45 @@ class LinkCompletenessEvaluator(BaseOneTurnEvaluator):
         except Exception:
             return False
 
+    def _extract_links_from_trace(self, agent_response: AgentResponse) -> list[str]:
+        """
+        Extrai links das fontes do tool calling no reasoning trace.
+        """
+        links = []
+        tools = ["google_search"]
+
+        if not agent_response or not agent_response.reasoning_trace:
+            return links
+        
+        for step in agent_response.reasoning_trace:
+            if step.message_type != "tool_return_message":
+                continue
+            
+            if step.content.get("name") not in tools:
+                continue
+
+            tool_call = step.content.get("tool_return", {})
+            sources = tool_call.get("sources", [])
+
+            for source in sources:
+                url = source.get("url")
+                if url:
+                    links.append(url) 
+        
+        return links
+
     async def evaluate(
-        self, agent_response: AgentResponse, task: EvaluationTask
+        self, 
+        agent_response: AgentResponse, 
+        task: EvaluationTask
     ) -> EvaluationResult:
         try:
-            answer_links = extract_links_from_text(agent_response.message)
+            tool_calling_links = self._extract_links_from_trace(agent_response)
             
-            if not answer_links:
+            if not tool_calling_links:
                 return EvaluationResult(
-                    score=0,  # Se não há links, score é 0
-                    annotations="No links found in the answer.",
+                    score=0,  # Se não há links nas fontes, score é 0
+                    annotations="No links found in tool calling sources.",
                     has_error=False,
                     error_message=None,
                 )
@@ -72,7 +103,7 @@ class LinkCompletenessEvaluator(BaseOneTurnEvaluator):
             link_analysis = []
             complete_links = 0
             
-            for link in answer_links:
+            for link in tool_calling_links:
                 is_complete = self._is_link_complete(link)
                 link_analysis.append({
                     "url": link,
@@ -81,15 +112,17 @@ class LinkCompletenessEvaluator(BaseOneTurnEvaluator):
                 if is_complete:
                     complete_links += 1
 
-            # Score é a proporção de links completos
-            score = complete_links / len(answer_links) if answer_links else 1
+            # Score binário: 1 se mais de 50% dos links são completos, 0 caso contrário
+            completeness_ratio = complete_links / len(tool_calling_links) if tool_calling_links else 0
+            score = 1 if completeness_ratio > 0.5 else 0
 
             annotations = {
-                "total_links": len(answer_links),
+                "total_links": len(tool_calling_links),
                 "complete_links": complete_links,
-                "incomplete_links": len(answer_links) - complete_links,
+                "incomplete_links": len(tool_calling_links) - complete_links,
                 "link_analysis": link_analysis,
-                "completeness_ratio": score
+                "completeness_ratio": completeness_ratio,
+                "binary_score_threshold": 0.5
             }
 
             return EvaluationResult(

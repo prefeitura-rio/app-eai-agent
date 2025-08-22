@@ -58,6 +58,10 @@ from src.evaluations.core.experiments.eai.evaluators.link_completeness import (
     LinkCompletenessEvaluator,
 )
 
+from src.evaluations.core.experiments.eai.evaluators.tool_calling_link_completeness import (
+    ToolCallingLinkCompletenessEvaluator,
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator",
     "GoldenLinkInToolCallingEvaluator",
@@ -75,4 +79,5 @@ __all__ = [
     "MessageLengthEvaluator",
     "HasLinkEvaluator",
     "LinkCompletenessEvaluator",
+    "ToolCallingLinkCompletenessEvaluator",
 ]
