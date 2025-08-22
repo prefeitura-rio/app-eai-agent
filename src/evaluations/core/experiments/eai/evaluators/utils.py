@@ -1,6 +1,7 @@
 import ast
 import re
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Dict, Any
 import unicodedata
 from urllib.parse import urlparse, unquote, parse_qsl, urlencode
 
@@ -16,7 +17,7 @@ def extract_links_from_text(text: Optional[str]) -> List[str]:
     markdown_links = re.findall(r"\[.*?\]\((https?://[^\s)]+)\)", text)
     plain_links = re.findall(r"https?://[^\s)\]]+", text)
     normalized = [
-        link.strip().strip('.') if link.startswith("http") else f"https://{link}"
+        link.strip().strip(".") if link.startswith("http") else f"https://{link}"
         for link in markdown_links + plain_links
     ]
     return list(dict.fromkeys(normalized))
@@ -66,9 +67,8 @@ def _norm_url(url: str) -> str:
     domain = parsed.netloc.lower().removeprefix("www.")
     path = unquote(parsed.path).lower().rstrip("/")
 
-    path = ''.join(
-        c for c in unicodedata.normalize('NFD', path)
-        if unicodedata.category(c) != 'Mn'
+    path = "".join(
+        c for c in unicodedata.normalize("NFD", path) if unicodedata.category(c) != "Mn"
     )
 
     if ":~:text=" in path:  # Strip scroll-to-text fragments
@@ -86,3 +86,35 @@ def _norm_url(url: str) -> str:
         norm_url += f"?{query_string}"
 
     return norm_url
+
+
+def get_dharma_preconputed_data(path: Path) -> Optional[Dict[str, Dict[str, Any]]]:
+    import json
+
+    dharma = json.load(open(path / "dharma_compiled_outputs.json", "r"))
+
+    inputs = dharma["user_input"]
+    responses = dharma["response"]
+    times = dharma["time"]
+
+    final_data = []
+    for key in inputs.keys():
+        new_key = str(int(key) + 1)
+        d = {
+            "id": new_key,
+            "one_turn_agent_message": responses[key],
+            "one_turn_reasoning_trace": [
+                {
+                    "message_type": "reasoning_message",
+                    "content": f"Time:{times[key]}",
+                },
+                {
+                    "message_type": "assistant_message",
+                    "content": responses[key],
+                },
+            ],
+        }
+
+        final_data.append(d)
+
+    return {item["id"]: item for item in final_data}

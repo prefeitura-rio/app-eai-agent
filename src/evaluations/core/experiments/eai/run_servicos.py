@@ -29,6 +29,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ProactivityEvaluator,
     MessageLengthEvaluator,
     HasLinkEvaluator,
+    LinkCompletenessEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -79,6 +80,7 @@ async def run_experiment():
         ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
         HasLinkEvaluator(judge_client),
+        LinkCompletenessEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -99,7 +101,11 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
+<<<<<<< HEAD
     MAX_CONCURRENCY = 30
+=======
+    MAX_CONCURRENCY = 20
+>>>>>>> refs/remotes/origin/staging
 
     runner = AsyncExperimentRunner(
         experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
