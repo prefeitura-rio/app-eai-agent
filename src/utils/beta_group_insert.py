@@ -283,17 +283,19 @@ class BetaGroupManager:
         """
         Retorna um set com todos os números já cadastrados na whitelist
         """
-        whitelist_data = self.get_whitelist()
-        if not whitelist_data:
-            return set()
-        
         existing_numbers = set()
+        whitelist_data = self.get_whitelist()
+
+        if not whitelist_data:
+            return existing_numbers
+        
         for entry in whitelist_data.get("whitelisted", []):
             phone_number = entry.get("phone_number")
             if phone_number:
-                # Remove o '+' se existir e adiciona ao set
-                clean_number = phone_number.replace('+', '')
-                existing_numbers.add(clean_number)
+                clean_number = ''.join(filter(str.isdigit, str(phone_number)))
+                if len(clean_number) >= 10:
+                    for norm_num in normalize_numbers(clean_number):
+                        existing_numbers.add(norm_num)
         
         return existing_numbers
 
@@ -498,22 +500,18 @@ def main(env: str = "production"):
         for i, number in enumerate(phone_numbers):
             clean_number = ''.join(filter(str.isdigit, str(number)))
             if len(clean_number) >= 10:
-                number_to_name[clean_number] = names[i] if i < len(names) else "Nome não informado"
+                if clean_number not in number_to_name:
+                    number_to_name[clean_number] = names[i] if i < len(names) else "Nome não informado"
         
         # Validação e normalização dos números
         all_normalized_numbers = []
         number_to_original = {}  # Mapeia número normalizado para número original
-        for number in phone_numbers:
+        for number, name in number_to_name.items():
             # Remove espaços, hífens, parênteses e outros caracteres
-            clean_number = ''.join(filter(str.isdigit, str(number)))
-            if len(clean_number) >= 10:  # Número mínimo válido
-                normalized_numbers = normalize_numbers(clean_number)
-                all_normalized_numbers.extend(normalized_numbers)
-                # Mapeia números normalizados para o número original
-                for norm_num in normalized_numbers:
-                    number_to_original[norm_num] = clean_number
-            else:
-                print(f"Aviso: Número inválido ignorado: {number}")
+            normalized_numbers = normalize_numbers(number)
+            all_normalized_numbers.extend(normalized_numbers)
+            for norm_num in normalized_numbers:
+                number_to_original[norm_num] = number
         
         if not all_normalized_numbers:
             print(f"Nenhum número válido encontrado no grupo '{group_name}'. Pulando.")
