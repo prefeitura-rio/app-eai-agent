@@ -351,7 +351,7 @@ async def main():
     # Exemplo com rate limiting de 50 requisições por minuto
     client = EAIClient(rate_limit_requests_per_minute=50)
     response = await client.send_message_and_get_response(
-        user_number="123", message="Hello, how are you?"
+        user_number="123", message="me manda um oi em negrito"
     )
     print(response)
 
