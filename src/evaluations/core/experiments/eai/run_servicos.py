@@ -101,11 +101,7 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-<<<<<<< HEAD
     MAX_CONCURRENCY = 30
-=======
-    MAX_CONCURRENCY = 20
->>>>>>> refs/remotes/origin/staging
 
     runner = AsyncExperimentRunner(
         experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
