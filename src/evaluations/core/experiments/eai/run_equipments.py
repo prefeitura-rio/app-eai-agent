@@ -86,7 +86,7 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 100
+    MAX_CONCURRENCY = 20
 
     runner = AsyncExperimentRunner(
         experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
