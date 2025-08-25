@@ -29,6 +29,8 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ProactivityEvaluator,
     MessageLengthEvaluator,
     HasLinkEvaluator,
+    LinkCompletenessEvaluator,
+    ToolCallingLinkCompletenessEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -79,6 +81,8 @@ async def run_experiment():
         ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
         HasLinkEvaluator(judge_client),
+        LinkCompletenessEvaluator(judge_client),
+        ToolCallingLinkCompletenessEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -99,7 +103,7 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 100
+    MAX_CONCURRENCY = 10
 
     runner = AsyncExperimentRunner(
         experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
@@ -112,7 +116,7 @@ async def run_experiment():
         output_dir=EXPERIMENT_DATA_PATH,
         timeout=180,
         polling_interval=5,
-        rate_limit_requests_per_minute=10000,
+        rate_limit_requests_per_minute=1000,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):

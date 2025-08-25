@@ -14,8 +14,8 @@ from src.services.agent_engine.history import (
 
 async def test_bulk_users():
     """Teste para buscar histórico de múltiplos usuários (incluindo 'asd')"""
-    print("\n=== Teste 3: Histórico bulk (múltiplos usuários) ===")
-    user_ids = ["1154af1a-7bf6-441d-ae06-4590a66c0d3d-3"]
+    print("\n=== Teste 1: Histórico bulk (múltiplos usuários) ===")
+    user_ids = ["hahahahahaha1"]
 
     try:
         start_time = time.time()
@@ -23,7 +23,7 @@ async def test_bulk_users():
         # Testando usando a classe diretamente
         history_instance = await GoogleAgentEngineHistory.create()
         results = await history_instance.get_history_bulk(
-            user_ids=user_ids, session_timeout_seconds=10
+            user_ids=user_ids, session_timeout_seconds=10, use_whatsapp_format=True
         )
 
         end_time = time.time()
@@ -41,22 +41,38 @@ async def test_bulk_users():
         return None
 
 
+async def test_get_thread_ids():
+    """Teste para buscar thread_ids"""
+    print("\n=== Teste 2: Thread IDs ===")
+    history_instance = await GoogleAgentEngineHistory.create()
+    results = await history_instance.get_history_bulk_from_last_update(
+        last_update="2025-08-15"
+    )
+    return results
+
+
 async def main():
     """Executa todos os testes"""
     print("🚀 Iniciando testes de usabilidade para GoogleAgentEngineHistory")
     print("=" * 60)
-
-    # Executar todos os testes
     results = await test_bulk_users()
-    print("\n" + "=" * 60)
-    print("✅ Todos os testes concluídos!")
-    # print(json.dumps(results, indent=4, ensure_ascii=False))
     json.dump(
         results,
-        open("./src/services/agent_engine/results_refactor_2.json", "w"),
+        open("./src/services/agent_engine/history.json", "w"),
         indent=4,
         ensure_ascii=False,
     )
+    print("\n" + "=" * 60)
+    # Executar todos os testes
+    # results = await test_get_thread_ids()
+    # print("\n" + "=" * 60)
+
+    # json.dump(
+    #     results,
+    #     open("./src/services/agent_engine/bq_payload.json", "w"),
+    #     indent=4,
+    #     ensure_ascii=False,
+    # )
 
 
 if __name__ == "__main__":

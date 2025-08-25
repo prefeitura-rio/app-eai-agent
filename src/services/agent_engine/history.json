@@ -1,0 +1,532 @@
+{
+    "hahahahahaha1": [
+        {
+            "id": "ae993f49-7db2-46c8-840c-a184047e9eaa",
+            "date": "2025-08-16T06:20:24.184927+00:00",
+            "session_id": "e4342db0adb8c41b",
+            "time_since_last_message": null,
+            "name": null,
+            "otid": "e7b787a4-bfe8-4881-a59a-82de593484d9",
+            "sender_id": null,
+            "step_id": "step-1ae3e509-1deb-4b3c-88fd-7c8c4e8e8187",
+            "is_err": null,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "user_message",
+            "content": "quanto é 28^7?"
+        },
+        {
+            "id": "a7acc64f-aab7-483b-9a7e-76e75999fcdc",
+            "date": "2025-08-16T06:20:26.923245+00:00",
+            "session_id": "e4342db0adb8c41b",
+            "time_since_last_message": 2.738318,
+            "name": null,
+            "otid": "1efc1c0a-9a40-4639-bd50-7a6c578a5860",
+            "sender_id": null,
+            "step_id": "step-1ae3e509-1deb-4b3c-88fd-7c8c4e8e8187",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -1.0703533036368233,
+            "usage_metadata": {
+                "prompt_token_count": 5985,
+                "candidates_token_count": 7,
+                "total_token_count": 6054,
+                "thoughts_token_count": 62,
+                "cached_content_token_count": 0
+            },
+            "message_type": "tool_call_message",
+            "tool_call": {
+                "name": "calculator_power",
+                "arguments": {
+                    "exponent": 7.0,
+                    "base": 28.0
+                },
+                "tool_call_id": "a7acc64f-aab7-483b-9a7e-76e75999fcdc"
+            }
+        },
+        {
+            "id": "638f05fd-7d55-43f1-bdf4-b83c9b34e008",
+            "date": "2025-08-16T06:20:28.067585+00:00",
+            "session_id": "e4342db0adb8c41b",
+            "time_since_last_message": 1.14434,
+            "name": "calculator_power",
+            "otid": "9639a53c-754a-4d03-a723-79deb82262d4",
+            "sender_id": null,
+            "step_id": "step-1ae3e509-1deb-4b3c-88fd-7c8c4e8e8187",
+            "is_err": false,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "tool_return_message",
+            "tool_return": "13492928512.0",
+            "status": "success",
+            "tool_call_id": "a7acc64f-aab7-483b-9a7e-76e75999fcdc",
+            "stdout": null,
+            "stderr": null
+        },
+        {
+            "id": "dc005772-b588-4c8e-8a3f-f2ef14ee0714-0",
+            "date": "2025-08-16T06:20:29.042993+00:00",
+            "session_id": "e4342db0adb8c41b",
+            "time_since_last_message": 0.975408,
+            "name": null,
+            "otid": "93d13e2f-f44b-43e6-b7ba-20b19a8f5c3a",
+            "sender_id": null,
+            "step_id": "step-eca83fff-c8d4-4570-91f9-dab3cbe0b3ac",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.2191938696236446,
+            "usage_metadata": {
+                "prompt_token_count": 6009,
+                "candidates_token_count": 29,
+                "total_token_count": 6038,
+                "thoughts_token_count": 0,
+                "cached_content_token_count": 5323
+            },
+            "message_type": "assistant_message",
+            "content": "13492928512.0\nSe precisar de mais alguma ajuda com cálculos, é só me dizer! 😉"
+        },
+        {
+            "id": "44f1f2d8-0c2c-49f6-91d0-fdf133872c13",
+            "date": "2025-08-16T06:22:23.035259+00:00",
+            "session_id": "35eff4fe3d96b67c",
+            "time_since_last_message": 113.992266,
+            "name": null,
+            "otid": "f6dddb3a-f783-4d69-b10e-03e7cb6363d9",
+            "sender_id": null,
+            "step_id": "step-eca83fff-c8d4-4570-91f9-dab3cbe0b3ac",
+            "is_err": null,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "user_message",
+            "content": "vc é muito boa em calculos, parabens!"
+        },
+        {
+            "id": "f22c6866-da96-4e0f-82f2-9e7a8090ffa1",
+            "date": "2025-08-16T06:22:23.979136+00:00",
+            "session_id": "35eff4fe3d96b67c",
+            "time_since_last_message": 0.943877,
+            "name": null,
+            "otid": "90e2e50c-2751-4c54-89ae-62c6b4916ea2",
+            "sender_id": null,
+            "step_id": "step-eca83fff-c8d4-4570-91f9-dab3cbe0b3ac",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.496696290515718,
+            "usage_metadata": {
+                "prompt_token_count": 6049,
+                "candidates_token_count": 21,
+                "total_token_count": 6143,
+                "thoughts_token_count": 73,
+                "cached_content_token_count": 0
+            },
+            "message_type": "tool_call_message",
+            "tool_call": {
+                "name": "user_feedback",
+                "arguments": {
+                    "user_id": "default_user",
+                    "feedback": "vc é muito boa em calculos, parabens!"
+                },
+                "tool_call_id": "f22c6866-da96-4e0f-82f2-9e7a8090ffa1"
+            }
+        },
+        {
+            "id": "38e2a514-0a5c-4b10-b229-83e81e7257a5",
+            "date": "2025-08-16T06:22:25.180801+00:00",
+            "session_id": "35eff4fe3d96b67c",
+            "time_since_last_message": 1.201665,
+            "name": "user_feedback",
+            "otid": "712c7c67-6c86-4366-bc64-77b0a751a374",
+            "sender_id": null,
+            "step_id": "step-eca83fff-c8d4-4570-91f9-dab3cbe0b3ac",
+            "is_err": false,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "tool_return_message",
+            "tool_return": {
+                "success": true,
+                "timestamp": "2025-08-16T03:22:24.639231",
+                "message": "Feedback armazenado com sucesso. Você pode agradecer ao usuário e informar que o feedback foi registrado para análise e melhorias futuras.",
+                "error": null
+            },
+            "status": "success",
+            "tool_call_id": "f22c6866-da96-4e0f-82f2-9e7a8090ffa1",
+            "stdout": null,
+            "stderr": null
+        },
+        {
+            "id": "ebc04fed-04ab-4c64-a353-0350a8ae8cb5-0",
+            "date": "2025-08-16T06:22:25.805814+00:00",
+            "session_id": "35eff4fe3d96b67c",
+            "time_since_last_message": 0.625013,
+            "name": null,
+            "otid": "49eda228-075e-4809-aed7-25b2de2cfe74",
+            "sender_id": null,
+            "step_id": "step-997c2f83-08f5-4f48-98e9-3bbf2f16c034",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.002762794275494183,
+            "usage_metadata": {
+                "prompt_token_count": 6130,
+                "candidates_token_count": 17,
+                "total_token_count": 6147,
+                "thoughts_token_count": 0,
+                "cached_content_token_count": 0
+            },
+            "message_type": "assistant_message",
+            "content": "Fico feliz em ajudar! Se precisar de mais alguma coisa, é só chamar."
+        },
+        {
+            "id": "828de1fb-5046-414c-b680-851e8c4a6e7b",
+            "date": "2025-08-16T06:27:35.537865+00:00",
+            "session_id": "2a6f9bcde1a4b714",
+            "time_since_last_message": 309.732051,
+            "name": null,
+            "otid": "7d39752c-29ee-4298-862f-e218d350bba1",
+            "sender_id": null,
+            "step_id": "step-997c2f83-08f5-4f48-98e9-3bbf2f16c034",
+            "is_err": null,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "user_message",
+            "content": "quem é o presidente do uzbequistao?"
+        },
+        {
+            "id": "7610df9c-8742-4ee3-9834-c55399fd1a6e",
+            "date": "2025-08-16T06:27:38.440882+00:00",
+            "session_id": "2a6f9bcde1a4b714",
+            "time_since_last_message": 2.903017,
+            "name": null,
+            "otid": "b506b8da-244c-4ea5-a387-ddf3f39210df",
+            "sender_id": null,
+            "step_id": "step-997c2f83-08f5-4f48-98e9-3bbf2f16c034",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.3252457838792067,
+            "usage_metadata": {
+                "prompt_token_count": 6157,
+                "candidates_token_count": 13,
+                "total_token_count": 6223,
+                "thoughts_token_count": 53,
+                "cached_content_token_count": 5238
+            },
+            "message_type": "tool_call_message",
+            "tool_call": {
+                "name": "google_search",
+                "arguments": {
+                    "query": "quem é o presidente do uzbequistao"
+                },
+                "tool_call_id": "7610df9c-8742-4ee3-9834-c55399fd1a6e"
+            }
+        },
+        {
+            "id": "dc4edcce-30d7-4ab3-a740-8203b9e54441",
+            "date": "2025-08-16T06:27:53.653569+00:00",
+            "session_id": "d367e1d0e38cbcb8",
+            "time_since_last_message": 15.212687,
+            "name": "google_search",
+            "otid": "6be411e2-7484-4a6e-a962-5e2d38e3a189",
+            "sender_id": null,
+            "step_id": "step-997c2f83-08f5-4f48-98e9-3bbf2f16c034",
+            "is_err": false,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "tool_return_message",
+            "tool_return": {
+                "text": "**Research Artifact**\n\n**Date of Search:** August 16, 2025\n\n**Subject:** President of Uzbekistan\n\n**Summary:**\n\nShavkat Mirziyoyev is the current President of the Republic of Uzbekistan [1]. He assumed the post of President on December 14, 2016, after serving as Prime Minister of Uzbekistan from 2003 to 2016 [1]. Mirziyoyev was first elected President on December 4, 2016, securing 88.61% of the vote [1]. He was subsequently re-elected for a second five-year term on October 24, 2021, with 80.1% of the vote [1]. In July 2023, he was re-elected for another seven-year term, winning 87.05% of the vote [2].\n\nMirziyoyev was born on July 24, 1957, in the Jizzakh Region of Uzbekistan [1]. He graduated from the Tashkent Institute of Irrigation and Agricultural Mechanization Engineers in 1981 with a degree in mechanical engineering and holds a Ph.D. in Technical Sciences [1]. He began his political career in 1996 as the governor (hakim) of the Mirzo Ulugbek district of Tashkent, later serving as governor of the Jizzakh Region (1996-2001) and the Samarkand Region (2001-2003) [1]. In 2003, he was appointed Prime Minister by the then-President Islam Karimov [1].\n\nFollowing the death of President Islam Karimov on September 2, 2016, Mirziyoyev was appointed as the interim president on September 8, 2016 [1]. He was officially sworn in as President on December 14, 2016 [1].\n\nUzbekistan is a presidential constitutional republic, with the President serving as both head of state and head of government [1]. The President appoints the prime minister and cabinet, subject to parliamentary approval, and has the authority to issue binding decrees [3]. The current Prime Minister of Uzbekistan is Abdulla Aripov [1].\n\n**Sources:**\n - [1] https://pt.wikipedia.org/wiki/Shavkat_Mirzioev\n - [2] https://pt.wikipedia.org/wiki/Presidente_do_Usbequist%C3%A3o\n - [3] https://sicnoticias.pt/mundo/2023-07-10-Presidente-do-Uzbequistao-reeleito-com-mais-de-87-dos-votos-06073f5b\n",
+                "sources": [
+                    {
+                        "label": "wikipedia.org",
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHSzmN7S46GbwgRmOOw7XewbcYH1XnA29zFx5W8uHCAbkOGvNN8HzupM74cw0ZrS0AfR6SwtC1pP0KJJbx4nZqSZc69REAf1CZkjC_dBQJ68Qli0-SMqS8LiugbVy86XNaBG1KEeH4bRU8=",
+                        "url": "https://pt.wikipedia.org/wiki/Shavkat_Mirzioev",
+                        "index": 1
+                    },
+                    {
+                        "label": "wikipedia.org",
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGJwENS2Kk1uWNHpOuAm5TjntSdSx5hN_DTqNmokXU7pkliXsgtYCEEpFnyTF0h6nfoh4n4FozJBk5c-8VmUr2gUZSpQ9tJ5oey7ic9cVbqiuNWGRSTm_iW7tUQg4kgWma6GPFLLrbrTjrivSvdFBgmc806RxB26w==",
+                        "url": "https://pt.wikipedia.org/wiki/Presidente_do_Usbequist%C3%A3o",
+                        "index": 2
+                    },
+                    {
+                        "label": "sicnoticias.pt",
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZXvpntLOORTteBR7BMFjgHWABApnuI0sqkpQ4vJK_WH_d15wpj5lVI8OjwTLHj9XFHHkslx1rltwbXChfR2b-Kb98gXJbcBI2S5eFxhBZ3Yv_RWX5f2NaYW1kCX3f__x2bPY1ON6qAwxgSUcD-DIzUPr25yNrA6iOlj21G_T-6vvLBzbGQEp5yoQ7lJdCdffGG1CG9C5YzV0MKRspxZeOVwcaWlWClw==",
+                        "url": "https://sicnoticias.pt/mundo/2023-07-10-Presidente-do-Uzbequistao-reeleito-com-mais-de-87-dos-votos-06073f5b",
+                        "index": 3
+                    }
+                ],
+                "web_search_queries": [
+                    "presidente do uzbequistão",
+                    "quem governa o uzbequistão",
+                    "Uzbekistan head of state",
+                    "Shavkat Mirziyoyev president",
+                    "Uzbekistan government structure"
+                ],
+                "id": "bd158606-185b-43c1-9486-485246c18006"
+            },
+            "status": "success",
+            "tool_call_id": "7610df9c-8742-4ee3-9834-c55399fd1a6e",
+            "stdout": null,
+            "stderr": null
+        },
+        {
+            "id": "e022aeb1-a30d-486e-a706-2ebff6d2b1ac-0",
+            "date": "2025-08-16T06:27:54.949004+00:00",
+            "session_id": "d367e1d0e38cbcb8",
+            "time_since_last_message": 1.295435,
+            "name": null,
+            "otid": "be30dc5a-8379-49bd-ba00-8f10bbdb7b5c",
+            "sender_id": null,
+            "step_id": "step-61a0a607-70a9-450d-9e6f-88344c91de27",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.37960777784648697,
+            "usage_metadata": {
+                "prompt_token_count": 7412,
+                "candidates_token_count": 38,
+                "total_token_count": 7521,
+                "thoughts_token_count": 71,
+                "cached_content_token_count": 0
+            },
+            "message_type": "assistant_message",
+            "content": "O atual presidente do Uzbequistão é _Shavkat Mirziyoyev_. Ele assumiu o cargo em 14 de dezembro de 2016."
+        },
+        {
+            "id": "e43b45b4-a673-4ef8-a2aa-190da4bed5f7",
+            "date": "2025-08-16T06:28:25.899968+00:00",
+            "session_id": "58036369e3b0242e",
+            "time_since_last_message": 30.950964,
+            "name": null,
+            "otid": "525cc184-2d5f-4e58-8e41-c24e9939e5a6",
+            "sender_id": null,
+            "step_id": "step-61a0a607-70a9-450d-9e6f-88344c91de27",
+            "is_err": null,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "user_message",
+            "content": "e da colombia?"
+        },
+        {
+            "id": "b0e2c237-18fe-4be0-b934-6be5ae9995ac",
+            "date": "2025-08-16T06:28:27.241585+00:00",
+            "session_id": "58036369e3b0242e",
+            "time_since_last_message": 1.341617,
+            "name": null,
+            "otid": "7189f53d-21d4-4113-9e8b-a87295736621",
+            "sender_id": null,
+            "step_id": "step-61a0a607-70a9-450d-9e6f-88344c91de27",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.357896614074707,
+            "usage_metadata": {
+                "prompt_token_count": 7454,
+                "candidates_token_count": 10,
+                "total_token_count": 7523,
+                "thoughts_token_count": 59,
+                "cached_content_token_count": 0
+            },
+            "message_type": "tool_call_message",
+            "tool_call": {
+                "name": "google_search",
+                "arguments": {
+                    "query": "quem é o presidente da colombia"
+                },
+                "tool_call_id": "b0e2c237-18fe-4be0-b934-6be5ae9995ac"
+            }
+        },
+        {
+            "id": "2e912799-5c76-42b1-95a8-c246140606bf",
+            "date": "2025-08-16T06:28:40.549111+00:00",
+            "session_id": "75d539ab21ec8046",
+            "time_since_last_message": 13.307526,
+            "name": "google_search",
+            "otid": "5bf1838f-2956-41ee-9ba1-a148d0aba9d7",
+            "sender_id": null,
+            "step_id": "step-61a0a607-70a9-450d-9e6f-88344c91de27",
+            "is_err": false,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "tool_return_message",
+            "tool_return": {
+                "text": "**Research Artifact**\n\n**Date of Search:** 2025-08-16\n\n**Research Topic:** quem é o presidente da colombia\n\nGustavo Petro is the current president of Colombia. [1] He assumed office on August 7, 2022. [1] Petro, a politician and economist, was elected president in 2022 as the candidate for the left-wing Pacto Histórico coalition. He [2] had previously run for president in 2010 and 2018. Petro [1]'s political career includes serving as a senator and as the mayor of Bogotá. [1]\n\n**Sources:**\n - [1] https://pt.wikipedia.org/wiki/Gustavo_Petro\n - [2] https://www.cnnbrasil.com.br/internacional/conheca-a-vida-de-gustavo-petro-eleito-presidente-da-colombia-em-fatos-e-numeros/\n",
+                "sources": [
+                    {
+                        "label": "wikipedia.org",
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEMYe5iH2jnHDPKWBnBBFj68mPkbYStmVk8FqLGFCK2ZBZZJ6QxqYx2a6CbW3AnOqkF-DljSIyWin9FpNMFvrLzX7SjvE2nkI2jUJdb6vNYlG8SWQS77A-DLcWnTqFxbwrGH8n1UQ==",
+                        "url": "https://pt.wikipedia.org/wiki/Gustavo_Petro",
+                        "index": 1
+                    },
+                    {
+                        "label": "cnnbrasil.com.br",
+                        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGByJaMy0koKSrgXmFJpFpMHZSNaVvJcCvp3p24HII_ct0B1HzQ9Na70K4BBvHQYBNOWGfAlgkOKy-ZcSyydL9KdBkiHEVXNR7fMtv4Co8mtD8J9Yvy-DNlJNaKDd8rnYR8L21-UsRNJihGxYkbwvRVS-IqEne3Hc2Qx9k6kT73-R2PnOZKQtA_o4S2M63mygdyCBNWHk37KIa5rnsCcW3hqRp-Yo8PlenC-XSHGdsH349pcBG-Ow==",
+                        "url": "https://www.cnnbrasil.com.br/internacional/conheca-a-vida-de-gustavo-petro-eleito-presidente-da-colombia-em-fatos-e-numeros/",
+                        "index": 2
+                    }
+                ],
+                "web_search_queries": [
+                    "quem é o presidente da colombia"
+                ],
+                "id": "4d939f88-eaac-4c20-b4d0-78cf223a3346"
+            },
+            "status": "success",
+            "tool_call_id": "b0e2c237-18fe-4be0-b934-6be5ae9995ac",
+            "stdout": null,
+            "stderr": null
+        },
+        {
+            "id": "4fff943c-4ce0-4198-be13-0be4d47f8f62-0",
+            "date": "2025-08-16T06:28:41.669332+00:00",
+            "session_id": "75d539ab21ec8046",
+            "time_since_last_message": 1.120221,
+            "name": null,
+            "otid": "b89dc70c-87b5-4921-b18f-a0ba12ca7654",
+            "sender_id": null,
+            "step_id": "step-80a40c5b-84d9-4abf-928b-d039466836ed",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.6388070424397786,
+            "usage_metadata": {
+                "prompt_token_count": 8117,
+                "candidates_token_count": 30,
+                "total_token_count": 8195,
+                "thoughts_token_count": 48,
+                "cached_content_token_count": 5214
+            },
+            "message_type": "assistant_message",
+            "content": "O atual presidente da Colômbia é _Gustavo Petro_. Ele assumiu o cargo em 7 de agosto de 2022."
+        },
+        {
+            "id": "b4e4ff10-43c8-4f81-a375-dc977a30e0ff",
+            "date": "2025-08-16T06:30:02.531584+00:00",
+            "session_id": "ce29c810c9ddecd6",
+            "time_since_last_message": 80.862252,
+            "name": null,
+            "otid": "282a1fb5-395f-4291-a26e-98889a10aae7",
+            "sender_id": null,
+            "step_id": "step-80a40c5b-84d9-4abf-928b-d039466836ed",
+            "is_err": null,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "user_message",
+            "content": "pow vc é ferra! fala pro seu chefe que vc ta de parabens"
+        },
+        {
+            "id": "6871c168-1b2c-417b-905b-595369b53196",
+            "date": "2025-08-16T06:30:04.420051+00:00",
+            "session_id": "ce29c810c9ddecd6",
+            "time_since_last_message": 1.888467,
+            "name": null,
+            "otid": "ab8a362b-6e61-459d-8610-f147b3d382d5",
+            "sender_id": null,
+            "step_id": "step-80a40c5b-84d9-4abf-928b-d039466836ed",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.9732916905329778,
+            "usage_metadata": {
+                "prompt_token_count": 8163,
+                "candidates_token_count": 26,
+                "total_token_count": 8256,
+                "thoughts_token_count": 67,
+                "cached_content_token_count": 0
+            },
+            "message_type": "tool_call_message",
+            "tool_call": {
+                "name": "user_feedback",
+                "arguments": {
+                    "user_id": "default_user",
+                    "feedback": "pow vc é ferra! fala pro seu chefe que vc ta de parabens"
+                },
+                "tool_call_id": "6871c168-1b2c-417b-905b-595369b53196"
+            }
+        },
+        {
+            "id": "dc66d9d5-284f-429f-b891-78aa109fd7c9",
+            "date": "2025-08-16T06:30:05.609458+00:00",
+            "session_id": "ce29c810c9ddecd6",
+            "time_since_last_message": 1.189407,
+            "name": "user_feedback",
+            "otid": "f7e194ef-53a1-44b6-8002-0df31ab5bf7e",
+            "sender_id": null,
+            "step_id": "step-80a40c5b-84d9-4abf-928b-d039466836ed",
+            "is_err": false,
+            "model_name": null,
+            "finish_reason": null,
+            "avg_logprobs": null,
+            "usage_metadata": null,
+            "message_type": "tool_return_message",
+            "tool_return": {
+                "success": true,
+                "timestamp": "2025-08-16T03:30:05.069920",
+                "message": "Feedback armazenado com sucesso. Você pode agradecer ao usuário e informar que o feedback foi registrado para análise e melhorias futuras.",
+                "error": null
+            },
+            "status": "success",
+            "tool_call_id": "6871c168-1b2c-417b-905b-595369b53196",
+            "stdout": null,
+            "stderr": null
+        },
+        {
+            "id": "450c25fc-3a24-431f-8b83-c7f77fe75cc8-0",
+            "date": "2025-08-16T06:30:06.614587+00:00",
+            "session_id": "ce29c810c9ddecd6",
+            "time_since_last_message": 1.005129,
+            "name": null,
+            "otid": "0d83d447-c90f-4b5b-91b0-84d31abba323",
+            "sender_id": null,
+            "step_id": "step-30f8900c-3953-4cf0-947a-531639389ae9",
+            "is_err": null,
+            "model_name": "gemini-2.5-flash",
+            "finish_reason": "STOP",
+            "avg_logprobs": -0.32528160640171594,
+            "usage_metadata": {
+                "prompt_token_count": 8249,
+                "candidates_token_count": 35,
+                "total_token_count": 8284,
+                "thoughts_token_count": 0,
+                "cached_content_token_count": 6881
+            },
+            "message_type": "assistant_message",
+            "content": "Muito obrigado pelo elogio! Fico feliz em saber que estou conseguindo ajudar. Seu feedback é muito importante e já foi registrado para que possamos continuar melhorando! 😊"
+        },
+        {
+            "message_type": "usage_statistics",
+            "completion_tokens": 226,
+            "prompt_tokens": 69725,
+            "total_tokens": 70384,
+            "step_count": 6,
+            "steps_messages": null,
+            "run_ids": null,
+            "agent_id": "hahahahahaha1",
+            "processed_at": "2025-08-16T06:32:50.151568+00:00",
+            "status": "done",
+            "model_names": [
+                "gemini-2.5-flash"
+            ]
+        }
+    ]
+}

@@ -1,11 +1,3 @@
-"""
-i am working in a markdon to whatsapp converter it is
-almost perfect, only need to work in the break lines lost
-and include a removal for the bars patern, sometimes it include before and after the text example \"Samba & Feijoada"\ or \Samba & Feijoada\
-run the code to see the results of the tests, and them fix it, run again to se if not break anything, do this untill solved my last problems    
-
-"""
-
 import re
 
 
@@ -57,6 +49,12 @@ def markdown_to_whatsapp(text):
     # 3. INLINE FORMATTING (using temporary placeholders)
     # The order is critical: multi-character markers first.
     converted_text = re.sub(r"~~(.*?)~~", r"<s>\1</s>", converted_text, flags=re.DOTALL)
+
+    # Handle triple asterisk pattern (***text***) for bold+italic
+    converted_text = re.sub(
+        r"\*\*\*(.*?)\*\*\*", r"<i><b>\1</b></i>", converted_text, flags=re.DOTALL
+    )
+
     converted_text = re.sub(
         r"\*\*(.*?)\*\*", r"<b>\1</b>", converted_text, flags=re.DOTALL
     )
@@ -135,11 +133,16 @@ def markdown_to_whatsapp(text):
 
     # 5. RESTORATION & FINAL CLEANUP
     converted_text = converted_text.replace("¤L¤ ", "* ")
+    
+    # Normalize list spacing to ensure single space after asterisk
+    converted_text = re.sub(r"^\*\s+", "* ", converted_text, flags=re.MULTILINE)
+    
     for i, code_block in enumerate(code_blocks):
         converted_text = converted_text.replace(f"¤C{i}¤", code_block)
 
     # FIX 2: Clean up the specific escaped quote pattern.
     converted_text = re.sub(r"\{r'\\\"(.*?)\\\"\'\}", r'"\1"', converted_text)
+    converted_text = re.sub(r'"', "'", converted_text)
 
     # Clean up excess newlines
     converted_text = re.sub(r"\n{3,}", "\n\n", converted_text)
@@ -289,6 +292,16 @@ def run_tests():
                 "_italic_",
                 "```\ncode block\n```",
             ],
+        },
+        {
+            "name": "Triple star pattern",
+            "input": "***Disque Denúncia:***",
+            "expected_contains": ["_*Disque Denúncia:*_"],
+        },
+        {
+            "name": "List with bold formatting (single space)",
+            "input": "*   **`calculator_add`**: Soma dois números.",
+            "expected_contains": ["* *`calculator_add`*: Soma dois números."],
         },
     ]
     print("=== RUNNING COMPREHENSIVE VALIDATION TESTS ===\n")
