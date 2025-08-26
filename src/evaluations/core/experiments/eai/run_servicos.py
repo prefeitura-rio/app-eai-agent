@@ -171,7 +171,7 @@ async def run_experiment(use_precomputed: bool = False, precomputed_file: Option
 
     runner = AsyncExperimentRunner(
         experiment_name=experiment_name,
-        experiment_description="gemini-2.5-flash" + (" (precomputed)" if use_precomputed else ""),
+        experiment_description="From CSV" if use_precomputed else "LangGraph - Vertex AI",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
