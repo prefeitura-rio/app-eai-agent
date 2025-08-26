@@ -3,7 +3,7 @@
 import { API_BASE_URL } from '@/app/components/config';
 import { HistoryItem } from '../components/VersionHistory';
 
-interface MemoryBlock {
+interface ClickUpCard {
   label: string;
   value: string;
   limit?: number;
@@ -13,7 +13,7 @@ interface MemoryBlock {
 interface SavePayload {
   agent_type: string;
   prompt_content: string;
-  memory_blocks: MemoryBlock[];
+  clickup_cards: ClickUpCard[];
   tools: string[];
   model_name: string | null;
   embedding_name: string | null;
@@ -25,7 +25,7 @@ interface SavePayload {
 interface VersionDetails {
   prompt: { content: string };
   config: {
-    memory_blocks: MemoryBlock[];
+    memory_blocks: ClickUpCard[];
     tools: string[];
     model_name: string;
     embedding_name: string;

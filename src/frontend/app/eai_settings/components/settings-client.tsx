@@ -43,7 +43,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   // Estado dos campos do formulário
   const [selectedAgent, setSelectedAgent] = useState(selectedAgentType);
   const [promptContent, setPromptContent] = useState(agentData.prompt);
-  const [memoryBlocks, setMemoryBlocks] = useState(agentData.config.memory_blocks);
+  const [clickUpCards, setClickUpCards] = useState(agentData.config.memory_blocks);
   const [tools, setTools] = useState(agentData.config.tools);
   const [modelName, setModelName] = useState(agentData.config.model_name);
   const [embeddingName, setEmbeddingName] = useState(agentData.config.embedding_name);
@@ -82,7 +82,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       if (versionDetails.prompt) setPromptContent(versionDetails.prompt.content || '');
       if (versionDetails.config) {
         const config = versionDetails.config;
-        setMemoryBlocks(JSON.stringify(config.memory_blocks || [], null, 2));
+        setClickUpCards(JSON.stringify(config.memory_blocks || [], null, 2));
         setTools((config.tools || []).join(', '));
         setModelName(config.model_name || '');
         setEmbeddingName(config.embedding_name || '');
@@ -98,7 +98,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   useEffect(() => {
     setSelectedAgent(selectedAgentType);
     setPromptContent(agentData.prompt);
-    setMemoryBlocks(agentData.config.memory_blocks);
+    setClickUpCards(agentData.config.memory_blocks);
     setTools(agentData.config.tools);
     setModelName(agentData.config.model_name);
     setEmbeddingName(agentData.config.embedding_name);
@@ -132,11 +132,11 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     
     setIsSaving(true);
     try {
-      const memoryBlocksArray = JSON.parse(memoryBlocks);
+      const clickUpCardsArray = JSON.parse(clickUpCards);
       const payload = {
         agent_type: selectedAgent,
         prompt_content: promptContent,
-        memory_blocks: memoryBlocksArray,
+        clickup_cards: clickUpCardsArray,
         tools: tools.split(',').map(t => t.trim()).filter(Boolean),
         model_name: modelName || null,
         embedding_name: embeddingName || null,
@@ -246,7 +246,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
             />
             <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
             <AgentConfiguration
-              memoryBlocks={memoryBlocks} onMemoryBlocksChange={setMemoryBlocks}
+              clickUpCards={clickUpCards} onClickUpCardsChange={setClickUpCards}
               tools={tools} onToolsChange={setTools}
               modelName={modelName} onModelNameChange={setModelName}
               embeddingName={embeddingName} onEmbeddingNameChange={setEmbeddingName}

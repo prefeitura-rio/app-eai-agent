@@ -24,7 +24,7 @@ class UnifiedSaveRequest(BaseModel):
     """Schema para salvar alterações unificadas."""
     agent_type: str = Field(..., description="Tipo do agente")
     prompt_content: Optional[str] = Field(None, description="Conteúdo do system prompt")
-    memory_blocks: Optional[List[Dict[str, Any]]] = Field(None, description="Memory blocks")
+    clickup_cards: Optional[List[Dict[str, Any]]] = Field(None, description="ClickUp cards")
     tools: Optional[List[str]] = Field(None, description="Lista de ferramentas")
     model_name: Optional[str] = Field(None, description="Nome do modelo")
     embedding_name: Optional[str] = Field(None, description="Nome do embedding")
@@ -57,7 +57,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
         # Determinar tipo de alteração
         has_prompt_changes = request.prompt_content is not None
         has_config_changes = any([
-            request.memory_blocks is not None,
+            request.clickup_cards is not None,
             request.tools is not None,
             request.model_name is not None,
             request.embedding_name is not None
@@ -97,7 +97,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
             current_config = AgentConfigRepository.get_active_config(db, request.agent_type)
             
             # Preparar valores de configuração (usar valores fornecidos ou fallback para configuração atual)
-            memory_blocks_value = request.memory_blocks if request.memory_blocks is not None else (current_config.memory_blocks if current_config else [])
+            clickup_cards_value = request.clickup_cards if request.clickup_cards is not None else (current_config.memory_blocks if current_config else [])
             tools_value = request.tools if request.tools is not None else (current_config.tools if current_config else [])
             model_name_value = request.model_name if request.model_name is not None else (current_config.model_name if current_config else "")
             embedding_name_value = request.embedding_name if request.embedding_name is not None else (current_config.embedding_name if current_config else "")
@@ -123,7 +123,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                 config = AgentConfigRepository.create_config(
                     db=db,
                     agent_type=request.agent_type,
-                    memory_blocks=memory_blocks_value,
+                    memory_blocks=clickup_cards_value,
                     tools=tools_value,
                     model_name=model_name_value,
                     embedding_name=embedding_name_value,
@@ -178,7 +178,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                 # Atualizar agentes com configuração se foi alterada
                 if has_config_changes:
                     config_values = {
-                        "memory_blocks": memory_blocks_value,
+                        "memory_blocks": clickup_cards_value,
                         "tools": tools_value,
                         "model_name": model_name_value,
                         "embedding_name": embedding_name_value,
@@ -217,7 +217,8 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                     author=request.author or "API",
                     reason=request.reason or "Alteração via API",
                     change_type=change_type,
-                    prompt_content_preview=request.prompt_content[:200] if request.prompt_content else None
+                    prompt_content_preview=request.prompt_content[:200] if request.prompt_content else None,
+                    clickup_cards=request.clickup_cards
                 )
             except Exception as e:
                 # Don't fail the main operation if Discord notification fails
