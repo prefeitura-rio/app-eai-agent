@@ -30,7 +30,7 @@ class UnifiedVersion(Base):
     
     # Metadados da versão
     author = Column(String(100), nullable=True)
-    reason = Column(String(255), nullable=True)
+    reason = Column(Text, nullable=True)
     description = Column(Text, nullable=True)
     
     # Controle temporal
