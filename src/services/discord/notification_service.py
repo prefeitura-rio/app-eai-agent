@@ -150,6 +150,42 @@ class DiscordNotificationService:
         
         return formatted
     
+    def format_clickup_cards(self, cards: list) -> str:
+        """
+        Format ClickUp cards for Discord display.
+        
+        Args:
+            cards: List of memory blocks representing ClickUp cards
+            
+        Returns:
+            str: Formatted string for Discord
+        """
+        if not cards:
+            return ""
+        
+        formatted_cards = []
+        for card in cards:
+            if isinstance(card, dict):
+                # Extract label and value if it's a memory block structure
+                label = card.get('label', '')
+                value = card.get('value', '')
+                
+                if label and value:
+                    # Check if value looks like a URL to make label clickable
+                    if value.startswith(('http://', 'https://')):
+                        formatted_cards.append(f"• [**{label}**]({value})")
+                    else:
+                        formatted_cards.append(f"• **{label}**: {value}")
+                elif label:
+                    formatted_cards.append(f"• {label}")
+                elif value:
+                    formatted_cards.append(f"• {value}")
+            elif isinstance(card, str):
+                # If it's just a string, add it as is
+                formatted_cards.append(f"• {card}")
+        
+        return "\n".join(formatted_cards)
+    
     def get_webhook_url(self) -> str:
         """
         Get the webhook URL, optionally with thread ID parameter.
@@ -216,7 +252,8 @@ class DiscordNotificationService:
         author: str,
         reason: str,
         change_type: str,
-        prompt_content_preview: Optional[str] = None
+        prompt_content_preview: Optional[str] = None,
+        clickup_cards: Optional[list] = None
     ) -> bool:
         """
         Send a notification about a new prompt version.
@@ -229,6 +266,7 @@ class DiscordNotificationService:
             reason: Reason for the change
             change_type: Type of change (prompt, config, both)
             prompt_content_preview: Optional preview of prompt content
+            clickup_cards: Optional list of ClickUp cards (memory_blocks) resolved in this release
             
         Returns:
             bool: True if successful, False otherwise
@@ -236,34 +274,50 @@ class DiscordNotificationService:
         # Format reason with line breaks at dashes for better readability
         formatted_reason = self.format_reason_with_breaks(reason)
         
+        # Format ClickUp cards if provided
+        formatted_cards = ""
+        if clickup_cards:
+            formatted_cards = self.format_clickup_cards(clickup_cards)
+        
+        # Create base fields (always included)
+        fields = [
+            {
+                "name": "📦 Versão",
+                "value": f"`{version_display}`",
+                "inline": True
+            },
+            {
+                "name": "🔢 Número da Versão",
+                "value": f"`{version_number}`",
+                "inline": True
+            },
+            {
+                "name": "👤 Autor",
+                "value": f"`{author}`",
+                "inline": True
+            },
+            {
+                "name": " Mudanças",
+                "value": formatted_reason[:1000] if len(formatted_reason) > 1000 else formatted_reason,  # Discord field limit
+                "inline": False
+            }
+        ]
+        
+        # Add ClickUp cards field if cards are provided
+        if formatted_cards:
+            fields.append({
+                "name": " 📋 Cards resolvidos",
+                "value": formatted_cards[:1000] if len(formatted_cards) > 1000 else formatted_cards,  # Discord field limit
+                "inline": False
+            })
+        
         # Create embed with simplified version information (only requested fields)
         embed = DiscordEmbed(
             title="🚀 Nova versão do EAí lançada!",
             description=f"Uma nova versão do chatbot EAí subiu para **produção**",
             color=0x00ff00,  # Green color for production deployments
             timestamp=datetime.utcnow().isoformat(),
-            fields=[
-                {
-                    "name": "📦 Versão",
-                    "value": f"`{version_display}`",
-                    "inline": True
-                },
-                {
-                    "name": "🔢 Número da Versão",
-                    "value": f"`{version_number}`",
-                    "inline": True
-                },
-                {
-                    "name": "👤 Autor",
-                    "value": f"`{author}`",
-                    "inline": True
-                },
-                {
-                    "name": " Mudanças",
-                    "value": formatted_reason[:1000] if len(formatted_reason) > 1000 else formatted_reason,  # Discord field limit
-                    "inline": False
-                }
-            ],
+            fields=fields,
             footer={
                 "text": "EAI Agent • Produção",
                 "icon_url": "https://cdn.discordapp.com/embed/avatars/0.png"

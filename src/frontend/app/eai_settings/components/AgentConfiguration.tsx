@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 interface AgentConfigurationProps {
-  memoryBlocks: string;
-  onMemoryBlocksChange: (value: string) => void;
+  clickUpCards: string;
+  onClickUpCardsChange: (value: string) => void;
   tools: string;
   onToolsChange: (value: string) => void;
   modelName: string;
@@ -20,7 +20,7 @@ interface AgentConfigurationProps {
 }
 
 export default function AgentConfiguration({
-  memoryBlocks, onMemoryBlocksChange,
+  clickUpCards, onClickUpCardsChange,
   tools, onToolsChange,
   modelName, onModelNameChange,
   embeddingName, onEmbeddingNameChange,
@@ -62,14 +62,20 @@ export default function AgentConfiguration({
         </div>
       </div>
             <div className="space-y-2">
-        <Label htmlFor="memory-blocks">Memory Blocks (JSON)</Label>
+        <Label htmlFor="clickup-cards">ClickUp Cards</Label>
         <Textarea
-          id="memory-blocks"
-          value={memoryBlocks}
-          onChange={(e) => onMemoryBlocksChange(e.target.value)}
+          id="clickup-cards"
+          value={clickUpCards}
+          onChange={(e) => onClickUpCardsChange(e.target.value)}
           disabled={disabled}
           className="h-[230px] resize-y font-mono text-xs"
-          placeholder='[{"type": "buffer_window", "config": {"k": 5}}]'
+          placeholder='[
+  {"label": "CARD-1", "value": "https://app.clickup.com/t/your-task-id-1"},
+  {"label": "CARD-2", "value": "https://app.clickup.com/t/your-task-id-2"},
+  {"label": "CARD-3", "value": "https://app.clickup.com/t/your-task-id-3"},
+  {"label": "CARD-4", "value": "https://app.clickup.com/t/your-task-id-4"},
+  {"label": "CARD-5", "value": "https://app.clickup.com/t/your-task-id-5"}
+]'
         />
       </div>
     </div>
