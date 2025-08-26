@@ -166,8 +166,8 @@ async def run_experiment(use_precomputed: bool = False, precomputed_file: Option
     if use_precomputed and precomputed_file and "dharma" in precomputed_file.lower():
         experiment_name = f"dharma-{datetime.now().strftime('%Y-%m-%d')}"
     else:
-        experiment_suffix = "precomputed" if use_precomputed else "live"
-        experiment_name = f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}-{experiment_suffix}"
+        experiment_suffix = "-precomputed" if use_precomputed else ""
+        experiment_name = f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}{experiment_suffix}"
 
     runner = AsyncExperimentRunner(
         experiment_name=experiment_name,
