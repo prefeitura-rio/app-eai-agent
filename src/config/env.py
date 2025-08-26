@@ -8,8 +8,8 @@ if os.path.exists("src/config/.env"):
     dotenv.load_dotenv(dotenv_path="src/config/.env")
 
 
-LETTA_API_URL = getenv_or_action("LETTA_API_URL")
-LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN")
+# LETTA_API_URL = getenv_or_action("LETTA_API_URL")
+# LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN")
 
 LETTA_STREAM_TIMEOUT = 300
 LETTA_STREAM_RETRY_ATTEMPTS = 3
@@ -25,9 +25,9 @@ GEMINI_EVAL_MODEL = getenv_or_action(
     "GEMINI_EVAL_MODEL", default="gemini-2.5-pro-preview-06-05"
 )
 
-TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL")
-TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY")
-TYPESENSE_STAGING_BEARER_API_KEY = getenv_or_action("TYPESENSE_STAGING_BEARER_API_KEY")
+# TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL")
+# TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY")
+# TYPESENSE_STAGING_BEARER_API_KEY = getenv_or_action("TYPESENSE_STAGING_BEARER_API_KEY")
 
 ISSUE_AGENT_ENABLE_SLEEPTIME = (
     getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME").lower() == "false"
@@ -39,9 +39,9 @@ PG_URI = getenv_or_action("PG_URI")
 DB_SSL = getenv_or_action("DB_SSL", default="true")
 
 
-PHOENIX_HOST = getenv_or_action("PHOENIX_HOST")
-PHOENIX_PORT = getenv_or_action("PHOENIX_PORT")
-PHOENIX_ENDPOINT = getenv_or_action("PHOENIX_ENDPOINT")
+# PHOENIX_HOST = getenv_or_action("PHOENIX_HOST")
+# PHOENIX_PORT = getenv_or_action("PHOENIX_PORT")
+# PHOENIX_ENDPOINT = getenv_or_action("PHOENIX_ENDPOINT")
 
 GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
     "GCP_SERVICE_ACCOUNT_CREDENTIALS", action="raise"
@@ -51,8 +51,8 @@ GOOGLE_BIGQUERY_PAGE_SIZE = int(
 )
 NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
 
-GOOGLE_MAPS_API_URL = getenv_or_action("GOOGLE_MAPS_API_URL")
-GOOGLE_MAPS_API_KEY = getenv_or_action("GOOGLE_MAPS_API_KEY")
+# GOOGLE_MAPS_API_URL = getenv_or_action("GOOGLE_MAPS_API_URL")
+# GOOGLE_MAPS_API_KEY = getenv_or_action("GOOGLE_MAPS_API_KEY")
 
 
 # OPENAI

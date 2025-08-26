@@ -3,6 +3,7 @@ import uuid
 import pandas as pd
 import logging
 import json
+import argparse
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -43,11 +44,59 @@ from src.evaluations.core.experiments.eai.evaluators.agent_config import (
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 
 
-async def run_experiment():
+def load_precomputed_responses_from_csv(csv_file_path: str) -> Dict[str, Dict[str, Any]]:
+    """
+    Load precomputed responses from the dharma.json CSV file.
+    
+    Args:
+        csv_file_path: Path to the dharma.json file
+    
+    Returns:
+        Dictionary mapping task IDs to precomputed responses
+    """
+    logger.info(f"Loading precomputed responses from: {csv_file_path}")
+    
+    try:
+        with open(csv_file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        user_inputs = data.get("user_input", {})
+        responses = data.get("response", {})
+        
+        precomputed_responses = {}
+        
+        for idx in user_inputs.keys():
+            if idx in responses and responses[idx] is not None:
+                task_id = str(int(idx) + 1)  # Convert to 1-based indexing to match dataset IDs
+                precomputed_responses[task_id] = {
+                    "id": task_id,
+                    "one_turn_agent_message": responses[idx],
+                    "one_turn_reasoning_trace": None,
+                    "multi_turn_transcript": None,
+                }
+        
+        logger.info(f"Loaded {len(precomputed_responses)} precomputed responses")
+        return precomputed_responses
+        
+    except Exception as e:
+        logger.error(f"Error loading precomputed responses: {e}")
+        raise
+
+
+async def run_experiment(use_precomputed: bool = False, precomputed_file: Optional[str] = None):
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
+    
+    Args:
+        use_precomputed: Whether to use precomputed responses instead of calling EAI_GATEWAY
+        precomputed_file: Path to the file containing precomputed responses (e.g., dharma.json)
     """
-    logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
+    if use_precomputed:
+        logger.info("--- Configurando o Experimento com Respostas Pré-computadas ---")
+        if not precomputed_file:
+            raise ValueError("precomputed_file must be provided when use_precomputed=True")
+    else:
+        logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
@@ -64,6 +113,12 @@ async def run_experiment():
     logger.info(
         f"✅ DataLoader configurado para o dataset: '{loader.get_dataset_config()['dataset_name']}'"
     )
+
+    # Load precomputed responses if requested
+    precomputed_responses = None
+    if use_precomputed:
+        precomputed_responses = load_precomputed_responses_from_csv(precomputed_file)
+        logger.info(f"✅ Carregadas {len(precomputed_responses)} respostas pré-computadas")
 
     # --- 3. Definição da Suíte de Avaliação ---
     judge_client = AzureOpenAIClient(model_name="gpt-4o")
@@ -100,18 +155,23 @@ async def run_experiment():
         "system_prompt": prompt_data["prompt"],
         "judge_model": judge_client.model_name,
         "judges_prompts": judges_prompts,
+        "use_precomputed": use_precomputed,
+        "precomputed_file": precomputed_file if use_precomputed else None,
     }
 
     # --- 5. Configuração e Execução do Runner ---
     MAX_CONCURRENCY = 10
 
+    experiment_suffix = "precomputed" if use_precomputed else "live"
+    experiment_name = f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}-{experiment_suffix}"
+
     runner = AsyncExperimentRunner(
-        experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
-        experiment_description="gemini-2.5-flash",
+        experiment_name=experiment_name,
+        experiment_description="gemini-2.5-flash" + (" (precomputed)" if use_precomputed else ""),
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
-        # precomputed_responses=precomputed_responses_dict,
+        precomputed_responses=precomputed_responses,
         # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
         timeout=180,
@@ -124,8 +184,32 @@ async def run_experiment():
 
 
 if __name__ == "__main__":
+    # Add command line argument parsing
+    parser = argparse.ArgumentParser(description="Run EAI experiment with optional precomputed responses")
+    parser.add_argument(
+        "--use-precomputed", 
+        action="store_true", 
+        help="Use precomputed responses instead of calling EAI_GATEWAY"
+    )
+    parser.add_argument(
+        "--precomputed-file",
+        type=str,
+        default="datasets/dharma.json",
+        help="Path to file containing precomputed responses (default: datasets/dharma.json)"
+    )
+    
+    args = parser.parse_args()
+    
+    # Validate arguments
+    if args.use_precomputed and not Path(args.precomputed_file).exists():
+        print(f"Error: Precomputed file '{args.precomputed_file}' does not exist.")
+        exit(1)
+    
     try:
-        asyncio.run(run_experiment())
+        asyncio.run(run_experiment(
+            use_precomputed=args.use_precomputed,
+            precomputed_file=args.precomputed_file if args.use_precomputed else None
+        ))
     except Exception as e:
         logging.getLogger(__name__).error(
             f"Ocorreu um erro fatal durante a execução do experimento: {e}",
