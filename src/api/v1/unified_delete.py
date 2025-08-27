@@ -7,6 +7,7 @@ from src.db import get_db_session
 from src.repositories.unified_version_repository import UnifiedVersionRepository
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.repositories.agent_config_repository import AgentConfigRepository
+from src.models.system_prompt_model import SystemPrompt
 from src.schemas.unified_delete_schema import UnifiedDeleteResponse
 
 router = APIRouter(
@@ -56,21 +57,52 @@ async def delete_unified_version(
         items_deleted = []
 
         with get_db_session() as db:
-            # 1. Verificar se a versão existe
+            # 1. Verificar se a versão existe na tabela unified_versions
             version = UnifiedVersionRepository.get_version_by_number(
                 db, agent_type, version_number
             )
             
+            # Se não existe na unified_versions, verificar se existe nas tabelas individuais
             if not version:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Versão {version_number} não encontrada para o tipo de agente {agent_type}",
+                # Buscar na tabela system_prompts
+                prompt_by_version = (
+                    db.query(SystemPrompt)
+                    .filter(
+                        SystemPrompt.agent_type == agent_type,
+                        SystemPrompt.version == version_number
+                    )
+                    .first()
                 )
-
-            # Capturar dados antes da exclusão
-            prompt_id = version.prompt_id
-            config_id = version.config_id
-            version_display = version.version_metadata.get('version_display')
+                
+                # Buscar na tabela agent_configs  
+                from src.models.agent_config_model import AgentConfig
+                config_by_version = (
+                    db.query(AgentConfig)
+                    .filter(
+                        AgentConfig.agent_type == agent_type,
+                        AgentConfig.version == version_number
+                    )
+                    .first()
+                )
+                
+                # Se não existe em nenhuma tabela, erro
+                if not prompt_by_version and not config_by_version:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Versão {version_number} não encontrada em nenhuma tabela para o tipo de agente {agent_type}",
+                    )
+                
+                # Dados dos registros órfãos encontrados
+                prompt_id = prompt_by_version.prompt_id if prompt_by_version else None
+                config_id = config_by_version.config_id if config_by_version else None
+                version_display = f"eai-ORPHAN-v{version_number}"
+                
+                logger.info(f"Encontrados registros órfãos para versão {version_number}: prompt_id={prompt_id}, config_id={config_id}")
+            else:
+                # Capturar dados da versão unificada
+                prompt_id = version.prompt_id
+                config_id = version.config_id
+                version_display = version.version_metadata.get('version_display')
 
             result.update({
                 "prompt_id": str(prompt_id) if prompt_id else None,
@@ -79,12 +111,16 @@ async def delete_unified_version(
             })
 
             # 2. Verificar se não é a única versão (proteção contra exclusão total)
-            all_versions = UnifiedVersionRepository.list_versions(db, agent_type, limit=2)
-            if len(all_versions) <= 1:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Não é possível excluir a única versão existente. Use o reset para recriar valores padrão.",
-                )
+            # Mas apenas se a versão existe na tabela unified_versions
+            if version:  # Se existe versão unificada, verificar proteção
+                all_versions = UnifiedVersionRepository.list_versions(db, agent_type, limit=2)
+                if len(all_versions) <= 1:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Não é possível excluir a única versão existente. Use o reset para recriar valores padrão.",
+                    )
+            else:
+                logger.info(f"Limpando registros órfãos da versão {version_number}, sem verificação de proteção")
 
             # 3. Remover deployments de prompts primeiro (se existir prompt_id)
             if prompt_id:
@@ -129,16 +165,20 @@ async def delete_unified_version(
                     logger.warning(f"Erro ao excluir config {config_id}: {str(e)}")
                     db.rollback()
 
-            # 6. Remover entrada de versão unificada
-            version_deleted = UnifiedVersionRepository.delete_version_by_number(
-                db, agent_type, version_number
-            )
-            
-            if not version_deleted:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Erro interno: não foi possível excluir a versão unificada",
+            # 6. Remover entrada de versão unificada (se existir)
+            if version:  # Só tenta deletar se existir
+                version_deleted = UnifiedVersionRepository.delete_version_by_number(
+                    db, agent_type, version_number
                 )
+                
+                if not version_deleted:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Erro interno: não foi possível excluir a versão unificada",
+                    )
+                items_deleted.append("unified_version")
+            else:
+                logger.info(f"Versão {version_number} não existe na tabela unified_versions, pulando exclusão")
 
             # Força commit final da exclusão
             db.commit()
