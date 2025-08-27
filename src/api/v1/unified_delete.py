@@ -52,6 +52,8 @@ async def delete_unified_version(
             "deployments_deleted": 0,
             "message": f"Versão {version_number} excluída com sucesso"
         }
+        
+        items_deleted = []
 
         with get_db_session() as db:
             # 1. Verificar se a versão existe
@@ -86,22 +88,46 @@ async def delete_unified_version(
 
             # 3. Remover deployments de prompts primeiro (se existir prompt_id)
             if prompt_id:
-                deployments_deleted = SystemPromptRepository.delete_deployments_by_prompt_ids(
-                    db, [str(prompt_id)]
-                )
-                result["deployments_deleted"] = deployments_deleted
+                try:
+                    deployments_deleted = SystemPromptRepository.delete_deployments_by_prompt_ids(
+                        db, [str(prompt_id)]
+                    )
+                    result["deployments_deleted"] = deployments_deleted
+                    db.commit()  # Commit após excluir deployments
+                    logger.info(f"Deployments excluídos: {deployments_deleted}")
+                    if deployments_deleted > 0:
+                        items_deleted.append(f"{deployments_deleted} deployments")
+                except Exception as e:
+                    logger.warning(f"Erro ao excluir deployments do prompt {prompt_id}: {str(e)}")
+                    db.rollback()
 
-            # 4. Remover prompt se existir
+            # 4. Remover prompt se existir (mesmo que não exista fisicamente)
             if prompt_id:
-                prompt_deleted = SystemPromptRepository.delete_prompt_by_id(db, str(prompt_id))
-                if not prompt_deleted:
-                    logger.warning(f"Prompt {prompt_id} não foi encontrado para exclusão")
+                try:
+                    prompt_deleted = SystemPromptRepository.delete_prompt_by_id(db, str(prompt_id))
+                    if prompt_deleted:
+                        logger.info(f"Prompt {prompt_id} excluído com sucesso")
+                        db.commit()  # Commit após excluir prompt
+                        items_deleted.append("prompt")
+                    else:
+                        logger.warning(f"Prompt {prompt_id} não foi encontrado na tabela system_prompts")
+                except Exception as e:
+                    logger.warning(f"Erro ao excluir prompt {prompt_id}: {str(e)}")
+                    db.rollback()
 
-            # 5. Remover configuração se existir
+            # 5. Remover configuração se existir (mesmo que não exista fisicamente)
             if config_id:
-                config_deleted = AgentConfigRepository.delete_config_by_id(db, str(config_id))
-                if not config_deleted:
-                    logger.warning(f"Config {config_id} não foi encontrado para exclusão")
+                try:
+                    config_deleted = AgentConfigRepository.delete_config_by_id(db, str(config_id))
+                    if config_deleted:
+                        logger.info(f"Config {config_id} excluído com sucesso")
+                        db.commit()  # Commit após excluir config
+                        items_deleted.append("config")
+                    else:
+                        logger.warning(f"Config {config_id} não foi encontrado na tabela agent_configs")
+                except Exception as e:
+                    logger.warning(f"Erro ao excluir config {config_id}: {str(e)}")
+                    db.rollback()
 
             # 6. Remover entrada de versão unificada
             version_deleted = UnifiedVersionRepository.delete_version_by_number(
@@ -114,8 +140,15 @@ async def delete_unified_version(
                     detail="Erro interno: não foi possível excluir a versão unificada",
                 )
 
-            # Força commit da exclusão
+            # Força commit final da exclusão
             db.commit()
+            
+            # Atualizar mensagem com detalhes do que foi excluído
+            if items_deleted:
+                items_str = ", ".join(items_deleted)
+                result["message"] = f"Versão {version_number} excluída com sucesso ({items_str})"
+            else:
+                result["message"] = f"Versão {version_number} excluída (apenas referência na tabela unified_versions)"
 
             return UnifiedDeleteResponse(**result)
 
