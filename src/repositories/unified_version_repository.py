@@ -149,4 +149,32 @@ class UnifiedVersionRepository:
             .delete(synchronize_session=False)
         )
         
-        return result 
+        return result
+
+    @staticmethod
+    def delete_version_by_number(
+        db: Session,
+        agent_type: str,
+        version_number: int
+    ) -> bool:
+        """
+        Remove uma versão específica do controle unificado.
+        
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+            version_number: Número da versão a ser removida
+            
+        Returns:
+            bool: True se a versão foi removida, False se não encontrada
+        """
+        result = (
+            db.query(UnifiedVersion)
+            .filter(
+                UnifiedVersion.agent_type == agent_type,
+                UnifiedVersion.version_number == version_number
+            )
+            .delete(synchronize_session=False)
+        )
+        
+        return result > 0 

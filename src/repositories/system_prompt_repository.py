@@ -415,3 +415,23 @@ class SystemPromptRepository:
             return max(prompt_version, config_version)
         
         return total_today
+
+    @staticmethod
+    def delete_prompt_by_id(db: Session, prompt_id: str) -> bool:
+        """
+        Exclui um prompt específico pelo ID.
+
+        Args:
+            db: Sessão do banco de dados
+            prompt_id: ID do prompt a ser excluído
+
+        Returns:
+            bool: True se o prompt foi excluído, False se não encontrado
+        """
+        result = (
+            db.query(SystemPrompt)
+            .filter(SystemPrompt.prompt_id == prompt_id)
+            .delete(synchronize_session=False)
+        )
+
+        return result > 0

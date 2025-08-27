@@ -124,4 +124,24 @@ class AgentConfigRepository:
                 cast(AgentConfig.created_at, Date) == date
             )
             .count()
-        ) 
+        )
+
+    @staticmethod
+    def delete_config_by_id(db: Session, config_id: str) -> bool:
+        """
+        Exclui uma configuração específica pelo ID.
+
+        Args:
+            db: Sessão do banco de dados
+            config_id: ID da configuração a ser excluída
+
+        Returns:
+            bool: True se a configuração foi excluída, False se não encontrada
+        """
+        result = (
+            db.query(AgentConfig)
+            .filter(AgentConfig.config_id == config_id)
+            .delete(synchronize_session=False)
+        )
+
+        return result > 0 
