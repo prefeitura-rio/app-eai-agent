@@ -67,7 +67,7 @@ def load_precomputed_responses_from_csv(csv_file_path: str) -> Dict[str, Dict[st
         
         for idx in user_inputs.keys():
             if idx in responses and responses[idx] is not None:
-                task_id = str(int(idx) + 1)  # Convert to 1-based indexing to match dataset IDs
+                task_id = str(idx)
                 precomputed_responses[task_id] = {
                     "id": task_id,
                     "one_turn_agent_message": responses[idx],
