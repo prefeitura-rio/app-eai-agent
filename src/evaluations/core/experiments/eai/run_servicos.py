@@ -164,7 +164,7 @@ async def run_experiment(use_precomputed: bool = False, precomputed_file: Option
 
     # Generate experiment name based on whether using precomputed responses
     if use_precomputed and precomputed_file and "dharma" in precomputed_file.lower():
-        experiment_name = f"dharma-{datetime.now().strftime('%Y-%m-%d')}"
+        experiment_name = f"dharma-{datetime.now().strftime('%Y-%m-%d_%H-%M')}"
     else:
         experiment_suffix = "-precomputed" if use_precomputed else ""
         experiment_name = f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}{experiment_suffix}"
