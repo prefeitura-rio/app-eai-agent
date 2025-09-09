@@ -93,6 +93,29 @@ export interface HistoryResponseData {
   data: HistoryMessage[];
 }
 
+// --- Delete History Interfaces ---
+
+export interface DeleteHistoryRequestPayload {
+  user_id: string;
+}
+
+export interface DeleteHistoryResponseData {
+  thread_id: string;
+  overall_result: string;
+  tables: {
+    checkpoints: {
+      result: string;
+      deleted_rows?: number;
+      error?: string;
+    };
+    checkpoints_writes: {
+      result: string;
+      deleted_rows?: number;
+      error?: string;
+    };
+  };
+}
+
 interface ChatApiResponse {
   response: {
     data?: ChatResponseData;
@@ -204,6 +227,55 @@ export async function getUserHistory(payload: HistoryRequestPayload, token: stri
     }
     
     // Retornar estrutura vazia em caso de erro
+    throw new Error(errorMessage);
+  }
+}
+
+// --- Delete History API Function ---
+
+export async function deleteUserHistory(payload: DeleteHistoryRequestPayload, token: string): Promise<DeleteHistoryResponseData> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+    
+    const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/history`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ detail: 'Failed to parse error response.' }));
+      throw new Error(errorData.detail || `Request failed with status ${res.status}`);
+    }
+
+    const data: DeleteHistoryResponseData = await res.json();
+
+    if (!data.thread_id) {
+      throw new Error("Resposta da API inválida: campo 'thread_id' ausente.");
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error("Error deleting user history:", error);
+    
+    let errorMessage = "An unknown error occurred.";
+    
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = "Timeout: A requisição de exclusão demorou mais de 30 segundos para responder.";
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     throw new Error(errorMessage);
   }
 }

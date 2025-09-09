@@ -44,6 +44,16 @@ class BulkHistoryResponse(BaseModel):
     data: Dict[str, List[Dict[str, Any]]]
 
 
+class DeleteHistoryRequest(BaseModel):
+    user_id: str
+
+
+class DeleteHistoryResponse(BaseModel):
+    thread_id: str
+    overall_result: str
+    tables: Dict[str, Dict[str, Any]]
+
+
 # --- Router Setup ---
 
 router = APIRouter(
@@ -148,4 +158,31 @@ async def get_bulk_user_history(
 
     except Exception as e:
         logger.exception(f"Error retrieving bulk history for users {request.user_ids}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+@router.delete("/history", response_model=DeleteHistoryResponse)
+async def delete_user_history(
+    request: DeleteHistoryRequest,
+):
+    """
+    Deletes the conversation history for a specific user from both checkpoint tables.
+    
+    Args:
+        request: Contains user_id to delete
+        
+    Returns:
+        DeleteHistoryResponse: Results of the deletion operation for both tables
+    """
+    try:
+        # Initialize the history service
+        history_service = await GoogleAgentEngineHistory.create()
+        
+        # Delete user history from both tables
+        result = await history_service.delete_user_history(user_id=request.user_id)
+        
+        return DeleteHistoryResponse(**result)
+        
+    except Exception as e:
+        logger.exception(f"Error deleting history for user {request.user_id}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
