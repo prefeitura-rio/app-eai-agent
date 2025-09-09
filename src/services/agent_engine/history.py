@@ -92,6 +92,70 @@ class GoogleAgentEngineHistory:
 
         return result
 
+    async def _delete_user_history(self, user_id: str, table_id: str = "checkpoints"):
+        """Deleta o histórico de um usuário específico"""
+        from sqlalchemy import text
+
+        # Definir a função que será executada com a conexão
+        async def execute_delete():
+            query = f"""
+                DELETE 
+                FROM "public"."{table_id}" 
+                WHERE thread_id = '{user_id}'
+            """
+            query_line = " ".join([line.strip() for line in query.split("\n")])
+            pool = self._checkpointer._engine._pool
+            async with pool.connect() as conn:
+                result = await conn.execute(text(query_line))
+                await conn.commit()
+                deleted_count = result.rowcount
+                logger.info(f"Linhas deletadas: {deleted_count}")
+            return deleted_count
+
+        try:
+            # Criar uma coroutine wrapper que chama a função
+            coro = execute_delete()
+            deleted_count = await self._checkpointer._engine._run_as_async(coro)
+            return {
+                "result": "success",
+                "deleted_rows": deleted_count,
+            }
+        except Exception as e:
+            return {
+                "result": "error",
+                "error": str(e),
+            }
+
+    async def delete_user_history(self, user_id: str):
+        """Interface pública para deletar histórico de um usuário específico de ambas as tabelas"""
+        import asyncio
+
+        # Executa ambas as operações em paralelo
+        results = await asyncio.gather(
+            self._delete_user_history(user_id=user_id, table_id="checkpoints"),
+            self._delete_user_history(user_id=user_id, table_id="checkpoints_writes"),
+            return_exceptions=True,
+        )
+
+        checkpoints_result, checkpoints_writes_result = results
+
+        # Estruturar o retorno de forma mais clara
+        return {
+            "thread_id": user_id,
+            "overall_result": (
+                "success"
+                if all(
+                    isinstance(r, dict) and r.get("result") == "success"
+                    for r in results
+                )
+                else "partial_failure"
+            ),
+            "tables": {
+                "checkpoints": checkpoints_result,
+                "checkpoints_writes": checkpoints_writes_result,
+            },
+        }
+
     async def get_history_bulk_from_last_update(self, last_update: str = "2025-07-25"):
         """
         CREATE VIEW "public"."thread_ids" AS (
