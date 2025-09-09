@@ -26,7 +26,6 @@ Avalie se a resposta é adequada para a situação específica de emergência ap
 - Urgência: {task[metadata][urgencia]}
 - Complexidade: {task[metadata][complexidade]}
 - Contexto: {task[metadata][contexto]}
-- Ferramentas necessárias: {task[metadata][tools]}
 
 **Critérios de Avaliação por Urgência:**
 
