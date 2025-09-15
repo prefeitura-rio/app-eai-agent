@@ -1,7 +1,10 @@
 import asyncio
+import uuid
+import pandas as pd
 import logging
+import json
+from typing import Dict, Any, Optional
 from pathlib import Path
-from datetime import datetime
 
 from src.evaluations.core.eval import (
     DataLoader,
@@ -9,7 +12,10 @@ from src.evaluations.core.eval import (
     GeminiAIClient,
     AsyncExperimentRunner,
 )
+from src.services.eai_gateway.api import CreateAgentRequest
+from src.evaluations.core.experiments.batman.data.test_data import UNIFIED_TEST_DATA
 from src.utils.log import logger
+from datetime import datetime
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
@@ -25,12 +31,14 @@ from src.evaluations.core.experiments.eai.evaluators import (
     HasLinkEvaluator,
     LinkCompletenessEvaluator,
     ToolCallingLinkCompletenessEvaluator,
-    ToolInvocationAccuracyEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
 )
 
+from src.evaluations.core.experiments.eai.evaluators.agent_config import (
+    agent_config_data,
+)
 
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 
@@ -51,7 +59,6 @@ async def run_experiment():
         metadata_cols=[
             "golden_links_list",
             "golden_answer",
-            "golden_tool",
         ],
     )
     logger.info(
@@ -76,7 +83,6 @@ async def run_experiment():
         HasLinkEvaluator(judge_client),
         LinkCompletenessEvaluator(judge_client),
         ToolCallingLinkCompletenessEvaluator(judge_client),
-        ToolInvocationAccuracyEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
