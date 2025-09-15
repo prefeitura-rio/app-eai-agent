@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare, Trash2 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryMessage } from '../services/api';
+import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryMessage, deleteUserHistory, DeleteHistoryRequestPayload } from '../services/api';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -20,6 +20,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface DisplayMessage {
   sender: 'user' | 'bot';
@@ -284,6 +285,7 @@ export default function ChatClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Estado para controlar se o componente já foi montado no cliente
   const [isMounted, setIsMounted] = useState(false);
@@ -311,6 +313,8 @@ export default function ChatClient() {
   const [historyMessages, setHistoryMessages] = useState<HistoryMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [isDeletingHistory, setIsDeletingHistory] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // History Parameters
   const [sessionTimeoutSeconds, setSessionTimeoutSeconds] = useState(3600); // 1 hora default
@@ -397,6 +401,10 @@ export default function ChatClient() {
     } finally {
       setIsLoading(false);
       setIsRetrying(false);
+      // Retornar foco para o textarea após o envio
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -463,6 +471,46 @@ export default function ChatClient() {
       toast.error(`Erro ao carregar histórico: ${errorMessage}`);
     } finally {
       setIsLoadingHistory(false);
+    }
+  };
+
+  const handleDeleteHistory = async () => {
+    if (!token) {
+      toast.error("Token de autenticação não encontrado!");
+      return;
+    }
+
+    setIsDeletingHistory(true);
+    setHistoryError(null);
+    setShowDeleteModal(false); // Fechar o modal
+
+    try {
+      const payload: DeleteHistoryRequestPayload = {
+        user_id: userNumber,
+      };
+
+      const deleteResult = await deleteUserHistory(payload, token);
+      
+      // Limpar histórico carregado e chat atual
+      setHistoryMessages([]);
+      setMessages([]);
+      
+      // Calcular total de linhas deletadas
+      const totalDeleted = (deleteResult.tables.checkpoints.deleted_rows || 0) + 
+                          (deleteResult.tables.checkpoints_writes.deleted_rows || 0);
+      
+      if (deleteResult.overall_result === "success") {
+        toast.success(`Histórico deletado com sucesso! ${totalDeleted} registros removidos.`);
+      } else {
+        toast.warning(`Operação parcial: ${totalDeleted} registros removidos. Verifique os detalhes.`);
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao deletar histórico.";
+      setHistoryError(errorMessage);
+      toast.error(`Erro ao deletar histórico: ${errorMessage}`);
+    } finally {
+      setIsDeletingHistory(false);
     }
   };
 
@@ -840,6 +888,7 @@ export default function ChatClient() {
         <CardFooter className="border-t pt-4">
           <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
             <Textarea
+              ref={textareaRef}
               id="message"
               placeholder="Digite sua mensagem..."
               className="flex-1 min-h-[60px] resize-none"
@@ -1003,6 +1052,80 @@ export default function ChatClient() {
                 </>
               )}
             </Button>
+
+            <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+              <DialogTrigger asChild>
+                <Button
+                  disabled={isDeletingHistory || isLoadingHistory || !isMounted}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  {isDeletingHistory ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deletando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Deletar Histórico
+                    </>
+                  )}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    <Trash2 className="h-5 w-5" />
+                    Deletar Histórico
+                  </DialogTitle>
+                  <DialogDescription className="text-base">
+                    Tem certeza que deseja deletar <strong>PERMANENTEMENTE</strong> todo o histórico do usuário <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">{userNumber}</code>?
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-4">
+                  <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <div className="text-destructive mt-0.5">⚠️</div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-destructive mb-1">Atenção!</h4>
+                      <ul className="text-sm text-destructive/80 space-y-1">
+                        <li>• Esta ação não pode ser desfeita</li>
+                        <li>• Todos os checkpoints serão removidos</li>
+                        <li>• O histórico será perdido permanentemente</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={isDeletingHistory}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteHistory}
+                    disabled={isDeletingHistory}
+                  >
+                    {isDeletingHistory ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deletando...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Sim, Deletar
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {historyError && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">

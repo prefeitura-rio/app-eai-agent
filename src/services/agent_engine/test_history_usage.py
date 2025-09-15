@@ -51,18 +51,29 @@ async def test_get_thread_ids():
     return results
 
 
+async def test_delete_user_history():
+    """Teste para buscar thread_ids"""
+    print("\n=== Teste 3: Delete Thread IDs ===")
+    history_instance = await GoogleAgentEngineHistory.create()
+    results = await history_instance.delete_user_history(user_id="663509127")
+    return results
+
+
 async def main():
     """Executa todos os testes"""
     print("🚀 Iniciando testes de usabilidade para GoogleAgentEngineHistory")
     print("=" * 60)
-    results = await test_bulk_users()
-    json.dump(
-        results,
-        open("./src/services/agent_engine/history.json", "w"),
-        indent=4,
-        ensure_ascii=False,
-    )
-    print("\n" + "=" * 60)
+    results = await test_delete_user_history()
+    print(results)
+
+    # results = await test_bulk_users()
+    # json.dump(
+    #     results,
+    #     open("./src/services/agent_engine/history.json", "w"),
+    #     indent=4,
+    #     ensure_ascii=False,
+    # )
+    # print("\n" + "=" * 60)
     # Executar todos os testes
     # results = await test_get_thread_ids()
     # print("\n" + "=" * 60)
