@@ -135,6 +135,86 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                             </div>
                                                         </div>
                                                     ));
+                                                } else if (obj.name === 'dharma_search_tool') {
+                                                    // Special handling for dharma_search_tool
+                                                    const toolReturn = obj.tool_return as {
+                                                        id?: string;
+                                                        created_at?: string;
+                                                        updated_at?: string;
+                                                        message?: string;
+                                                        documents?: Array<{
+                                                            title: string;
+                                                            collection: string;
+                                                            content: string;
+                                                            id: string;
+                                                            url: string;
+                                                        }>;
+                                                        metadata?: {
+                                                            total_tokens?: number;
+                                                        };
+                                                    };
+                                                    
+                                                    return (
+                                                        <div className="space-y-4">
+                                                            {toolReturn.message && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Consulta</h5>
+                                                                    <div className="pl-4">
+                                                                        <div className="text-sm font-medium text-foreground">
+                                                                            {toolReturn.message}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {toolReturn.documents && Array.isArray(toolReturn.documents) && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Documentos Encontrados ({toolReturn.documents.length})</h5>
+                                                                    <div className="pl-4 space-y-3">
+                                                                        {toolReturn.documents.map((doc, index) => (
+                                                                            <div key={doc.id || index} className="border border-border rounded-lg p-3 space-y-2">
+                                                                                <div className="flex justify-between items-start">
+                                                                                    <h6 className="font-medium text-sm text-foreground line-clamp-2">
+                                                                                        {doc.title}
+                                                                                    </h6>
+                                                                                    {doc.collection && (
+                                                                                        <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-md ml-2 shrink-0">
+                                                                                            {doc.collection}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground line-clamp-3">
+                                                                                    {doc.content}
+                                                                                </div>
+                                                                                {doc.url && (
+                                                                                    <a 
+                                                                                        href={doc.url} 
+                                                                                        target="_blank" 
+                                                                                        rel="noopener noreferrer"
+                                                                                        className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                                                                                    >
+                                                                                        Ver documento
+                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                                        </svg>
+                                                                                    </a>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {toolReturn.metadata?.total_tokens && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="font-medium text-sm capitalize text-muted-foreground">Metadata</h5>
+                                                                    <div className="pl-4">
+                                                                        <div className="text-xs text-muted-foreground">
+                                                                            Tokens utilizados: {toolReturn.metadata.total_tokens}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
                                                 } else if (obj.name === 'equipments_instructions') {
                                                     // Special handling for equipments_instructions
                                                     const toolReturn = obj.tool_return as {

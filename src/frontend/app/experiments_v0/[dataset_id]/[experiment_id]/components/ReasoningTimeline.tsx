@@ -56,6 +56,50 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                                     {step.message.tool_return.text && (
                                         <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(step.message.tool_return.text) as string) }} />
                                     )}
+                                    {step.message.tool_return.message && (
+                                        <div>
+                                            <h4 className="font-semibold text-xs">Consulta:</h4>
+                                            <div className="text-sm font-medium text-foreground">{step.message.tool_return.message}</div>
+                                        </div>
+                                    )}
+                                    {step.message.tool_return.documents && Array.isArray(step.message.tool_return.documents) && (
+                                        <div>
+                                            <hr className="my-2 border-dashed" />
+                                            <h4 className="font-semibold text-xs">Documentos Encontrados ({step.message.tool_return.documents.length}):</h4>
+                                            <div className="space-y-2 mt-2">
+                                                {step.message.tool_return.documents.map((doc: any, docIndex: number) => (
+                                                    <div key={doc.id || docIndex} className="border border-border rounded-lg p-3 space-y-2">
+                                                        <div className="flex justify-between items-start">
+                                                            <h6 className="font-medium text-sm text-foreground line-clamp-2">
+                                                                {doc.title}
+                                                            </h6>
+                                                            {doc.collection && (
+                                                                <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-md ml-2 shrink-0">
+                                                                    {doc.collection}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground line-clamp-3">
+                                                            {doc.content}
+                                                        </div>
+                                                        {doc.url && (
+                                                            <a 
+                                                                href={doc.url} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                                                            >
+                                                                Ver documento
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                </svg>
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                     {step.message.tool_return.web_search_queries && (
                                         <div>
                                             <hr className="my-2 border-dashed" />
@@ -74,6 +118,14 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                                                     </AccordionContent>
                                                 </AccordionItem>
                                             </Accordion>
+                                        </div>
+                                    )}
+                                    {step.message.tool_return.metadata?.total_tokens && (
+                                        <div>
+                                            <hr className="my-2 border-dashed" />
+                                            <div className="text-xs text-muted-foreground">
+                                                Tokens utilizados: {step.message.tool_return.metadata.total_tokens}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

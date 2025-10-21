@@ -103,10 +103,12 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 10
+    MAX_CONCURRENCY = 20
 
     runner = AsyncExperimentRunner(
-        experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+        # experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+        # experiment_name=f"eai-surkai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+        experiment_name=f"dharma-{datetime.now().strftime('%Y-%m-%d')}-v0.3",
         experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
@@ -117,6 +119,7 @@ async def run_experiment():
         timeout=180,
         polling_interval=5,
         rate_limit_requests_per_minute=1000,
+        # reasoning_engine_id="3875545391445311488", #DHARMA_REASONING_ENGINE_ID
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
