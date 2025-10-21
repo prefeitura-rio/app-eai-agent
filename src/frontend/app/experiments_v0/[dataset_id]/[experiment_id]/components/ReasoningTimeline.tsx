@@ -7,6 +7,14 @@ import { OrderedStep } from '@/app/components/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Lightbulb, Wrench, LogIn, MessageSquare, BarChart } from 'lucide-react';
 
+interface DocumentItem {
+    title: string;
+    collection: string;
+    content: string;
+    id: string;
+    url: string;
+}
+
 interface ReasoningTimelineProps {
   orderedSteps: OrderedStep[];
 }
@@ -67,7 +75,7 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                                             <hr className="my-2 border-dashed" />
                                             <h4 className="font-semibold text-xs">Documentos Encontrados ({step.message.tool_return.documents.length}):</h4>
                                             <div className="space-y-2 mt-2">
-                                                {step.message.tool_return.documents.map((doc: any, docIndex: number) => (
+                                                {step.message.tool_return.documents.map((doc: DocumentItem, docIndex: number) => (
                                                     <div key={doc.id || docIndex} className="border border-border rounded-lg p-3 space-y-2">
                                                         <div className="flex justify-between items-start">
                                                             <h6 className="font-medium text-sm text-foreground line-clamp-2">
