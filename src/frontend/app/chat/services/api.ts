@@ -19,6 +19,20 @@ export interface ToolCall {
 }
 
 export interface ToolReturn {
+  text?: string;
+  message?: string;
+  web_search_queries?: string[];
+  sources?: unknown[];
+  documents?: Array<{
+    title: string;
+    collection: string;
+    content: string;
+    id: string;
+    url: string;
+  }>;
+  metadata?: {
+    total_tokens?: number;
+  };
   [key: string]: unknown;
 }
 

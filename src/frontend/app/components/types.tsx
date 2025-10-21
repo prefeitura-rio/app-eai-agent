@@ -50,8 +50,19 @@ export interface OrderedStep {
     name?: string;
     tool_return?: {
       text?: string;
+      message?: string;
       web_search_queries?: string[];
       sources?: unknown[];
+      documents?: Array<{
+        title: string;
+        collection: string;
+        content: string;
+        id: string;
+        url: string;
+      }>;
+      metadata?: {
+        total_tokens?: number;
+      };
     };
     content?: string;
     total_tokens?: number;
