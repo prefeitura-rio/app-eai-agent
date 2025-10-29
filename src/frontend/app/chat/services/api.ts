@@ -7,6 +7,7 @@ import { API_BASE_URL } from '@/app/components/config';
 export interface ChatRequestPayload {
   user_number: string;
   message: string;
+  use_whatsapp_format: boolean;
   timeout?: number;
   polling_interval?: number;
   provider?: string;
