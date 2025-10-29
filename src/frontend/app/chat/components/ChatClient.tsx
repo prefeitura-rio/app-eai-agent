@@ -436,7 +436,6 @@ export default function ChatClient() {
         user_number: userNumber,
         message: input,
         provider: provider,
-        use_whatsapp_format: useWhatsappFormat,
       };
 
       // Usa retry com backoff exponencial para lidar com erros de conexão
