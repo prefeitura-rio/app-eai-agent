@@ -51,10 +51,10 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
-        # number_rows=10,
+        number_rows=10,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Golden Dataset samples",
+        dataset_name="Golden Dataset 10 samples",
         dataset_description="Dataset de avaliacao de servicos",
         metadata_cols=[
             "golden_links_list",
@@ -103,12 +103,12 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 20
+    MAX_CONCURRENCY = 1
 
     runner = AsyncExperimentRunner(
         # experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
         # experiment_name=f"eai-surkai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
-        experiment_name=f"dharma-{datetime.now().strftime('%Y-%m-%d')}-v0.3",
+        experiment_name=f"dharma-{datetime.now().strftime('%Y-%m-%d')}-v0.4",
         experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
@@ -118,8 +118,8 @@ async def run_experiment():
         output_dir=EXPERIMENT_DATA_PATH,
         timeout=180,
         polling_interval=5,
-        rate_limit_requests_per_minute=1000,
-        # reasoning_engine_id="3875545391445311488", #DHARMA_REASONING_ENGINE_ID
+        rate_limit_requests_per_minute=10,
+        reasoning_engine_id="7248741512345812992", #DHARMA_REASONING_ENGINE_ID
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
