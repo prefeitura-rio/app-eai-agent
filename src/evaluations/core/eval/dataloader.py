@@ -4,6 +4,7 @@ from typing import Generator, Dict, Any, Union, List, Optional
 from urllib.parse import urlparse, parse_qs
 import hashlib
 from datetime import datetime, timezone
+from pathlib import Path
 
 from src.utils.bigquery import upload_dataset_to_bq
 from src.evaluations.core.eval.schemas import EvaluationTask
@@ -119,8 +120,9 @@ class DataLoader:
                 query_params.get("gid", [None])[0] or fragment_params.get("gid", [0])[0]
             )
 
-            csv_export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
-            return pd.read_csv(csv_export_url).head(self.number_rows)
+            # Usa caminho relativo baseado na localização deste arquivo
+            csv_file_path = Path(__file__).parent / "Golden Dataset - Filtered - 188.csv"
+            return pd.read_csv(csv_file_path).head(self.number_rows)
         except Exception as e:
             raise Exception(f"Erro ao carregar dados do Google Sheets: {e}")
 
