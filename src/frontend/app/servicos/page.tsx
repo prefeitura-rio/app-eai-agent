@@ -156,8 +156,9 @@ export default function ServicosPage() {
         subtitle="Visualize, crie e edite os servicos disponiveis no portal"
       />
 
-      <div className="flex-1 overflow-hidden p-6">
-        <div className="grid md:grid-cols-[380px_1fr] gap-6 h-[calc(100vh-200px)] max-h-screen">
+      <div className="flex-1 overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full py-6">
+          <div className="grid md:grid-cols-[380px_1fr] gap-6 h-full">
           {/* Painel Esquerdo - Lista de Servicos */}
           <Card className="flex flex-col h-full overflow-hidden">
             <CardHeader className="flex-shrink-0 pb-4">
@@ -384,16 +385,14 @@ export default function ServicosPage() {
           </Card>
 
           {/* Painel Direito - Formulario de Edicao ou Placeholder */}
-          <div className="h-full overflow-y-auto max-h-full min-h-0">
-            {showPanel ? (
-              <div className="h-full">
-                <ServiceFormPanel
-                  service={isCreatingNew ? null : selectedService}
-                  onSuccess={handleServiceSaved}
-                  onClose={handleClosePanel}
-                />
-              </div>
-            ) : (
+          {showPanel ? (
+            <ServiceFormPanel
+              service={isCreatingNew ? null : selectedService}
+              onSuccess={handleServiceSaved}
+              onClose={handleClosePanel}
+            />
+          ) : (
+            <Card className="flex flex-col h-full overflow-hidden">
               <div className="h-full flex items-center justify-center">
                 <div className="text-center p-12 text-muted-foreground">
                   <FileText className="h-16 w-16 mx-auto mb-4 opacity-20" />
@@ -402,7 +401,8 @@ export default function ServicosPage() {
                   <p className="text-sm">ou clique no botao + para criar um novo</p>
                 </div>
               </div>
-            )}
+            </Card>
+          )}
           </div>
         </div>
       </div>

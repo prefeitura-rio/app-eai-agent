@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save, FileText, X, Trash2, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
@@ -161,110 +162,108 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="bg-card rounded-lg border shadow-sm">
-        <div className="flex items-center justify-between p-4 border-b bg-muted/30">
-          <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">
-              {isEditing ? 'Editar Servico' : 'Novo Servico'}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            {isEditing && service?.status === 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUnpublish}
-                disabled={isSubmitting}
-              >
-                <EyeOff className="mr-2 h-4 w-4" />
-                Despublicar
-              </Button>
-            )}
-            {isEditing && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isSubmitting}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir
-              </Button>
-            )}
+    <Card className="flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b bg-muted/30 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <FileText className="h-5 w-5" />
+          <h2 className="text-lg font-semibold">
+            {isEditing ? 'Editar Servico' : 'Novo Servico'}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {isEditing && service?.status === 1 && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleSubmit(true)}
+              onClick={handleUnpublish}
               disabled={isSubmitting}
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Save className="mr-2 h-4 w-4" />
-              Salvar
+              <EyeOff className="mr-2 h-4 w-4" />
+              Despublicar
             </Button>
+          )}
+          {isEditing && (
             <Button
+              variant="outline"
               size="sm"
-              onClick={() => handleSubmit(false)}
+              onClick={handleDelete}
               disabled={isSubmitting}
+              className="text-destructive hover:text-destructive"
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Publicar
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="basico">Basico</TabsTrigger>
-              <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-              <TabsTrigger value="canais">Canais</TabsTrigger>
-              <TabsTrigger value="documentos">Documentos</TabsTrigger>
-              <TabsTrigger value="botoes">Botoes</TabsTrigger>
-              <TabsTrigger value="config">Config</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="basico" className="mt-4">
-              <BasicInfoTab data={formData} onChange={handleFieldChange} errors={errors} />
-            </TabsContent>
-
-            <TabsContent value="detalhes" className="mt-4">
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Tab Detalhes - Em desenvolvimento</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="canais" className="mt-4">
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Tab Canais - Em desenvolvimento</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="documentos" className="mt-4">
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Tab Documentos - Em desenvolvimento</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="botoes" className="mt-4">
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Tab Botoes - Em desenvolvimento</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="config" className="mt-4">
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <p>Tab Configuracoes - Em desenvolvimento</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleSubmit(true)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Save className="mr-2 h-4 w-4" />
+            Salvar
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleSubmit(false)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Publicar
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-    </div>
+
+      <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="basico">Basico</TabsTrigger>
+            <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+            <TabsTrigger value="canais">Canais</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+            <TabsTrigger value="botoes">Botoes</TabsTrigger>
+            <TabsTrigger value="config">Config</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basico" className="mt-4">
+            <BasicInfoTab data={formData} onChange={handleFieldChange} errors={errors} />
+          </TabsContent>
+
+          <TabsContent value="detalhes" className="mt-4">
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <p>Tab Detalhes - Em desenvolvimento</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="canais" className="mt-4">
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <p>Tab Canais - Em desenvolvimento</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="documentos" className="mt-4">
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <p>Tab Documentos - Em desenvolvimento</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="botoes" className="mt-4">
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <p>Tab Botoes - Em desenvolvimento</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="config" className="mt-4">
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <p>Tab Configuracoes - Em desenvolvimento</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Card>
   );
 }
