@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FlaskConical, Bot, ArrowRight, MessageSquare } from 'lucide-react';
+import { FlaskConical, Bot, ArrowRight, MessageSquare, ClipboardList } from 'lucide-react';
 import AppHeader from '@/app/components/AppHeader';
 
 export default function HomePage() {
@@ -52,7 +52,27 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </Link>
-          
+
+          <Link href="/servicos" className="group">
+            <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+                <CardTitle>Gerenciamento de Serviços</CardTitle>
+                <CardDescription>
+                  Gerencie, crie e edite os serviços disponíveis no portal.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="flex items-center text-sm font-medium text-primary">
+                      Ir para Serviços
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Link href="/eai_settings" className="group">
             <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
               <CardHeader>
