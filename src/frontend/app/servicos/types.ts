@@ -57,12 +57,22 @@ export interface ServiceFilters {
   status?: 0 | 1 | '';
   author?: string;
   tema_geral?: string;
+  orgao_gestor?: string;
+  publico_especifico?: string;
   awaiting_approval?: boolean;
   is_free?: boolean;
+  fixar_destaque?: boolean;
   published_at?: number;
   nome_servico?: string;
   field?: string;
   value?: string;
+}
+
+export interface FilterOptions {
+  tema_geral: string[];
+  orgao_gestor: string[];
+  publico_especifico: string[];
+  autor: string[];
 }
 
 export interface TombamentoParams {

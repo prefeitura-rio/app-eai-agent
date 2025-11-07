@@ -1,5 +1,5 @@
 import { SEVICOS_API_BASE_URL } from '@/app/components/config';
-import { Service, ServiceListResponse, ServiceFilters, TombamentoParams } from '../types';
+import { Service, ServiceListResponse, ServiceFilters, TombamentoParams, FilterOptions } from '../types';
 import { getAccessToken, clearAccessToken } from './govbr-auth';
 
 const API_BASE = SEVICOS_API_BASE_URL;
@@ -109,7 +109,7 @@ export async function publishService(id: string, tombamento?: TombamentoParams):
   const url = `${API_BASE}${SERVICES_ENDPOINT}/${id}/publish`;
   const response = await fetchWithAuth(url, {
     method: 'PATCH',
-    body: tombamento ? JSON.stringify(tombamento) : undefined,
+    body: JSON.stringify(tombamento || {}),
   });
 
   if (!response.ok) {
@@ -123,6 +123,7 @@ export async function unpublishService(id: string): Promise<Service> {
   const url = `${API_BASE}${SERVICES_ENDPOINT}/${id}/unpublish`;
   const response = await fetchWithAuth(url, {
     method: 'PATCH',
+    body: JSON.stringify({}),
   });
 
   if (!response.ok) {
@@ -130,4 +131,28 @@ export async function unpublishService(id: string): Promise<Service> {
   }
 
   return response.json();
+}
+
+export async function getFilterOptions(): Promise<FilterOptions> {
+  // Busca todos os servicos para extrair valores unicos
+  const response = await listServices({ per_page: 1000 });
+
+  const temaGeralSet = new Set<string>();
+  const orgaoGestorSet = new Set<string>();
+  const publicoEspecificoSet = new Set<string>();
+  const autorSet = new Set<string>();
+
+  response.services.forEach(service => {
+    if (service.tema_geral) temaGeralSet.add(service.tema_geral);
+    if (service.orgao_gestor) service.orgao_gestor.forEach(org => orgaoGestorSet.add(org));
+    if (service.publico_especifico) service.publico_especifico.forEach(pub => publicoEspecificoSet.add(pub));
+    if (service.autor) autorSet.add(service.autor);
+  });
+
+  return {
+    tema_geral: Array.from(temaGeralSet).sort(),
+    orgao_gestor: Array.from(orgaoGestorSet).sort(),
+    publico_especifico: Array.from(publicoEspecificoSet).sort(),
+    autor: Array.from(autorSet).sort(),
+  };
 }
