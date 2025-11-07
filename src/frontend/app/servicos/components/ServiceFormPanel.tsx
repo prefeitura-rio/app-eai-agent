@@ -7,6 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save, FileText, X, Trash2, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import BasicInfoTab from './ServiceFormTabs/BasicInfoTab';
+import DetailsTab from './ServiceFormTabs/DetailsTab';
+import ChannelsTab from './ServiceFormTabs/ChannelsTab';
+import DocumentsTab from './ServiceFormTabs/DocumentsTab';
+import ButtonsTab from './ServiceFormTabs/ButtonsTab';
+import ConfigTab from './ServiceFormTabs/ConfigTab';
 import { Service } from '../types';
 import { createService, updateService, deleteService, unpublishService } from '../services/api';
 
@@ -234,33 +239,23 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
           </TabsContent>
 
           <TabsContent value="detalhes" className="mt-4">
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <p>Tab Detalhes - Em desenvolvimento</p>
-            </div>
+            <DetailsTab data={formData} onChange={handleFieldChange} errors={errors} />
           </TabsContent>
 
           <TabsContent value="canais" className="mt-4">
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <p>Tab Canais - Em desenvolvimento</p>
-            </div>
+            <ChannelsTab data={formData} onChange={handleFieldChange} errors={errors} />
           </TabsContent>
 
           <TabsContent value="documentos" className="mt-4">
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <p>Tab Documentos - Em desenvolvimento</p>
-            </div>
+            <DocumentsTab data={formData} onChange={handleFieldChange} errors={errors} />
           </TabsContent>
 
           <TabsContent value="botoes" className="mt-4">
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <p>Tab Botoes - Em desenvolvimento</p>
-            </div>
+            <ButtonsTab data={formData} onChange={handleFieldChange} errors={errors} />
           </TabsContent>
 
           <TabsContent value="config" className="mt-4">
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <p>Tab Configuracoes - Em desenvolvimento</p>
-            </div>
+            <ConfigTab data={formData} onChange={handleFieldChange} errors={errors} />
           </TabsContent>
         </Tabs>
       </div>
