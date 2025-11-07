@@ -138,21 +138,15 @@ export async function getFilterOptions(): Promise<FilterOptions> {
   const response = await listServices({ per_page: 1000 });
 
   const temaGeralSet = new Set<string>();
-  const orgaoGestorSet = new Set<string>();
-  const publicoEspecificoSet = new Set<string>();
   const autorSet = new Set<string>();
 
   response.services.forEach(service => {
     if (service.tema_geral) temaGeralSet.add(service.tema_geral);
-    if (service.orgao_gestor) service.orgao_gestor.forEach(org => orgaoGestorSet.add(org));
-    if (service.publico_especifico) service.publico_especifico.forEach(pub => publicoEspecificoSet.add(pub));
     if (service.autor) autorSet.add(service.autor);
   });
 
   return {
     tema_geral: Array.from(temaGeralSet).sort(),
-    orgao_gestor: Array.from(orgaoGestorSet).sort(),
-    publico_especifico: Array.from(publicoEspecificoSet).sort(),
     autor: Array.from(autorSet).sort(),
   };
 }

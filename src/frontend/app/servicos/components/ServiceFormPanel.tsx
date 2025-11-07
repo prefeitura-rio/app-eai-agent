@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Loader2, Save, FileText, X, Trash2, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import BasicInfoTab from './ServiceFormTabs/BasicInfoTab';
@@ -30,7 +30,6 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
   });
   const [errors, setErrors] = useState<Partial<Record<keyof Service, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('basico');
 
   const isEditing = !!service?.id;
 
@@ -46,7 +45,6 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
       });
     }
     setErrors({});
-    setActiveTab('basico');
   }, [service]);
 
   const handleFieldChange = (field: keyof Service, value: unknown) => {
@@ -94,7 +92,6 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
   const handleSubmit = async (asDraft: boolean = true) => {
     if (!validateForm()) {
       toast.error('Preencha todos os campos obrigatorios');
-      setActiveTab('basico');
       return;
     }
 
@@ -224,40 +221,79 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 min-h-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="basico">Basico</TabsTrigger>
-            <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-            <TabsTrigger value="canais">Canais</TabsTrigger>
-            <TabsTrigger value="documentos">Documentos</TabsTrigger>
-            <TabsTrigger value="botoes">Botoes</TabsTrigger>
-            <TabsTrigger value="config">Config</TabsTrigger>
-          </TabsList>
+        <Accordion type="multiple" defaultValue={["basico", "config"]} className="w-full">
+          <AccordionItem value="basico">
+            <AccordionTrigger className="text-base font-semibold">
+              Informacoes Basicas
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Campos essenciais para identificacao e categorizacao do servico
+              </p>
+              <BasicInfoTab data={formData} onChange={handleFieldChange} errors={errors} />
+            </AccordionContent>
+          </AccordionItem>
 
-          <TabsContent value="basico" className="mt-4">
-            <BasicInfoTab data={formData} onChange={handleFieldChange} errors={errors} />
-          </TabsContent>
+          <AccordionItem value="config">
+            <AccordionTrigger className="text-base font-semibold">
+              Configuracoes Avancadas
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Metadados, configuracoes de IA e campos personalizados
+              </p>
+              <ConfigTab data={formData} onChange={handleFieldChange} errors={errors} />
+            </AccordionContent>
+          </AccordionItem>
 
-          <TabsContent value="detalhes" className="mt-4">
-            <DetailsTab data={formData} onChange={handleFieldChange} errors={errors} />
-          </TabsContent>
+          <AccordionItem value="detalhes">
+            <AccordionTrigger className="text-base font-semibold">
+              Detalhes do Servico
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Descricao completa, resultados esperados, instrucoes e custos
+              </p>
+              <DetailsTab data={formData} onChange={handleFieldChange} errors={errors} />
+            </AccordionContent>
+          </AccordionItem>
 
-          <TabsContent value="canais" className="mt-4">
-            <ChannelsTab data={formData} onChange={handleFieldChange} errors={errors} />
-          </TabsContent>
+          <AccordionItem value="canais">
+            <AccordionTrigger className="text-base font-semibold">
+              Canais de Atendimento
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Defina os canais digitais e presenciais para acesso ao servico
+              </p>
+              <ChannelsTab data={formData} onChange={handleFieldChange} errors={errors} />
+            </AccordionContent>
+          </AccordionItem>
 
-          <TabsContent value="documentos" className="mt-4">
-            <DocumentsTab data={formData} onChange={handleFieldChange} errors={errors} />
-          </TabsContent>
+          <AccordionItem value="documentos">
+            <AccordionTrigger className="text-base font-semibold">
+              Documentos e Legislacao
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Documentos necessarios e legislacao aplicavel ao servico
+              </p>
+              <DocumentsTab data={formData} onChange={handleFieldChange} errors={errors} />
+            </AccordionContent>
+          </AccordionItem>
 
-          <TabsContent value="botoes" className="mt-4">
-            <ButtonsTab data={formData} onChange={handleFieldChange} errors={errors} />
-          </TabsContent>
-
-          <TabsContent value="config" className="mt-4">
-            <ConfigTab data={formData} onChange={handleFieldChange} errors={errors} />
-          </TabsContent>
-        </Tabs>
+          <AccordionItem value="botoes">
+            <AccordionTrigger className="text-base font-semibold">
+              Botoes de Acao
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure botoes que serao exibidos na pagina do servico
+              </p>
+              <ButtonsTab data={formData} onChange={handleFieldChange} errors={errors} />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </Card>
   );

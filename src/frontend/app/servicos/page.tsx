@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Search, ChevronLeft, ChevronRight, AlertCircle, FileText, Filter } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, AlertCircle, FileText, Filter, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/app/utils/utils';
 import AppHeader from '@/app/components/AppHeader';
@@ -31,19 +32,14 @@ export default function ServicosPage() {
     status: '',
     nome_servico: '',
     tema_geral: '',
-    orgao_gestor: '',
-    publico_especifico: '',
     author: '',
     awaiting_approval: undefined,
     is_free: undefined,
-    fixar_destaque: undefined,
   });
   const [totalFound, setTotalFound] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     tema_geral: [],
-    orgao_gestor: [],
-    publico_especifico: [],
     autor: [],
   });
 
@@ -66,6 +62,7 @@ export default function ServicosPage() {
     setIsLoading(true);
     try {
       const response = await listServices(filters);
+
       setServices(response.services);
       setTotalFound(response.found);
       setTotalPages(Math.ceil(response.found / (filters.per_page || 20)));
@@ -138,16 +135,24 @@ export default function ServicosPage() {
       status: '',
       nome_servico: '',
       tema_geral: '',
-      orgao_gestor: '',
-      publico_especifico: '',
       author: '',
       awaiting_approval: undefined,
       is_free: undefined,
-      fixar_destaque: undefined,
     });
   };
 
+  const countActiveFilters = () => {
+    let count = 0;
+    if (filters.status !== '') count++;
+    if (filters.tema_geral) count++;
+    if (filters.author) count++;
+    if (filters.awaiting_approval !== undefined) count++;
+    if (filters.is_free !== undefined) count++;
+    return count;
+  };
+
   const showPanel = selectedService !== null || isCreatingNew;
+  const activeFiltersCount = countActiveFilters();
 
   return (
     <div className="h-screen flex flex-col">
@@ -174,8 +179,13 @@ export default function ServicosPage() {
                       className="pl-9"
                     />
                   </div>
-                  <Button variant="outline" size="icon" onClick={() => setShowFilters(!showFilters)}>
+                  <Button variant="outline" size="icon" onClick={() => setShowFilters(!showFilters)} className="relative">
                     <Filter className="h-4 w-4" />
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
                   </Button>
                   <Button onClick={handleCreateService} size="icon">
                     <Plus className="h-4 w-4" />
@@ -185,112 +195,89 @@ export default function ServicosPage() {
                 {/* Filtros expandidos */}
                 {showFilters && (
                   <div className="space-y-3">
-                    <Select
-                      value={filters.status?.toString() || 'all'}
-                      onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : Number(value) as 0 | 1)}
-                    >
-                      <SelectTrigger className="text-xs">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        <SelectItem value="0">Rascunho</SelectItem>
-                        <SelectItem value="1">Publicado</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={filters.tema_geral || 'all'}
-                      onValueChange={(value) => handleFilterChange('tema_geral', value === 'all' ? '' : value)}
-                    >
-                      <SelectTrigger className="text-xs">
-                        <SelectValue placeholder="Tema Geral" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os temas</SelectItem>
-                        {filterOptions.tema_geral.map((tema) => (
-                          <SelectItem key={tema} value={tema}>{tema}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={filters.orgao_gestor || 'all'}
-                      onValueChange={(value) => handleFilterChange('orgao_gestor', value === 'all' ? '' : value)}
-                    >
-                      <SelectTrigger className="text-xs">
-                        <SelectValue placeholder="Orgao Gestor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os orgaos</SelectItem>
-                        {filterOptions.orgao_gestor.map((orgao) => (
-                          <SelectItem key={orgao} value={orgao}>{orgao}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={filters.publico_especifico || 'all'}
-                      onValueChange={(value) => handleFilterChange('publico_especifico', value === 'all' ? '' : value)}
-                    >
-                      <SelectTrigger className="text-xs">
-                        <SelectValue placeholder="Publico Especifico" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os publicos</SelectItem>
-                        {filterOptions.publico_especifico.map((publico) => (
-                          <SelectItem key={publico} value={publico}>{publico}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={filters.author || 'all'}
-                      onValueChange={(value) => handleFilterChange('author', value === 'all' ? '' : value)}
-                    >
-                      <SelectTrigger className="text-xs">
-                        <SelectValue placeholder="Autor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os autores</SelectItem>
-                        {filterOptions.autor.map((autor) => (
-                          <SelectItem key={autor} value={autor}>{autor}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
                     <div className="grid grid-cols-2 gap-2">
+                      <Select
+                        value={filters.status?.toString() || 'all'}
+                        onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : Number(value) as 0 | 1)}
+                      >
+                        <SelectTrigger className="text-xs h-9">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os status</SelectItem>
+                          <SelectItem value="0">Rascunho</SelectItem>
+                          <SelectItem value="1">Publicado</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={filters.tema_geral || 'all'}
+                        onValueChange={(value) => handleFilterChange('tema_geral', value === 'all' ? '' : value)}
+                      >
+                        <SelectTrigger className="text-xs h-9">
+                          <SelectValue placeholder="Tema Geral" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os temas</SelectItem>
+                          {filterOptions.tema_geral.map((tema) => (
+                            <SelectItem key={tema} value={tema}>{tema}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={filters.author || 'all'}
+                        onValueChange={(value) => handleFilterChange('author', value === 'all' ? '' : value)}
+                      >
+                        <SelectTrigger className="text-xs h-9">
+                          <SelectValue placeholder="Autor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os autores</SelectItem>
+                          {filterOptions.autor.map((autor) => (
+                            <SelectItem key={autor} value={autor}>{autor}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={filters.awaiting_approval === undefined ? 'all' : filters.awaiting_approval.toString()}
+                        onValueChange={(value) => handleFilterChange('awaiting_approval', value === 'all' ? undefined : value === 'true')}
+                      >
+                        <SelectTrigger className="text-xs h-9">
+                          <SelectValue placeholder="Aguardando Aprovacao" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Aprovacao: Todos</SelectItem>
+                          <SelectItem value="true">Aprovacao: Sim</SelectItem>
+                          <SelectItem value="false">Aprovacao: Nao</SelectItem>
+                        </SelectContent>
+                      </Select>
+
                       <Select
                         value={filters.is_free === undefined ? 'all' : filters.is_free.toString()}
                         onValueChange={(value) => handleFilterChange('is_free', value === 'all' ? undefined : value === 'true')}
                       >
-                        <SelectTrigger className="text-xs">
+                        <SelectTrigger className="text-xs h-9">
                           <SelectValue placeholder="Gratuito" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Todos</SelectItem>
-                          <SelectItem value="true">Sim</SelectItem>
-                          <SelectItem value="false">Nao</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={filters.fixar_destaque === undefined ? 'all' : filters.fixar_destaque.toString()}
-                        onValueChange={(value) => handleFilterChange('fixar_destaque', value === 'all' ? undefined : value === 'true')}
-                      >
-                        <SelectTrigger className="text-xs">
-                          <SelectValue placeholder="Destaque" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos</SelectItem>
-                          <SelectItem value="true">Sim</SelectItem>
-                          <SelectItem value="false">Nao</SelectItem>
+                          <SelectItem value="all">Gratuito: Todos</SelectItem>
+                          <SelectItem value="true">Gratuito: Sim</SelectItem>
+                          <SelectItem value="false">Gratuito: Nao</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full">
-                      Limpar Filtros
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="w-full"
+                      disabled={activeFiltersCount === 0}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Limpar Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
                     </Button>
                   </div>
                 )}
@@ -335,10 +322,10 @@ export default function ServicosPage() {
                       onClick={() => handleSelectService(service)}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <p className="font-semibold text-sm line-clamp-1">
+                        <p className="font-semibold text-sm flex-1">
                           {service.nome_servico}
                         </p>
-                        <StatusBadge status={service.status} />
+                        <StatusBadge status={service.status} className="flex-shrink-0" />
                       </div>
                       <p className="text-xs opacity-80 mb-1">
                         {service.tema_geral || 'Sem tema'}
