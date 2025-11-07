@@ -28,7 +28,7 @@ export default function ServicosPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ServiceFilters>({
     page: 1,
-    per_page: 20,
+    per_page: 100,
     status: '',
     nome_servico: '',
     tema_geral: '',
@@ -131,7 +131,7 @@ export default function ServicosPage() {
   const clearFilters = () => {
     setFilters({
       page: 1,
-      per_page: 20,
+      per_page: 100,
       status: '',
       nome_servico: '',
       tema_geral: '',
