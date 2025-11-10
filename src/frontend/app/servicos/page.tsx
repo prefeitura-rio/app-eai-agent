@@ -14,7 +14,7 @@ import AppHeader from '@/app/components/AppHeader';
 import GovBrAuthModal from './components/GovBrAuthModal';
 import StatusBadge from './components/StatusBadge';
 import ServiceFormPanel from './components/ServiceFormPanel';
-import { listServices, getFilterOptions } from './services/api';
+import { listServices, getFilterOptions, AuthenticationError } from './services/api';
 import { isAuthenticated } from './services/govbr-auth';
 import { Service, ServiceFilters, FilterOptions } from './types';
 import { formatDate } from './utils/formatters';
@@ -69,12 +69,15 @@ export default function ServicosPage() {
     } catch (error) {
       console.error('Erro ao carregar servicos:', error);
 
+      // Se for erro de autenticacao, mostrar modal de login
+      if (error instanceof AuthenticationError) {
+        toast.error(error.message);
+        setShowAuthModal(true);
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast.error(`Erro ao carregar servicos: ${errorMessage}`);
-
-      if (error instanceof Error && error.message.includes('autenticado')) {
-        setShowAuthModal(true);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +89,11 @@ export default function ServicosPage() {
       setFilterOptions(options);
     } catch (error) {
       console.error('Erro ao carregar opcoes de filtro:', error);
+
+      // Se for erro de autenticacao, mostrar modal de login
+      if (error instanceof AuthenticationError) {
+        setShowAuthModal(true);
+      }
     }
   };
 
@@ -112,6 +120,12 @@ export default function ServicosPage() {
   };
 
   const handleClosePanel = () => {
+    setSelectedService(null);
+    setIsCreatingNew(false);
+  };
+
+  const handleAuthError = () => {
+    setShowAuthModal(true);
     setSelectedService(null);
     setIsCreatingNew(false);
   };
@@ -377,6 +391,7 @@ export default function ServicosPage() {
               service={isCreatingNew ? null : selectedService}
               onSuccess={handleServiceSaved}
               onClose={handleClosePanel}
+              onAuthError={handleAuthError}
             />
           ) : (
             <Card className="flex flex-col h-full overflow-hidden">

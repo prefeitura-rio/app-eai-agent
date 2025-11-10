@@ -13,15 +13,16 @@ import DocumentsTab from './ServiceFormTabs/DocumentsTab';
 import ButtonsTab from './ServiceFormTabs/ButtonsTab';
 import ConfigTab from './ServiceFormTabs/ConfigTab';
 import { Service } from '../types';
-import { createService, updateService, deleteService, unpublishService } from '../services/api';
+import { createService, updateService, deleteService, unpublishService, AuthenticationError } from '../services/api';
 
 interface ServiceFormPanelProps {
   service?: Service | null;
   onSuccess?: () => void;
   onClose: () => void;
+  onAuthError?: () => void;
 }
 
-export default function ServiceFormPanel({ service, onSuccess, onClose }: ServiceFormPanelProps) {
+export default function ServiceFormPanel({ service, onSuccess, onClose, onAuthError }: ServiceFormPanelProps) {
   const [formData, setFormData] = useState<Partial<Service>>({
     status: 0,
     is_free: false,
@@ -115,6 +116,14 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
       onSuccess?.();
     } catch (error) {
       console.error('Erro ao salvar servico:', error);
+
+      // Se for erro de autenticacao, notificar componente pai
+      if (error instanceof AuthenticationError) {
+        toast.error(error.message);
+        onAuthError?.();
+        return;
+      }
+
       toast.error(error instanceof Error ? error.message : 'Erro ao salvar servico');
     } finally {
       setIsSubmitting(false);
@@ -135,6 +144,14 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
       onSuccess?.();
     } catch (error) {
       console.error('Erro ao excluir servico:', error);
+
+      // Se for erro de autenticacao, notificar componente pai
+      if (error instanceof AuthenticationError) {
+        toast.error(error.message);
+        onAuthError?.();
+        return;
+      }
+
       toast.error(error instanceof Error ? error.message : 'Erro ao excluir servico');
     } finally {
       setIsSubmitting(false);
@@ -156,6 +173,14 @@ export default function ServiceFormPanel({ service, onSuccess, onClose }: Servic
       onSuccess?.();
     } catch (error) {
       console.error('Erro ao despublicar servico:', error);
+
+      // Se for erro de autenticacao, notificar componente pai
+      if (error instanceof AuthenticationError) {
+        toast.error(error.message);
+        onAuthError?.();
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao despublicar servico';
       toast.error(errorMessage, { duration: 5000 });
     } finally {

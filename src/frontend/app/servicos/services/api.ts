@@ -5,11 +5,19 @@ import { getAccessToken, clearAccessToken } from './govbr-auth';
 const API_BASE = SEVICOS_API_BASE_URL;
 const SERVICES_ENDPOINT = '/app-busca-search/api/v1/admin/services';
 
+// Custom error para autenticacao
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthenticationError';
+  }
+}
+
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const token = getAccessToken();
 
   if (!token) {
-    throw new Error('Nao autenticado');
+    throw new AuthenticationError('Nao autenticado');
   }
 
   const headers = {
@@ -18,14 +26,27 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
     ...options.headers,
   };
 
-  const response = await fetch(url, { ...options, headers });
+  try {
+    const response = await fetch(url, { ...options, headers });
 
-  if (response.status === 401) {
-    clearAccessToken();
-    throw new Error('Sessao expirada. Faca login novamente.');
+    // 401 = Token inválido/expirado, 403 = Token sem permissão
+    if (response.status === 401 || response.status === 403) {
+      console.log('[API] Token expirado ou sem permissao. Limpando token...');
+      clearAccessToken();
+      throw new AuthenticationError('Sessao expirada ou sem permissao. Faca login novamente.');
+    }
+
+    return response;
+  } catch (error) {
+    // Se for erro de rede/CORS, também limpar token e pedir reautenticação
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.log('[API] Erro de rede (possivelmente CORS ou token invalido). Limpando token...');
+      clearAccessToken();
+      throw new AuthenticationError('Erro de conexao ou sessao expirada. Faca login novamente.');
+    }
+    // Se já for AuthenticationError, apenas repassa
+    throw error;
   }
-
-  return response;
 }
 
 function buildQueryParams(filters: ServiceFilters): string {
