@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     timeout: int = 180
     polling_interval: int = 2
     provider: str = "google_agent_engine"
+    reasoning_engine_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -84,6 +85,7 @@ async def handle_chat(
     try:
         response = await eai_client.send_message_and_get_response(
             user_number=request.user_number,
+            reasoning_engine_id=request.reasoning_engine_id,
             message=request.message,
         )
         return ChatResponse(response=response.model_dump())
@@ -167,22 +169,22 @@ async def delete_user_history(
 ):
     """
     Deletes the conversation history for a specific user from both checkpoint tables.
-    
+
     Args:
         request: Contains user_id to delete
-        
+
     Returns:
         DeleteHistoryResponse: Results of the deletion operation for both tables
     """
     try:
         # Initialize the history service
         history_service = await GoogleAgentEngineHistory.create()
-        
+
         # Delete user history from both tables
         result = await history_service.delete_user_history(user_id=request.user_id)
-        
+
         return DeleteHistoryResponse(**result)
-        
+
     except Exception as e:
         logger.exception(f"Error deleting history for user {request.user_id}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

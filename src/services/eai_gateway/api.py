@@ -296,6 +296,7 @@ class EAIClient:
         self,
         user_number: Optional[str],
         message: str,
+        reasoning_engine_id: Optional[str] = None,
         # agent_id: Optional[str] = None,
     ) -> MessageResponse:
         """
@@ -304,10 +305,10 @@ class EAIClient:
         # send_req = AgentWebhookRequest(agent_id=agent_id, message=message)
         # send_resp = await self.send_message_to_agent(send_req)
         send_req = UserWebhookRequest(
-            user_number=user_number, 
-            message=message, 
+            user_number=user_number,
+            message=message,
             provider=self.provider,
-            reasoning_engine_id=self.reasoning_engine_id
+            reasoning_engine_id=self.reasoning_engine_id or reasoning_engine_id,
         )
         send_resp = await self.message_user_number(send_req)
         message_id = send_resp.message_id

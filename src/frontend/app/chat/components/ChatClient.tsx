@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare, Trash2, Eraser } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryMessage, deleteUserHistory, DeleteHistoryRequestPayload } from '../services/api';
 import { marked } from 'marked';
@@ -388,8 +388,9 @@ export default function ChatClient() {
     const savedFixed = localStorage.getItem('chat-number-fixed') === 'true';
     setIsNumberFixed(savedFixed);
   }, []);
-  
+
   const [provider] = useState('google_agent_engine'); // Provider fixo, não editável
+  const [reasoningEngineId, setReasoningEngineId] = useState('');
 
   // History States
   const [historyMessages, setHistoryMessages] = useState<HistoryMessage[]>([]);
@@ -436,6 +437,7 @@ export default function ChatClient() {
         user_number: userNumber,
         message: input,
         provider: provider,
+        ...(reasoningEngineId && { reasoning_engine_id: reasoningEngineId }),
       };
 
       // Usa retry com backoff exponencial para lidar com erros de conexão
@@ -494,7 +496,10 @@ export default function ChatClient() {
     if (!isNumberFixed) {
       const newNumber = generateRandomNumber();
       setUserNumber(newNumber);
-      toast.success("Novo número gerado!");
+      // Limpar histórico e mensagens atuais
+      setHistoryMessages([]);
+      setMessages([]);
+      toast.success("Novo número gerado e tela limpa!");
     } else {
       toast.error("Número está travado! Desbloqueie primeiro.");
     }
@@ -1081,6 +1086,17 @@ export default function ChatClient() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="reasoning-engine-id">Reasoning Engine ID</Label>
+            <Input
+              id="reasoning-engine-id"
+              value={reasoningEngineId}
+              onChange={(e) => setReasoningEngineId(e.target.value)}
+              placeholder="reasoning_engine_id (opcional)"
+            />
+
+          </div>
+
           <Separator className="my-4" />
 
           <div className="space-y-4">
@@ -1116,45 +1132,61 @@ export default function ChatClient() {
               </Label>
             </div>
 
-            <Button
-              onClick={handleLoadHistory}
-              disabled={isLoadingHistory || !isMounted}
-              className="w-full"
-              variant="outline"
-            >
-              {isLoadingHistory ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Carregando...
-                </>
-              ) : (
-                <>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Carregar Histórico
-                </>
-              )}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={handleLoadHistory}
+                disabled={isLoadingHistory || !isMounted}
+                className="w-full"
+                variant="outline"
+              >
+                {isLoadingHistory ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Carregando...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Carregar Histórico
+                  </>
+                )}
+              </Button>
 
-            <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-              <DialogTrigger asChild>
-                <Button
-                  disabled={isDeletingHistory || isLoadingHistory || !isMounted}
-                  className="w-full"
-                  variant="destructive"
-                >
-                  {isDeletingHistory ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Deletando...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Deletar Histórico
-                    </>
-                  )}
-                </Button>
-              </DialogTrigger>
+              <Button
+                onClick={() => {
+                  setHistoryMessages([]);
+                  setMessages([]);
+                  setHistoryError(null);
+                  toast.info("Tela limpa!");
+                }}
+                disabled={!isMounted}
+                className="w-full"
+                variant="outline"
+              >
+                <Eraser className="h-4 w-4 mr-2" />
+                Limpar Tela
+              </Button>
+
+              <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+                <DialogTrigger asChild>
+                  <Button
+                    disabled={isDeletingHistory || isLoadingHistory || !isMounted}
+                    className="w-full"
+                    variant="destructive"
+                  >
+                    {isDeletingHistory ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deletando...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Deletar Histórico
+                      </>
+                    )}
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -1207,7 +1239,8 @@ export default function ChatClient() {
                   </Button>
                 </DialogFooter>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
 
             {historyError && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">

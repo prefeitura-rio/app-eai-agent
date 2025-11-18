@@ -10,6 +10,7 @@ export interface ChatRequestPayload {
   timeout?: number;
   polling_interval?: number;
   provider?: string;
+  reasoning_engine_id?: string;
 }
 
 export interface ToolCall {
@@ -200,7 +201,7 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
 export async function getUserHistory(payload: HistoryRequestPayload, token: string): Promise<HistoryResponseData> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 30 segundos timeout
     
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/history`, {
       method: 'POST',
@@ -250,7 +251,7 @@ export async function getUserHistory(payload: HistoryRequestPayload, token: stri
 export async function deleteUserHistory(payload: DeleteHistoryRequestPayload, token: string): Promise<DeleteHistoryResponseData> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 30 segundos timeout
     
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/history`, {
       method: 'DELETE',
