@@ -465,21 +465,22 @@ export default function ChatClient() {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-      
+
       // Verifica se é um erro de conexão para mostrar mensagem mais amigável
-      const isConnectionError = errorMessage.includes('connection is closed') || 
+      const isConnectionError = errorMessage.includes('connection is closed') ||
                                errorMessage.includes('API Error') ||
-                               errorMessage.includes('400 Reasoning Engine Execution failed');
-      
-      const friendlyMessage = isConnectionError 
+                               errorMessage.includes('400 Reasoning Engine Execution failed') ||
+                               errorMessage.includes('Failed to fetch');
+
+      const friendlyMessage = isConnectionError
         ? "Erro de conexão com o serviço. Tente novamente em alguns instantes."
         : `Erro: ${errorMessage}`;
-      
+
       const botErrorMessage: DisplayMessage = { sender: 'bot', content: friendlyMessage };
       setMessages(prev => [...prev, botErrorMessage]);
-      
-      // Mostra toast informativo para erros de conexão
-      if (isConnectionError) {
+
+      // Mostra toast apenas para erros de conexão (exceto 502 que já tem mensagem clara)
+      if (isConnectionError && !errorMessage.includes('servidor está demorando')) {
         toast.error("Erro de conexão. Tentando novamente automaticamente...");
       }
     } finally {

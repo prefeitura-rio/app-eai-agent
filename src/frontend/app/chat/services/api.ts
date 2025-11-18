@@ -157,6 +157,11 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
     clearTimeout(timeoutId);
 
     if (!res.ok) {
+      // Tratamento específico para 502 Bad Gateway
+      if (res.status === 502) {
+        throw new Error('O servidor está demorando muito para responder. Aguarde alguns instantes e tente novamente.');
+      }
+
       const errorData = await res.json().catch(() => ({ detail: 'Failed to parse error response.' }));
       throw new Error(errorData.detail || `Request failed with status ${res.status}`);
     }
