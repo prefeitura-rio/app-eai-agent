@@ -115,10 +115,17 @@ export default function ChatClient() {
     }
   }, [isNumberFixed]);
 
+  const isSendingRef = useRef(false);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificação síncrona para evitar envios duplicados rápidos
+    if (isSendingRef.current) return;
     if (!input.trim() || !token) return;
 
+    isSendingRef.current = true;
+    
     const userMessage: DisplayMessage = { sender: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -153,20 +160,20 @@ export default function ChatClient() {
       
       const isTimeout = errorMessage.includes('Timeout') || errorMessage.includes('504');
 
-      let friendlyMessage = `Erro: ${errorMessage}`;
-
       if (isTimeout || isConnectionError) {
-         friendlyMessage = "A resposta está demorando mais que o esperado. O servidor pode ainda estar processando sua solicitação. Verifique o histórico em instantes para não enviar mensagens duplicadas.";
-         toast.warning("Demora na resposta. Verifique o histórico.");
+         // Silenciosamente falha no chat, apenas avisa via toast se necessário
+         // O usuário pediu para não mostrar msg de erro no chat para não confundir
+         console.warn("Timeout ou erro de conexão:", errorMessage);
       } else {
          toast.error("Erro ao enviar mensagem.");
+         // Opcional: Adicionar msg de erro no chat apenas para erros fatais não-timeout
+         // const botErrorMessage: DisplayMessage = { sender: 'bot', content: `Erro: ${errorMessage}` };
+         // setMessages(prev => [...prev, botErrorMessage]);
       }
-
-      const botErrorMessage: DisplayMessage = { sender: 'bot', content: friendlyMessage };
-      setMessages(prev => [...prev, botErrorMessage]);
 
     } finally {
       setIsLoading(false);
+      isSendingRef.current = false;
       // Retornar foco para o textarea após o envio
       setTimeout(() => {
         textareaRef.current?.focus();
