@@ -16,26 +16,31 @@ class AnswerCompletenessEvaluator(BaseOneTurnEvaluator):
     # - 0.0 (ruim): A resposta ignora ou omite a maior parte das ideias principais, ou diverge muito em significado.
 
     PROMPT_TEMPLATE = """
-Nesta tarefa, você irá avaliar o quanto a resposta de um modelo cobre os tópicos centrais e os conceitos essenciais presentes em uma resposta ideal.
+Nesta tarefa, você atuará como um avaliador objetivo para verificar se a resposta de um assistente cumpre uma lista de requisitos técnicos e informativos obrigatórios.
 
-A avaliação deve ser feita com base na cobertura do conteúdo, não na similaridade de estilo ou na forma de redigir.
-Concentre-se em verificar se a resposta do modelo inclui os *pontos-chave* mais importantes. Omissões menores ou diferenças de linguagem não devem penalizar a resposta se a substância principal estiver presente.
+Você deve verificar a lista de "Critérios de Avaliação". Cada critério possui uma descrição e um peso (Alto ou Baixo).
+
+Diretrizes de Avaliação:
+1. Analise cada item listado nos "Critérios de Avaliação".
+2. Verifique se a "Resposta do Modelo" satisfaz a condição descrita no critério.
+3. Critérios com Peso **Alto** são muito importantes. A ausência da informação ou ação descrita em pelo menos 75% deles resulta em falha.
+4. Critérios com Peso **Baixo** são complementares. Sua ausência não deve penalizar a nota total, desde que os critérios de peso Alto estejam presentes.
 
 Atribua uma das seguintes pontuações:
-- 1.0 (equivalente): A resposta do modelo cobre todos ou a maioria dos conceitos da resposta ideal. Detalhes pequenos ausentes são aceitáveis se os pontos principais estiverem claros.
-- 0.0 (diferente): A resposta do modelo ignora ou omite a maior parte das ideias principais ou diverge muito em significado.
+- 1.0 (Aprovado): A resposta cumpre pelo menos 75% dos critérios de peso 'Alto'.
+- 0.0 (Reprovado): A resposta falha em cumprir um ou mais critérios de peso 'Alto', ou fornece informações incorretas que contradizem os critérios.
 
 Sua resposta deve conter **exatamente duas linhas**, com o seguinte formato:
 Score: <um valor float sendo 0.0 ou 1.0>
-Reasoning: <uma explicação curta e objetiva justificando sua nota>
+Reasoning: <explicação curta citando quais critérios foram atendidos e quais falharam>
 
-Para o `Reasoning`, considere:
-- Quais são os conceitos ou tópicos essenciais presentes na resposta ideal?
-- Algum conceito importante foi omitido? Qual? O que ele representa? Como sua ausência afeta o entendimento?
+Para o `Reasoning`:
+- Seja direto. Cite o número do critério que causou a reprovação, se houver (ex: "Falhou no Critério 2").
+- Se aprovado, confirme o cumprimento dos requisitos principais.
 
 Pergunta: {task[prompt]}
+Critérios de Avaliação: {task[golden_answer_criteria]}
 Resposta do Modelo: {agent_response[message]}
-Resposta Ideal: {task[golden_answer]}
 """
 
     async def evaluate(
