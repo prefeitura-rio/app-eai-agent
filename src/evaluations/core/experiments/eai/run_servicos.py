@@ -19,8 +19,8 @@ from datetime import datetime
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
-    GoldenLinkInAnswerEvaluator,
-    GoldenLinkInToolCallingEvaluator,
+    # GoldenLinkInAnswerEvaluator,
+    # GoldenLinkInToolCallingEvaluator,
     AnswerCompletenessEvaluator,
     AnswerAddressingEvaluator,
     ClarityEvaluator,
@@ -59,6 +59,7 @@ async def run_experiment():
         metadata_cols=[
             "golden_links_list",
             "golden_answer",
+            "golden_answer_criteria",
         ],
     )
     logger.info(
@@ -71,8 +72,8 @@ async def run_experiment():
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
-        GoldenLinkInAnswerEvaluator(judge_client),
-        GoldenLinkInToolCallingEvaluator(judge_client),
+        # GoldenLinkInAnswerEvaluator(judge_client),
+        # GoldenLinkInToolCallingEvaluator(judge_client),
         AnswerCompletenessEvaluator(judge_client),
         AnswerAddressingEvaluator(judge_client),
         ClarityEvaluator(judge_client),
@@ -106,9 +107,9 @@ async def run_experiment():
     MAX_CONCURRENCY = 20
 
     runner = AsyncExperimentRunner(
-        # experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+        experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
         # experiment_name=f"eai-surkai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
-        experiment_name=f"dharma-{datetime.now().strftime('%Y-%m-%d')}-v0.3",
+        # experiment_name=f"dharma-{datetime.now().strftime('%Y-%m-%d')}-v0.3",
         experiment_description="gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
