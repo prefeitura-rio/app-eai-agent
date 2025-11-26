@@ -1,529 +1,31 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Copy, Lock, Unlock, RefreshCw, Lightbulb, Wrench, LogIn, Search, BarChart2, History, Clock, MessageSquare, Trash2, Eraser } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MessageSquare, History } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
-import { sendChatMessage, ChatRequestPayload, ChatResponseData, AgentMessage, getUserHistory, HistoryRequestPayload, HistoryMessage, deleteUserHistory, DeleteHistoryRequestPayload } from '../services/api';
+import { sendChatMessage, ChatRequestPayload, getUserHistory, HistoryRequestPayload, HistoryMessage, deleteUserHistory, DeleteHistoryRequestPayload, AgentMessage } from '../services/api';
 import { marked } from 'marked';
+import { toast } from 'sonner';
+
+import { DisplayMessage } from '../types/chat';
+
+// Modules
+import ChatSidebar from './modules/ChatSidebar';
+import ChatInput from './modules/ChatInput';
+import JsonViewer from './modules/JsonViewer';
+import ToolReturnViewer from './modules/ToolReturnViewer';
+import { Bot, User, Copy, Search, BarChart2, Lightbulb, Wrench, LogIn } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import DOMPurify from 'dompurify';
 
 // Configurar marked para processar quebras de linha
 marked.use({ breaks: true });
-import { Label } from '@/components/ui/label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-interface DisplayMessage {
-  sender: 'user' | 'bot';
-  content: string;
-  fullResponse?: ChatResponseData;
-}
-
-interface InstrucaoItem {
-  tema?: string;
-  instrucoes?: string;
-}
-
-const JsonViewer = ({ data }: { data: object }) => (
-  <pre className="p-2 bg-muted/50 rounded-md text-base-custom whitespace-pre-wrap break-all font-mono">
-    {JSON.stringify(data, null, 2)}
-  </pre>
-);
-
-const ToolReturnViewer = ({ toolReturn, toolName }: { toolReturn: unknown; toolName?: string }) => {
-  try {
-    const data = typeof toolReturn === 'string' ? JSON.parse(toolReturn) : toolReturn;
-    
-    // Debug log para verificar a estrutura
-    
-    if (typeof data !== 'object' || data === null) {
-      return <p className="p-2 bg-muted/50 rounded-md text-base-custom whitespace-pre-wrap break-all font-mono">{String(data)}</p>;
-    }
-
-    // Special handling for specific tools
-    if (toolName === 'google_search') {
-      // Detectar se é resposta do Typesense ou Google
-      const hasTypesenseResponse = 'response' in data && Array.isArray(data.response);
-
-      if (hasTypesenseResponse) {
-        // Formato Typesense
-        const typesenseResults = data.response as Array<{
-          title: string;
-          description: string;
-          category: string;
-          hint: string;
-          custo_servico: string;
-          descricao_completa: string;
-          is_free: string;
-          orgao_gestor: string[];
-          publico_especifico: string[];
-          documentos_necessarios: string[];
-          instrucoes_solicitante: string;
-          legislacao_relacionada: string[];
-          resultado_solicitacao: string;
-          resumo_plaintext: string;
-          servico_nao_cobre: string;
-          tempo_atendimento: string;
-          score_info: Record<string, unknown>;
-          ai_score: Record<string, unknown>;
-        }>;
-
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
-              <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                Resultados do Hub ({typesenseResults.length})
-              </span>
-            </div>
-
-            {typesenseResults.map((result, index) => (
-              <div key={index} className="border border-border rounded-lg p-4 space-y-3 bg-card">
-                {/* Título e Categoria */}
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-semibold text-lg text-foreground">{result.title}</h4>
-                    {result.category && (
-                      <Badge variant="secondary" className="shrink-0">{result.category}</Badge>
-                    )}
-                  </div>
-                  {result.description && (
-                    <p className="text-sm text-muted-foreground">{result.description}</p>
-                  )}
-                </div>
-
-                {/* Hint da Ferramenta */}
-                {result.hint && (
-                  <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-                    <div className="flex items-start gap-2">
-                      <Lightbulb className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
-                      <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                        <strong>Dica:</strong> {result.hint}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Accordion com Detalhes */}
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value={`details-${index}`} className="border-none">
-                    <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                      Ver Detalhes Completos
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3 pt-3">
-
-                      {/* Descrição Completa */}
-                      {result.descricao_completa && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">Descrição Completa</h5>
-                          <div
-                            className="prose prose-sm dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(result.descricao_completa, { breaks: true }) as string) }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Informações Gerais */}
-                      <div className="grid grid-cols-2 gap-3">
-                        {result.custo_servico && (
-                          <div>
-                            <h5 className="font-medium text-sm text-muted-foreground mb-1">Custo</h5>
-                            <p className="text-sm">{result.custo_servico}</p>
-                          </div>
-                        )}
-                        {result.tempo_atendimento && (
-                          <div>
-                            <h5 className="font-medium text-sm text-muted-foreground mb-1">Tempo de Atendimento</h5>
-                            <p className="text-sm">{result.tempo_atendimento}</p>
-                          </div>
-                        )}
-                        {result.is_free && (
-                          <div>
-                            <h5 className="font-medium text-sm text-muted-foreground mb-1">Gratuito</h5>
-                            <p className="text-sm">{result.is_free}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Órgão Gestor */}
-                      {result.orgao_gestor && result.orgao_gestor.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">Órgão Gestor</h5>
-                          <div className="flex flex-wrap gap-1">
-                            {result.orgao_gestor.map((orgao, idx) => (
-                              <Badge key={idx} variant="outline">{orgao}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Público Específico */}
-                      {result.publico_especifico && result.publico_especifico.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">Público Específico</h5>
-                          <div className="flex flex-wrap gap-1">
-                            {result.publico_especifico.map((publico, idx) => (
-                              <Badge key={idx} variant="secondary">{publico}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Documentos Necessários */}
-                      {result.documentos_necessarios && result.documentos_necessarios.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-2">Documentos Necessários</h5>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            {result.documentos_necessarios.map((doc, idx) => (
-                              <li key={idx}>{doc}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Instruções ao Solicitante */}
-                      {result.instrucoes_solicitante && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">Instruções ao Solicitante</h5>
-                          <div
-                            className="prose prose-sm dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(result.instrucoes_solicitante, { breaks: true }) as string) }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Resultado da Solicitação */}
-                      {result.resultado_solicitacao && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">Resultado da Solicitação</h5>
-                          <div
-                            className="prose prose-sm dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(result.resultado_solicitacao, { breaks: true }) as string) }}
-                          />
-                        </div>
-                      )}
-
-                      {/* O que o serviço não cobre */}
-                      {result.servico_nao_cobre && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">O que o serviço NÃO cobre</h5>
-                          <div
-                            className="prose prose-sm dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(result.servico_nao_cobre, { breaks: true }) as string) }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Legislação Relacionada */}
-                      {result.legislacao_relacionada && result.legislacao_relacionada.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-2">Legislação Relacionada</h5>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            {result.legislacao_relacionada.map((lei, idx) => (
-                              <li key={idx}>{lei}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Scores (Debug Info) */}
-                      {(result.score_info || result.ai_score) && (
-                        <Accordion type="single" collapsible>
-                          <AccordionItem value="scores" className="border-t">
-                            <AccordionTrigger className="text-xs text-muted-foreground">
-                              Informações de Score (Debug)
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-2">
-                                {result.score_info && Object.keys(result.score_info).length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-medium mb-1">Score Info:</p>
-                                    <JsonViewer data={result.score_info} />
-                                  </div>
-                                )}
-                                {result.ai_score && Object.keys(result.ai_score).length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-medium mb-1">AI Score:</p>
-                                    <JsonViewer data={result.ai_score} />
-                                  </div>
-                                )}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      )}
-
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-            ))}
-          </div>
-        );
-      } else {
-        // Formato Google Original
-        const entries = Object.entries(data);
-        const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
-        const orderedEntries = [];
-
-        // Add fields in the specified order
-        for (const field of orderedFields) {
-          const entry = entries.find(([key]) => key === field);
-          if (entry) {
-            orderedEntries.push(entry);
-          }
-        }
-
-        // Add any remaining fields
-        for (const entry of entries) {
-          if (!orderedFields.includes(entry[0])) {
-            orderedEntries.push(entry);
-          }
-        }
-
-        return (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
-              <Search className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                Resultados do Google Search
-              </span>
-            </div>
-            {orderedEntries.map(([key, value]) => (
-              <div key={key} className="space-y-1">
-                <h5 className="font-medium text-base-custom capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
-                <div className="pl-4">
-                  {key === 'sources' ? (
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="sources" className="border-none">
-                        <AccordionTrigger className="text-base-custom p-2 hover:no-underline">
-                          Ver Fontes
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          {typeof value === 'string' ? (
-                            <div
-                              className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom"
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value, { breaks: true }) as string) }}
-                            />
-                          ) : (
-                            <pre className="text-base-custom font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
-                              {JSON.stringify(value, null, 2)}
-                            </pre>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  ) : typeof value === 'string' ? (
-                    <div
-                      className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value, { breaks: true }) as string) }}
-                    />
-                  ) : (
-                    <pre className="text-base-custom font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
-                      {JSON.stringify(value, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      }
-    } else if (toolName === 'equipments_instructions') {
-      // Special handling for equipments_instructions
-      const toolReturnData = data as {
-        tema?: string;
-        next_tool_instructions?: string;
-        next_too_instructions?: string;
-        instrucoes?: Array<{
-          tema?: string;
-          instrucoes?: string;
-        }>;
-        categorias?: unknown;
-      };
-      
-      return (
-        <div className="space-y-4">
-          {(toolReturnData.next_tool_instructions || toolReturnData.next_too_instructions) && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Próximas Instruções</h5>
-              <div className="pl-4">
-                <div
-                  className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(toolReturnData.next_tool_instructions || toolReturnData.next_too_instructions || '', { breaks: true }) as string) }}
-                />
-              </div>
-            </div>
-          )}
-          
-          {toolReturnData.tema && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Tema</h5>
-              <div className="pl-4">
-                <div className="text-base-custom font-medium text-foreground">
-                  {toolReturnData.tema}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {toolReturnData.instrucoes && Array.isArray(toolReturnData.instrucoes) && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Instruções</h5>
-              <div className="pl-4 space-y-3">
-                {toolReturnData.instrucoes.map((item: InstrucaoItem, index: number) => (
-                  <div key={index} className="border-l-2 border-primary/20 pl-3">
-                    {/* Renderiza tema primeiro se existir */}
-                    {item.tema && (
-                      <div className="text-base-custom text-muted-foreground mb-2">
-                        <span className="font-medium">Tema:</span> {item.tema}
-                      </div>
-                    )}
-                    {/* Renderiza instruções se existir */}
-                    {item.instrucoes && typeof item.instrucoes === 'string' && (
-                      <div
-                        className="prose prose-base dark:prose-invert max-w-none whitespace-pre-wrap prose-base-custom"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(item.instrucoes, { breaks: true }) as string) }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {Boolean(toolReturnData.categorias) && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Categorias</h5>
-              <div className="pl-4">
-                <JsonViewer data={toolReturnData.categorias as object} />
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    } else if (toolName === 'dharma_search_tool') {
-      // Special handling for dharma_search_tool
-      const toolReturnData = data as {
-        id?: string;
-        created_at?: string;
-        updated_at?: string;
-        message?: string;
-        documents?: Array<{
-          title: string;
-          collection: string;
-          content: string;
-          id: string;
-          url: string;
-        }>;
-        metadata?: {
-          total_tokens?: number;
-        };
-      };
-      
-      return (
-        <div className="space-y-4">
-          {toolReturnData.message && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Consulta</h5>
-              <div className="pl-4">
-                <div className="text-base-custom font-medium text-foreground">
-                  {toolReturnData.message}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {toolReturnData.documents && Array.isArray(toolReturnData.documents) && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Documentos Encontrados ({toolReturnData.documents.length})</h5>
-              <div className="pl-4 space-y-3">
-                {toolReturnData.documents.map((doc, index) => (
-                  <div key={doc.id || index} className="border border-border rounded-lg p-3 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <h6 className="font-medium text-base-custom text-foreground line-clamp-2">
-                        {doc.title}
-                      </h6>
-                      {doc.collection && (
-                        <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-md ml-2 shrink-0">
-                          {doc.collection}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground line-clamp-3">
-                      {doc.content}
-                    </div>
-                    {doc.url && (
-                      <a 
-                        href={doc.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        Ver documento
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {toolReturnData.metadata?.total_tokens && (
-            <div className="space-y-1">
-              <h5 className="font-medium text-base-custom capitalize text-muted-foreground">Metadata</h5>
-              <div className="pl-4">
-                <div className="text-xs text-muted-foreground">
-                  Tokens utilizados: {toolReturnData.metadata.total_tokens}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    } else {
-      // Default behavior for other tools
-      return (
-        <div className="space-y-2">
-          <div className="text-xs bg-yellow-100 dark:bg-yellow-900/20 p-2 rounded border">
-            <strong>Debug Info:</strong> Tool: {toolName || 'unknown'}, Keys: {Object.keys(data).join(', ')}
-          </div>
-          {Object.entries(data).map(([key, value]) => (
-            <div key={key}>
-              <p className="font-semibold text-base-custom capitalize">{key.replace(/_/g, ' ')}:</p>
-              {key.toLowerCase().includes('text') || key.toLowerCase().includes('markdown') ? (
-                <div 
-                  className="prose prose-base dark:prose-invert max-w-full prose-base-custom"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(String(value)) as string) }}
-                />
-              ) : (
-                <JsonViewer data={value as object} />
-              )}
-            </div>
-          ))}
-        </div>
-      );
-    }
-  } catch {
-    return (
-      <p className="p-2 bg-muted/50 rounded-md text-base-custom whitespace-pre-wrap break-all font-mono">
-        {String(toolReturn)}
-      </p>
-    );
-  }
-};
+// --- Utils ---
 
 const getStepIcon = (messageType: AgentMessage['message_type'] | HistoryMessage['message_type']) => {
   switch (messageType) {
@@ -536,20 +38,20 @@ const getStepIcon = (messageType: AgentMessage['message_type'] | HistoryMessage[
   }
 };
 
-// Função para gerar número aleatório de 9 dígitos
 const generateRandomNumber = (): string => {
   return Math.floor(100000000 + Math.random() * 900000000).toString();
 };
 
-// Função para copiar texto para clipboard
 const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    toast.success("Número copiado para a área de transferência!");
+    toast.success("Copiado para a área de transferência!");
   } catch {
-    toast.error("Erro ao copiar número");
+    toast.error("Erro ao copiar");
   }
 };
+
+// --- Main Component ---
 
 export default function ChatClient() {
   const { token } = useAuth();
@@ -597,7 +99,7 @@ export default function ChatClient() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, historyMessages]);
 
   // Salva o número do usuário no localStorage quando mudar
   useEffect(() => {
@@ -630,7 +132,7 @@ export default function ChatClient() {
         ...(reasoningEngineId && { reasoning_engine_id: reasoningEngineId }),
       };
 
-      // Chamada direta sem retry automático para evitar duplicidade em operações longas
+      // Chamada direta sem retry automático
       const botResponseData = await sendChatMessage(payload, token);
       
       const assistantMessage = botResponseData.messages.find(m => m.message_type === 'assistant_message');
@@ -645,7 +147,6 @@ export default function ChatClient() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
 
-      // Verifica tipos de erro
       const isConnectionError = errorMessage.includes('connection is closed') ||
                                errorMessage.includes('Failed to fetch') ||
                                errorMessage.includes('NetworkError');
@@ -695,15 +196,6 @@ export default function ChatClient() {
     copyToClipboard(userNumber);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (input.trim() && !isLoading) {
-        handleSendMessage(e as React.FormEvent);
-      }
-    }
-  };
-
   const handleLoadHistory = async () => {
     if (!token) {
       toast.error("Token de autenticação não encontrado!");
@@ -750,7 +242,7 @@ export default function ChatClient() {
 
     setIsDeletingHistory(true);
     setHistoryError(null);
-    setShowDeleteModal(false); // Fechar o modal
+    setShowDeleteModal(false);
 
     try {
       const payload: DeleteHistoryRequestPayload = {
@@ -763,7 +255,6 @@ export default function ChatClient() {
       setHistoryMessages([]);
       setMessages([]);
       
-      // Calcular total de linhas deletadas
       const totalDeleted = (deleteResult.tables.checkpoints.deleted_rows || 0) + 
                           (deleteResult.tables.checkpoints_writes.deleted_rows || 0);
       
@@ -780,6 +271,28 @@ export default function ChatClient() {
     } finally {
       setIsDeletingHistory(false);
     }
+  };
+
+  // Helper to render message content
+  const renderMessageContent = (content: string, isUser: boolean) => {
+    const parsed = marked.parse(content || '', { breaks: true }) as string;
+    const codeTextColor = isUser ? 'rgb(255, 255, 255)' : 'inherit';
+    
+    const styledHTML = parsed.replace(
+      /<pre><code class="language-json">/g,
+      `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
+    );
+    
+    return (
+      <div
+        className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${isUser ? 'text-primary-foreground' : ''}`}
+        style={{
+          '--tw-prose-pre-bg': 'rgb(31 41 55)',
+          '--tw-prose-pre-code': 'rgb(209 213 219)',
+        } as React.CSSProperties}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(styledHTML) }}
+      />
+    );
   };
 
   return (
@@ -845,30 +358,9 @@ export default function ChatClient() {
                             </span>
                           )}
                         </div>
-                      <div
-                        className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${msg.message_type === 'user_message' ? 'text-primary-foreground' : ''}`}
-                        style={{
-                          '--tw-prose-pre-bg': 'rgb(31 41 55)',
-                          '--tw-prose-pre-code': 'rgb(209 213 219)',
-                        } as React.CSSProperties}
-                        dangerouslySetInnerHTML={{ 
-                          __html: (() => {
-                            const content = msg.content || '';
-                            const parsed = marked.parse(content, { breaks: true }) as string;
-                            
-                            // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
-                            const isUserMessage = msg.message_type === 'user_message';
-                            const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
-                            
-                            const styledHTML = parsed.replace(
-                              /<pre><code class="language-json">/g,
-                              `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
-                            );
-                            
-                            return DOMPurify.sanitize(styledHTML);
-                          })()
-                        }}
-                      />
+                      
+                      {renderMessageContent(msg.content || '', msg.message_type === 'user_message')}
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -902,14 +394,11 @@ export default function ChatClient() {
                               </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 space-y-4">
-                              {/* Buscar todas as mensagens da interação (entre user_message anterior e próxima user_message) */}
+                              {/* Buscar todas as mensagens da interação */}
                               {(() => {
-                                // Encontrar o índice da mensagem atual na lista completa
                                 const currentIndex = historyMessages.findIndex(m => m.id === msg.id);
-                                
                                 if (currentIndex === -1) return null;
                                 
-                                // Procurar a user_message que inicia esta interação (indo para trás)
                                 let interactionStart = currentIndex;
                                 while (interactionStart > 0) {
                                   interactionStart--;
@@ -918,29 +407,25 @@ export default function ChatClient() {
                                   }
                                 }
                                 
-                                // Se não encontrou uma user_message antes, usar o início
                                 if (historyMessages[interactionStart].message_type !== 'user_message') {
                                   return null;
                                 }
                                 
-                                // Procurar a próxima user_message para definir o fim da interação (indo para frente)
                                 let interactionEnd = currentIndex;
                                 while (interactionEnd < historyMessages.length - 1) {
                                   interactionEnd++;
                                   if (historyMessages[interactionEnd].message_type === 'user_message') {
-                                    interactionEnd--; // Não incluir a próxima user_message
+                                    interactionEnd--;
                                     break;
                                   }
                                 }
                                 
-                                // Extrair todas as mensagens da interação
                                 const interactionMessages = historyMessages.slice(interactionStart, interactionEnd + 1);
                                 
-                                // Filtrar apenas os steps (não user e não assistant final)
                                 const interactionSteps = interactionMessages.filter(step => 
                                   step.message_type !== 'usage_statistics' &&
                                   step.message_type !== 'user_message' &&
-                                  step.id !== msg.id && // Não incluir a própria mensagem assistant atual
+                                  step.id !== msg.id &&
                                   (step.message_type === 'tool_call_message' || 
                                    step.message_type === 'tool_return_message' ||
                                    step.message_type === 'reasoning_message' ||
@@ -1057,26 +542,9 @@ export default function ChatClient() {
                   {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
                   <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                     <div className="relative group">
-                      <div
-                        className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${msg.sender === 'user' ? 'text-primary-foreground' : ''}`}
-                        dangerouslySetInnerHTML={{ 
-                          __html: (() => {
-                            const content = msg.content;
-                            const parsed = marked.parse(content, { breaks: true }) as string;
-                            
-                            // Adicionar estilos inline para blocos de código com a mesma cor de fundo da mensagem
-                            const isUserMessage = msg.sender === 'user';
-                            const codeTextColor = isUserMessage ? 'rgb(255, 255, 255)' : 'inherit';
-                            
-                            const styledHTML = parsed.replace(
-                              /<pre><code class="language-json">/g,
-                              `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
-                            );
-                            
-                            return DOMPurify.sanitize(styledHTML);
-                          })()
-                        }}
-                      />
+                      
+                      {renderMessageContent(msg.content || '', msg.sender === 'user')}
+                      
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -1153,301 +621,47 @@ export default function ChatClient() {
               ))}
             </div>
         </CardContent>
-        <CardFooter className="border-t pt-4">
-          <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
-            <Textarea
-              ref={textareaRef}
-              id="message"
-              placeholder="Digite sua mensagem..."
-              className="flex-1 min-h-[60px] resize-none"
-              autoComplete="off"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-              rows={3}
-              style={{ resize: 'none' }}
-            />
-            <Button type="submit" size="icon" disabled={isLoading}>
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              <span className="sr-only">Enviar</span>
-            </Button>
-          </form>
-        </CardFooter>
+        
+        <ChatInput 
+          input={input}
+          setInput={setInput}
+          isLoading={isLoading}
+          onSendMessage={handleSendMessage}
+          textareaRef={textareaRef}
+        />
       </Card>
 
       {/* Painel de Parâmetros (Direita) */}
-      <Card className="flex flex-col h-full">
-        <CardHeader>
-          <CardTitle>Parâmetros</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="user-number">User Number</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="user-number"
-                value={isMounted ? userNumber : ''}
-                onChange={(e) => !isNumberFixed && setUserNumber(e.target.value)}
-                disabled={isNumberFixed}
-                className="flex-1"
-              />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={handleGenerateNumber}
-                      disabled={isNumberFixed || !isMounted}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Gerar novo número aleatório</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={handleToggleFixNumber}
-                      disabled={!isMounted}
-                    >
-                      {isNumberFixed ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{isNumberFixed ? "Desbloquear número" : "Fixar número"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={handleCopyNumber}
-                      disabled={!isMounted}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Copiar número</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="provider">Provider</Label>
-            <Input
-              id="provider"
-              value={provider}
-              disabled
-              className="bg-muted"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="reasoning-engine-id">Reasoning Engine ID</Label>
-            <Input
-              id="reasoning-engine-id"
-              value={reasoningEngineId}
-              onChange={(e) => setReasoningEngineId(e.target.value)}
-              placeholder="reasoning_engine_id (opcional)"
-            />
-
-          </div>
-
-          <Separator className="my-4" />
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold text-sm">Histórico</h3>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="session-timeout">Session Timeout (segundos)</Label>
-              <Input
-                id="session-timeout"
-                type="number"
-                value={sessionTimeoutSeconds}
-                onChange={(e) => setSessionTimeoutSeconds(parseInt(e.target.value) || 3600)}
-                min="60"
-                max="86400"
-                placeholder="3600"
-              />
-              <p className="text-xs text-muted-foreground">
-                Tempo limite para agrupar mensagens na mesma sessão
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="whatsapp-format"
-                checked={useWhatsappFormat}
-                onCheckedChange={(checked) => setUseWhatsappFormat(checked as boolean)}
-              />
-              <Label htmlFor="whatsapp-format" className="text-sm">
-                Formato WhatsApp
-              </Label>
-            </div>
-
-            <div className="space-y-2">
-              <Button
-                onClick={handleLoadHistory}
-                disabled={isLoadingHistory || !isMounted}
-                className="w-full"
-                variant="outline"
-              >
-                {isLoadingHistory ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Carregando...
-                  </>
-                ) : (
-                  <>
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Carregar Histórico
-                  </>
-                )}
-              </Button>
-
-              <Button
-                onClick={() => {
-                  setHistoryMessages([]);
-                  setMessages([]);
-                  setHistoryError(null);
-                  toast.info("Tela limpa!");
-                }}
-                disabled={!isMounted}
-                className="w-full"
-                variant="outline"
-              >
-                <Eraser className="h-4 w-4 mr-2" />
-                Limpar Tela
-              </Button>
-
-              <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-                <DialogTrigger asChild>
-                  <Button
-                    disabled={isDeletingHistory || isLoadingHistory || !isMounted}
-                    className="w-full"
-                    variant="destructive"
-                  >
-                    {isDeletingHistory ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Deletando...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Deletar Histórico
-                      </>
-                    )}
-                  </Button>
-                </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-destructive">
-                    <Trash2 className="h-5 w-5" />
-                    Deletar Histórico
-                  </DialogTitle>
-                  <DialogDescription className="text-base">
-                    Tem certeza que deseja deletar <strong>PERMANENTEMENTE</strong> todo o histórico do usuário <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">{userNumber}</code>?
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="py-4">
-                  <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <div className="text-destructive mt-0.5">⚠️</div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-destructive mb-1">Atenção!</h4>
-                      <ul className="text-sm text-destructive/80 space-y-1">
-                        <li>• Esta ação não pode ser desfeita</li>
-                        <li>• Todos os checkpoints serão removidos</li>
-                        <li>• O histórico será perdido permanentemente</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <DialogFooter className="gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={isDeletingHistory}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteHistory}
-                    disabled={isDeletingHistory}
-                  >
-                    {isDeletingHistory ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Deletando...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Sim, Deletar
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-              </Dialog>
-            </div>
-
-            {historyError && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                <p className="text-sm text-destructive">{historyError}</p>
-              </div>
-            )}
-
-            {historyMessages.length > 0 && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">
-                    {historyMessages.filter(m => m.message_type !== 'usage_statistics').length} mensagens carregadas
-                  </span>
-                </div>
-                <Button
-                  onClick={() => {
-                    setHistoryMessages([]);
-                    setMessages([]);
-                    setHistoryError(null);
-                    toast.info("Histórico e chat atual limpos!");
-                  }}
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 px-2 text-xs"
-                >
-                  Limpar Tudo
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ChatSidebar
+        userNumber={userNumber}
+        setUserNumber={setUserNumber}
+        isNumberFixed={isNumberFixed}
+        isMounted={isMounted}
+        provider={provider}
+        reasoningEngineId={reasoningEngineId}
+        setReasoningEngineId={setReasoningEngineId}
+        sessionTimeoutSeconds={sessionTimeoutSeconds}
+        setSessionTimeoutSeconds={setSessionTimeoutSeconds}
+        useWhatsappFormat={useWhatsappFormat}
+        setUseWhatsappFormat={setUseWhatsappFormat}
+        isLoadingHistory={isLoadingHistory}
+        isDeletingHistory={isDeletingHistory}
+        historyMessages={historyMessages}
+        historyError={historyError}
+        showDeleteModal={showDeleteModal}
+        setShowDeleteModal={setShowDeleteModal}
+        onGenerateNumber={handleGenerateNumber}
+        onToggleFixNumber={handleToggleFixNumber}
+        onCopyNumber={handleCopyNumber}
+        onLoadHistory={handleLoadHistory}
+        onClearScreen={() => {
+          setHistoryMessages([]);
+          setMessages([]);
+          setHistoryError(null);
+          toast.info("Tela limpa!");
+        }}
+        onDeleteHistory={handleDeleteHistory}
+      />
     </div>
   );
 }
