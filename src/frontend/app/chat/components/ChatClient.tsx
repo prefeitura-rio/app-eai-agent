@@ -551,48 +551,11 @@ const copyToClipboard = async (text: string) => {
   }
 };
 
-// Função de retry com backoff exponencial
-const retryWithBackoff = async <T,>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000,
-  onRetry?: (attempt: number, delay: number) => void
-): Promise<T> => {
-  let lastError: Error;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      
-      // Se é o último tentativa, não espera
-      if (attempt === maxRetries) {
-        break;
-      }
-      
-      // Calcula delay com backoff exponencial
-      const delay = baseDelay * Math.pow(2, attempt);
-      
-      // Notifica sobre o retry se callback fornecido
-      if (onRetry) {
-        onRetry(attempt + 1, delay);
-      }
-      
-      // Espera antes da próxima tentativa
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError!;
-};
-
 export default function ChatClient() {
   const { token } = useAuth();
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -667,19 +630,8 @@ export default function ChatClient() {
         ...(reasoningEngineId && { reasoning_engine_id: reasoningEngineId }),
       };
 
-      // Usa retry com backoff exponencial para lidar com erros de conexão
-      const botResponseData = await retryWithBackoff(
-        () => sendChatMessage(payload, token),
-        3, // maxRetries
-        1000, // baseDelay (1 segundo)
-        (attempt, delay) => {
-          setIsRetrying(true);
-          toast.info(`Tentativa ${attempt} falhou. Tentando novamente em ${delay/1000}s...`);
-        }
-      );
-      
-      // Limpa o estado de retry se sucesso
-      setIsRetrying(false);
+      // Chamada direta sem retry automático para evitar duplicidade em operações longas
+      const botResponseData = await sendChatMessage(payload, token);
       
       const assistantMessage = botResponseData.messages.find(m => m.message_type === 'assistant_message');
       
@@ -693,26 +645,27 @@ export default function ChatClient() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
 
-      // Verifica se é um erro de conexão para mostrar mensagem mais amigável
+      // Verifica tipos de erro
       const isConnectionError = errorMessage.includes('connection is closed') ||
-                               errorMessage.includes('API Error') ||
-                               errorMessage.includes('400 Reasoning Engine Execution failed') ||
-                               errorMessage.includes('Failed to fetch');
+                               errorMessage.includes('Failed to fetch') ||
+                               errorMessage.includes('NetworkError');
+      
+      const isTimeout = errorMessage.includes('Timeout') || errorMessage.includes('504');
 
-      const friendlyMessage = isConnectionError
-        ? "Erro de conexão com o serviço. Tente novamente em alguns instantes."
-        : `Erro: ${errorMessage}`;
+      let friendlyMessage = `Erro: ${errorMessage}`;
+
+      if (isTimeout || isConnectionError) {
+         friendlyMessage = "A resposta está demorando mais que o esperado. O servidor pode ainda estar processando sua solicitação. Verifique o histórico em instantes para não enviar mensagens duplicadas.";
+         toast.warning("Demora na resposta. Verifique o histórico.");
+      } else {
+         toast.error("Erro ao enviar mensagem.");
+      }
 
       const botErrorMessage: DisplayMessage = { sender: 'bot', content: friendlyMessage };
       setMessages(prev => [...prev, botErrorMessage]);
 
-      // Mostra toast apenas para erros de conexão (exceto 502 que já tem mensagem clara)
-      if (isConnectionError && !errorMessage.includes('servidor está demorando')) {
-        toast.error("Erro de conexão. Tentando novamente automaticamente...");
-      }
     } finally {
       setIsLoading(false);
-      setIsRetrying(false);
       // Retornar foco para o textarea após o envio
       setTimeout(() => {
         textareaRef.current?.focus();
@@ -1217,14 +1170,7 @@ export default function ChatClient() {
             />
             <Button type="submit" size="icon" disabled={isLoading}>
               {isLoading ? (
-                isRetrying ? (
-                  <div className="flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    <span className="text-xs">Retry</span>
-                  </div>
-                ) : (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
               )}

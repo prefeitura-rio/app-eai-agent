@@ -140,10 +140,10 @@ interface ChatApiResponse {
 // --- API Function ---
 
 export async function sendChatMessage(payload: ChatRequestPayload, token: string): Promise<ChatResponseData> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 300000); // 300 segundos (5 minutos)
+  
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 300 segundos (5 minutos)
-    
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/chat`, {
       method: 'POST',
       headers: {
@@ -175,29 +175,16 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
     return data.response.data;
 
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error("Error sending chat message:", error);
-    
-    let errorMessage = "An unknown error occurred.";
     
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        errorMessage = "Timeout: A requisição demorou mais de 5 minutos para responder.";
-      } else {
-        errorMessage = error.message;
+        throw new Error("Timeout: A requisição demorou mais de 5 minutos para responder.");
       }
     }
     
-    // Retornar um objeto de erro que corresponda à estrutura esperada
-    return {
-      messages: [{
-        id: 'error',
-        date: new Date().toISOString(),
-        name: null,
-        message_type: 'assistant_message',
-        content: `Erro: ${errorMessage}`
-      }],
-      usage: { completion_tokens: 0, prompt_tokens: 0, total_tokens: 0, step_count: 0 }
-    };
+    throw error;
   }
 }
 
