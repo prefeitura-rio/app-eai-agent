@@ -116,7 +116,7 @@ async def run_experiment():
         # precomputed_responses=precomputed_responses_dict,
         # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
-        timeout=180,
+        timeout=300,
         polling_interval=5,
         rate_limit_requests_per_minute=1000,
         # reasoning_engine_id="3875545391445311488", #DHARMA_REASONING_ENGINE_ID

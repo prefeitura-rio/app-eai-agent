@@ -178,7 +178,7 @@ class EAIClient:
     def __init__(
         self,
         provider: str = "google_agent_engine",
-        timeout: int = 180,
+        timeout: int = 300,
         polling_interval: int = 2,
         rate_limit_requests_per_minute: int = 60,
         reasoning_engine_id: Optional[str] = None,

@@ -15,7 +15,7 @@ from src.utils.log import logger
 class ChatRequest(BaseModel):
     user_number: str
     message: str
-    timeout: int = 180
+    timeout: int = 300
     polling_interval: int = 2
     provider: str = "google_agent_engine"
     reasoning_engine_id: Optional[str] = None
@@ -78,7 +78,7 @@ async def handle_chat(
     - When creating an agent, it uses any provided optional parameters, falling back to defaults.
     """
     eai_client = EAIClient(
-        timeout=180,
+        timeout=300,
         polling_interval=2,
         provider=request.provider,
     )

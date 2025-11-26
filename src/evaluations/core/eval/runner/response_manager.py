@@ -28,7 +28,7 @@ class ResponseManager:
         # agent_config: Dict[str, Any],
         precomputed_responses: Optional[Dict[str, Dict[str, Any]]] = None,
         eai_client: EAIClient = EAIClient(),
-        timeout: int = 180,
+        timeout: int = 300,
         polling_interval: int = 2,
         rate_limit_requests_per_minute: int = 60,
     ):

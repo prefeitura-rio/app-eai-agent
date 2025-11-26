@@ -6,7 +6,7 @@ from src.utils.log import logger
 
 
 class RMIClient:
-    def __init__(self, timeout: int = 180):
+    def __init__(self, timeout: int = 300):
         self.issuer = env.CIDADAO_ISSUER
         self.client_id = env.CIDADAO_CLIENT_ID
         self.client_secret = env.CIDADAO_CLIENT_SECRET

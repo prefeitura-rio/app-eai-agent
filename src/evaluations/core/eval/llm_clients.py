@@ -30,7 +30,7 @@ class EAIConversationManager:
         self,
         # agent_config: CreateAgentRequest,
         eai_client: EAIClient = EAIClient(),
-        timeout: int = 180,
+        timeout: int = 300,
         polling_interval: int = 2,
         rate_limit_requests_per_minute: int = 60,
     ):
