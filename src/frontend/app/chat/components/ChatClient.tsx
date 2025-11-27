@@ -299,14 +299,7 @@ export default function ChatClient() {
 
       const historyData = await getUserHistory(payload, token);
 
-      // Client-side deduplication based on ID
-      const uniqueMessagesMap = new Map();
-      historyData.data.forEach((msg) => {
-        if (!uniqueMessagesMap.has(msg.id)) {
-          uniqueMessagesMap.set(msg.id, msg);
-        }
-      });
-      const uniqueMessages = Array.from(uniqueMessagesMap.values());
+      const uniqueMessages = historyData.data;
 
       setHistoryMessages(uniqueMessages);
 
@@ -425,15 +418,7 @@ export default function ChatClient() {
                   (msg) =>
                     msg.message_type === "user_message" ||
                     msg.message_type === "assistant_message"
-                )
-                .filter((msg, index, self) => {
-                  if (index === 0) return true;
-                  const prev = self[index - 1];
-                  const isDuplicate =
-                    msg.message_type === prev.message_type &&
-                    msg.content === prev.content;
-                  return !isDuplicate;
-                });
+                );
 
               if (conversationMessages.length === 0) return null;
 
