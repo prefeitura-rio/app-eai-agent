@@ -305,7 +305,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-green-600" />
                 <span className="text-sm font-medium text-green-600">
-                  {historyMessages.filter(m => m.message_type !== 'usage_statistics').length} mensagens carregadas
+                  {historyMessages.filter(m => m.message_type === 'user_message' || m.message_type === 'assistant_message').length} mensagens carregadas
                 </span>
               </div>
               <Button

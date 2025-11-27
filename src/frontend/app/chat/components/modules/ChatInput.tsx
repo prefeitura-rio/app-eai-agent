@@ -52,14 +52,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
           ref={textareaRef}
           id="message"
           placeholder="Digite sua mensagem..."
-          className="flex-1 min-h-[60px] resize-none"
+          className="flex-1 min-h-[60px] max-h-[70vh] overflow-y-auto resize-y"
           autoComplete="off"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={isLoading}
           rows={3}
-          style={{ resize: 'none' }}
         />
         <Button type="submit" size="icon" disabled={isLoading} className={isLoading ? "w-16" : ""}>
           {isLoading ? (
