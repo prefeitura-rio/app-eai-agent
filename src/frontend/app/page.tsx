@@ -14,7 +14,7 @@ export default function HomePage() {
       />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Link href="/experiments_v0" className="group">
+          {/* <Link href="/experiments_v0" className="group">
             <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
               <CardHeader>
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -32,7 +32,7 @@ export default function HomePage() {
                   </div>
               </CardContent>
             </Card>
-          </Link>
+          </Link> */}
           <Link href="/experiments" className="group">
             <Card className="h-full transition-all duration-200 ease-in-out hover:border-primary hover:shadow-lg">
               <CardHeader>
