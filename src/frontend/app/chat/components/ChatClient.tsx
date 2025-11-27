@@ -51,6 +51,14 @@ const copyToClipboard = async (text: string) => {
   }
 };
 
+const formatDuration = (seconds: number) => {
+  if (seconds < 1) return `${(seconds * 1000).toFixed(0)}ms`;
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}m ${s}s`;
+};
+
 // --- Main Component ---
 
 export default function ChatClient() {
@@ -121,6 +129,8 @@ export default function ChatClient() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('[ChatClient] handleSendMessage called', { input, isSending: isSendingRef.current });
+
     // Verificação síncrona para evitar envios duplicados rápidos
     if (isSendingRef.current) return;
     if (!input.trim() || !token) return;
@@ -134,7 +144,10 @@ export default function ChatClient() {
       content: input,
       timestamp: new Date().toISOString()
     };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => {
+        console.log('[ChatClient] Adding user message', userMessage);
+        return [...prev, userMessage];
+    });
     setInput('');
     setIsLoading(true);
 
@@ -146,8 +159,11 @@ export default function ChatClient() {
         ...(reasoningEngineId && { reasoning_engine_id: reasoningEngineId }),
       };
 
+      console.log('[ChatClient] Sending payload:', payload);
+
       // Chamada direta sem retry automático
       const botResponseData = await sendChatMessage(payload, token);
+      console.log('[ChatClient] Received response:', botResponseData);
       
       const latency = (Date.now() - startTime) / 1000;
       const assistantMessage = botResponseData.messages.find(m => m.message_type === 'assistant_message');
@@ -159,9 +175,13 @@ export default function ChatClient() {
         timestamp: new Date().toISOString(),
         latency: latency
       };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => {
+        console.log('[ChatClient] Adding bot message', botMessage);
+        return [...prev, botMessage];
+      });
 
     } catch (error) {
+      console.error('[ChatClient] Error in handleSendMessage:', error);
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
 
       const isConnectionError = errorMessage.includes('connection is closed') ||
@@ -215,9 +235,16 @@ export default function ChatClient() {
   };
 
   const handleLoadHistory = async () => {
+    console.log('[ChatClient] handleLoadHistory called');
+
     if (!token) {
       toast.error("Token de autenticação não encontrado!");
       return;
+    }
+
+    if (isLoadingHistory) {
+        console.warn('[ChatClient] History load already in progress, skipping.');
+        return;
     }
 
     setIsLoadingHistory(true);
@@ -230,20 +257,40 @@ export default function ChatClient() {
         use_whatsapp_format: useWhatsappFormat,
       };
 
+      console.log('[ChatClient] Fetching history with payload:', payload);
+
       const historyData = await getUserHistory(payload, token);
-      setHistoryMessages(historyData.data);
+      console.log('[ChatClient] Raw history data length:', historyData.data.length);
+      
+      // Client-side deduplication based on ID
+      const uniqueMessagesMap = new Map();
+      historyData.data.forEach(msg => {
+          if (!uniqueMessagesMap.has(msg.id)) {
+              uniqueMessagesMap.set(msg.id, msg);
+          } else {
+              console.warn('[ChatClient] Duplicate message ID found in history response:', msg.id);
+          }
+      });
+      const uniqueMessages = Array.from(uniqueMessagesMap.values());
+      console.log('[ChatClient] Deduplicated history length:', uniqueMessages.length);
+      
+      // Log sequence to debug duplication
+      console.log('[ChatClient] History Sequence:\n' + uniqueMessages.map(m => `ID:${m.id} [${m.message_type}] Content:${(m.content || '').slice(0, 30).replace(/\n/g, ' ')}`).join('\n'));
+
+      setHistoryMessages(uniqueMessages);
       
       // Limpar chat atual quando carregar histórico
       setMessages([]);
       
       // Filtrar apenas mensagens de conversa (não usage_statistics)
-      const conversationMessages = historyData.data.filter(
+      const conversationMessages = uniqueMessages.filter(
         msg => msg.message_type !== 'usage_statistics'
       );
       
       toast.success(`Histórico carregado! ${conversationMessages.length} mensagens encontradas.`);
       
     } catch (error) {
+      console.error('[ChatClient] Error loading history:', error);
       const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao carregar histórico.";
       setHistoryError(errorMessage);
       toast.error(`Erro ao carregar histórico: ${errorMessage}`);
@@ -325,9 +372,17 @@ export default function ChatClient() {
               {/* Mensagens do Histórico */}
               {(() => {
                 // Filtrar mensagens de conversa
-                const conversationMessages = historyMessages.filter(msg => 
-                  msg.message_type === 'user_message' || msg.message_type === 'assistant_message'
-                );
+                const conversationMessages = historyMessages
+                  .filter(msg => msg.message_type === 'user_message' || msg.message_type === 'assistant_message')
+                  .filter((msg, index, self) => {
+                    if (index === 0) return true;
+                    const prev = self[index - 1];
+                    const isDuplicate = msg.message_type === prev.message_type && msg.content === prev.content;
+                    if (isDuplicate) {
+                      console.warn(`[ChatClient] Hiding visual duplicate: ID ${msg.id} (matches previous ID ${prev.id})`);
+                    }
+                    return !isDuplicate;
+                  });
                 
                 if (conversationMessages.length === 0) return null;
 
@@ -358,186 +413,403 @@ export default function ChatClient() {
                       <div className="flex-1 border-t border-border"></div>
                     </div>
                     
-                    {/* Mensagens da Sessão */}
-                    <div className="space-y-4">
-                      {session.messages.map((msg, msgIndex) => (
-                        <div key={`history-${msg.id}-${msgIndex}`} className={`flex items-start gap-3 ${msg.message_type === 'user_message' ? 'justify-end' : ''}`}>
-                    {msg.message_type === 'assistant_message' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                    <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.message_type === 'user_message' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                      <div className="relative group">
-                        <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
-                          <History className="h-3 w-3" />
-                          <span className="text-xs font-mono">
-                            Sessão {sessionIdToNumber[msg.session_id || '']} • {new Date(msg.date).toLocaleDateString('pt-BR')} {new Date(msg.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                          {msg.time_since_last_message && (
-                            <span className="text-xs text-muted-foreground">
-                              +{Math.round(msg.time_since_last_message)}s
-                            </span>
-                          )}
-                        </div>
-                      
-                      {renderMessageContent(msg.content || '', msg.message_type === 'user_message')}
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`absolute top-8 right-2 border ${
-                                msg.message_type === 'user_message' 
-                                  ? 'bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white' 
-                                  : 'bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary'
-                              }`}
-                              onClick={() => copyToClipboard(msg.content || '')}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copiar mensagem do histórico</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    {msg.message_type === 'assistant_message' && (
-                      <div className="mt-3 pt-3 border-t border-muted/30">
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value={`history-details-${msg.id}`} className="border-none">
-                            <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
-                              <div className="flex items-center gap-2">
-                                <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                <span className="text-blue-600 dark:text-blue-400">Ver Detalhes (Histórico)</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-4 space-y-4">
-                              {/* Buscar todas as mensagens da interação */}
-                              {(() => {
-                                const currentIndex = historyMessages.findIndex(m => m.id === msg.id);
-                                if (currentIndex === -1) return null;
-                                
-                                let interactionStart = currentIndex;
-                                while (interactionStart > 0) {
-                                  interactionStart--;
-                                  if (historyMessages[interactionStart].message_type === 'user_message') {
-                                    break;
-                                  }
-                                }
-                                
-                                if (historyMessages[interactionStart].message_type !== 'user_message') {
-                                  return null;
-                                }
-                                
-                                let interactionEnd = currentIndex;
-                                while (interactionEnd < historyMessages.length - 1) {
-                                  interactionEnd++;
-                                  if (historyMessages[interactionEnd].message_type === 'user_message') {
-                                    interactionEnd--;
-                                    break;
-                                  }
-                                }
-                                
-                                const interactionMessages = historyMessages.slice(interactionStart, interactionEnd + 1);
-                                
-                                const interactionSteps = interactionMessages.filter(step => 
-                                  step.message_type !== 'usage_statistics' &&
-                                  step.message_type !== 'user_message' &&
-                                  step.id !== msg.id &&
-                                  (step.message_type === 'tool_call_message' || 
-                                   step.message_type === 'tool_return_message' ||
-                                   step.message_type === 'reasoning_message' ||
-                                   step.message_type === 'assistant_message')
-                                );
-                                
-                                return (
-                                  <div className="space-y-2">
-                                    {interactionSteps.length > 0 ? (
-                                      interactionSteps.map((step, stepIndex) => (
-                                        <div key={`step-${step.id}-${stepIndex}`} className="space-y-2 border-l-2 border-muted pl-3">
-                                          <div className="flex items-center gap-2">
-                                            {getStepIcon(step.message_type)}
-                                            <h5 className="font-semibold text-sm">{step.message_type.replace(/_/g, ' ')}</h5>
-                                            {step.name && <Badge variant="secondary">{step.name}</Badge>}
-                                          </div>
-                                          {step.reasoning && (
-                                            <p className="italic text-muted-foreground text-sm">{step.reasoning}</p>
-                                          )}
-                                          {step.tool_call && (
-                                            <div>
-                                              <p className="font-semibold text-sm capitalize mb-2">Tool Call Arguments:</p>
-                                              <JsonViewer data={(() => {
-                                                try {
-                                                  return typeof step.tool_call.arguments === 'string' 
-                                                    ? JSON.parse(step.tool_call.arguments)
-                                                    : step.tool_call.arguments;
-                                                } catch {
-                                                  return { raw: step.tool_call.arguments };
-                                                }
-                                              })()} />
-                                            </div>
-                                          )}
-                                          {step.tool_return && (
-                                            <ToolReturnViewer toolReturn={step.tool_return} toolName={step.name || undefined} />
-                                          )}
-                                          {step.content && step.message_type === 'assistant_message' && (
-                                            <div>
-                                              <p className="font-semibold text-sm capitalize mb-2">Resposta Intermediária:</p>
-                                              <div 
-                                                className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-2 rounded"
-                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(step.content, { breaks: true }) as string) }}
-                                              />
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <div className="text-sm text-muted-foreground italic">
-                                        Resposta direta sem uso de ferramentas
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                              
-                              <div className="space-y-2 pt-2 border-t">
-                                <h4 className="font-semibold">Informações da Mensagem</h4>
-                                <div className="text-sm space-y-1">
-                                  <div><span className="font-medium">ID:</span> {msg.id}</div>
-                                  <div><span className="font-medium">Session ID:</span> {msg.session_id}</div>
-                                  <div><span className="font-medium">Data:</span> {new Date(msg.date).toLocaleString('pt-BR')}</div>
-                                  <div><span className="font-medium">Tipo:</span> {msg.message_type}</div>
-                                  {msg.time_since_last_message && (
-                                    <div><span className="font-medium">Tempo desde última:</span> {Math.round(msg.time_since_last_message)}s</div>
-                                  )}
-                                  {msg.model_name && (
-                                    <div><span className="font-medium">Modelo:</span> {msg.model_name}</div>
-                                  )}
-                                  {msg.finish_reason && (
-                                    <div><span className="font-medium">Finish Reason:</span> {msg.finish_reason}</div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {msg.usage_metadata && (
-                                <div className="space-y-2 pt-2 border-t">
-                                  <div className="flex items-center gap-2">
-                                    <BarChart2 className="h-4 w-4 text-purple-500" />
-                                    <h4 className="font-semibold">Usage Metadata</h4>
-                                  </div>
-                                  <JsonViewer data={msg.usage_metadata} />
-                                </div>
-                              )}
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    )}
-                          </div>
-                          {msg.message_type === 'user_message' && <User className="h-6 w-6 flex-shrink-0" />}
-                        </div>
-                      ))}
-                    </div>
+                                                            {/* Mensagens da Sessão */}
+                    
+                                                            <div className="space-y-4">
+                    
+                                                              {session.messages.map((msg, msgIndex) => {
+                    
+                                                                return (
+                    
+                                                                  <div key={`history-${msg.id}-${msgIndex}`} className={`flex items-start gap-3 ${msg.message_type === 'user_message' ? 'justify-end' : ''}`}>
+                    
+                                                                      {msg.message_type === 'assistant_message' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
+                    
+                                                                      <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.message_type === 'user_message' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                    
+                                                                        <div className="relative group">
+                    
+                                                                                                            <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
+                    
+                                                                                                              <History className="h-3 w-3" />
+                    
+                                                                                                              <span className="text-xs font-mono">
+                    
+                                                                                                                Sessão {sessionIdToNumber[msg.session_id || '']} • {new Date(msg.date).toLocaleDateString('pt-BR')} {new Date(msg.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    
+                                                                                                              </span>
+                    
+                                                                                                              {(() => {
+                    
+                                                                                                                if (msgIndex > 0) {
+                    
+                                                                                                                  const prevMsg = session.messages[msgIndex - 1];
+                    
+                                                                                                                  
+                    
+                                                                                                                  // Tempo de resposta do Assistente (User -> Assistant)
+                    
+                                                                                                                                                          if (msg.message_type === 'assistant_message' && prevMsg.message_type === 'user_message') {
+                    
+                                                                                                                                                            const diff = (new Date(msg.date).getTime() - new Date(prevMsg.date).getTime()) / 1000;
+                    
+                                                                                                                                                            return (
+                    
+                                                                                                                                                              <span className="text-xs text-muted-foreground flex items-center gap-1 border-l border-muted-foreground/30 pl-2 ml-1">
+                    
+                                                                                                                                                                <Clock className="h-3 w-3" />
+                    
+                                                                                                                                                                {formatDuration(diff)}
+                    
+                                                                                                                                                              </span>
+                    
+                                                                                                                                                            );
+                    
+                                                                                                                                                          }
+                    
+                                                                          
+                    
+                                                                                                                  // Tempo de pensamento do Usuário (Assistant -> User)
+                    
+                                                                                                                  if (msg.message_type === 'user_message' && prevMsg.message_type === 'assistant_message') {
+                    
+                                                                                                                      const diff = (new Date(msg.date).getTime() - new Date(prevMsg.date).getTime()) / 1000;
+                    
+                                                                                                                      return (
+                    
+                                                                                                                        <span className="text-xs text-primary-foreground/80 flex items-center gap-1 border-l border-primary-foreground/30 pl-2 ml-1">
+                    
+                                                                                                                          <Clock className="h-3 w-3" />
+                    
+                                                                                                                          {formatDuration(diff)}
+                    
+                                                                                                                        </span>
+                    
+                                                                                                                      );
+                    
+                                                                                                                  }
+                    
+                                                                                                                }
+                    
+                                                                                                                return null;
+                    
+                                                                                                              })()}
+                    
+                                                                                                            </div>
+                    
+                                                                        
+                    
+                                                                          {renderMessageContent(msg.content || '', msg.message_type === 'user_message')}
+                    
+                                        
+                    
+                                                                          <Tooltip>
+                    
+                                                                            <TooltipTrigger asChild>
+                    
+                                                                              <Button
+                    
+                                                                                variant="ghost"
+                    
+                                                                                size="sm"
+                    
+                                                                                className={`absolute top-8 right-2 border ${
+                    
+                                                                                  msg.message_type === 'user_message' 
+                    
+                                                                                    ? 'bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white' 
+                    
+                                                                                    : 'bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary'
+                    
+                                                                                }`}
+                    
+                                                                                onClick={() => copyToClipboard(msg.content || '')}
+                    
+                                                                              >
+                    
+                                                                                <Copy className="h-3 w-3" />
+                    
+                                                                              </Button>
+                    
+                                                                            </TooltipTrigger>
+                    
+                                                                            <TooltipContent>
+                    
+                                                                              <p>Copiar mensagem do histórico</p>
+                    
+                                                                            </TooltipContent>
+                    
+                                                                          </Tooltip>
+                    
+                                                                        </div>
+                    
+                                                                        {msg.message_type === 'assistant_message' && (
+                    
+                                                                          <div className="mt-3 pt-3 border-t border-muted/30">
+                    
+                                                                            <Accordion type="single" collapsible className="w-full">
+                    
+                                                                              <AccordionItem value={`history-details-${msg.id}`} className="border-none">
+                    
+                                                                                <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
+                    
+                                                                                  <div className="flex items-center gap-2">
+                    
+                                                                                    <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    
+                                                                                    <span className="text-blue-600 dark:text-blue-400">Ver Detalhes (Histórico)</span>
+                    
+                                                                                  </div>
+                    
+                                                                                </AccordionTrigger>
+                    
+                                                                                <AccordionContent className="p-4 space-y-4">
+                    
+                                                                                  {/* Buscar todas as mensagens da interação */}
+                    
+                                                                                  {(() => {
+                    
+                                                                                    const currentIndex = historyMessages.findIndex(m => m.id === msg.id);
+                    
+                                                                                    if (currentIndex === -1) return null;
+                    
+                                                                                    
+                    
+                                                                                    let interactionStart = currentIndex;
+                    
+                                                                                    while (interactionStart > 0) {
+                    
+                                                                                      interactionStart--;
+                    
+                                                                                      if (historyMessages[interactionStart].message_type === 'user_message') {
+                    
+                                                                                        break;
+                    
+                                                                                      }
+                    
+                                                                                    }
+                    
+                                                                                    
+                    
+                                                                                    if (historyMessages[interactionStart].message_type !== 'user_message') {
+                    
+                                                                                      return null;
+                    
+                                                                                    }
+                    
+                                                                                    
+                    
+                                                                                    let interactionEnd = currentIndex;
+                    
+                                                                                    while (interactionEnd < historyMessages.length - 1) {
+                    
+                                                                                      interactionEnd++;
+                    
+                                                                                      if (historyMessages[interactionEnd].message_type === 'user_message') {
+                    
+                                                                                        interactionEnd--;
+                    
+                                                                                        break;
+                    
+                                                                                      }
+                    
+                                                                                    }
+                    
+                                                                                    
+                    
+                                                                                    const interactionMessages = historyMessages.slice(interactionStart, interactionEnd + 1);
+                    
+                                                                                    
+                    
+                                                                                    const interactionSteps = interactionMessages.filter(step => 
+                    
+                                                                                      step.message_type !== 'usage_statistics' &&
+                    
+                                                                                      step.message_type !== 'user_message' &&
+                    
+                                                                                      step.id !== msg.id &&
+                    
+                                                                                      (step.message_type === 'tool_call_message' || 
+                    
+                                                                                       step.message_type === 'tool_return_message' ||
+                    
+                                                                                       step.message_type === 'reasoning_message')
+                    
+                                                                                    );
+                    
+                                                                                    
+                    
+                                                                                    return (
+                    
+                                                                                      <div className="space-y-2">
+                    
+                                                                                        {interactionSteps.length > 0 ? (
+                    
+                                                                                          interactionSteps.map((step, stepIndex) => (
+                    
+                                                                                            <div key={`step-${step.id}-${stepIndex}`} className="space-y-2 border-l-2 border-muted pl-3">
+                    
+                                                                                              <div className="flex items-center gap-2">
+                    
+                                                                                                {getStepIcon(step.message_type)}
+                    
+                                                                                                <h5 className="font-semibold text-sm">{step.message_type.replace(/_/g, ' ')}</h5>
+                    
+                                                                                                {step.name && <Badge variant="secondary">{step.name}</Badge>}
+                    
+                                                                                              </div>
+                    
+                                                                                              {step.reasoning && (
+                    
+                                                                                                <p className="italic text-muted-foreground text-sm">{step.reasoning}</p>
+                    
+                                                                                              )}
+                    
+                                                                                              {step.tool_call && (
+                    
+                                                                                                <div>
+                    
+                                                                                                  <p className="font-semibold text-sm capitalize mb-2">Tool Call Arguments:</p>
+                    
+                                                                                                  <JsonViewer data={(() => {
+                    
+                                                                                                    try {
+                    
+                                                                                                      return typeof step.tool_call.arguments === 'string' 
+                    
+                                                                                                        ? JSON.parse(step.tool_call.arguments)
+                    
+                                                                                                        : step.tool_call.arguments;
+                    
+                                                                                                    } catch {
+                    
+                                                                                                      return { raw: step.tool_call.arguments };
+                    
+                                                                                                    }
+                    
+                                                                                                  })()} />
+                    
+                                                                                                </div>
+                    
+                                                                                              )}
+                    
+                                                                                              {step.tool_return && (
+                    
+                                                                                                <ToolReturnViewer toolReturn={step.tool_return} toolName={step.name || undefined} />
+                    
+                                                                                              )}
+                    
+                                                                                              {step.content && step.message_type === 'assistant_message' && (
+                    
+                                                                                                <div>
+                    
+                                                                                                  <p className="font-semibold text-sm capitalize mb-2">Resposta Intermediária:</p>
+                    
+                                                                                                  <div 
+                    
+                                                                                                    className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-2 rounded"
+                    
+                                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(step.content, { breaks: true }) as string) }}
+                    
+                                                                                                  />
+                    
+                                                                                                </div>
+                    
+                                                                                              )}
+                    
+                                                                                            </div>
+                    
+                                                                                          ))
+                    
+                                                                                        ) : (
+                    
+                                                                                          <div className="text-sm text-muted-foreground italic">
+                    
+                                                                                            Resposta direta sem uso de ferramentas
+                    
+                                                                                          </div>
+                    
+                                                                                        )}
+                    
+                                                                                      </div>
+                    
+                                                                                    );
+                    
+                                                                                  })()}
+                    
+                                                                                  
+                    
+                                                                                  <div className="space-y-2 pt-2 border-t">
+                    
+                                                                                    <h4 className="font-semibold">Informações da Mensagem</h4>
+                    
+                                                                                    <div className="text-sm space-y-1">
+                    
+                                                                                      <div><span className="font-medium">ID:</span> {msg.id}</div>
+                    
+                                                                                      <div><span className="font-medium">Session ID:</span> {msg.session_id}</div>
+                    
+                                                                                      <div><span className="font-medium">Data:</span> {new Date(msg.date).toLocaleString('pt-BR')}</div>
+                    
+                                                                                      <div><span className="font-medium">Tipo:</span> {msg.message_type}</div>
+                    
+                                                                                      {msg.model_name && (
+                    
+                                                                                        <div><span className="font-medium">Modelo:</span> {msg.model_name}</div>
+                    
+                                                                                      )}
+                    
+                                                                                      {msg.finish_reason && (
+                    
+                                                                                        <div><span className="font-medium">Finish Reason:</span> {msg.finish_reason}</div>
+                    
+                                                                                      )}
+                    
+                                                                                    </div>
+                    
+                                                                                  </div>
+                    
+                                                                                  
+                    
+                                                                                  {msg.usage_metadata && (
+                    
+                                                                                    <div className="space-y-2 pt-2 border-t">
+                    
+                                                                                      <div className="flex items-center gap-2">
+                    
+                                                                                        <BarChart2 className="h-4 w-4 text-purple-500" />
+                    
+                                                                                        <h4 className="font-semibold">Usage Metadata</h4>
+                    
+                                                                                      </div>
+                    
+                                                                                      <JsonViewer data={msg.usage_metadata} />
+                    
+                                                                                    </div>
+                    
+                                                                                  )}
+                    
+                                                                                </AccordionContent>
+                    
+                                                                              </AccordionItem>
+                    
+                                                                            </Accordion>
+                    
+                                                                          </div>
+                    
+                                                                        )}
+                    
+                                                                      </div>
+                    
+                                                                      {msg.message_type === 'user_message' && <User className="h-6 w-6 flex-shrink-0" />}
+                    
+                                                                    </div>
+                    
+                                                                );
+                    
+                                                              })}
+                    
+                                                            </div>
                   </div>
                 ));
               })()}
@@ -555,102 +827,118 @@ export default function ChatClient() {
               )}
 
               {/* Mensagens do Chat Atual */}
-              {messages.map((msg, index) => (
-                <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                  {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
-                  <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    <div className="relative group">
-                      
-                      <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
-                        <Clock className="h-3 w-3" />
-                        {msg.timestamp && (
-                          <span className="text-xs font-mono opacity-80">
-                            {new Date(msg.timestamp).toLocaleDateString('pt-BR')} {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                        )}
-                        {msg.latency && (
-                          <span className="text-xs text-muted-foreground font-mono">
-                            +{msg.latency.toFixed(1)}s
-                          </span>
-                        )}
-                      </div>
+              {messages.map((msg, index) => {
+                return (
+                  <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                      {msg.sender === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
+                      <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        <div className="relative group">
+                          
+                          <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
+                            <Clock className="h-3 w-3" />
+                            {msg.timestamp && (
+                              <span className="text-xs font-mono opacity-80">
+                                {new Date(msg.timestamp).toLocaleDateString('pt-BR')} {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </span>
+                            )}
+                            {msg.sender === 'bot' && msg.latency && (
+                              <span className="text-xs text-muted-foreground font-mono flex items-center gap-1 ml-2 border-l border-muted-foreground/30 pl-2">
+                                <Clock className="h-3 w-3" />
+                                {formatDuration(msg.latency)}
+                              </span>
+                            )}
+                            {(() => {
+                                if (msg.sender === 'user' && index > 0) {
+                                    const prevMsg = messages[index - 1];
+                                    if (prevMsg.sender === 'bot' && msg.timestamp && prevMsg.timestamp) {
+                                        const diff = (new Date(msg.timestamp).getTime() - new Date(prevMsg.timestamp).getTime()) / 1000;
+                                        return (
+                                            <span className="text-xs text-primary-foreground/80 font-mono flex items-center gap-1 ml-2 border-l border-primary-foreground/30 pl-2">
+                                                <Clock className="h-3 w-3" />
+                                                {formatDuration(diff)}
+                                            </span>
+                                        );
+                                    }
+                                }
+                                return null;
+                            })()}
+                          </div>
 
-                      {renderMessageContent(msg.content || '', msg.sender === 'user')}
-                      
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`absolute top-8 right-2 border ${
-                                msg.sender === 'user' 
-                                  ? 'bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white' 
-                                  : 'bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary'
-                              }`}
-                              onClick={() => copyToClipboard(msg.content)}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copiar mensagem</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    {msg.sender === 'bot' && msg.fullResponse && (
-                      <div className="mt-3 pt-3 border-t border-muted/30">
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="item-1" className="border-none">
-                            <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
-                              <div className="flex items-center gap-2">
-                                <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                <span className="text-blue-600 dark:text-blue-400">Ver Detalhes</span>
-                              </div>
-                            </AccordionTrigger>
-                          <AccordionContent className="p-4 space-y-4">
-                            {msg.fullResponse.messages.filter(m => m.message_type !== 'assistant_message').map((step, stepIndex) => (
-                              <div key={`${step.id}-${step.message_type}-${stepIndex}`} className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  {getStepIcon(step.message_type)}
-                                  <h4 className="font-semibold">{step.message_type.replace(/_/g, ' ')}</h4>
-                                  {step.name && <Badge variant="secondary">{step.name}</Badge>}
-                                </div>
-                                {step.reasoning && <p className="italic text-muted-foreground text-base pl-6">{step.reasoning}</p>}
-                                {step.tool_call && (
-                                  <div>
-                                    <p className="font-semibold text-base capitalize mb-2">Tool Call Arguments:</p>
-                                    <JsonViewer data={(() => {
-                                      try {
-                                        return typeof step.tool_call.arguments === 'string' 
-                                          ? JSON.parse(step.tool_call.arguments)
-                                          : step.tool_call.arguments;
-                                      } catch {
-                                        return { raw: step.tool_call.arguments };
-                                      }
-                                    })()} />
+                          {renderMessageContent(msg.content || '', msg.sender === 'user')}
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`absolute top-8 right-2 border ${
+                                  msg.sender === 'user' 
+                                    ? 'bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white' 
+                                    : 'bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary'
+                                }`}
+                                onClick={() => copyToClipboard(msg.content)}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copiar mensagem</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        {msg.sender === 'bot' && msg.fullResponse && (
+                          <div className="mt-3 pt-3 border-t border-muted/30">
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="item-1" className="border-none">
+                                <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
+                                  <div className="flex items-center gap-2">
+                                    <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    <span className="text-blue-600 dark:text-blue-400">Ver Detalhes</span>
                                   </div>
-                                )}
-                                {step.tool_return && <ToolReturnViewer toolReturn={step.tool_return} toolName={step.name || undefined} />}
-                              </div>
-                            ))}
-                            <div className="space-y-2 pt-2 border-t">
-                                <div className="flex items-center gap-2">
-                                  <BarChart2 className="h-4 w-4 text-purple-500" />
-                                  <h4 className="font-semibold">Usage Statistics</h4>
+                                </AccordionTrigger>
+                              <AccordionContent className="p-4 space-y-4">
+                                {msg.fullResponse.messages.filter(m => m.message_type !== 'assistant_message').map((step, stepIndex) => (
+                                  <div key={`${step.id}-${step.message_type}-${stepIndex}`} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      {getStepIcon(step.message_type)}
+                                      <h4 className="font-semibold">{step.message_type.replace(/_/g, ' ')}</h4>
+                                      {step.name && <Badge variant="secondary">{step.name}</Badge>}
+                                    </div>
+                                    {step.reasoning && <p className="italic text-muted-foreground text-base pl-6">{step.reasoning}</p>}
+                                    {step.tool_call && (
+                                      <div>
+                                        <p className="font-semibold text-base capitalize mb-2">Tool Call Arguments:</p>
+                                        <JsonViewer data={(() => {
+                                          try {
+                                            return typeof step.tool_call.arguments === 'string' 
+                                              ? JSON.parse(step.tool_call.arguments)
+                                              : step.tool_call.arguments;
+                                          } catch {
+                                            return { raw: step.tool_call.arguments };
+                                          }
+                                        })()} />
+                                      </div>
+                                    )}
+                                    {step.tool_return && <ToolReturnViewer toolReturn={step.tool_return} toolName={step.name || undefined} />}
+                                  </div>
+                                ))}
+                                <div className="space-y-2 pt-2 border-t">
+                                    <div className="flex items-center gap-2">
+                                      <BarChart2 className="h-4 w-4 text-purple-500" />
+                                      <h4 className="font-semibold">Usage Statistics</h4>
+                                    </div>
+                                    <JsonViewer data={msg.fullResponse.usage} />
                                 </div>
-                                <JsonViewer data={msg.fullResponse.usage} />
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      )}
+                      </div>
+                      {msg.sender === 'user' && <User className="h-6 w-6 flex-shrink-0" />}
                     </div>
-                  )}
-                  </div>
-                  {msg.sender === 'user' && <User className="h-6 w-6 flex-shrink-0" />}
-                </div>
-              ))}
+                );
+              })}
             </div>
         </CardContent>
         
