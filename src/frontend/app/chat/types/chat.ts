@@ -4,6 +4,8 @@ export interface DisplayMessage {
   sender: 'user' | 'bot';
   content: string;
   fullResponse?: ChatResponseData;
+  timestamp?: string;
+  latency?: number;
 }
 
 export interface InstrucaoItem {

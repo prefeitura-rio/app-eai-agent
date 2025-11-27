@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,7 @@ interface ChatInputProps {
   input: string;
   setInput: (value: string) => void;
   isLoading: boolean;
+  requestStartTime: number | null;
   onSendMessage: (e: React.FormEvent) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
@@ -16,9 +17,25 @@ const ChatInput: React.FC<ChatInputProps> = ({
   input,
   setInput,
   isLoading,
+  requestStartTime,
   onSendMessage,
   textareaRef
 }) => {
+  const [elapsed, setElapsed] = useState<number>(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading && requestStartTime) {
+      setElapsed(Math.floor((Date.now() - requestStartTime) / 1000));
+      interval = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - requestStartTime) / 1000));
+      }, 1000);
+    } else {
+      setElapsed(0);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading, requestStartTime]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -44,9 +61,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
           rows={3}
           style={{ resize: 'none' }}
         />
-        <Button type="submit" size="icon" disabled={isLoading}>
+        <Button type="submit" size="icon" disabled={isLoading} className={isLoading ? "w-16" : ""}>
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex items-center gap-1">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs">{elapsed}s</span>
+            </div>
           ) : (
             <Send className="h-4 w-4" />
           )}

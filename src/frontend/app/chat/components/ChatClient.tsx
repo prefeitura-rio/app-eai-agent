@@ -15,7 +15,7 @@ import ChatSidebar from './modules/ChatSidebar';
 import ChatInput from './modules/ChatInput';
 import JsonViewer from './modules/JsonViewer';
 import ToolReturnViewer from './modules/ToolReturnViewer';
-import { Bot, User, Copy, Search, BarChart2, Lightbulb, Wrench, LogIn } from 'lucide-react';
+import { Bot, User, Copy, Search, BarChart2, Lightbulb, Wrench, LogIn, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -115,6 +115,7 @@ export default function ChatClient() {
     }
   }, [isNumberFixed]);
 
+  const [requestStartTime, setRequestStartTime] = useState<number | null>(null);
   const isSendingRef = useRef(false);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -125,8 +126,14 @@ export default function ChatClient() {
     if (!input.trim() || !token) return;
 
     isSendingRef.current = true;
+    const startTime = Date.now();
+    setRequestStartTime(startTime);
     
-    const userMessage: DisplayMessage = { sender: 'user', content: input };
+    const userMessage: DisplayMessage = { 
+      sender: 'user', 
+      content: input,
+      timestamp: new Date().toISOString()
+    };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -142,12 +149,15 @@ export default function ChatClient() {
       // Chamada direta sem retry automático
       const botResponseData = await sendChatMessage(payload, token);
       
+      const latency = (Date.now() - startTime) / 1000;
       const assistantMessage = botResponseData.messages.find(m => m.message_type === 'assistant_message');
       
       const botMessage: DisplayMessage = { 
         sender: 'bot', 
         content: assistantMessage?.content || "Não foi possível obter uma resposta do assistente.",
-        fullResponse: botResponseData
+        fullResponse: botResponseData,
+        timestamp: new Date().toISOString(),
+        latency: latency
       };
       setMessages(prev => [...prev, botMessage]);
 
@@ -173,6 +183,7 @@ export default function ChatClient() {
 
     } finally {
       setIsLoading(false);
+      setRequestStartTime(null);
       isSendingRef.current = false;
       // Retornar foco para o textarea após o envio
       setTimeout(() => {
@@ -550,6 +561,20 @@ export default function ChatClient() {
                   <div className={`w-full max-w-[80%] rounded-lg overflow-hidden ${msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                     <div className="relative group">
                       
+                      <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
+                        <Clock className="h-3 w-3" />
+                        {msg.timestamp && (
+                          <span className="text-xs font-mono opacity-80">
+                            {new Date(msg.timestamp).toLocaleDateString('pt-BR')} {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                        )}
+                        {msg.latency && (
+                          <span className="text-xs text-muted-foreground font-mono">
+                            +{msg.latency.toFixed(1)}s
+                          </span>
+                        )}
+                      </div>
+
                       {renderMessageContent(msg.content || '', msg.sender === 'user')}
                       
                       <TooltipProvider>
@@ -558,7 +583,7 @@ export default function ChatClient() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className={`absolute top-2 right-2 border ${
+                              className={`absolute top-8 right-2 border ${
                                 msg.sender === 'user' 
                                   ? 'bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white' 
                                   : 'bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary'
@@ -633,6 +658,7 @@ export default function ChatClient() {
           input={input}
           setInput={setInput}
           isLoading={isLoading}
+          requestStartTime={requestStartTime}
           onSendMessage={handleSendMessage}
           textareaRef={textareaRef}
         />
