@@ -39,6 +39,7 @@ import {
   Wrench,
   LogIn,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,6 +56,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import DOMPurify from "dompurify";
+
 
 // Configurar marked para processar quebras de linha
 marked.use({ breaks: true });
@@ -238,6 +240,22 @@ export default function ChatClient() {
         // Silenciosamente falha no chat, apenas avisa via toast se necessário
         // O usuário pediu para não mostrar msg de erro no chat para não confundir
         console.warn("Timeout ou erro de conexão:", errorMessage);
+
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        const botErrorMessage: DisplayMessage = { 
+          sender: 'bot', 
+          content: `⚠️ **O servidor está demorando para responder.**\n\nSua mensagem foi enviada, mas não recebemos a confirmação em tempo hábil (${duration}s).\n\n**O que fazer:**\n1. Aguarde alguns instantes.\n2. Clique em **"Carregar Histórico"** no menu lateral para verificar se a resposta já foi processada.\n3. Se o problema persistir, tente novamente mais tarde.`,
+          timestamp: new Date().toISOString(),
+          latency: parseFloat(duration),
+          isTimeoutError: true
+        };
+        setMessages((prev) => {
+          // Evitar duplicação se a última mensagem já for um erro de timeout
+          if (prev.length > 0 && prev[prev.length - 1].isTimeoutError) {
+            return prev;
+          }
+          return [...prev, botErrorMessage];
+        });
       } else {
         toast.error("Erro ao enviar mensagem.");
         // Opcional: Adicionar msg de erro no chat apenas para erros fatais não-timeout
@@ -907,182 +925,189 @@ export default function ChatClient() {
                     msg.sender === "user" ? "justify-end" : ""
                   }`}
                 >
-                  {msg.sender === "bot" && (
+                  {msg.sender === "bot" && !msg.isTimeoutError && (
                     <Bot className="h-6 w-6 text-primary flex-shrink-0" />
                   )}
-                  <div
-                    className={`w-full max-w-[80%] rounded-lg overflow-hidden ${
-                      msg.sender === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    <div className="relative group">
-                      <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
-                        <Clock className="h-3 w-3" />
-                        {msg.timestamp && (
-                          <span className="text-xs font-mono opacity-80">
-                            {new Date(msg.timestamp).toLocaleDateString(
-                              "pt-BR"
-                            )}{" "}
-                            {new Date(msg.timestamp).toLocaleTimeString(
-                              "pt-BR",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              }
-                            )}
-                          </span>
-                        )}
-                        {msg.sender === "bot" && msg.latency && (
-                          <span className="text-xs text-muted-foreground font-mono flex items-center gap-1 ml-2 border-l border-muted-foreground/30 pl-2">
-                            <Clock className="h-3 w-3" />
-                            {formatDuration(msg.latency)}
-                          </span>
-                        )}
-                        {(() => {
-                          if (msg.sender === "user" && index > 0) {
-                            const prevMsg = messages[index - 1];
-                            if (
-                              prevMsg.sender === "bot" &&
-                              msg.timestamp &&
-                              prevMsg.timestamp
-                            ) {
-                              const diff =
-                                (new Date(msg.timestamp).getTime() -
-                                  new Date(prevMsg.timestamp).getTime()) /
-                                1000;
-                              return (
-                                <span className="text-xs text-primary-foreground/80 font-mono flex items-center gap-1 ml-2 border-l border-primary-foreground/30 pl-2">
-                                  <Clock className="h-3 w-3" />
-                                  {formatDuration(diff)}
-                                </span>
-                              );
-                            }
-                          }
-                          return null;
-                        })()}
-                      </div>
-
-                      {renderMessageContent(
-                        msg.content || "",
-                        msg.sender === "user"
-                      )}
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`absolute top-8 right-2 border ${
-                              msg.sender === "user"
-                                ? "bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white"
-                                : "bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary"
-                            }`}
-                            onClick={() => copyToClipboard(msg.content)}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Copiar mensagem</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    {msg.sender === "bot" && msg.fullResponse && (
-                      <div className="mt-3 pt-3 border-t border-muted/30">
-                        <Accordion
-                          type="single"
-                          collapsible
-                          className="w-full"
-                        >
-                          <AccordionItem
-                            value="item-1"
-                            className="border-none"
-                          >
-                            <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
-                              <div className="flex items-center gap-2">
-                                <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                <span className="text-blue-600 dark:text-blue-400">
-                                  Ver Detalhes
-                                </span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-4 space-y-4">
-                              {msg.fullResponse.messages
-                                .filter(
-                                  (m) =>
-                                    m.message_type !== "assistant_message"
-                                )
-                                .map((step, stepIndex) => (
-                                  <div
-                                    key={`${step.id}-${step.message_type}-${stepIndex}`}
-                                    className="space-y-2"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {getStepIcon(step.message_type)}
-                                      <h4 className="font-semibold">
-                                        {step.message_type.replace(/_/g, " ")}
-                                      </h4>
-                                      {step.name && (
-                                        <Badge variant="secondary">
-                                          {step.name}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    {step.reasoning && (
-                                      <p className="italic text-muted-foreground text-base pl-6">
-                                        {step.reasoning}
-                                      </p>
-                                    )}
-                                    {step.tool_call && (
-                                      <div>
-                                        <p className="font-semibold text-base capitalize mb-2">
-                                          Tool Call Arguments:
-                                        </p>
-                                        <JsonViewer
-                                          data={(() => {
-                                            try {
-                                              return typeof step.tool_call
-                                                .arguments === "string"
-                                                ? JSON.parse(
-                                                    step.tool_call.arguments
-                                                  )
-                                                : step.tool_call.arguments;
-                                            } catch {
-                                              return {
-                                                raw: step.tool_call.arguments,
-                                              };
-                                            }
-                                          })()}
-                                        />
+                  {msg.isTimeoutError && (
+                    <ShieldAlert className="h-6 w-6 text-amber-500 flex-shrink-0" />
+                  )}
+                                                      {msg.isTimeoutError ? (
+                                                        <div className="w-full max-w-[80%] p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 shadow-sm">
+                                                          {renderMessageContent(msg.content || "", false)}
+                                                        </div>
+                                                      ) : (                                      <div
+                                        className={`w-full max-w-[80%] rounded-lg overflow-hidden ${
+                                          msg.sender === "user"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "bg-muted"
+                                        }`}
+                                      >
+                                        <div className="relative group">
+                                          <div className="flex items-center gap-2 px-3 py-1 bg-black/10 border-b border-border/20">
+                                            <Clock className="h-3 w-3" />
+                                            {msg.timestamp && (
+                                              <span className="text-xs font-mono opacity-80">
+                                                {new Date(msg.timestamp).toLocaleDateString(
+                                                  "pt-BR"
+                                                )}{" "}
+                                                {new Date(msg.timestamp).toLocaleTimeString(
+                                                  "pt-BR",
+                                                  {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    second: "2-digit",
+                                                  }
+                                                )}
+                                              </span>
+                                            )}
+                                            {msg.sender === "bot" && msg.latency && (
+                                              <span className="text-xs text-muted-foreground font-mono flex items-center gap-1 ml-2 border-l border-muted-foreground/30 pl-2">
+                                                <Clock className="h-3 w-3" />
+                                                {formatDuration(msg.latency)}
+                                              </span>
+                                            )}
+                                            {(() => {
+                                              if (msg.sender === "user" && index > 0) {
+                                                const prevMsg = messages[index - 1];
+                                                if (
+                                                  prevMsg.sender === "bot" &&
+                                                  msg.timestamp &&
+                                                  prevMsg.timestamp
+                                                ) {
+                                                  const diff =
+                                                    (new Date(msg.timestamp).getTime() -
+                                                      new Date(prevMsg.timestamp).getTime()) /
+                                                    1000;
+                                                  return (
+                                                    <span className="text-xs text-primary-foreground/80 font-mono flex items-center gap-1 ml-2 border-l border-primary-foreground/30 pl-2">
+                                                      <Clock className="h-3 w-3" />
+                                                      {formatDuration(diff)}
+                                                    </span>
+                                                  );
+                                                }
+                                              }
+                                              return null;
+                                            })()}
+                                          </div>
+                  
+                                          {renderMessageContent(
+                                            msg.content || "",
+                                            msg.sender === "user"
+                                          )}
+                  
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className={`absolute top-8 right-2 border ${
+                                                  msg.sender === "user"
+                                                    ? "bg-white/20 hover:bg-white/30 border-white/30 hover:border-white/40 text-white"
+                                                    : "bg-primary/10 hover:bg-primary/20 border-primary/20 hover:border-primary/30 text-primary"
+                                                }`}
+                                                onClick={() => copyToClipboard(msg.content)}
+                                              >
+                                                <Copy className="h-3 w-3" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Copiar mensagem</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </div>
+                                        {msg.sender === "bot" && msg.fullResponse && (
+                                          <div className="mt-3 pt-3 border-t border-muted/30">
+                                            <Accordion
+                                              type="single"
+                                              collapsible
+                                              className="w-full"
+                                            >
+                                              <AccordionItem
+                                                value="item-1"
+                                                className="border-none"
+                                              >
+                                                <AccordionTrigger className="px-3 py-2 text-sm font-medium bg-background/50 hover:bg-background/80 rounded-md border border-border hover:border-border/80 transition-colors">
+                                                  <div className="flex items-center gap-2">
+                                                    <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                                    <span className="text-blue-600 dark:text-blue-400">
+                                                      Ver Detalhes
+                                                    </span>
+                                                  </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="p-4 space-y-4">
+                                                  {msg.fullResponse.messages
+                                                    .filter(
+                                                      (m) =>
+                                                        m.message_type !== "assistant_message"
+                                                    )
+                                                    .map((step, stepIndex) => (
+                                                      <div
+                                                        key={`${step.id}-${step.message_type}-${stepIndex}`}
+                                                        className="space-y-2"
+                                                      >
+                                                        <div className="flex items-center gap-2">
+                                                          {getStepIcon(step.message_type)}
+                                                          <h4 className="font-semibold">
+                                                            {step.message_type.replace(/_/g, " ")}
+                                                          </h4>
+                                                          {step.name && (
+                                                            <Badge variant="secondary">
+                                                              {step.name}
+                                                            </Badge>
+                                                          )}
+                                                        </div>
+                                                        {step.reasoning && (
+                                                          <p className="italic text-muted-foreground text-base pl-6">
+                                                            {step.reasoning}
+                                                          </p>
+                                                        )}
+                                                        {step.tool_call && (
+                                                          <div>
+                                                            <p className="font-semibold text-base capitalize mb-2">
+                                                              Tool Call Arguments:
+                                                            </p>
+                                                            <JsonViewer
+                                                              data={(() => {
+                                                                try {
+                                                                  return typeof step.tool_call
+                                                                    .arguments === "string"
+                                                                    ? JSON.parse(
+                                                                        step.tool_call.arguments
+                                                                      )
+                                                                    : step.tool_call.arguments;
+                                                                } catch {
+                                                                  return {
+                                                                    raw: step.tool_call.arguments,
+                                                                  };
+                                                                }
+                                                              })()}
+                                                            />
+                                                          </div>
+                                                        )}
+                                                        {step.tool_return && (
+                                                          <ToolReturnViewer
+                                                            toolReturn={step.tool_return}
+                                                            toolName={step.name || undefined}
+                                                          />
+                                                        )}
+                                                      </div>
+                                                    ))}
+                                                  <div className="space-y-2 pt-2 border-t">
+                                                    <div className="flex items-center gap-2">
+                                                      <BarChart2 className="h-4 w-4 text-purple-500" />
+                                                      <h4 className="font-semibold">
+                                                        Usage Statistics
+                                                      </h4>
+                                                    </div>
+                                                    <JsonViewer data={msg.fullResponse.usage} />
+                                                  </div>
+                                                </AccordionContent>
+                                              </AccordionItem>
+                                            </Accordion>
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                    {step.tool_return && (
-                                      <ToolReturnViewer
-                                        toolReturn={step.tool_return}
-                                        toolName={step.name || undefined}
-                                      />
-                                    )}
-                                  </div>
-                                ))}
-                              <div className="space-y-2 pt-2 border-t">
-                                <div className="flex items-center gap-2">
-                                  <BarChart2 className="h-4 w-4 text-purple-500" />
-                                  <h4 className="font-semibold">
-                                    Usage Statistics
-                                  </h4>
-                                </div>
-                                <JsonViewer data={msg.fullResponse.usage} />
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    )}
-                  </div>
-                  {msg.sender === "user" && (
+                                    )}                  {msg.sender === "user" && (
                     <User className="h-6 w-6 flex-shrink-0" />
                   )}
                 </div>

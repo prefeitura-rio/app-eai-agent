@@ -6,6 +6,7 @@ export interface DisplayMessage {
   fullResponse?: ChatResponseData;
   timestamp?: string;
   latency?: number;
+  isTimeoutError?: boolean;
 }
 
 export interface InstrucaoItem {
