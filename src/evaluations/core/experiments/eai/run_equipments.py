@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import json
 from pathlib import Path
 from datetime import datetime
 
@@ -11,7 +10,6 @@ from src.evaluations.core.eval import (
 )
 from src.utils.log import logger
 
-# Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
     GoldenEquipmentLLMGuidedConversation,
     EquipmentsCorrectnessEvaluator,
