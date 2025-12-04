@@ -56,9 +56,10 @@ class AsyncExperimentRunner:
         upload_to_bq: bool = True,
         output_dir: Union[str, Path] = "./data",
         provider: str = "google_agent_engine",
-        timeout: int = 180,
+        timeout: int = 300,
         polling_interval: int = 2,
         rate_limit_requests_per_minute: int = 60,
+        reasoning_engine_id: Optional[str] = None,
     ):
         self.experiment_name = experiment_name
         self.experiment_description = experiment_description
@@ -74,6 +75,7 @@ class AsyncExperimentRunner:
             timeout=timeout,
             polling_interval=polling_interval,
             rate_limit_requests_per_minute=rate_limit_requests_per_minute,
+            reasoning_engine_id=reasoning_engine_id,
         )
 
         self._evaluator_cache = self._categorize_evaluators()

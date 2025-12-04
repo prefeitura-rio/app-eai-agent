@@ -95,6 +95,7 @@ async def run_experiment():
         # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
         rate_limit_requests_per_minute=10000,
+        # reasoning_engine_id="3875545391445311488", #DHARMA_REASONING_ENGINE_ID
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):

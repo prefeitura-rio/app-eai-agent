@@ -17,6 +17,8 @@ class ActivateSearchEvaluator(BaseOneTurnEvaluator):
         "google_search",
         "equipments_instructions",
         "equipments_by_address",
+        "dharma_search_tool",
+        "web_search_surkai",
         # "public_services_grounded_search",
     ]
 

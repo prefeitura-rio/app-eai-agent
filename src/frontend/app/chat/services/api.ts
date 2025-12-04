@@ -10,6 +10,7 @@ export interface ChatRequestPayload {
   timeout?: number;
   polling_interval?: number;
   provider?: string;
+  reasoning_engine_id?: string;
 }
 
 export interface ToolCall {
@@ -19,6 +20,20 @@ export interface ToolCall {
 }
 
 export interface ToolReturn {
+  text?: string;
+  message?: string;
+  web_search_queries?: string[];
+  sources?: unknown[];
+  documents?: Array<{
+    title: string;
+    collection: string;
+    content: string;
+    id: string;
+    url: string;
+  }>;
+  metadata?: {
+    total_tokens?: number;
+  };
   [key: string]: unknown;
 }
 
@@ -125,10 +140,10 @@ interface ChatApiResponse {
 // --- API Function ---
 
 export async function sendChatMessage(payload: ChatRequestPayload, token: string): Promise<ChatResponseData> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 300000); // 300 segundos (5 minutos)
+  
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 300 segundos (5 minutos)
-    
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/chat`, {
       method: 'POST',
       headers: {
@@ -142,6 +157,11 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
     clearTimeout(timeoutId);
 
     if (!res.ok) {
+      // Tratamento específico para 502 Bad Gateway
+      if (res.status === 502) {
+        throw new Error('O servidor está demorando muito para responder. Aguarde alguns instantes e tente novamente.');
+      }
+
       const errorData = await res.json().catch(() => ({ detail: 'Failed to parse error response.' }));
       throw new Error(errorData.detail || `Request failed with status ${res.status}`);
     }
@@ -155,29 +175,16 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
     return data.response.data;
 
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error("Error sending chat message:", error);
-    
-    let errorMessage = "An unknown error occurred.";
     
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        errorMessage = "Timeout: A requisição demorou mais de 5 minutos para responder.";
-      } else {
-        errorMessage = error.message;
+        throw new Error("Timeout: A requisição demorou mais de 5 minutos para responder.");
       }
     }
     
-    // Retornar um objeto de erro que corresponda à estrutura esperada
-    return {
-      messages: [{
-        id: 'error',
-        date: new Date().toISOString(),
-        name: null,
-        message_type: 'assistant_message',
-        content: `Erro: ${errorMessage}`
-      }],
-      usage: { completion_tokens: 0, prompt_tokens: 0, total_tokens: 0, step_count: 0 }
-    };
+    throw error;
   }
 }
 
@@ -186,7 +193,7 @@ export async function sendChatMessage(payload: ChatRequestPayload, token: string
 export async function getUserHistory(payload: HistoryRequestPayload, token: string): Promise<HistoryResponseData> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 30 segundos timeout
     
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/history`, {
       method: 'POST',
@@ -236,7 +243,7 @@ export async function getUserHistory(payload: HistoryRequestPayload, token: stri
 export async function deleteUserHistory(payload: DeleteHistoryRequestPayload, token: string): Promise<DeleteHistoryResponseData> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 30 segundos timeout
     
     const res = await fetch(`${API_BASE_URL}/api/v1/eai-gateway/history`, {
       method: 'DELETE',

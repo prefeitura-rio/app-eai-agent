@@ -254,13 +254,61 @@ class LangGraphMessageFormatter:
     ) -> List[Dict[str, Any]]:
         """Processa mensagem do tipo AI, podendo gerar múltiplas mensagens."""
         messages = []
-        content = kwargs.get("content", "")
+        raw_content = kwargs.get("content", "")
         tool_calls = kwargs.get("tool_calls", [])
 
         response_metadata = kwargs.get("response_metadata", {})
         usage_md = response_metadata.get("usage_metadata", {})
         output_details = usage_md.get("output_token_details") or {}
+        # reasoning_tokens agora pode vir do metadata OU ser calculado do conteúdo thinking
         reasoning_tokens = output_details.get("reasoning", 0) or 0
+
+        final_content = ""
+        thinking_content = ""
+
+        # Processar conteúdo (pode ser string ou lista)
+        if isinstance(raw_content, list):
+            for item in raw_content:
+                if isinstance(item, dict):
+                    if item.get("type") == "thinking":
+                        thinking_content += item.get("thinking", "")
+                    elif item.get("type") == "text":
+                        final_content += item.get("text", "")
+                elif isinstance(item, str):
+                    final_content += item
+        elif isinstance(raw_content, str):
+            final_content = raw_content
+
+        # Adicionar mensagem de pensamento se houver conteúdo explícito ou tokens de reasoning
+        if thinking_content:
+            messages.append(
+                {
+                    **base_dict,
+                    "id": f"thinking-{base_dict['id'] or uuid.uuid4()}",
+                    "message_type": "reasoning_message",
+                    "source": "reasoner_model",
+                    "reasoning": thinking_content,
+                    "signature": None,
+                }
+            )
+        elif reasoning_tokens > 0:
+            # Fallback para reasoning implícito (sem conteúdo textual exposto)
+            reasoning_text = "Processando..."
+            if tool_calls:
+                reasoning_text = f"Processando chamada para ferramenta {tool_calls[0].get('name', 'unknown')}"
+            elif final_content:
+                reasoning_text = "Processando resposta para o usuário"
+
+            messages.append(
+                {
+                    **base_dict,
+                    "id": f"reasoning-{base_dict['id'] or uuid.uuid4()}",
+                    "message_type": "reasoning_message",
+                    "source": "reasoner_model",
+                    "reasoning": reasoning_text,
+                    "signature": None,
+                }
+            )
 
         if tool_calls:
             # Construir mapeamento de tool_call_id para nome da ferramenta
@@ -270,46 +318,21 @@ class LangGraphMessageFormatter:
                 if tool_call_id:
                     self.tool_call_to_name[tool_call_id] = tool_name
 
-            # Adicionar reasoning message se houver reasoning tokens
-            if reasoning_tokens > 0:
-                messages.append(
-                    {
-                        **base_dict,
-                        "id": base_dict["id"] or f"{uuid.uuid4()}",
-                        "message_type": "reasoning_message",
-                        "source": "reasoner_model",
-                        "reasoning": f"Processando chamada para ferramenta {tool_calls[0].get('name', 'unknown')}",
-                        "signature": None,
-                    }
-                )
-
             # Processar cada tool call
             for tc in tool_calls:
                 messages.append(self._process_tool_call(tc, base_dict))
 
-        elif content:
-            # Adicionar reasoning message se houver reasoning tokens
-            if reasoning_tokens > 0:
-                messages.append(
-                    {
-                        **base_dict,
-                        "id": f"{base_dict['id'] or uuid.uuid4()}",
-                        "message_type": "reasoning_message",
-                        "source": "reasoner_model",
-                        "reasoning": "Processando resposta para o usuário",
-                        "signature": None,
-                    }
-                )
-
+        # Se houver conteúdo final de texto (mesmo com tool calls, às vezes o modelo explica)
+        if final_content:
             # Adicionar assistant message
             messages.append(
                 {
                     **base_dict,
                     "message_type": "assistant_message",
                     "content": (
-                        markdown_to_whatsapp(content)
+                        markdown_to_whatsapp(final_content)
                         if use_whatsapp_format
-                        else content
+                        else final_content
                     ),
                 }
             )
@@ -400,6 +423,7 @@ class LangGraphMessageFormatter:
         input_tokens = 0
         output_tokens = 0
         total_tokens = 0
+        thoughts_tokens = 0
         model_names = set()
 
         for msg in messages_to_process:
@@ -408,20 +432,41 @@ class LangGraphMessageFormatter:
             usage_md = response_metadata.get("usage_metadata", {})
 
             # Mapear campos corretos do Google AI
+            # input
             input_tokens += int(usage_md.get("prompt_token_count", 0) or 0)
+
+            # output (candidates)
             output_tokens += int(usage_md.get("candidates_token_count", 0) or 0)
-            total_tokens += int(usage_md.get("total_token_count", 0) or 0)
+
+            # thoughts (se houver)
+            thoughts_tokens += int(usage_md.get("thoughts_token_count", 0) or 0)
+
+            # total (geralmente a soma, mas usamos o valor retornado se existir)
+            msg_total = int(usage_md.get("total_token_count", 0) or 0)
+            if msg_total == 0:
+                msg_total = (
+                    int(usage_md.get("prompt_token_count", 0) or 0)
+                    + int(usage_md.get("candidates_token_count", 0) or 0)
+                    + int(usage_md.get("thoughts_token_count", 0) or 0)
+                )
+            total_tokens += msg_total
 
             # Coletar model_names
             model_name = response_metadata.get("model_name")
             if model_name:
                 model_names.add(model_name)
 
+        # Se thoughts não estiverem incluídos em output_tokens (candidates),
+        # podemos querer expor isso ou somar.
+        # No Gemini, thoughts são cobrados como output, então faz sentido somar para ter uma noção de "tokens gerados".
+        total_output_tokens = output_tokens + thoughts_tokens
+
         return {
             "message_type": "usage_statistics",
-            "completion_tokens": output_tokens,
+            "completion_tokens": total_output_tokens,  # Inclui pensamentos para refletir geração total
+            "thoughts_tokens": thoughts_tokens,  # Novo campo para expor o total de tokens de pensamento
             "prompt_tokens": input_tokens,
-            "total_tokens": total_tokens or (input_tokens + output_tokens),
+            "total_tokens": total_tokens,
             "step_count": len(
                 {m.get("step_id") for m in self.processed_messages if m.get("step_id")}
             ),

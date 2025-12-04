@@ -116,6 +116,7 @@ class UserWebhookRequest(BaseModel):
     user_number: Optional[str]
     message: str
     provider: Optional[str] = "google_agent_engine"
+    reasoning_engine_id: Optional[str] = None
 
 
 class AgentWebhookResponse(BaseModel):
@@ -177,13 +178,15 @@ class EAIClient:
     def __init__(
         self,
         provider: str = "google_agent_engine",
-        timeout: int = 180,
+        timeout: int = 300,
         polling_interval: int = 2,
         rate_limit_requests_per_minute: int = 60,
+        reasoning_engine_id: Optional[str] = None,
     ):
         self.base_url = env.EAI_GATEWAY_API_URL
         self.timeout = timeout
         self.polling_interval = polling_interval
+        self.reasoning_engine_id = reasoning_engine_id
         self.rate_limiter = GlobalEAIRateLimiter(rate_limit_requests_per_minute)
         headers = (
             {"Authorization": f"Bearer {env.EAI_GATEWAY_API_TOKEN}"}
@@ -293,6 +296,7 @@ class EAIClient:
         self,
         user_number: Optional[str],
         message: str,
+        reasoning_engine_id: Optional[str] = None,
         # agent_id: Optional[str] = None,
     ) -> MessageResponse:
         """
@@ -301,7 +305,10 @@ class EAIClient:
         # send_req = AgentWebhookRequest(agent_id=agent_id, message=message)
         # send_resp = await self.send_message_to_agent(send_req)
         send_req = UserWebhookRequest(
-            user_number=user_number, message=message, provider=self.provider
+            user_number=user_number,
+            message=message,
+            provider=self.provider,
+            reasoning_engine_id=self.reasoning_engine_id or reasoning_engine_id,
         )
         send_resp = await self.message_user_number(send_req)
         message_id = send_resp.message_id
