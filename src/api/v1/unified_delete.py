@@ -165,7 +165,30 @@ async def delete_unified_version(
                     logger.warning(f"Erro ao excluir config {config_id}: {str(e)}")
                     db.rollback()
 
-            # 6. Remover entrada de versão unificada (se existir)
+            # 6. Verificar se é a versão mais recente e reativar a anterior se necessário
+            if prompt_id:
+                latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
+                
+                # Se a versão sendo deletada é a mais recente, precisamos reativar a anterior
+                if latest_prompt and latest_prompt.version == version_number:
+                    logger.info(f"Versão {version_number} é a mais recente, buscando versão anterior para reativar")
+                    
+                    # Buscar a versão anterior (penúltima)
+                    previous_prompt = SystemPromptRepository.get_previous_prompt(db, agent_type)
+                    
+                    if previous_prompt:
+                        # Reativar o prompt anterior
+                        db.query(SystemPrompt).filter(
+                            SystemPrompt.prompt_id == previous_prompt.prompt_id
+                        ).update({"is_active": True})
+                        db.commit()
+                        logger.info(f"Prompt anterior (versão {previous_prompt.version}) reativado com sucesso")
+                        result["reactivated_version"] = previous_prompt.version
+                        result["reactivated_prompt_id"] = str(previous_prompt.prompt_id)
+                    else:
+                        logger.warning("Não há versão anterior para reativar - esta é a única versão de prompt")
+            
+            # 7. Remover entrada de versão unificada (se existir)
             if version:  # Só tenta deletar se existir
                 version_deleted = UnifiedVersionRepository.delete_version_by_number(
                     db, agent_type, version_number
