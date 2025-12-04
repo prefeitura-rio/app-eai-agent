@@ -122,7 +122,35 @@ async def delete_unified_version(
             else:
                 logger.info(f"Limpando registros órfãos da versão {version_number}, sem verificação de proteção")
 
-            # 3. Remover deployments de prompts primeiro (se existir prompt_id)
+            # 3. ANTES de deletar, verificar se é a versão mais recente para prompt e config
+            # Isso deve ser feito ANTES da deleção para garantir que encontramos as versões corretas
+            is_latest_prompt = False
+            is_latest_config = False
+            previous_prompt = None
+            previous_config = None
+            
+            if prompt_id:
+                latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
+                if latest_prompt and latest_prompt.version == version_number:
+                    is_latest_prompt = True
+                    previous_prompt = SystemPromptRepository.get_previous_prompt(db, agent_type)
+                    if previous_prompt:
+                        logger.info(f"Prompt: versão {version_number} é a mais recente, versão {previous_prompt.version} será reativada")
+                    else:
+                        logger.warning("Prompt: não há versão anterior para reativar")
+            
+            if config_id:
+                from src.models.agent_config_model import AgentConfig
+                latest_config = AgentConfigRepository.get_latest_config(db, agent_type)
+                if latest_config and latest_config.version == version_number:
+                    is_latest_config = True
+                    previous_config = AgentConfigRepository.get_previous_config(db, agent_type)
+                    if previous_config:
+                        logger.info(f"Config: versão {version_number} é a mais recente, versão {previous_config.version} será reativada")
+                    else:
+                        logger.warning("Config: não há versão anterior para reativar")
+
+            # 4. Remover deployments de prompts primeiro (se existir prompt_id)
             if prompt_id:
                 try:
                     deployments_deleted = SystemPromptRepository.delete_deployments_by_prompt_ids(
@@ -137,7 +165,7 @@ async def delete_unified_version(
                     logger.warning(f"Erro ao excluir deployments do prompt {prompt_id}: {str(e)}")
                     db.rollback()
 
-            # 4. Remover prompt se existir (mesmo que não exista fisicamente)
+            # 5. Remover prompt e reativar anterior se necessário
             if prompt_id:
                 try:
                     prompt_deleted = SystemPromptRepository.delete_prompt_by_id(db, str(prompt_id))
@@ -145,13 +173,23 @@ async def delete_unified_version(
                         logger.info(f"Prompt {prompt_id} excluído com sucesso")
                         db.commit()  # Commit após excluir prompt
                         items_deleted.append("prompt")
+                        
+                        # Reativar prompt anterior se era o mais recente
+                        if is_latest_prompt and previous_prompt:
+                            db.query(SystemPrompt).filter(
+                                SystemPrompt.prompt_id == previous_prompt.prompt_id
+                            ).update({"is_active": True})
+                            db.commit()
+                            logger.info(f"Prompt anterior (versão {previous_prompt.version}) reativado com sucesso")
+                            result["reactivated_version"] = previous_prompt.version
+                            result["reactivated_prompt_id"] = str(previous_prompt.prompt_id)
                     else:
                         logger.warning(f"Prompt {prompt_id} não foi encontrado na tabela system_prompts")
                 except Exception as e:
                     logger.warning(f"Erro ao excluir prompt {prompt_id}: {str(e)}")
                     db.rollback()
 
-            # 5. Remover configuração se existir (mesmo que não exista fisicamente)
+            # 6. Remover configuração e reativar anterior se necessário
             if config_id:
                 try:
                     config_deleted = AgentConfigRepository.delete_config_by_id(db, str(config_id))
@@ -159,13 +197,24 @@ async def delete_unified_version(
                         logger.info(f"Config {config_id} excluído com sucesso")
                         db.commit()  # Commit após excluir config
                         items_deleted.append("config")
+                        
+                        # Reativar config anterior se era o mais recente
+                        if is_latest_config and previous_config:
+                            from src.models.agent_config_model import AgentConfig
+                            db.query(AgentConfig).filter(
+                                AgentConfig.config_id == previous_config.config_id
+                            ).update({"is_active": True})
+                            db.commit()
+                            logger.info(f"Config anterior (versão {previous_config.version}) reativado com sucesso")
+                            result["reactivated_config_version"] = previous_config.version
+                            result["reactivated_config_id"] = str(previous_config.config_id)
                     else:
                         logger.warning(f"Config {config_id} não foi encontrado na tabela agent_configs")
                 except Exception as e:
                     logger.warning(f"Erro ao excluir config {config_id}: {str(e)}")
                     db.rollback()
-
-            # 6. Remover entrada de versão unificada (se existir)
+            
+            # 7. Remover entrada de versão unificada (se existir)
             if version:  # Só tenta deletar se existir
                 version_deleted = UnifiedVersionRepository.delete_version_by_number(
                     db, agent_type, version_number

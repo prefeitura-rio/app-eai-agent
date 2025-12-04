@@ -68,6 +68,22 @@ class AgentConfigRepository:
         )
 
     @staticmethod
+    def get_previous_config(db: Session, agent_type: str) -> Optional[AgentConfig]:
+        """Busca a penúltima configuração (segunda mais recente) para um tipo de agente.
+        Útil para reativar após deletar a última config.
+        """
+        configs = (
+            db.query(AgentConfig)
+            .filter(AgentConfig.agent_type == agent_type)
+            .order_by(desc(AgentConfig.version))
+            .limit(2)
+            .all()
+        )
+        
+        # Retorna a segunda config se existirem pelo menos 2
+        return configs[1] if len(configs) >= 2 else None
+
+    @staticmethod
     def list_configs(
         db: Session, agent_type: Optional[str] = None, limit: int = 100, offset: int = 0
     ) -> List[AgentConfig]:

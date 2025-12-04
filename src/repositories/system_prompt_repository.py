@@ -158,6 +158,30 @@ class SystemPromptRepository:
         )
 
     @staticmethod
+    def get_previous_prompt(db: Session, agent_type: str) -> Optional[SystemPrompt]:
+        """
+        Busca o penúltimo system prompt (segundo mais recente) para um tipo de agente.
+        Útil para reativar após deletar o último prompt.
+
+        Args:
+            db: Sessão do banco de dados
+            agent_type: Tipo do agente
+
+        Returns:
+            Optional[SystemPrompt]: Penúltimo system prompt ou None
+        """
+        prompts = (
+            db.query(SystemPrompt)
+            .filter(SystemPrompt.agent_type == agent_type)
+            .order_by(desc(SystemPrompt.version))
+            .limit(2)
+            .all()
+        )
+        
+        # Retorna o segundo prompt se existirem pelo menos 2
+        return prompts[1] if len(prompts) >= 2 else None
+
+    @staticmethod
     def list_prompts(
         db: Session, agent_type: Optional[str] = None, limit: int = 100, offset: int = 0
     ) -> List[SystemPrompt]:

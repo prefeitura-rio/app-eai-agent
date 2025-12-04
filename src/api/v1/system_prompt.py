@@ -14,6 +14,7 @@ from src.schemas.system_prompt_schema import (
     SystemPromptHistoryResponse,
     SystemPromptHistoryItem,
     SystemPromptResetResponse,
+    SystemPromptDeleteResponse,
 )
 
 router = APIRouter(
@@ -205,6 +206,74 @@ async def get_system_prompt_by_id(prompt_id: str, db: Session = Depends(get_db))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao obter system prompt por ID: {str(e)}",
+        )
+
+
+@router.delete("/last", response_model=SystemPromptDeleteResponse)
+async def delete_last_system_prompt(
+    agent_type: str = Query(..., description="Tipo do agente"),
+    update_agents: bool = Query(
+        False, description="Atualizar também os agentes existentes com o prompt anterior"
+    ),
+    db: Session = Depends(get_db),
+):
+    """
+    Deleta apenas o último system prompt do histórico e reativa o anterior.
+    
+    Este endpoint é útil quando você quer desfazer a última atualização de prompt
+    sem perder todo o histórico.
+
+    Args:
+        agent_type: Tipo do agente
+        update_agents: Se verdadeiro, também atualiza os agentes existentes com o prompt anterior
+        db: Sessão do banco de dados
+
+    Returns:
+        SystemPromptDeleteResponse: Resposta contendo o resultado da operação
+        
+    Raises:
+        HTTPException 400: Se não houver prompts suficientes para deletar
+        HTTPException 500: Se houver erro durante a operação
+    """
+    try:
+        if not agent_type or agent_type.strip() == "":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="É necessário especificar um tipo de agente válido",
+            )
+
+        result = await system_prompt_service.delete_last_system_prompt(
+            agent_type=agent_type, update_agents=update_agents, db=db
+        )
+
+        message = f"Versão {result['deleted_version']} deletada, versão {result['active_version']} agora está ativa"
+
+        if update_agents:
+            updated_agents = sum(
+                1 for success in result["agents_updated"].values() if success
+            )
+            total_agents = len(result["agents_updated"])
+
+            if total_agents > 0:
+                message += (
+                    f", {updated_agents}/{total_agents} agentes foram atualizados"
+                )
+
+        return SystemPromptDeleteResponse(
+            success=result["success"],
+            agent_type=agent_type,
+            deleted_version=result.get("deleted_version"),
+            active_version=result.get("active_version"),
+            previous_prompt_id=result.get("previous_prompt_id"),
+            agents_updated=result.get("agents_updated", {}),
+            message=message,
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao deletar último system prompt: {str(e)}",
         )
 
 
