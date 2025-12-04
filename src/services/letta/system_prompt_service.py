@@ -331,6 +331,104 @@ class SystemPromptService:
 
         return formatted_prompts
 
+    async def delete_last_system_prompt(
+        self, agent_type: str, update_agents: bool = False, db: Session = None
+    ) -> Dict[str, Any]:
+        """
+        Deleta apenas o último system prompt do histórico e reativa o anterior.
+
+        Args:
+            agent_type: Tipo do agente
+            update_agents: Se deve atualizar os agentes existentes com o prompt anterior
+            db: Sessão do banco de dados
+
+        Returns:
+            Dict: Resultado da operação incluindo versões deletada e ativa
+        """
+        result = {
+            "success": True,
+            "agents_updated": {},
+            "deleted_version": None,
+            "active_version": None,
+            "previous_prompt_id": None,
+        }
+
+        if db is None:
+            with get_db_session() as session:
+                db = session
+
+        try:
+            # Obter o prompt mais recente (último)
+            latest_prompt = SystemPromptRepository.get_latest_prompt(db, agent_type)
+
+            if not latest_prompt:
+                raise ValueError(
+                    f"Nenhum system prompt encontrado para o tipo de agente: {agent_type}"
+                )
+
+            # Obter o penúltimo prompt
+            previous_prompt = SystemPromptRepository.get_previous_prompt(db, agent_type)
+
+            if not previous_prompt:
+                raise ValueError(
+                    f"Não é possível deletar o único system prompt existente para o tipo de agente: {agent_type}. "
+                    f"Use o endpoint de reset se deseja resetar para o padrão."
+                )
+
+            # Armazenar informações antes de deletar
+            deleted_version = latest_prompt.version
+            latest_prompt_id = latest_prompt.prompt_id
+
+            # Deletar deployments relacionados ao último prompt
+            prompt_ids = [latest_prompt_id]
+            SystemPromptRepository.delete_deployments_by_prompt_ids(db, prompt_ids)
+
+            # Deletar o último prompt
+            SystemPromptRepository.delete_prompt_by_id(db, latest_prompt_id)
+
+            # Deletar a versão do controle unificado
+            UnifiedVersionRepository.delete_version_by_number(
+                db, agent_type, deleted_version
+            )
+
+            # Reativar o prompt anterior
+            db.query(SystemPrompt).filter(
+                SystemPrompt.prompt_id == previous_prompt.prompt_id
+            ).update({"is_active": True})
+
+            db.commit()
+            db.refresh(previous_prompt)
+
+            # Atualizar resultado
+            result["deleted_version"] = deleted_version
+            result["active_version"] = previous_prompt.version
+            result["previous_prompt_id"] = previous_prompt.prompt_id
+
+            # Atualizar agentes se solicitado
+            if update_agents:
+                agents_result = await self.update_all_agents_system_prompt(
+                    new_prompt=previous_prompt.content,
+                    agent_type=agent_type,
+                    tags=[agent_type],
+                    db=db,
+                    prompt_id=previous_prompt.prompt_id,
+                )
+                result["agents_updated"] = agents_result
+
+                if agents_result and not all(agents_result.values()):
+                    result["success"] = False
+
+            return result
+
+        except ValueError as ve:
+            # Re-raise ValueError para ser tratado no controller
+            raise ve
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Erro ao deletar último system prompt: {str(e)}")
+            result["success"] = False
+            raise Exception(f"Erro ao deletar último system prompt: {str(e)}")
+
     async def reset_system_prompt(
         self, agent_type: str, update_agents: bool = False, db: Session = None
     ) -> Dict[str, Any]:

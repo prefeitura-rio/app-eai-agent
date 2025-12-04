@@ -162,3 +162,36 @@ class SystemPromptResetResponse(BaseModel):
                 "message": "System prompt resetado com sucesso para 2 agentes.",
             }
         }
+
+
+class SystemPromptDeleteResponse(BaseModel):
+    """Schema para resposta da deleção do último system prompt."""
+
+    success: bool = Field(..., description="Status geral da operação")
+    agent_type: str = Field(..., description="Tipo de agente")
+    deleted_version: Optional[int] = Field(
+        None, description="Versão do prompt que foi deletado"
+    )
+    active_version: Optional[int] = Field(
+        None, description="Versão do prompt que ficou ativo"
+    )
+    previous_prompt_id: Optional[str] = Field(
+        None, description="ID do prompt que foi reativado"
+    )
+    agents_updated: Dict[str, bool] = Field(
+        default_factory=dict, description="Status da atualização dos agentes"
+    )
+    message: str = Field("", description="Mensagem adicional sobre a operação")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "agent_type": "agentic_search",
+                "deleted_version": 5,
+                "active_version": 4,
+                "previous_prompt_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                "agents_updated": {"agt_123456789": True, "agt_987654321": True},
+                "message": "Última versão do system prompt deletada com sucesso.",
+            }
+        }
