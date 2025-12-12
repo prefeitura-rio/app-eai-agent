@@ -35,7 +35,7 @@ Score: <um valor float sendo 0.0 ou 1.0>
 Reasoning: <explicação curta citando quais critérios foram atendidos e quais falharam>
 
 Para o `Reasoning`:
-- Seja direto. Cite o número do critério que causou a reprovação, se houver (ex: "Falhou no Critério 2").
+- Seja direto porém completo. Cite o número e a descrição do critério que causou a reprovação, se houver (ex: "Falhou no Critério 2: informar a data limite para cadastro 30/01/2025").
 - Se aprovado, confirme o cumprimento dos requisitos principais.
 
 Pergunta: {task[prompt]}
