@@ -137,7 +137,7 @@ class SearchRecallEvaluator(BaseOneTurnEvaluator):
     def _extract_google_search_calls(self, agent_response: AgentResponse) -> list[list[str]]:
         """
         Extrai os IDs dos documentos retornados por cada chamada do google_search
-        que tenha o formato Typesense válido.
+        ou dharma_search_tool que tenha o formato Typesense válido.
         
         Retorna uma lista de listas, onde cada lista interna contém os IDs
         dos documentos retornados por uma chamada específica (na ordem retornada).
@@ -151,8 +151,8 @@ class SearchRecallEvaluator(BaseOneTurnEvaluator):
             if step.message_type != "tool_return_message":
                 continue
             
-            if step.content.get("name") != "google_search":
-                continue
+            # if step.content.get("name") != "google_search":
+            #     continue
 
             tool_return = step.content.get("tool_return", {})
             
@@ -161,8 +161,9 @@ class SearchRecallEvaluator(BaseOneTurnEvaluator):
                 continue
             
             # Extrai os IDs dos documentos (mantém a ordem)
-            response = tool_return.get("response", [])
-            doc_ids = [doc.get("id") for doc in response if doc.get("id")]
+            # Suporta tanto 'response' (google_search) quanto 'documents' (dharma_search_tool)
+            docs_list = tool_return.get("response") or tool_return.get("documents", [])
+            doc_ids = [doc.get("id") for doc in docs_list if doc.get("id")]
             
             if doc_ids:
                 search_calls.append(doc_ids)
@@ -172,21 +173,23 @@ class SearchRecallEvaluator(BaseOneTurnEvaluator):
     def _is_valid_typesense_format(self, tool_return: dict) -> bool:
         """
         Verifica se o tool_return tem o formato Typesense válido:
-        - Tem chave 'response' com uma lista
+        - Tem chave 'response' (google_search) ou 'documents' (dharma_search_tool) com uma lista
         - Cada item da lista tem pelo menos 'title' e 'id'
         """
-        if "response" not in tool_return:
+        # Suporta tanto 'response' quanto 'documents'
+        docs_list = tool_return.get("response") or tool_return.get("documents")
+        
+        if not docs_list:
             return False
         
-        response = tool_return.get("response")
-        if not isinstance(response, list):
+        if not isinstance(docs_list, list):
             return False
         
-        if len(response) == 0:
+        if len(docs_list) == 0:
             return False
         
         # Verifica se todos os itens têm 'title' e 'id'
         return all(
             isinstance(item, dict) and "title" in item and "id" in item
-            for item in response
+            for item in docs_list
         )
