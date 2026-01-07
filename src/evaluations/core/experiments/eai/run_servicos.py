@@ -91,9 +91,9 @@ async def run_experiment():
         # LinkCompletenessEvaluator(judge_client),
         # ToolCallingLinkCompletenessEvaluator(judge_client),
         TypesenseFormatEvaluator(judge_client),
-        SearchPrecisionEvaluator(judge_client),
-        SearchRecallEvaluator(judge_client),
-        SearchAveragePrecisionEvaluator(judge_client),
+        SearchPrecisionEvaluator(judge_client), # quantidade de documentos relevantes retornados / total de documentos retornados
+        SearchRecallEvaluator(judge_client), # quantidade de documentos relevantes retornados / total de documentos relevantes existentes
+        SearchAveragePrecisionEvaluator(judge_client), # precisão considerando o ranking dos documentos retornados. Maior peso para documentos relevantes no topo da lista
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -130,8 +130,8 @@ async def run_experiment():
         timeout=180,
         polling_interval=5,
         rate_limit_requests_per_minute=1000,
-        # reasoning_engine_id="5579399187381878784", # DHARMA_REASONING_ENGINE_ID = 5579399187381878784, RIO_FAST_REASONING_ENGINE_ID = 6324744925711695872
-        # reasoning_engine_id="6324744925711695872", # DHARMA_REASONING_ENGINE_ID = 5579399187381878784, RIO_FAST_REASONING_ENGINE_ID = 6324744925711695872
+        # reasoning_engine_id="5579399187381878784", # DHARMA_REASONING_ENGINE_ID = 5579399187381878784, RIO_FAST_2.5_REASONING_ENGINE_ID = 6324744925711695872
+        # reasoning_engine_id="6324744925711695872", # DHARMA_REASONING_ENGINE_ID = 5579399187381878784, RIO_FAST_2.5_REASONING_ENGINE_ID = 6324744925711695872
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
