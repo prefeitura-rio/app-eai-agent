@@ -56,17 +56,18 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
     await update_typesense_parameters(parameters=typesense_params)
+    await_minutes = 3
     logger.info(
-        "✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando 5 minutos..."
+        f"✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando {await_minutes} minutos..."
     )
-    time.sleep(
-        5 * 60
-    )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
+    # time.sleep(
+    #     await_minutes * 60
+    # )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
 
     logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 
     loader = DataLoader(
-        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
+        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=2117378843",  # golden dataset
         # number_rows=3,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
@@ -83,8 +84,8 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     )
 
     # --- 3. Definição da Suíte de Avaliação ---
-    judge_client = AzureOpenAIClient(model_name="gpt-4o")
-    # judge_client = GeminiAIClient(model_name="gemini-1.5-flash-latest")
+    # judge_client = AzureOpenAIClient(model_name="gpt-4o")
+    judge_client = GeminiAIClient(model_name="gemini-2.0-flash-lite")
 
     # Instancia os avaliadores que serão executados
     evaluators_to_run = [
@@ -126,7 +127,7 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 20
+    MAX_CONCURRENCY = 5
     typesense_params_description = {
         "type": typesense_params.get("type"),
         "threshold_semantic": typesense_params.get("threshold_semantic"),
