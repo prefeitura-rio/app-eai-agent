@@ -60,9 +60,9 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     logger.info(
         f"✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando {await_minutes} minutos..."
     )
-    # time.sleep(
-    #     await_minutes * 60
-    # )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
+    time.sleep(
+        await_minutes * 60
+    )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
 
     logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 

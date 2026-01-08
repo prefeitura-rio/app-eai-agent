@@ -237,11 +237,14 @@ class GeminiAIClient(BaseJudgeClient):
     ) -> str:
         logger.info(f"Executando prompt do juiz com o modelo {self.model_name}...")
         try:
-            generate_content_config = types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(
-                    thinking_budget=-1,
-                ),
-            )
+            generate_content_config = types.GenerateContentConfig()
+            if "2.5" in self.model_name or "3.0" in self.model_name:
+                generate_content_config = types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(
+                        thinking_budget=-1,
+                    ),
+                )
+
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
                 contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
