@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from os import getenv
-from typing import List, Dict
+from typing import List, Dict, Optional, Any
 from pathlib import Path
 from src.utils.log import logger
 
@@ -139,3 +139,50 @@ def mask_string(string: str, *, mask: str = "*") -> str:
     first_characters = string[:number_of_starting_characters_to_show]
     last_characters = string[-number_of_ending_characters_to_show:]
     return f"{first_characters}{mask * (length - number_of_characters_to_show * 2)}{last_characters}"  # noqa
+
+
+from infisical_sdk import InfisicalSDKClient
+from src.config import env
+import json
+
+
+async def update_typesense_parameters(
+    parameters: Optional[Dict[str, Any]] = {
+        "type": "semantic",  # options: semantic, hybrid
+        "threshold_semantic": 0.7,  # change between 0 and 1
+        "threshold_keyword": 1,  # do not change
+        "threshold_hybrid": 0.7,  # change between 0 and 1
+        "threshold_ai": 0.85,  # do not change
+        "page": 1,  # do not change
+        "per_page": 10,  # do not change
+        "alpha": 0.7,  # change between 0 and 1 | # 1 -> semantic, 0 -> keyword
+    }
+):
+    # Initialize the client
+    client = InfisicalSDKClient(
+        host=env.INFISICAL_HOST,  # Defaults to https://app.infisical.com
+        token=env.INFISICAL_TOKEN,  # If not set, use the client.auth() methods.
+    )
+
+    # # Use the SDK to interact with Infisical
+    # secrets = client.secrets.list_secrets(
+    #     project_id=env.INFISICAL_PROJECT_ID,
+    #     environment_slug="staging",
+    #     secret_path="/",
+    # )
+    updated_secret = client.secrets.update_secret_by_name(
+        current_secret_name="TYPESENSE_PARAMETERS",
+        project_id=env.INFISICAL_PROJECT_ID,
+        secret_path="/",
+        environment_slug="staging",
+        secret_value=json.dumps(
+            parameters,
+            indent=2,
+            ensure_ascii=False,
+        ),
+        skip_multiline_encoding=False,
+    )
+    if updated_secret:
+        print("Secret updated successfully.")
+    else:
+        print("Failed to update the secret.")

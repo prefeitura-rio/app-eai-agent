@@ -5,8 +5,12 @@ import os
 if os.path.exists("src/config/.env"):
     import dotenv
 
-    dotenv.load_dotenv(dotenv_path="src/config/.env")
+    dotenv.load_dotenv(dotenv_path="src/config/.env", override=True)
 
+
+INFISICAL_HOST = getenv_or_action("INFISICAL_HOST", action="ignore")
+INFISICAL_TOKEN = getenv_or_action("INFISICAL_TOKEN", action="ignore")
+INFISICAL_PROJECT_ID = getenv_or_action("INFISICAL_PROJECT_ID", action="ignore")
 
 LETTA_API_URL = getenv_or_action("LETTA_API_URL", action="ignore")
 LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN", action="ignore")
@@ -22,12 +26,14 @@ LLM_MODEL = getenv_or_action("LLM_MODEL", action="ignore")
 EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL", action="ignore")
 GEMINI_API_KEY = getenv_or_action("GEMINI_API_KEY", action="ignore")
 GEMINI_EVAL_MODEL = getenv_or_action(
-    "GEMINI_EVAL_MODEL", default="gemini-2.5-pro-preview-06-05"
-, action="ignore")
+    "GEMINI_EVAL_MODEL", default="gemini-2.5-pro-preview-06-05", action="ignore"
+)
 
 TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL", action="ignore")
 TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY", action="ignore")
-TYPESENSE_STAGING_BEARER_API_KEY = getenv_or_action("TYPESENSE_STAGING_BEARER_API_KEY", action="ignore")
+TYPESENSE_STAGING_BEARER_API_KEY = getenv_or_action(
+    "TYPESENSE_STAGING_BEARER_API_KEY", action="ignore"
+)
 
 ISSUE_AGENT_ENABLE_SLEEPTIME = (
     getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME", action="ignore").lower() == "false"

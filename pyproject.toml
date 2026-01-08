@@ -41,6 +41,7 @@ dependencies = [
     "pgvector>=0.3.6",
     "langchain>=0.3.27",
     "langchain-google-cloud-sql-pg>=0.14.1",
+    "infisicalsdk>=1.0.14",
 ]
 
 [tool.taskipy.tasks]
