@@ -310,9 +310,10 @@ def upload_dataset_to_bq(dataset_config, filtered_df):
                 if pd.isna(x):
                     return None
                 if isinstance(x, (np.integer, np.floating, np.bool_)):
-                    return x.item() 
+                    return x.item()
                 return x
-            return df.applymap(clean_value)
+
+            return df.map(clean_value)
 
         filtered_df = sanitize_for_bigquery(filtered_df)
 
