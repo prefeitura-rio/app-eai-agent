@@ -1,10 +1,7 @@
 import asyncio
-import uuid
-import pandas as pd
 import logging
-import json
-from typing import Dict, Any, Optional
 from pathlib import Path
+from datetime import datetime
 
 from src.evaluations.core.eval import (
     DataLoader,
@@ -12,10 +9,7 @@ from src.evaluations.core.eval import (
     GeminiAIClient,
     AsyncExperimentRunner,
 )
-from src.services.eai_gateway.api import CreateAgentRequest
-from src.evaluations.core.experiments.batman.data.test_data import UNIFIED_TEST_DATA
 from src.utils.log import logger
-from datetime import datetime
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
@@ -41,9 +35,6 @@ from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
 )
 
-from src.evaluations.core.experiments.eai.evaluators.agent_config import (
-    agent_config_data,
-)
 
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 
