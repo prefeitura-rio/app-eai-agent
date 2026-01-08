@@ -82,6 +82,10 @@ from src.evaluations.core.experiments.eai.evaluators.answer_completeness_old imp
     AnswerCompletenessOldEvaluator,
 )
 
+from src.evaluations.core.experiments.eai.evaluators.tool_invocation_accuracy import (
+    ToolInvocationAccuracyEvaluator,
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator",
     "GoldenLinkInToolCallingEvaluator",
@@ -105,4 +109,5 @@ __all__ = [
     "SearchRecallEvaluator",
     "SearchAveragePrecisionEvaluator",
     "AnswerCompletenessOldEvaluator",
+    "ToolInvocationAccuracyEvaluator",
 ]
