@@ -4,11 +4,13 @@ Base class for Typesense search evaluators.
 Contains shared utility methods for parsing golden documents and extracting search results.
 """
 
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
+from typing import List, Dict, Any, Optional, Set
+from dataclasses import dataclass, field
 
 from src.evaluations.core.eval import (
     AgentResponse,
+    EvaluationTask,
+    EvaluationResult,
     BaseOneTurnEvaluator,
 )
 
@@ -21,6 +23,101 @@ class SearchResult:
     raw_documents: List[Dict[str, Any]]
 
 
+@dataclass
+class TypesenseEvalContext:
+    """
+    Common evaluation context extracted from task and agent response.
+    Shared across all Typesense evaluators.
+    """
+    # Golden data
+    golden_docs: List[str]
+    golden_doc_names: List[str]
+    id_to_name: Dict[str, str]
+    
+    # Returned data
+    search_results: List[SearchResult]
+    returned_ids: List[str]
+    returned_id_to_title: Dict[str, str]
+    queries: List[str]
+    
+    # Computed sets for matching
+    golden_set: Set[str] = field(default_factory=set)
+    returned_set: Set[str] = field(default_factory=set)
+    matched: Set[str] = field(default_factory=set)
+    missing: Set[str] = field(default_factory=set)
+    
+    # Flags
+    has_golden_docs: bool = False
+    has_returned_docs: bool = False
+    
+    def __post_init__(self):
+        self.golden_set = set(self.golden_docs)
+        self.returned_set = set(self.returned_ids)
+        self.matched = self.golden_set.intersection(self.returned_set)
+        self.missing = self.golden_set - self.returned_set
+        self.has_golden_docs = len(self.golden_docs) > 0
+        self.has_returned_docs = len(self.returned_ids) > 0
+    
+    @property
+    def total_expected(self) -> int:
+        return len(self.golden_docs)
+    
+    @property
+    def total_returned(self) -> int:
+        return len(self.returned_ids)
+    
+    @property
+    def total_matched(self) -> int:
+        return len(self.matched)
+    
+    @property
+    def total_missing(self) -> int:
+        return len(self.missing)
+    
+    @property
+    def query_text(self) -> Optional[str]:
+        """Formatted query string."""
+        if not self.queries:
+            return None
+        return self.queries[0] if len(self.queries) == 1 else " | ".join(self.queries)
+    
+    def get_doc_display(self, doc_id: str, include_id: bool = False) -> str:
+        """Get display string for a document."""
+        name = self.id_to_name.get(doc_id) or self.returned_id_to_title.get(doc_id)
+        if include_id:
+            if name:
+                return f"{name} ({doc_id})"
+            return doc_id
+        else:
+            if name:
+                return name
+            return doc_id[:8] if len(doc_id) > 8 else doc_id
+    
+    def get_numbered_doc(
+        self, 
+        index: int, 
+        doc_id: str, 
+        include_id: bool = False,
+        bold: bool = False,
+    ) -> str:
+        """Get numbered display string for a document."""
+        display = self.get_doc_display(doc_id, include_id)
+        if bold:
+            return f"{index}. **{display}**"
+        return f"{index}. {display}"
+    
+    def is_match(self, doc_id: str) -> bool:
+        """Check if doc_id is in the matched set."""
+        return doc_id in self.matched
+    
+    def find_first_match_position(self) -> tuple[Optional[int], Optional[str]]:
+        """Find position of first golden doc in returned results (1-indexed)."""
+        for i, doc_id in enumerate(self.returned_ids):
+            if doc_id in self.golden_set:
+                return (i + 1, doc_id)
+        return (None, None)
+
+
 class BaseTypesenseEvaluator(BaseOneTurnEvaluator):
     """
     Base class for all Typesense search evaluators.
@@ -29,7 +126,83 @@ class BaseTypesenseEvaluator(BaseOneTurnEvaluator):
     - Parsing golden documents from various formats
     - Extracting search results from agent responses
     - Validating Typesense response format
+    - Building evaluation context
     """
+
+    def build_context(
+        self, agent_response: AgentResponse, task: EvaluationTask
+    ) -> TypesenseEvalContext:
+        """
+        Build common evaluation context from task and agent response.
+        This extracts and processes all data needed by evaluators.
+        """
+        # Parse golden documents
+        golden_docs = self.parse_golden_documents(
+            getattr(task, "golden_documents_list", None)
+        )
+        golden_doc_names = self.parse_golden_document_names(
+            getattr(task, "golden_documents_list_names", None)
+        )
+        
+        # Create ID to name mapping
+        id_to_name: Dict[str, str] = {}
+        for i, doc_id in enumerate(golden_docs):
+            if i < len(golden_doc_names) and golden_doc_names[i]:
+                id_to_name[doc_id] = golden_doc_names[i]
+        
+        # Extract search results
+        search_results = self.extract_search_results(agent_response)
+        
+        # Extract returned IDs and titles
+        returned_ids: List[str] = []
+        returned_id_to_title: Dict[str, str] = {}
+        seen: Set[str] = set()
+        for result in search_results:
+            for doc_id, title in zip(result.doc_ids, result.doc_titles):
+                if doc_id not in seen:
+                    returned_ids.append(doc_id)
+                    returned_id_to_title[doc_id] = title
+                    seen.add(doc_id)
+        
+        # Extract queries
+        queries = self.extract_search_queries(agent_response)
+        
+        return TypesenseEvalContext(
+            golden_docs=golden_docs,
+            golden_doc_names=golden_doc_names,
+            id_to_name=id_to_name,
+            search_results=search_results,
+            returned_ids=returned_ids,
+            returned_id_to_title=returned_id_to_title,
+            queries=queries,
+        )
+
+    def no_golden_docs_result(self) -> EvaluationResult:
+        """Return standard result when no golden docs are defined."""
+        return EvaluationResult(
+            score=None,
+            annotations="Sem documentos esperados definidos",
+            has_error=False,
+            error_message=None,
+        )
+
+    def error_result(self, error: Exception) -> EvaluationResult:
+        """Return standard error result."""
+        return EvaluationResult(
+            score=None,
+            annotations=None,
+            has_error=True,
+            error_message=str(error),
+        )
+
+    def success_result(self, score: float, annotations: str) -> EvaluationResult:
+        """Return standard success result."""
+        return EvaluationResult(
+            score=score,
+            annotations=annotations,
+            has_error=False,
+            error_message=None,
+        )
 
     def parse_golden_documents(self, golden_documents_list: Any) -> List[str]:
         """
@@ -252,3 +425,41 @@ class BaseTypesenseEvaluator(BaseOneTurnEvaluator):
             return [str(name).strip() for name in golden_doc_names if name]
         
         return []
+
+    # =========================================================================
+    # Scenario Evaluation Methods
+    # =========================================================================
+
+    def evaluate_scenario(
+        self,
+        ctx: TypesenseEvalContext,
+        compute_score_and_annotation,
+    ) -> EvaluationResult:
+        """
+        Evaluate based on the 4 scenarios. All Typesense evaluators should use this.
+
+        Scenarios:
+            1. Has golden docs + has results -> Score from compute_score_and_annotation()
+            2. Has golden docs + no results  -> Score from compute_score_and_annotation()
+            3. No golden docs + has results  -> Score None
+            4. No golden docs + no results   -> Score None
+
+        Args:
+            ctx: TypesenseEvalContext with all evaluation data
+            compute_score_and_annotation: Callable that receives ctx and returns (score, annotation)
+
+        Returns:
+            EvaluationResult with score and annotation
+        """
+        # Scenarios 3 and 4: No golden docs defined -> Score None
+        if not ctx.has_golden_docs:
+            return EvaluationResult(
+                score=None,
+                annotations="Sem documentos esperados definidos",
+                has_error=False,
+                error_message=None,
+            )
+
+        # Scenarios 1 and 2: Has golden docs defined
+        score, annotation = compute_score_and_annotation(ctx)
+        return self.success_result(score, annotation)

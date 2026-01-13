@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-TypesenseHasMatchEvaluator - Binary metric to check if any golden document was found.
+TypesenseRecallEvaluator - Measures the proportion of golden documents found.
 
-Score = 1 if any match, 0 otherwise
+Score = matched_docs / expected_docs
 """
 
 from src.evaluations.core.eval import (
@@ -16,12 +16,14 @@ from src.evaluations.core.experiments.eai.evaluators.typesense.base import (
 )
 
 
-class TypesenseHasMatchEvaluator(BaseTypesenseEvaluator):
+class TypesenseRecallEvaluator(BaseTypesenseEvaluator):
     """
-    Binary evaluator that checks if at least one golden document appears in the search results.
+    Measures recall: what proportion of expected documents were found.
+    
+    Score = matched_docs / total_expected_docs
     """
 
-    name = "typesense_has_match"
+    name = "typesense_recall"
 
     async def evaluate(
         self, agent_response: AgentResponse, task: EvaluationTask
@@ -33,26 +35,26 @@ class TypesenseHasMatchEvaluator(BaseTypesenseEvaluator):
             return self.error_result(e)
 
     def _compute_score_and_annotation(self, ctx: TypesenseEvalContext) -> tuple:
-        """Compute has_match score and build annotation."""
-        has_match = ctx.total_matched > 0
-        score = 1 if has_match else 0
+        """Compute recall score and build annotation."""
+        score = ctx.total_matched / ctx.total_expected if ctx.total_expected > 0 else 0.0
         
         lines = []
+        lines.append(f"**Recall:** {ctx.total_matched}/{ctx.total_expected} ({score:.0%})")
         
-        if has_match:
-            lines.append(f"**Resultado:** Sim ({ctx.total_matched} doc(s) encontrado(s))")
+        if ctx.matched:
             lines.append("")
-            lines.append("**Docs encontrados:**")
+            lines.append("**Encontrados:**")
             for i, doc_id in enumerate(ctx.matched, 1):
                 lines.append(ctx.get_numbered_doc(i, doc_id))
-        else:
-            if not ctx.has_returned_docs:
-                lines.append("**Resultado:** Nao (nenhuma busca executada)")
-            else:
-                lines.append(f"**Resultado:** Nao (0/{ctx.total_expected} docs encontrados)")
+        
+        if ctx.missing:
+            lines.append("")
+            lines.append("**Faltando:**")
+            for i, doc_id in enumerate(ctx.missing, 1):
+                lines.append(ctx.get_numbered_doc(i, doc_id))
         
         lines.append("")
         lines.append("---")
-        lines.append("*Has Match: 1 se pelo menos um documento esperado foi retornado, 0 caso contrario.*")
+        lines.append("*Recall: Proporcao de documentos esperados que foram encontrados. Formula: encontrados / esperados.*")
         
         return (score, "\n".join(lines))

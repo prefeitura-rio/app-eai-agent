@@ -26,9 +26,16 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ProactivityEvaluator,
     MessageLengthEvaluator,
     AnswerCompletenessOldEvaluator,
-    # New Typesense evaluators
+)
+# Typesense evaluators
+from src.evaluations.core.experiments.eai.evaluators.typesense import (
     TypesenseHasMatchEvaluator,
     TypesenseActivateEvaluator,
+    TypesenseRecallEvaluator,
+    TypesensePrecisionEvaluator,
+    TypesenseAllMatchEvaluator,
+    TypesenseTopKMatchEvaluator,
+    TypesenseMRREvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -91,12 +98,14 @@ async def run_experiment(typesense_params: Dict[str, Any]):
         WhatsAppFormatEvaluator(judge_client),
         ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
-        TypesenseHasMatchEvaluator(
-            judge_client
-        ),  # binário: pelo menos 1 documento esperado foi encontrado nos resultados?
-        TypesenseActivateEvaluator(
-            judge_client
-        ),  # binário: a busca usou Typesense como source?
+        # Typesense evaluators
+        TypesenseActivateEvaluator(judge_client),  # binário: a busca usou Typesense como source?
+        TypesenseHasMatchEvaluator(judge_client),  # binário: pelo menos 1 doc esperado encontrado?
+        TypesenseAllMatchEvaluator(judge_client),  # binário: TODOS os docs esperados encontrados?
+        TypesenseRecallEvaluator(judge_client),  # ratio: matched/expected
+        TypesensePrecisionEvaluator(judge_client),  # ratio: relevant/returned
+        TypesenseTopKMatchEvaluator(judge_client),  # binário: doc esperado no top 3?
+        TypesenseMRREvaluator(judge_client),  # MRR: 1/posição do primeiro match
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]

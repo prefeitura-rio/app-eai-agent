@@ -15,10 +15,10 @@ interface EvaluationsProps {
 }
 
 /**
- * Checks if a string is a simple human-readable text (not JSON, not markdown).
- * Simple text is text that doesn't contain JSON or complex markdown formatting.
+ * Checks if a string is a simple evaluator annotation format.
+ * This format uses ** for bold headers and numbered lists, but not complex markdown.
  */
-const isSimpleText = (content: string): boolean => {
+const isEvaluatorAnnotation = (content: string): boolean => {
     const trimmed = content.trim();
     // Not JSON (doesn't start with { or [)
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
@@ -28,24 +28,72 @@ const isSimpleText = (content: string): boolean => {
     if (trimmed.startsWith('```')) {
         return false;
     }
-    // Contains mostly readable text (no heavy markdown)
-    // Allow basic punctuation but not markdown syntax
-    const hasComplexMarkdown = /^#+\s|`{3}|\*\*|__|\[.*\]\(.*\)/.test(trimmed);
-    return !hasComplexMarkdown;
+    // Check for evaluator annotation patterns: **Header:** or numbered lists
+    const hasEvaluatorFormat = /\*\*[^*]+:\*\*|^\d+\.\s/m.test(trimmed);
+    // Has complex markdown like headers, links, or code
+    const hasComplexMarkdown = /^#+\s|`{3}|\[.*\]\(.*\)/.test(trimmed);
+    return hasEvaluatorFormat && !hasComplexMarkdown;
 };
 
 /**
- * Renders a simple text annotation as a clean, styled text block.
- * Preserves newlines by splitting content into paragraphs.
+ * Renders evaluator annotations with proper formatting.
+ * Handles **bold** text, *italic* descriptions, and numbered lists.
  */
-const SimpleTextRenderer = ({ content }: { content: string }) => {
+const EvaluatorAnnotationRenderer = ({ content }: { content: string }) => {
     const lines = content.split('\n');
+    
+    // Process inline formatting: **bold**
+    const processInlineFormatting = (text: string): React.ReactNode[] => {
+        const result: React.ReactNode[] = [];
+        let lastIndex = 0;
+        const regex = /\*\*(.+?)\*\*/g;
+        let match;
+        
+        while ((match = regex.exec(text)) !== null) {
+            // Add text before the match
+            if (match.index > lastIndex) {
+                result.push(text.slice(lastIndex, match.index));
+            }
+            // Add the bold text
+            result.push(<strong key={match.index}>{match[1]}</strong>);
+            lastIndex = regex.lastIndex;
+        }
+        
+        // Add remaining text
+        if (lastIndex < text.length) {
+            result.push(text.slice(lastIndex));
+        }
+        
+        return result.length > 0 ? result : [text];
+    };
+    
+    const renderLine = (line: string, index: number) => {
+        const trimmed = line.trim();
+        
+        // Empty line = small spacer
+        if (!trimmed) {
+            return <div key={index} className="h-2" />;
+        }
+        
+        // Horizontal rule
+        if (trimmed === '---') {
+            return <hr key={index} className="my-2 border-border" />;
+        }
+        
+        // Italic description line (starts and ends with single *, no ** inside)
+        if (trimmed.startsWith('*') && trimmed.endsWith('*') && !trimmed.startsWith('**') && !trimmed.includes('**')) {
+            const text = trimmed.slice(1, -1);
+            return <p key={index} className="text-xs text-muted-foreground italic">{text}</p>;
+        }
+        
+        // Regular line - process bold formatting
+        return <p key={index}>{processInlineFormatting(line)}</p>;
+    };
+    
     return (
         <div className="p-4 bg-muted/50 border rounded-md">
-            <div className="text-sm text-foreground leading-relaxed space-y-1">
-                {lines.map((line, i) => (
-                    <p key={i}>{line || '\u00A0'}</p>
-                ))}
+            <div className="text-sm text-foreground leading-relaxed">
+                {lines.map((line, i) => renderLine(line, i))}
             </div>
         </div>
     );
@@ -67,9 +115,9 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
     
     // If it's a string
     if (typeof content === 'string') {
-        // First, check if it's simple human-readable text (new evaluators format)
-        if (isSimpleText(content)) {
-            return <SimpleTextRenderer content={content} />;
+        // First, check if it's evaluator annotation format
+        if (isEvaluatorAnnotation(content)) {
+            return <EvaluatorAnnotationRenderer content={content} />;
         }
         
         // Try to parse as JSON
