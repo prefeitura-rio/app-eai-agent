@@ -14,6 +14,43 @@ interface EvaluationsProps {
   evaluations: Evaluation[];
 }
 
+/**
+ * Checks if a string is a simple human-readable text (not JSON, not markdown).
+ * Simple text is text that doesn't contain JSON or complex markdown formatting.
+ */
+const isSimpleText = (content: string): boolean => {
+    const trimmed = content.trim();
+    // Not JSON (doesn't start with { or [)
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        return false;
+    }
+    // Not code blocks
+    if (trimmed.startsWith('```')) {
+        return false;
+    }
+    // Contains mostly readable text (no heavy markdown)
+    // Allow basic punctuation but not markdown syntax
+    const hasComplexMarkdown = /^#+\s|`{3}|\*\*|__|\[.*\]\(.*\)/.test(trimmed);
+    return !hasComplexMarkdown;
+};
+
+/**
+ * Renders a simple text annotation as a clean, styled text block.
+ * Preserves newlines by splitting content into paragraphs.
+ */
+const SimpleTextRenderer = ({ content }: { content: string }) => {
+    const lines = content.split('\n');
+    return (
+        <div className="p-4 bg-muted/50 border rounded-md">
+            <div className="text-sm text-foreground leading-relaxed space-y-1">
+                {lines.map((line, i) => (
+                    <p key={i}>{line || '\u00A0'}</p>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const MarkdownRenderer = ({ content }: { content: string | Record<string, unknown> | null }) => {
     if (!content) return null;
     
@@ -28,10 +65,15 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
         );
     }
     
-    // If it's a string, try to parse as JSON first, then render as markdown
+    // If it's a string
     if (typeof content === 'string') {
+        // First, check if it's simple human-readable text (new evaluators format)
+        if (isSimpleText(content)) {
+            return <SimpleTextRenderer content={content} />;
+        }
+        
+        // Try to parse as JSON
         try {
-            // Try to parse as JSON
             const parsed = JSON.parse(content);
             return (
                 <div className="p-4 bg-muted/50 border rounded-md">
