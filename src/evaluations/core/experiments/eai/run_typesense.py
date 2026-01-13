@@ -8,7 +8,6 @@ from pathlib import Path
 
 from src.evaluations.core.eval import (
     DataLoader,
-    AzureOpenAIClient,
     GeminiAIClient,
     AsyncExperimentRunner,
 )
@@ -19,8 +18,6 @@ from datetime import datetime
 
 # Importa os avaliadores modulares
 from src.evaluations.core.experiments.eai.evaluators import (
-    # GoldenLinkInAnswerEvaluator,
-    # GoldenLinkInToolCallingEvaluator,
     AnswerCompletenessEvaluator,
     AnswerAddressingEvaluator,
     ClarityEvaluator,
@@ -28,14 +25,10 @@ from src.evaluations.core.experiments.eai.evaluators import (
     WhatsAppFormatEvaluator,
     ProactivityEvaluator,
     MessageLengthEvaluator,
-    HasLinkEvaluator,
-    LinkCompletenessEvaluator,
-    ToolCallingLinkCompletenessEvaluator,
-    TypesenseFormatEvaluator,
-    SearchPrecisionEvaluator,
-    SearchRecallEvaluator,
-    SearchAveragePrecisionEvaluator,
     AnswerCompletenessOldEvaluator,
+    # New Typesense evaluators
+    TypesenseHasMatchEvaluator,
+    TypesenseActivateEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -55,26 +48,27 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-    await update_typesense_parameters(parameters=typesense_params)
-    await_minutes = 3
-    logger.info(
-        f"✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando {await_minutes} minutos..."
-    )
-    time.sleep(
-        await_minutes * 60
-    )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
+    # await update_typesense_parameters(parameters=typesense_params)
+    # await_minutes = 3
+    # logger.info(
+    #     f"✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando {await_minutes} minutos..."
+    # )
+    # time.sleep(
+    #     await_minutes * 60
+    # )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
 
     logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 
     loader = DataLoader(
-        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=2117378843",  # golden dataset
-        # number_rows=3,
+        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
+        number_rows=6,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Golden Dataset 2.0 - 2026.1 - Typesense",
+        dataset_name="Golden Dataset 2.0 - 2026.1 - Typesense Nano",
         dataset_description="Dataset de avaliacao de servicos",
         metadata_cols=[
             "golden_documents_list",
+            "golden_documents_list_names",
             "golden_answer",
             "golden_answer_criteria",
         ],
@@ -97,16 +91,12 @@ async def run_experiment(typesense_params: Dict[str, Any]):
         WhatsAppFormatEvaluator(judge_client),
         ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
-        TypesenseFormatEvaluator(judge_client),
-        SearchPrecisionEvaluator(
+        TypesenseHasMatchEvaluator(
             judge_client
-        ),  # quantidade de documentos relevantes retornados / total de documentos retornados
-        SearchRecallEvaluator(
+        ),  # binário: pelo menos 1 documento esperado foi encontrado nos resultados?
+        TypesenseActivateEvaluator(
             judge_client
-        ),  # quantidade de documentos relevantes retornados / total de documentos relevantes existentes
-        SearchAveragePrecisionEvaluator(
-            judge_client
-        ),  # precisão considerando o ranking dos documentos retornados. Maior peso para documentos relevantes no topo da lista
+        ),  # binário: a busca usou Typesense como source?
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -127,7 +117,7 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 5
+    MAX_CONCURRENCY = 2
     typesense_params_description = {
         "type": typesense_params.get("type"),
         "threshold_semantic": typesense_params.get("threshold_semantic"),
@@ -154,7 +144,7 @@ if __name__ == "__main__":
     # generate a set of Typesense parameters to test
     typesense_params_list = []
     # 1. SEMANTIC: Apenas 11 combinações
-    for ts in [0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9]:  # Focar na zona de "sucesso"
+    for ts in [0.7]:  # Focar na zona de "sucesso"
         typesense_params_list.append(
             {
                 "type": "semantic",
@@ -168,20 +158,20 @@ if __name__ == "__main__":
             }
         )
     # 2. HYBRID: Focar na relação entre Alpha e Thresholds
-    for alpha in [0.3, 0.5, 0.7, 0.8]:
-        for th in [0.5, 0.7, 0.8]:
-            typesense_params_list.append(
-                {
-                    "type": "hybrid",
-                    "threshold_semantic": th,
-                    "threshold_hybrid": th,
-                    "alpha": alpha,
-                    "threshold_keyword": 1,
-                    "threshold_ai": 0.85,
-                    "page": 1,
-                    "per_page": 10,
-                }
-            )
+    # for alpha in [0.3, 0.5, 0.7, 0.8]:
+    #     for th in [0.5, 0.7, 0.8]:
+    #         typesense_params_list.append(
+    #             {
+    #                 "type": "hybrid",
+    #                 "threshold_semantic": th,
+    #                 "threshold_hybrid": th,
+    #                 "alpha": alpha,
+    #                 "threshold_keyword": 1,
+    #                 "threshold_ai": 0.85,
+    #                 "page": 1,
+    #                 "per_page": 10,
+    #             }
+    #         )
     for i, typesense_params in enumerate(typesense_params_list):
         logger.info(
             f"🚀 Iniciando experimento {i + 1} de {len(typesense_params_list)}: {typesense_params}"

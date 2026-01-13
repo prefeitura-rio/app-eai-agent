@@ -62,28 +62,19 @@ from src.evaluations.core.experiments.eai.evaluators.tool_calling_link_completen
     ToolCallingLinkCompletenessEvaluator,
 )
 
-from src.evaluations.core.experiments.eai.evaluators.activate_typesense import (
-    TypesenseFormatEvaluator,
-)
-
-from src.evaluations.core.experiments.eai.evaluators.search_precision import (
-    SearchPrecisionEvaluator,
-)
-
-from src.evaluations.core.experiments.eai.evaluators.search_recall import (
-    SearchRecallEvaluator,
-)
-
-from src.evaluations.core.experiments.eai.evaluators.search_average_precision import (
-    SearchAveragePrecisionEvaluator,
-)
-
 from src.evaluations.core.experiments.eai.evaluators.answer_completeness_old import (
     AnswerCompletenessOldEvaluator,
 )
 
 from src.evaluations.core.experiments.eai.evaluators.tool_invocation_accuracy import (
     ToolInvocationAccuracyEvaluator,
+)
+
+# Typesense evaluators (new)
+from src.evaluations.core.experiments.eai.evaluators.typesense import (
+    BaseTypesenseEvaluator,
+    TypesenseHasMatchEvaluator,
+    TypesenseActivateEvaluator,
 )
 
 __all__ = [
@@ -104,10 +95,10 @@ __all__ = [
     "HasLinkEvaluator",
     "LinkCompletenessEvaluator",
     "ToolCallingLinkCompletenessEvaluator",
-    "TypesenseFormatEvaluator",
-    "SearchPrecisionEvaluator",
-    "SearchRecallEvaluator",
-    "SearchAveragePrecisionEvaluator",
     "AnswerCompletenessOldEvaluator",
     "ToolInvocationAccuracyEvaluator",
+    # Typesense evaluators (new)
+    "BaseTypesenseEvaluator",
+    "TypesenseHasMatchEvaluator",
+    "TypesenseActivateEvaluator",
 ]
