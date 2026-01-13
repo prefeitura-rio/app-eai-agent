@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -11,16 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-} from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import ProgressBar from './ProgressBar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,12 +25,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, RefreshCw, Trash2 } from 'lucide-react';
+import { Search, RefreshCw, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { DatasetExperimentInfo, DatasetExample } from '../../types';
 import { deleteExperiment } from '../../services/api';
 import { toast } from 'sonner';
+import ColumnsSelector from './ColumnsSelector';
+import CompactMetricCell from './CompactMetricCell';
 
 interface ClientProps {
   experiments: DatasetExperimentInfo[];
@@ -46,7 +41,12 @@ interface ClientProps {
   datasetName: string;
 }
 
-type SortKey = keyof DatasetExperimentInfo;
+type SortDirection = 'asc' | 'desc' | null;
+
+interface SortConfig {
+  key: string;
+  direction: SortDirection;
+}
 
 export default function DatasetDetailsClient({ 
   experiments: initialExperiments, 
@@ -60,8 +60,27 @@ export default function DatasetDetailsClient({
   const [experiments, setExperiments] = useState<DatasetExperimentInfo[]>(initialExperiments);
   const [examples] = useState<DatasetExample[]>(initialExamples);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'experiment_timestamp', direction: 'descending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'experiment_timestamp', direction: 'desc' });
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  // Get all unique metric names
+  const allMetrics = useMemo(() => {
+    const metrics = new Set<string>();
+    experiments.forEach(exp => {
+      exp.aggregate_metrics.forEach(metric => metrics.add(metric.metric_name));
+    });
+    return Array.from(metrics).sort();
+  }, [experiments]);
+
+  // State for visible columns (default to all)
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(allMetrics);
+
+  // Update visible columns when allMetrics changes (but preserve user selection)
+  useEffect(() => {
+    if (visibleColumns.length === 0 && allMetrics.length > 0) {
+      setVisibleColumns(allMetrics);
+    }
+  }, [allMetrics, visibleColumns.length]);
 
   useEffect(() => {
     setTitle('Experimentos do Dataset');
@@ -72,32 +91,63 @@ export default function DatasetDetailsClient({
     setExperiments(initialExperiments);
   }, [initialExperiments]);
 
-  const allMetrics = useMemo(() => {
-    const metrics = new Set<string>();
-    experiments.forEach(exp => {
-      exp.aggregate_metrics.forEach(metric => metrics.add(metric.metric_name));
-    });
-    return Array.from(metrics).sort();
-  }, [experiments]);
-
+  // Filter and sort experiments
   const filteredAndSortedExperiments = useMemo(() => {
-    let sortableItems = [...experiments];
+    let result = [...experiments];
+    
+    // Filter by search term
     if (searchTerm) {
-      sortableItems = sortableItems.filter(item =>
-        item.experiment_name.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter(item =>
+        item.experiment_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.experiment_description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (sortConfig.key) {
-      sortableItems.sort((a, b) => {
-        const aValue = a[sortConfig.key!];
-        const bValue = b[sortConfig.key!];
-        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+    
+    // Sort
+    if (sortConfig.key && sortConfig.direction) {
+      result.sort((a, b) => {
+        let aValue: number | string;
+        let bValue: number | string;
+        
+        // Check if sorting by a metric
+        if (allMetrics.includes(sortConfig.key)) {
+          const aMetric = a.aggregate_metrics.find(m => m.metric_name === sortConfig.key);
+          const bMetric = b.aggregate_metrics.find(m => m.metric_name === sortConfig.key);
+          aValue = aMetric?.score_statistics?.average ?? -1;
+          bValue = bMetric?.score_statistics?.average ?? -1;
+        } else {
+          // Sort by standard fields
+          switch (sortConfig.key) {
+            case 'experiment_timestamp':
+              aValue = new Date(a.experiment_timestamp).getTime();
+              bValue = new Date(b.experiment_timestamp).getTime();
+              break;
+            case 'experiment_name':
+              aValue = a.experiment_name.toLowerCase();
+              bValue = b.experiment_name.toLowerCase();
+              break;
+            case 'total_runs':
+              aValue = a.aggregate_metrics[0]?.total_runs || 0;
+              bValue = b.aggregate_metrics[0]?.total_runs || 0;
+              break;
+            case 'duration':
+              aValue = a.execution_summary.total_duration_seconds;
+              bValue = b.execution_summary.total_duration_seconds;
+              break;
+            default:
+              aValue = 0;
+              bValue = 0;
+          }
+        }
+        
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
-    return sortableItems;
-  }, [experiments, searchTerm, sortConfig]);
+    
+    return result;
+  }, [experiments, searchTerm, sortConfig, allMetrics]);
 
   const filteredExamples = useMemo(() => {
     if (!searchTerm) return examples;
@@ -112,6 +162,31 @@ export default function DatasetDetailsClient({
     return JSON.stringify(obj, null, 2);
   };
 
+  const handleSort = (key: string) => {
+    setSortConfig(prev => {
+      if (prev.key !== key) {
+        return { key, direction: 'desc' };
+      }
+      if (prev.direction === 'desc') {
+        return { key, direction: 'asc' };
+      }
+      if (prev.direction === 'asc') {
+        return { key: 'experiment_timestamp', direction: 'desc' };
+      }
+      return { key, direction: 'desc' };
+    });
+  };
+
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key !== key) {
+      return null;
+    }
+    if (sortConfig.direction === 'asc') {
+      return <ArrowUp className="h-3 w-3 ml-1" />;
+    }
+    return <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
   const handleDeleteExperiment = async (experimentId: string, experimentName: string) => {
     if (isDeleting === experimentId || !token) return;
     
@@ -119,10 +194,7 @@ export default function DatasetDetailsClient({
     
     try {
       await deleteExperiment(experimentId, datasetId, token);
-      
-      // Remove the experiment from the local state
       setExperiments(prev => prev.filter(exp => exp.experiment_id !== experimentId));
-      
       toast.success(`Experimento "${experimentName}" deletado com sucesso!`);
     } catch (error) {
       console.error('Error deleting experiment:', error);
@@ -132,76 +204,166 @@ export default function DatasetDetailsClient({
     }
   };
 
-  return (
-    <Tabs defaultValue="experiments" className="w-full space-y-4">
-        <div className="flex items-center justify-between">
-            <TabsList>
-                <TabsTrigger value="experiments">Experimentos ({filteredAndSortedExperiments.length})</TabsTrigger>
-                <TabsTrigger value="examples">Exemplos ({filteredExamples.length})</TabsTrigger>
-            </TabsList>
-            <div className="flex items-center justify-between gap-4">
-                <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Filtrar..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
-                </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
-                      <RefreshCw className="h-4 w-4 text-primary" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>Atualizar</p></TooltipContent>
-                </Tooltip>
-            </div>
-        </div>
-      <TabsContent value="experiments">
-        <div className="overflow-x-auto border rounded-lg h-[calc(100vh-16rem)]">
-          <div style={{ minWidth: `${350 + 150 * allMetrics.length + 100 * 4}px` }}>
-            {/* Cabeçalho Fixo */}
-            <div className="grid gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground border-b bg-muted/50 sticky top-0"
-                 style={{ gridTemplateColumns: `minmax(350px, 1.5fr) repeat(${allMetrics.length}, 150px) repeat(4, 100px)` }}>
-              <div className="text-left">Experimento</div>
-              {allMetrics.map(metric => (
-                <div key={metric} className="text-center">{metric}</div>
-              ))}
-              <div className="text-center">Duração Total</div>
-              <div className="text-center">Total Runs</div>
-              <div className="text-center">Sucesso</div>
-              <div className="text-center">Falhas</div>
-            </div>
+  // Only show visible metrics
+  const displayMetrics = useMemo(() => 
+    allMetrics.filter(m => visibleColumns.includes(m)),
+    [allMetrics, visibleColumns]
+  );
 
-            <Accordion type="multiple" className="w-full">
-              {filteredAndSortedExperiments.map((exp) => (
-                <AccordionItem value={exp.experiment_id} key={exp.experiment_id} className="border-b last:border-b-0">
-                  <div className="grid gap-4 w-full items-start p-3 hover:bg-muted/50"
-                       style={{ gridTemplateColumns: `minmax(350px, 1.5fr) repeat(${allMetrics.length}, 150px) repeat(4, 100px)` }}>
-                    <div className="text-left flex items-start justify-between">
-                      <div className="flex-1">
-                        <Link href={`/experiments/${datasetId}/${exp.experiment_id}`} className="font-semibold text-primary hover:underline">
-                          {exp.experiment_name}
-                        </Link>
-                        <p className="text-xs text-muted-foreground mt-1 break-words whitespace-normal">{exp.experiment_description}</p>
-                        <p className="text-xs text-muted-foreground mt-2">{new Date(exp.experiment_timestamp).toLocaleString('pt-BR')}</p>
+  return (
+    <TooltipProvider>
+      <Tabs defaultValue="experiments" className="w-full space-y-4">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="experiments">Experimentos ({filteredAndSortedExperiments.length})</TabsTrigger>
+            <TabsTrigger value="examples">Exemplos ({filteredExamples.length})</TabsTrigger>
+          </TabsList>
+          <div className="flex items-center gap-2">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Filtrar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <ColumnsSelector
+              availableColumns={allMetrics}
+              selectedColumns={visibleColumns}
+              onSelectionChange={setVisibleColumns}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Atualizar</p></TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        <TabsContent value="experiments">
+          <div className="border rounded-lg overflow-auto h-[calc(100vh-12rem)]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    {/* Fixed experiment column */}
+                    <TableHead 
+                      className="min-w-[300px] max-w-[400px] cursor-pointer hover:bg-muted/50 sticky left-0 bg-background z-20"
+                      onClick={() => handleSort('experiment_name')}
+                    >
+                      <div className="flex items-center">
+                        Experimento
+                        {getSortIcon('experiment_name')}
                       </div>
-                      <div className="ml-2 flex-shrink-0">
+                    </TableHead>
+                    
+                    {/* Metric columns */}
+                    {displayMetrics.map(metric => (
+                      <TableHead 
+                        key={metric} 
+                        className="text-center min-w-[120px] max-w-[150px] cursor-pointer hover:bg-muted/50 align-bottom"
+                        onClick={() => handleSort(metric)}
+                      >
+                        <div className="flex flex-col items-center justify-end gap-1 py-2">
+                          <span className="text-xs leading-tight text-center whitespace-normal break-words">{metric}</span>
+                          {getSortIcon(metric)}
+                        </div>
+                      </TableHead>
+                    ))}
+                    
+                    {/* Fixed info columns */}
+                    <TableHead 
+                      className="text-center min-w-[80px] cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('duration')}
+                    >
+                      <div className="flex items-center justify-center">
+                        Duração
+                        {getSortIcon('duration')}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-center min-w-[70px] cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('total_runs')}
+                    >
+                      <div className="flex items-center justify-center">
+                        Runs
+                        {getSortIcon('total_runs')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center min-w-[50px]">OK</TableHead>
+                    <TableHead className="text-center min-w-[50px]">Err</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedExperiments.map((exp) => (
+                    <TableRow 
+                      key={exp.experiment_id} 
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      {/* Experiment info */}
+                      <TableCell className="min-w-[300px] max-w-[400px] sticky left-0 bg-background">
+                        <div className="space-y-1">
+                          <Link 
+                            href={`/experiments/${datasetId}/${exp.experiment_id}`} 
+                            className="font-semibold text-primary hover:underline block"
+                          >
+                            {exp.experiment_name}
+                          </Link>
+                          {exp.experiment_description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {exp.experiment_description}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(exp.experiment_timestamp).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                      </TableCell>
+                      
+                      {/* Metric cells */}
+                      {displayMetrics.map(metric => {
+                        const metricData = exp.aggregate_metrics.find(m => m.metric_name === metric);
+                        const score = metricData?.score_statistics?.average ?? null;
+                        return (
+                          <TableCell key={metric} className="text-center p-1">
+                            <CompactMetricCell score={score} />
+                          </TableCell>
+                        );
+                      })}
+                      
+                      {/* Info columns */}
+                      <TableCell className="text-center text-sm">
+                        {exp.execution_summary.total_duration_seconds.toFixed(1)}s
+                      </TableCell>
+                      <TableCell className="text-center text-sm font-medium">
+                        {exp.aggregate_metrics[0]?.total_runs || 0}
+                      </TableCell>
+                      <TableCell className="text-center text-sm font-medium text-green-600">
+                        {exp.aggregate_metrics[0]?.successful_runs || 0}
+                      </TableCell>
+                      <TableCell className="text-center text-sm font-medium text-red-600">
+                        {Number(exp.error_summary.total_failed_runs) || 0}
+                      </TableCell>
+                      
+                      {/* Delete button */}
+                      <TableCell className="p-1">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                               disabled={isDeleting === exp.experiment_id}
                             >
                               {isDeleting === exp.experiment_id ? (
-                                <RefreshCw className="h-4 w-4 animate-spin" />
+                                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               )}
                             </Button>
                           </AlertDialogTrigger>
@@ -220,66 +382,21 @@ export default function DatasetDetailsClient({
                                 onClick={() => handleDeleteExperiment(exp.experiment_id, exp.experiment_name)}
                                 className="bg-red-500 hover:bg-red-600"
                               >
-                                Deletar Experimento
+                                Deletar
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      </div>
-                    </div>
-                    {allMetrics.map(metric => {
-                      const metricData = exp.aggregate_metrics.find(m => m.metric_name === metric);
-                      const score = metricData?.score_statistics?.average ?? null;
-                      return (
-                        <div key={metric} className="col-span-1 text-center self-center">
-                          <ProgressBar score={score} metricName={metric} />
-                        </div>
-                      );
-                    })}
-                    <div className="text-center font-semibold self-center">{exp.execution_summary.total_duration_seconds.toFixed(2)}s</div>
-                    <div className="text-center font-semibold self-center">{exp.aggregate_metrics[0]?.total_runs || 0}</div>
-                    <div className="text-center font-semibold text-green-600 self-center">{exp.aggregate_metrics[0]?.successful_runs || 0}</div>
-                    <div className="text-center font-semibold text-red-600 self-center">{Number(exp.error_summary.total_failed_runs) || 0}</div>
-                  </div>
-                  <AccordionContent className="p-6 bg-muted/30">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {exp.aggregate_metrics.map(metric => (
-                        <div key={metric.metric_name} className="space-y-3">
-                          <h4 className="font-semibold text-base">{metric.metric_name}</h4>
-                          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                            <span>Média: <strong className="text-foreground">{metric.score_statistics?.average?.toFixed(3) ?? 'N/A'}</strong></span>
-                            <span>Mediana: <strong className="text-foreground">{metric.score_statistics?.median?.toFixed(3) ?? 'N/A'}</strong></span>
-                            <span>Mínimo: <strong className="text-foreground">{metric.score_statistics?.min?.toFixed(3) ?? 'N/A'}</strong></span>
-                            <span>Máximo: <strong className="text-foreground">{metric.score_statistics?.max?.toFixed(3) ?? 'N/A'}</strong></span>
-                            <span>Desvio Padrão: <strong className="text-foreground">{metric.score_statistics?.std_dev?.toFixed(3) ?? 'N/A'}</strong></span>
-                            <span>Duração Média: <strong className="text-foreground">{metric.duration_statistics_seconds?.average?.toFixed(2) ?? 'N/A'}s</strong></span>
-                            <span>Sucessos: <strong className="text-foreground text-green-600">{metric.successful_runs}</strong></span>
-                            <span>Falhas: <strong className="text-foreground text-red-600">{metric.failed_runs}</strong></span>
-                          </div>
-                          <div>
-                            <h5 className="text-sm font-medium mb-2">Distribuição de Scores</h5>
-                            <div className="space-y-1">
-                              {metric.score_distribution.map(dist => (
-                                <div key={dist.value} className="grid grid-cols-[3rem_1fr_5rem] items-center gap-2 text-xs">
-                                  <div className="text-right font-bold">{dist.value.toFixed(1)}</div>
-                                  <Progress value={dist.percentage} className="h-2" />
-                                  <div className="text-left text-muted-foreground">({dist.count} runs) {dist.percentage.toFixed(0)}%</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
           </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="examples">
-        <div className="overflow-auto h-[calc(100vh-16rem)] border rounded-lg">
+        </TabsContent>
+
+        <TabsContent value="examples">
+          <div className="overflow-auto h-[calc(100vh-12rem)] border rounded-lg">
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
@@ -290,23 +407,24 @@ export default function DatasetDetailsClient({
               </TableHeader>
               <TableBody>
                 {filteredExamples.map((ex) => {
-                    const { id, prompt, ...rest } = ex;
-                    return (
-                      <TableRow key={id}>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{id}</TableCell>
-                        <TableCell className="font-mono text-xs">{prompt}</TableCell>
-                        <TableCell>
-                          <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
-                            {formatObjectForDisplay(rest)}
-                          </pre>
-                        </TableCell>
-                      </TableRow>
-                    )
+                  const { id, prompt, ...rest } = ex;
+                  return (
+                    <TableRow key={id}>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{id}</TableCell>
+                      <TableCell className="font-mono text-xs">{prompt}</TableCell>
+                      <TableCell>
+                        <pre className="text-xs bg-muted rounded-md p-3 whitespace-pre-wrap break-all font-mono">
+                          {formatObjectForDisplay(rest)}
+                        </pre>
+                      </TableCell>
+                    </TableRow>
+                  );
                 })}
               </TableBody>
             </Table>
-        </div>
-      </TabsContent>
-    </Tabs>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </TooltipProvider>
   );
 }
