@@ -27,6 +27,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     MessageLengthEvaluator,
     AnswerCompletenessOldEvaluator,
 )
+
 # Typesense evaluators
 from src.evaluations.core.experiments.eai.evaluators.typesense import (
     TypesenseHasMatchEvaluator,
@@ -99,9 +100,15 @@ async def run_experiment(typesense_params: Dict[str, Any]):
         ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
         # Typesense evaluators
-        TypesenseActivateEvaluator(judge_client),  # binário: a busca usou Typesense como source?
-        TypesenseHasMatchEvaluator(judge_client),  # binário: pelo menos 1 doc esperado encontrado?
-        TypesenseAllMatchEvaluator(judge_client),  # binário: TODOS os docs esperados encontrados?
+        TypesenseActivateEvaluator(
+            judge_client
+        ),  # binário: a busca usou Typesense como source?
+        TypesenseHasMatchEvaluator(
+            judge_client
+        ),  # binário: pelo menos 1 doc esperado encontrado?
+        TypesenseAllMatchEvaluator(
+            judge_client
+        ),  # binário: TODOS os docs esperados encontrados?
         TypesenseRecallEvaluator(judge_client),  # ratio: matched/expected
         TypesensePrecisionEvaluator(judge_client),  # ratio: relevant/returned
         TypesenseTopKMatchEvaluator(judge_client),  # binário: doc esperado no top 3?
@@ -152,7 +159,18 @@ async def run_experiment(typesense_params: Dict[str, Any]):
 if __name__ == "__main__":
     # generate a set of Typesense parameters to test
     typesense_params_list = []
-    # 1. SEMANTIC: Apenas 11 combinações
+    typesense_params_list.append(
+        {
+            "type": "keyword",
+            "threshold_semantic": 0.7,
+            "threshold_hybrid": 0.7,  # Irrelevante aqui
+            "alpha": 0.7,  # Irrelevante aqui
+            "threshold_keyword": 1,
+            "threshold_ai": 0.85,
+            "page": 1,
+            "per_page": 10,
+        }
+    )  # 1. SEMANTIC: Apenas 11 combinações
     for ts in [0.7]:  # Focar na zona de "sucesso"
         typesense_params_list.append(
             {

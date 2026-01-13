@@ -10,7 +10,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Settings2, Eye, EyeOff } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 interface MetricsSelectorProps {
   availableMetrics: string[];
@@ -69,26 +68,19 @@ export default function MetricsSelector({
     onSelectionChange([]);
   };
 
-  const hiddenCount = availableMetrics.length - selectedMetrics.length;
-
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Settings2 className="h-4 w-4" />
-          <span>Colunas</span>
-          {hiddenCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
-              {hiddenCount} ocultas
-            </Badge>
-          )}
+          <span>Métricas ({selectedMetrics.length}/{availableMetrics.length})</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <div className="space-y-4">
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="p-3 border-b">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Métricas Visíveis</h4>
-            <div className="flex gap-2">
+            <span className="text-sm font-medium">Métricas visíveis</span>
+            <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -109,29 +101,30 @@ export default function MetricsSelector({
               </Button>
             </div>
           </div>
-          
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {availableMetrics.map((metric) => (
-              <div key={metric} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`metric-${metric}`}
-                  checked={selectedMetrics.includes(metric)}
-                  onCheckedChange={() => handleToggleMetric(metric)}
-                />
-                <Label
-                  htmlFor={`metric-${metric}`}
-                  className="text-sm font-normal cursor-pointer flex-1 truncate"
-                  title={metric}
-                >
-                  {metric}
-                </Label>
-              </div>
-            ))}
-          </div>
-          
-          <div className="text-xs text-muted-foreground pt-2 border-t">
-            {selectedMetrics.length} de {availableMetrics.length} métricas visíveis
-          </div>
+        </div>
+        <div className="max-h-72 overflow-y-auto p-2">
+          {availableMetrics.map((metric) => (
+            <label
+              key={metric}
+              className="flex items-center gap-3 py-2 px-2 hover:bg-muted rounded cursor-pointer"
+            >
+              <Checkbox
+                id={`metric-${metric}`}
+                checked={selectedMetrics.includes(metric)}
+                onCheckedChange={() => handleToggleMetric(metric)}
+                className="shrink-0"
+              />
+              <Label
+                htmlFor={`metric-${metric}`}
+                className="text-sm font-normal cursor-pointer flex-1"
+              >
+                {metric}
+              </Label>
+            </label>
+          ))}
+        </div>
+        <div className="text-xs text-muted-foreground p-3 border-t text-center">
+          {selectedMetrics.length} de {availableMetrics.length} métricas visíveis
         </div>
       </PopoverContent>
     </Popover>
