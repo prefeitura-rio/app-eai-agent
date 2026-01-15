@@ -56,23 +56,23 @@ async def run_experiment(typesense_params: Dict[str, Any]):
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
-    # await update_typesense_parameters(parameters=typesense_params)
-    # await_minutes = 3
-    # logger.info(
-    #     f"✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando {await_minutes} minutos..."
-    # )
-    # time.sleep(
-    #     await_minutes * 60
-    # )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
+    await update_typesense_parameters(parameters=typesense_params)
+    await_minutes = 3
+    logger.info(
+        f"✅ Parâmetros do Typesense atualizados no Infisical com sucesso. Aguardando {await_minutes} minutos..."
+    )
+    time.sleep(
+        await_minutes * 60
+    )  # espera 5 minutos para garantir que o Infisical atualize os parâmetros
 
     logger.info("--- Configurando o Experimento Unificado (Arquitetura Refatorada) ---")
 
     loader = DataLoader(
-        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
-        number_rows=6,
+        source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=1229987938",  # golden dataset
+        # number_rows=6,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Golden Dataset 2.0 - 2026.1 - Typesense Nano",
+        dataset_name="Golden Dataset 2.0 - 2026.1 - Typesense",
         dataset_description="Dataset de avaliacao de servicos",
         metadata_cols=[
             "golden_documents_list",
@@ -159,46 +159,70 @@ async def run_experiment(typesense_params: Dict[str, Any]):
 if __name__ == "__main__":
     # generate a set of Typesense parameters to test
     typesense_params_list = []
-    typesense_params_list.append(
-        {
-            "type": "keyword",
-            "threshold_semantic": 0.7,
-            "threshold_hybrid": 0.7,  # Irrelevante aqui
-            "alpha": 0.7,  # Irrelevante aqui
-            "threshold_keyword": 1,
-            "threshold_ai": 0.85,
-            "page": 1,
-            "per_page": 10,
-        }
-    )  # 1. SEMANTIC: Apenas 11 combinações
-    for ts in [0.7]:  # Focar na zona de "sucesso"
+    # typesense_params_list = [
+    #     {
+    #         "type": "keyword",
+    #         "threshold_semantic": 0,
+    #         "threshold_hybrid": 0,  # Irrelevante aqui
+    #         "alpha": 0,  # Irrelevante aqui
+    #         "threshold_keyword": 0,
+    #         "threshold_ai": 0,
+    #         "page": 1,
+    #         "per_page": 5,
+    #     },
+    # ]
+
+    # 1. SEMANTIC: Apenas 11 combinações
+    for ts in [
+        # 0.0,
+        # 0.1,
+        # 0.2,
+        # 0.3,
+        # 0.4,
+        # 0.5,
+        # 0.6,
+        # 0.7,
+        # 0.8,
+        0.9,
+        1.0,
+    ]:  # Focar na zona de "sucesso"
         typesense_params_list.append(
             {
                 "type": "semantic",
                 "threshold_semantic": ts,
-                "threshold_hybrid": 0.7,  # Irrelevante aqui
-                "alpha": 0.7,  # Irrelevante aqui
-                "threshold_keyword": 1,
-                "threshold_ai": 0.85,
+                "threshold_hybrid": 0,  # Irrelevante aqui
+                "alpha": 0,  # Irrelevante aqui
+                "threshold_keyword": 0,
+                "threshold_ai": 0,
                 "page": 1,
-                "per_page": 10,
+                "per_page": 5,
             }
         )
-    # 2. HYBRID: Focar na relação entre Alpha e Thresholds
-    # for alpha in [0.3, 0.5, 0.7, 0.8]:
-    #     for th in [0.5, 0.7, 0.8]:
-    #         typesense_params_list.append(
-    #             {
-    #                 "type": "hybrid",
-    #                 "threshold_semantic": th,
-    #                 "threshold_hybrid": th,
-    #                 "alpha": alpha,
-    #                 "threshold_keyword": 1,
-    #                 "threshold_ai": 0.85,
-    #                 "page": 1,
-    #                 "per_page": 10,
-    #             }
-    #         )
+    ## 2. HYBRID: Focar na relação entre Alpha e Thresholds
+    for alpha in [
+        0.3,
+        0.5,
+        0.7,
+        0.9,
+    ]:
+        for th in [
+            0.3,
+            0.5,
+            0.7,
+            0.9,
+        ]:
+            typesense_params_list.append(
+                {
+                    "type": "hybrid",
+                    "threshold_semantic": 0,
+                    "threshold_hybrid": th,
+                    "alpha": alpha,
+                    "threshold_keyword": 0,
+                    "threshold_ai": 0,
+                    "page": 1,
+                    "per_page": 5,
+                }
+            )
     for i, typesense_params in enumerate(typesense_params_list):
         logger.info(
             f"🚀 Iniciando experimento {i + 1} de {len(typesense_params_list)}: {typesense_params}"

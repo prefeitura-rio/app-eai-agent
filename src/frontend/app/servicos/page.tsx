@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -43,22 +43,7 @@ export default function ServicosPage() {
     autor: [],
   });
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      setShowAuthModal(true);
-    } else {
-      loadServices();
-      loadFilterOptions();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated()) {
-      loadServices();
-    }
-  }, [filters]);
-
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await listServices(filters);
@@ -81,9 +66,9 @@ export default function ServicosPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
 
-  const loadFilterOptions = async () => {
+  const loadFilterOptions = useCallback(async () => {
     try {
       const options = await getFilterOptions();
       setFilterOptions(options);
@@ -95,7 +80,22 @@ export default function ServicosPage() {
         setShowAuthModal(true);
       }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      setShowAuthModal(true);
+    } else {
+      loadServices();
+      loadFilterOptions();
+    }
+  }, [loadServices, loadFilterOptions]);
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      loadServices();
+    }
+  }, [loadServices]);
 
   const handleAuthSuccess = () => {
     toast.success('Autenticado com sucesso!');

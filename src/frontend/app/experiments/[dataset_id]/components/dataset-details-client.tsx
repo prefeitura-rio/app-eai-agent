@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, RefreshCw, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, RefreshCw, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { DatasetExperimentInfo, DatasetExample } from '../../types';
