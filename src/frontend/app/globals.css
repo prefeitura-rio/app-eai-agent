@@ -138,3 +138,92 @@ body {
 .prose-lg-custom {
     font-size: var(--font-size-lg) !important;
 }
+
+/* Estilos para mensagens do usuário - garantir visibilidade de links e textos coloridos */
+/* Light mode - texto branco */
+.user-message-content a,
+.user-message-content a:visited,
+.user-message-content a:hover,
+.user-message-content a:active {
+    color: white !important;
+    text-decoration: underline !important;
+    text-decoration-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.user-message-content code {
+    color: white !important;
+    background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.user-message-content strong,
+.user-message-content b {
+    color: white !important;
+}
+
+.user-message-content em,
+.user-message-content i {
+    color: white !important;
+}
+
+.user-message-content blockquote {
+    color: white !important;
+    border-left-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.user-message-content h1,
+.user-message-content h2,
+.user-message-content h3,
+.user-message-content h4,
+.user-message-content h5,
+.user-message-content h6 {
+    color: white !important;
+}
+
+.user-message-content mark {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Dark mode - texto preto */
+.dark .user-message-content a,
+.dark .user-message-content a:visited,
+.dark .user-message-content a:hover,
+.dark .user-message-content a:active {
+    color: black !important;
+    text-decoration: underline !important;
+    text-decoration-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.dark .user-message-content code {
+    color: black !important;
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .user-message-content strong,
+.dark .user-message-content b {
+    color: black !important;
+}
+
+.dark .user-message-content em,
+.dark .user-message-content i {
+    color: black !important;
+}
+
+.dark .user-message-content blockquote {
+    color: black !important;
+    border-left-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .user-message-content h1,
+.dark .user-message-content h2,
+.dark .user-message-content h3,
+.dark .user-message-content h4,
+.dark .user-message-content h5,
+.dark .user-message-content h6 {
+    color: black !important;
+}
+
+.dark .user-message-content mark {
+    color: black !important;
+    background-color: rgba(0, 0, 0, 0.2) !important;
+}

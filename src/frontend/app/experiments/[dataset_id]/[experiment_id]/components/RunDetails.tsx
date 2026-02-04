@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Comparison from './Comparison';
-import Evaluations from './Evaluations';
+import Evaluations, { useVisibleMetrics } from './Evaluations';
+import MetricsSelector from './MetricsSelector';
 import ReasoningTimeline from './ReasoningTimeline';
 import ConversationTranscript from './ConversationTranscript';
 
@@ -109,6 +110,13 @@ export default function RunDetails({ run }: RunDetailsProps) {
     const reasoningTrace = isOneTurn 
         ? run.one_turn_analysis.agent_reasoning_trace 
         : [];
+
+    // Hook para gerenciar métricas visíveis
+    const allMetrics = useMemo(() => 
+        analysis.evaluations?.map(e => e.metric_name) || [], 
+        [analysis.evaluations]
+    );
+    const { selectedMetrics, setSelectedMetrics } = useVisibleMetrics(allMetrics);
 
     // Verifica se deve exibir erro para o modo atual
     const shouldShowError = useMemo(() => {
@@ -273,13 +281,21 @@ export default function RunDetails({ run }: RunDetailsProps) {
                     
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3 text-lg">
-                                <CheckSquare className="h-5 w-5 text-primary" />
-                                <span>Avaliações</span>
-                            </CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <CheckSquare className="h-5 w-5 text-primary" />
+                                    <span>Avaliações</span>
+                                </CardTitle>
+                                <MetricsSelector
+                                    availableMetrics={allMetrics}
+                                    selectedMetrics={selectedMetrics}
+                                    onSelectionChange={setSelectedMetrics}
+                                    storageKey="evaluations-visible-metrics"
+                                />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <Evaluations key={viewMode} evaluations={analysis.evaluations} />
+                            <Evaluations key={viewMode} evaluations={analysis.evaluations} selectedMetrics={selectedMetrics} />
                         </CardContent>
                     </Card>
                     

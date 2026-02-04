@@ -5,68 +5,74 @@ import os
 if os.path.exists("src/config/.env"):
     import dotenv
 
-    dotenv.load_dotenv(dotenv_path="src/config/.env")
+    dotenv.load_dotenv(dotenv_path="src/config/.env", override=True)
 
 
-LETTA_API_URL = getenv_or_action("LETTA_API_URL")
-LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN")
+INFISICAL_HOST = getenv_or_action("INFISICAL_HOST", action="ignore")
+INFISICAL_TOKEN = getenv_or_action("INFISICAL_TOKEN", action="ignore")
+INFISICAL_PROJECT_ID = getenv_or_action("INFISICAL_PROJECT_ID", action="ignore")
+
+LETTA_API_URL = getenv_or_action("LETTA_API_URL", action="ignore")
+LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN", action="ignore")
 
 LETTA_STREAM_TIMEOUT = 300
 LETTA_STREAM_RETRY_ATTEMPTS = 3
 LETTA_STREAM_RETRY_DELAY = 2.0
 
-EAI_AGENT_URL = getenv_or_action("EAI_AGENT_URL")
-EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN")
+EAI_AGENT_URL = getenv_or_action("EAI_AGENT_URL", action="ignore")
+EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN", action="ignore")
 
-LLM_MODEL = getenv_or_action("LLM_MODEL")
-EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL")
-GEMINI_API_KEY = getenv_or_action("GEMINI_API_KEY")
+LLM_MODEL = getenv_or_action("LLM_MODEL", action="ignore")
+EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL", action="ignore")
+GEMINI_API_KEY = getenv_or_action("GEMINI_API_KEY", action="ignore")
 GEMINI_EVAL_MODEL = getenv_or_action(
-    "GEMINI_EVAL_MODEL", default="gemini-2.5-pro-preview-06-05"
+    "GEMINI_EVAL_MODEL", default="gemini-2.5-pro-preview-06-05", action="ignore"
 )
 
-TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL")
-TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY")
-TYPESENSE_STAGING_BEARER_API_KEY = getenv_or_action("TYPESENSE_STAGING_BEARER_API_KEY")
+TYPESENSE_CLIENT_API_URL = getenv_or_action("TYPESENSE_CLIENT_API_URL", action="ignore")
+TYPESENSE_CLIENT_API_KEY = getenv_or_action("TYPESENSE_CLIENT_API_KEY", action="ignore")
+TYPESENSE_STAGING_BEARER_API_KEY = getenv_or_action(
+    "TYPESENSE_STAGING_BEARER_API_KEY", action="ignore"
+)
 
 ISSUE_AGENT_ENABLE_SLEEPTIME = (
-    getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME").lower() == "false"
+    getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME", action="ignore").lower() == "false"
 )
 
-PG_URI = getenv_or_action("PG_URI")
+PG_URI = getenv_or_action("PG_URI", action="ignore")
 # --- Conexão direta (TCP) ao Postgres ---
 # Usado quando não queremos depender da SQL Admin API/Connector
-DB_SSL = getenv_or_action("DB_SSL", default="true")
+DB_SSL = getenv_or_action("DB_SSL", default="true", action="ignore")
 
 
-PHOENIX_HOST = getenv_or_action("PHOENIX_HOST")
-PHOENIX_PORT = getenv_or_action("PHOENIX_PORT")
-PHOENIX_ENDPOINT = getenv_or_action("PHOENIX_ENDPOINT")
+PHOENIX_HOST = getenv_or_action("PHOENIX_HOST", action="ignore")
+PHOENIX_PORT = getenv_or_action("PHOENIX_PORT", action="ignore")
+PHOENIX_ENDPOINT = getenv_or_action("PHOENIX_ENDPOINT", action="ignore")
 
 GCP_SERVICE_ACCOUNT_CREDENTIALS = getenv_or_action(
     "GCP_SERVICE_ACCOUNT_CREDENTIALS", action="raise"
 )
 GOOGLE_BIGQUERY_PAGE_SIZE = int(
-    getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100")
+    getenv_or_action("GOOGLE_BIGQUERY_PAGE_SIZE", default="100", action="ignore")
 )
-NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL")
+NOMINATIM_API_URL = getenv_or_action("NOMINATIM_API_URL", action="ignore")
 
-GOOGLE_MAPS_API_URL = getenv_or_action("GOOGLE_MAPS_API_URL")
-GOOGLE_MAPS_API_KEY = getenv_or_action("GOOGLE_MAPS_API_KEY")
+GOOGLE_MAPS_API_URL = getenv_or_action("GOOGLE_MAPS_API_URL", action="ignore")
+GOOGLE_MAPS_API_KEY = getenv_or_action("GOOGLE_MAPS_API_KEY", action="ignore")
 
 
 # OPENAI
-OPENAI_AZURE_API_KEY = getenv_or_action("OPENAI_AZURE_API_KEY")
-OPENAI_AZURE_URL = getenv_or_action("OPENAI_AZURE_URL")
-OPENAI_AZURE_API_VERSION = getenv_or_action("OPENAI_AZURE_API_VERSION")
+OPENAI_AZURE_API_KEY = getenv_or_action("OPENAI_AZURE_API_KEY", action="ignore")
+OPENAI_AZURE_URL = getenv_or_action("OPENAI_AZURE_URL", action="ignore")
+OPENAI_AZURE_API_VERSION = getenv_or_action("OPENAI_AZURE_API_VERSION", action="ignore")
 
-OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY")
+OPENAI_API_KEY = getenv_or_action("OPENAI_API_KEY", action="ignore")
 
 
-GPT_SEARCH_MODEL = getenv_or_action("GPT_SEARCH_MODEL")
+GPT_SEARCH_MODEL = getenv_or_action("GPT_SEARCH_MODEL", action="ignore")
 
-EVAL_MODEL_TYPE = getenv_or_action("EVAL_MODEL_TYPE", default="gpt")
-GPT_EVAL_MODEL = getenv_or_action("GPT_EVAL_MODEL", default="gpt-4o")
+EVAL_MODEL_TYPE = getenv_or_action("EVAL_MODEL_TYPE", default="gpt", action="ignore")
+GPT_EVAL_MODEL = getenv_or_action("GPT_EVAL_MODEL", default="gpt-4o", action="ignore")
 
 USE_LOCAL_API = (
     getenv_or_action("USE_LOCAL_API", default="false", action="ignore") == "true"

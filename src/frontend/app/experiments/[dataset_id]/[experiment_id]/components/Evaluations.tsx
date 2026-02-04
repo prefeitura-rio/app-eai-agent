@@ -1,23 +1,90 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Evaluation } from '../../../types';
 import { Badge } from "@/components/ui/badge";
 import { getScoreBadgeClass } from '@/app/utils/utils';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { AlertTriangle, FileText } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
-interface EvaluationsProps {
-  evaluations: Evaluation[];
-}
+const STORAGE_KEY = 'evaluations-visible-metrics';
+
+/**
+ * Checks if a string is a simple evaluator annotation format.
+ */
+const isEvaluatorAnnotation = (content: string): boolean => {
+    const trimmed = content.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        return false;
+    }
+    if (trimmed.startsWith('```')) {
+        return false;
+    }
+    const hasEvaluatorFormat = /\*\*[^*]+:\*\*|^\d+\.\s/m.test(trimmed);
+    const hasComplexMarkdown = /^#+\s|`{3}|\[.*\]\(.*\)/.test(trimmed);
+    return hasEvaluatorFormat && !hasComplexMarkdown;
+};
+
+/**
+ * Renders evaluator annotations with proper formatting.
+ */
+const EvaluatorAnnotationRenderer = ({ content }: { content: string }) => {
+    const lines = content.split('\n');
+    
+    const processInlineFormatting = (text: string): React.ReactNode[] => {
+        const result: React.ReactNode[] = [];
+        let lastIndex = 0;
+        const regex = /\*\*(.+?)\*\*/g;
+        let match;
+        
+        while ((match = regex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                result.push(text.slice(lastIndex, match.index));
+            }
+            result.push(<strong key={match.index}>{match[1]}</strong>);
+            lastIndex = regex.lastIndex;
+        }
+        
+        if (lastIndex < text.length) {
+            result.push(text.slice(lastIndex));
+        }
+        
+        return result.length > 0 ? result : [text];
+    };
+    
+    const renderLine = (line: string, index: number) => {
+        const trimmed = line.trim();
+        
+        if (!trimmed) {
+            return <div key={index} className="h-2" />;
+        }
+        
+        if (trimmed === '---') {
+            return <hr key={index} className="my-2 border-border" />;
+        }
+        
+        if (trimmed.startsWith('*') && trimmed.endsWith('*') && !trimmed.startsWith('**') && !trimmed.includes('**')) {
+            const text = trimmed.slice(1, -1);
+            return <p key={index} className="text-xs text-muted-foreground italic">{text}</p>;
+        }
+        
+        return <p key={index}>{processInlineFormatting(line)}</p>;
+    };
+    
+    return (
+        <div className="p-4 bg-muted/50 border rounded-md">
+            <div className="text-sm text-foreground leading-relaxed">
+                {lines.map((line, i) => renderLine(line, i))}
+            </div>
+        </div>
+    );
+};
 
 const MarkdownRenderer = ({ content }: { content: string | Record<string, unknown> | null }) => {
     if (!content) return null;
     
-    // If it's an object, render as JSON
     if (typeof content === 'object' && content !== null) {
         return (
             <div className="p-4 bg-muted/50 border rounded-md">
@@ -28,10 +95,12 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
         );
     }
     
-    // If it's a string, try to parse as JSON first, then render as markdown
     if (typeof content === 'string') {
+        if (isEvaluatorAnnotation(content)) {
+            return <EvaluatorAnnotationRenderer content={content} />;
+        }
+        
         try {
-            // Try to parse as JSON
             const parsed = JSON.parse(content);
             return (
                 <div className="p-4 bg-muted/50 border rounded-md">
@@ -41,40 +110,12 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
                 </div>
             );
         } catch {
-            // If not JSON, render as markdown
             marked.use({ breaks: true });
             const html = DOMPurify.sanitize(marked.parse(content) as string);
-            // Check if the content is just simple text wrapped in code blocks
-            const isSimpleTextInCodeBlock = content.trim().startsWith('```') && 
-                                          content.trim().endsWith('```') && 
-                                          !content.includes('**') && 
-                                          !content.includes('*') && 
-                                          !content.includes('[') && 
-                                          !content.includes(']') &&
-                                          !content.includes('#');
-            
-            
-            if (isSimpleTextInCodeBlock) {
-                // Extract the content without the code block markers
-                const cleanContent = content.trim().replace(/^```\s*/, '').replace(/\s*```$/, '');
-                return (
-                    <div
-                        className="p-4 bg-muted/50 border rounded-md prose prose-sm dark:prose-invert max-w-none break-words overflow-wrap-anywhere"
-                        style={{
-                            wordBreak: 'break-word',
-                            overflowWrap: 'break-word',
-                            whiteSpace: 'pre-wrap',
-                            maxWidth: '100%',
-                            overflow: 'visible'
-                        }}
-                        dangerouslySetInnerHTML={{ __html: `<p style="word-break: break-word; overflow-wrap: break-word; white-space: pre-wrap; max-width: 100%;">${cleanContent}</p>` }}
-                    />
-                );
-            }
             
             return (
                 <div
-                    className="p-4 bg-muted/50 border rounded-md prose prose-sm dark:prose-invert max-w-none break-words overflow-wrap-anywhere"
+                    className="p-4 bg-muted/50 border rounded-md prose prose-sm dark:prose-invert max-w-none break-words"
                     style={{
                         wordBreak: 'break-word',
                         overflowWrap: 'break-word',
@@ -83,7 +124,6 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
                         overflow: 'visible'
                     }}
                     dangerouslySetInnerHTML={{ __html: html }}
-
                 />
             );
         }
@@ -92,45 +132,77 @@ const MarkdownRenderer = ({ content }: { content: string | Record<string, unknow
     return null;
 };
 
-export default function Evaluations({ evaluations }: EvaluationsProps) {
+// Hook to manage visible metrics with localStorage persistence
+export function useVisibleMetrics(allMetrics: string[], storageKey: string = STORAGE_KEY) {
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(allMetrics);
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const validMetrics = parsed.filter((m: string) => allMetrics.includes(m));
+                    if (validMetrics.length > 0) {
+                        setSelectedMetrics(validMetrics);
+                    }
+                } catch {
+                    // Ignore
+                }
+            }
+        }
+    }, [storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined' && selectedMetrics.length > 0) {
+            localStorage.setItem(storageKey, JSON.stringify(selectedMetrics));
+        }
+    }, [selectedMetrics, storageKey]);
+    
+    return { selectedMetrics, setSelectedMetrics };
+}
+
+// Main evaluations list component
+interface EvaluationsProps {
+    evaluations: Evaluation[];
+    selectedMetrics: string[];
+}
+
+export default function Evaluations({ evaluations, selectedMetrics }: EvaluationsProps) {
+    const visibleEvaluations = evaluations.filter(e => selectedMetrics.includes(e.metric_name));
+    
     if (!evaluations || evaluations.length === 0) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-lg">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <span>Avaliações</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-base-custom text-muted-foreground p-4">Nenhuma avaliação para este modo.</p>
-                </CardContent>
-            </Card>
+            <p className="text-muted-foreground p-4">Nenhuma avaliação para este modo.</p>
+        );
+    }
+    
+    if (visibleEvaluations.length === 0) {
+        return (
+            <div className="p-4 text-center text-muted-foreground border rounded-md">
+                Nenhuma métrica selecionada. Use o seletor acima para escolher métricas.
+            </div>
         );
     }
 
     return (
-        <Accordion type="multiple" defaultValue={evaluations.map(e => e.metric_name)}>
-            {evaluations.map((ev) => {
-                return (
-                    <AccordionItem value={ev.metric_name} key={ev.metric_name}>
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-3">
-                                <Badge className={getScoreBadgeClass(ev.score ?? 0)}>
-                                    {ev.score?.toFixed(1) ?? 'N/A'}
-                                </Badge>
-                                <span className="font-semibold text-left">{ev.metric_name}</span>
-                                {ev.has_error && <AlertTriangle className="h-4 w-4 text-destructive" />}
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                            <div>
-                                <MarkdownRenderer content={ev.annotations} />
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                );
-            })}
+        <Accordion type="multiple" defaultValue={visibleEvaluations.map(e => e.metric_name)}>
+            {visibleEvaluations.map((ev) => (
+                <AccordionItem value={ev.metric_name} key={ev.metric_name}>
+                    <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center gap-3">
+                            <Badge className={getScoreBadgeClass(ev.score ?? 0)}>
+                                {ev.score?.toFixed(1) ?? 'N/A'}
+                            </Badge>
+                            <span className="font-semibold text-left">{ev.metric_name}</span>
+                            {ev.has_error && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <MarkdownRenderer content={ev.annotations} />
+                    </AccordionContent>
+                </AccordionItem>
+            ))}
         </Accordion>
     );
 }

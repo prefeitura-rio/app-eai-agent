@@ -4,15 +4,15 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ExperimentDetails, ExperimentRun } from '../../../types';
 import { useHeader } from '@/app/contexts/HeaderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from "@/app/utils/utils";
 import { downloadFile } from '@/app/utils/csv';
-import { FileCode, Download, Bot, AlertTriangle } from 'lucide-react';
+import { FileCode, Download, Bot } from 'lucide-react';
 import JsonViewerModal from '@/app/components/JsonViewerModal';
 import DownloadLlmJsonModal, { LlmJsonFilters } from './DownloadLlmJsonModal';
 import RunDetails from './RunDetails';
 import SummaryMetrics from './SummaryMetrics';
 import ExperimentSummary from './ExperimentSummary';
 import Filters from './Filters';
+import RunsList from './RunsList';
 
 interface ClientProps {
   experimentData: ExperimentDetails;
@@ -24,6 +24,15 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
   const [filteredRuns, setFilteredRuns] = useState<ExperimentRun[]>(experimentData.runs);
   const [isJsonModalOpen, setJsonModalOpen] = useState(false);
   const [isLlmModalOpen, setLlmModalOpen] = useState(false);
+  
+  // Get all metric names from aggregate metrics
+  const allMetricNames = useMemo(() => 
+    experimentData.aggregate_metrics?.map(m => m.metric_name) || [],
+    [experimentData.aggregate_metrics]
+  );
+  
+  // State for visible metrics (default to all)
+  const [visibleMetrics, setVisibleMetrics] = useState<string[]>(allMetricNames);
 
   const handleDownloadJson = useCallback(() => {
     const jsonString = JSON.stringify(experimentData, null, 2);
@@ -95,10 +104,6 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
     }
   };
 
-  const hasRunError = (run: ExperimentRun) => {
-    return run.one_turn_analysis.has_error || run.multi_turn_analysis.has_error;
-  };
-
   return (
     <>
       <JsonViewerModal 
@@ -120,38 +125,22 @@ export default function ExperimentDetailsClient({ experimentData }: ClientProps)
             <Filters runs={experimentData.runs} onFilterChange={handleFilterChange} />
           </div>
           <CardContent className="flex-1 overflow-y-auto p-2 min-h-0">
-              <div className="space-y-2">
-                  {filteredRuns.map((run) => {
-                    const hasError = hasRunError(run);
-                    return (
-                      <div
-                          key={run.task_data.id}
-                          onClick={() => setSelectedRunId(run.task_data.id)}
-                          className={cn(
-                              "p-3 rounded-md cursor-pointer border transition-colors relative",
-                              selectedRunId === run.task_data.id
-                                  ? "bg-primary text-primary-foreground"
-                                  : "hover:bg-muted/50",
-                              hasError && "border-destructive/50"
-                          )}
-                      >
-                          <div className="flex items-center justify-between">
-                              <p className="font-semibold text-sm truncate">ID: {run.task_data.id}</p>
-                              {hasError && (
-                                  <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-                              )}
-                          </div>
-                      </div>
-                    );
-                  })}
-              </div>
+              <RunsList
+                  runs={filteredRuns}
+                  selectedRunId={selectedRunId}
+                  onSelectRun={setSelectedRunId}
+              />
           </CardContent>
         </Card>
 
         <div className="h-full overflow-y-auto max-h-full">
           <div className="space-y-6 p-6">
               <ExperimentSummary experimentData={experimentData} />
-              <SummaryMetrics aggregateMetrics={experimentData.aggregate_metrics} />
+              <SummaryMetrics 
+                  aggregateMetrics={experimentData.aggregate_metrics}
+                  visibleMetrics={visibleMetrics}
+                  onVisibleMetricsChange={setVisibleMetrics}
+              />
               {selectedRun && <RunDetails run={selectedRun} />}
           </div>
         </div>

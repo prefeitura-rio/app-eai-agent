@@ -45,7 +45,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -393,25 +392,26 @@ export default function ChatClient() {
   // Helper to render message content
   const renderMessageContent = (content: string, isUser: boolean) => {
     const parsed = marked.parse(content || "", { breaks: true }) as string;
-    const codeTextColor = isUser ? "rgb(255, 255, 255)" : "inherit";
 
     const styledHTML = parsed.replace(
       /<pre><code class="language-json">/g,
-      `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="color: ${codeTextColor}; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
+      `<pre style="background-color: transparent; padding: 1rem; border-radius: 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;"><code class="language-json" style="font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">`
     );
+
+    const baseStyles: React.CSSProperties = isUser
+      ? {}
+      : {
+          "--tw-prose-pre-bg": "rgb(31 41 55)",
+          "--tw-prose-pre-code": "rgb(209 213 219)",
+        } as React.CSSProperties;
 
     return (
       <div
         className={`prose prose-base dark:prose-invert p-4 pr-12 whitespace-pre-wrap prose-base-custom break-words overflow-wrap-anywhere ${
-          isUser ? "text-primary-foreground" : ""
+          isUser ? "text-primary-foreground user-message-content" : ""
         }`}
-        style={
-          {
-            "--tw-prose-pre-bg": "rgb(31 41 55)",
-            "--tw-prose-pre-code": "rgb(209 213 219)",
-          } as React.CSSProperties
-        }
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(styledHTML) }}
+        style={baseStyles}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(styledHTML, { ADD_ATTR: ['style'] }) }}
       />
     );
   };
