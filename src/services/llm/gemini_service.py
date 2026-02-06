@@ -74,9 +74,17 @@ class GeminiService:
 
                     logger.info("Resposta recebida do Gemini")
                     candidate = response.candidates[0]
+                    grounding_chunks = getattr(candidate.grounding_metadata, 'grounding_chunks', None) if candidate.grounding_metadata else None
+                    
+                    if not grounding_chunks:
+                        logger.warning(f"Nenhum grounding_chunks encontrado na resposta (tentativa {retry_count + 1} de {max_retry_attempts})")
+                        retry_attempts -= 1
+                        retry_count += 1
+                        continue
+                    
                     logger.info("Resolvendo URLs das fontes...")
                     resolved_urls_map = await resolve_urls(
-                        urls_to_resolve=candidate.grounding_metadata.grounding_chunks
+                        urls_to_resolve=grounding_chunks
                     )
 
                     logger.info("Processando citações...")
@@ -155,6 +163,18 @@ class GeminiService:
                 )
                 retry_attempts -= 1
                 retry_count += 1
+        
+        return {
+            "id": request_id,
+            "text": "Não foi possível obter resposta com fontes após múltiplas tentativas",
+            "sources": [],
+            "web_search_queries": [],
+            "tokens_metadata": {},
+            "retry_attempts": retry_count,
+            "model": model,
+            "temperature": temperature,
+            "query": query,
+        }
 
     def get_tokens_metadata(self, response: GenerateContentResponse) -> dict:
         usage_metadata = response.usage_metadata
@@ -450,7 +470,20 @@ async def resolve_urls(urls_to_resolve: List[Any]) -> Dict[str, str]:
     Create a map of the vertex ai search urls (very long) to a short url with a unique id for each url.
     Ensures each original URL gets a consistent shortened form while maintaining uniqueness.
     """
-    unique_urls = list(set([uri.web.uri for uri in urls_to_resolve]))
+    if not urls_to_resolve:
+        logger.warning("urls_to_resolve está vazio ou é None")
+        return {}
+    
+    try:
+        unique_urls = list(set([uri.web.uri for uri in urls_to_resolve if hasattr(uri, 'web') and hasattr(uri.web, 'uri')]))
+    except (AttributeError, TypeError) as e:
+        logger.error(f"Erro ao processar urls_to_resolve: {e}")
+        return {}
+    
+    if not unique_urls:
+        logger.warning("Nenhuma URL válida encontrada em urls_to_resolve")
+        return {}
+    
     urls = [{"uri": uri} for uri in unique_urls]
 
     logger.info(f"Resolvendo {len(urls)} URLs únicas")
