@@ -82,7 +82,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                 if (obj.name === 'google_search') {
                                                     const textEntry = entries.find(([key]) => key === 'text');
                                                     if (textEntry && typeof textEntry[1] === 'object' && textEntry[1] !== null) {
-                                                        // Process the nested entries inside the "text" object
+                                                        // Replace entries with the nested entries inside the "text" object
                                                         const nestedEntries = Object.entries(textEntry[1] as Record<string, unknown>);
                                                         const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
                                                         const orderedEntries = [];
@@ -139,15 +139,47 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                                 </div>
                                                             </div>
                                                         ));
+                                                    } else {
+                                                        // If no nested "text" object, show only the "text" field content directly 
+                                                        const textOnlyEntry = entries.find(([key]) => key === 'text');
+                                                        if (textOnlyEntry) {
+                                                            return (
+                                                                <div className="space-y-1">
+                                                                    <div className="pl-4">
+                                                                        {typeof textOnlyEntry[1] === 'string' ? (
+                                                                            <div
+                                                                                className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(textOnlyEntry[1]) as string) }}
+                                                                            />
+                                                                        ) : (
+                                                                            <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                                {JSON.stringify(textOnlyEntry[1], null, 2)}
+                                                                            </pre>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
                                                     }
                                                     
-                                                    // Fallback: if no nested "text" object found, use original logic
+                                                    // Final fallback: use original logic
                                                     const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
                                                     const orderedEntries = [];
                                                     
                                                     // Add fields in the specified order
                                                     for (const field of orderedFields) {
                                                         const entry = entries.find(([key]) => key === field);
+                                                        if (entry) {
+                                                            orderedEntries.push(entry);
+                                                        }
+                                                    }
+                                                    
+                                                    // Add any remaining fields
+                                                    for (const entry of entries) {
+                                                        if (!orderedFields.includes(entry[0])) {
+                                                            orderedEntries.push(entry);
+                                                        }
+                                                    }
                                                         if (entry) {
                                                             orderedEntries.push(entry);
                                                         }
