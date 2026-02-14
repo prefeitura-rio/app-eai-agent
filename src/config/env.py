@@ -22,6 +22,9 @@ LETTA_STREAM_RETRY_DELAY = 2.0
 EAI_AGENT_URL = getenv_or_action("EAI_AGENT_URL", action="ignore")
 EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN", action="ignore")
 
+EAI_AGENT_URL_PROD = getenv_or_action("EAI_AGENT_URL_PROD", action="ignore")
+EAI_AGENT_TOKEN_PROD = getenv_or_action("EAI_AGENT_TOKEN_PROD", action="ignore")
+
 LLM_MODEL = getenv_or_action("LLM_MODEL", action="ignore")
 EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL", action="ignore")
 GEMINI_API_KEY = getenv_or_action("GEMINI_API_KEY", action="ignore")
