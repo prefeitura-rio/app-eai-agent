@@ -43,10 +43,10 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
-        # number_rows=20,
+        number_rows=20,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Rio: Comparação de Modelos - 2026.1",
+        dataset_name="Mini Dataset",
         dataset_description="Dataset de comparação de modelos Rio Fast 2.5, Rio Nano 3.0 e Rio 3.0 Preview, todos utilizando o Google Search como ferramenta de busca.",
         metadata_cols=[
             "golden_documents_list",
