@@ -82,34 +82,37 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                 if (obj.name === 'google_search') {
                                                     const textEntry = entries.find(([key]) => key === 'text');
                                                     if (textEntry) {
-                                                        // Check if tool_return["text"] is an object with structured data
-                                                        if (typeof textEntry[1] === 'object' && textEntry[1] !== null) {
-                                                            const textObject = textEntry[1] as Record<string, unknown>;
-                                                            
+                                                        let textObject: Record<string, unknown> | null = null;
+                                                        
+                                                        // Try to parse if it's a JSON string
+                                                        if (typeof textEntry[1] === 'string') {
+                                                            try {
+                                                                textObject = JSON.parse(textEntry[1]);
+                                                            } catch {
+                                                                // If parsing fails, it's just a regular string
+                                                                return (
+                                                                    <div className="space-y-1">
+                                                                        <div className="pl-4">
+                                                                            <div
+                                                                                className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(textEntry[1]) as string) }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        } else if (typeof textEntry[1] === 'object' && textEntry[1] !== null) {
+                                                            textObject = textEntry[1] as Record<string, unknown>;
+                                                        }
+                                                        
+                                                        // Now handle the parsed object
+                                                        if (textObject) {
                                                             // Check if it has a nested "text" field (tool_return["text"]["text"])
                                                             if (textObject.text && typeof textObject.text === 'object') {
-                                                                // Handle tool_return["text"]["text"] format
                                                                 const nestedTextObject = textObject.text as Record<string, unknown>;
                                                                 const nestedEntries = Object.entries(nestedTextObject);
-                                                                const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
-                                                                const orderedEntries = [];
                                                                 
-                                                                // Add fields in the specified order
-                                                                for (const field of orderedFields) {
-                                                                    const entry = nestedEntries.find(([key]) => key === field);
-                                                                    if (entry) {
-                                                                        orderedEntries.push(entry);
-                                                                    }
-                                                                }
-                                                                
-                                                                // Add any remaining fields
-                                                                for (const entry of nestedEntries) {
-                                                                    if (!orderedFields.includes(entry[0])) {
-                                                                        orderedEntries.push(entry);
-                                                                    }
-                                                                }
-                                                                
-                                                                return orderedEntries.map(([key, value]) => (
+                                                                return nestedEntries.map(([key, value]) => (
                                                                     <div key={key} className="space-y-1">
                                                                         <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
                                                                         <div className="pl-4">
@@ -147,7 +150,7 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                                     </div>
                                                                 ));
                                                             } else {
-                                                                // Handle tool_return["text"] format (textObject has the structured data directly)
+                                                                // Handle tool_return["text"] format - display each field separately
                                                                 const directEntries = Object.entries(textObject);
                                                                 return directEntries.map(([key, value]) => (
                                                                     <div key={key} className="space-y-1">
@@ -187,18 +190,6 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                                                     </div>
                                                                 ));
                                                             }
-                                                        } else {
-                                                            // If tool_return["text"] is a string, show it directly 
-                                                            return (
-                                                                <div className="space-y-1">
-                                                                    <div className="pl-4">
-                                                                        <div
-                                                                            className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
-                                                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(textEntry[1] as string) as string) }}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            );
                                                         }
                                                     }
                                                     
