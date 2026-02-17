@@ -70,6 +70,27 @@ from src.evaluations.core.experiments.eai.evaluators.tool_invocation_accuracy im
     ToolInvocationAccuracyEvaluator,
 )
 
+# Memory experiment evaluators
+from src.evaluations.core.experiments.eai.evaluators.memory_test_llm_guided_conv import (
+    MemoryTestLLMGuidedConversation,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.search_calls_after_second_question import (
+    SearchCallsAfterSecondQuestionEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.critical_fact_accuracy import (
+    CriticalFactAccuracyEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.hallucination_flag import (
+    HallucinationFlagEvaluator,
+)
+
+from src.evaluations.core.experiments.eai.evaluators.token_usage_total import (
+    TokenUsageTotalEvaluator,
+)
+
 # Typesense evaluators (new)
 from src.evaluations.core.experiments.eai.evaluators.typesense import (
     BaseTypesenseEvaluator,
@@ -97,6 +118,12 @@ __all__ = [
     "ToolCallingLinkCompletenessEvaluator",
     "AnswerCompletenessOldEvaluator",
     "ToolInvocationAccuracyEvaluator",
+    # Memory experiment evaluators
+    "MemoryTestLLMGuidedConversation",
+    "SearchCallsAfterSecondQuestionEvaluator",
+    "CriticalFactAccuracyEvaluator",
+    "HallucinationFlagEvaluator",
+    "TokenUsageTotalEvaluator",
     # Typesense evaluators (new)
     "BaseTypesenseEvaluator",
     "TypesenseHasMatchEvaluator",
