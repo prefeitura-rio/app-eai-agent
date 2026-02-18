@@ -7,6 +7,7 @@ from src.services.agent_engine.message_formatter import to_gateway_format
 
 from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine, PostgresLoader
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 
 class GoogleAgentEngineHistory:
@@ -32,7 +33,9 @@ class GoogleAgentEngineHistory:
             pool_recycle=300,
             connect_args=connect_args,
         )
-        checkpointer = await PostgresSaver.create(engine=engine, use_jsonb=True)
+        # Use JsonPlusSerializer for JSONB column compatibility
+        serde = JsonPlusSerializer()
+        checkpointer = await PostgresSaver.create(engine=engine, serde=serde)
         logger.info("Checkpointer inicializado com suporte a JSONB")
         return cls(checkpointer)
 
