@@ -32,8 +32,8 @@ class GoogleAgentEngineHistory:
             pool_recycle=300,
             connect_args=connect_args,
         )
-        checkpointer = await PostgresSaver.create(engine=engine)
-        logger.info("Checkpointer inicializado")
+        checkpointer = await PostgresSaver.create(engine=engine, use_jsonb=True)
+        logger.info("Checkpointer inicializado com suporte a JSONB")
         return cls(checkpointer)
 
     async def get_checkpointer(self) -> PostgresSaver:
@@ -159,35 +159,16 @@ class GoogleAgentEngineHistory:
     async def get_history_bulk_from_last_update(self, last_update: str = "2025-07-25"):
         """
         CREATE VIEW "public"."thread_ids" AS (
-                    WITH tb AS (
-                    SELECT
-                        thread_id,
-                        encode(checkpoint, 'hex') as checkpoint_hex
-                    FROM "public"."checkpoints"
-                    ),
-                    extracted_hex AS (
-                    SELECT
-                        thread_id,
-                        (regexp_matches(
-                        checkpoint_hex,
-                        '((3[0-9]){4}2d(3[0-9]){2}2d(3[0-9]){2}54(3[0-9]){2}3a(3[0-9]){2}3a(3[0-9]){2}2e(3[0-9])+(2b|2d)(3[0-9]){2}3a(3[0-9]){2})'
-                        ))[1] AS timestamp_hex
-                    FROM tb
-                    ),
-                    final_tb AS (
-                    SELECT DISTINCT
-                    thread_id,
-                    (convert_from(decode(timestamp_hex, 'hex'), 'UTF8'))::timestamptz AS checkpoint_ts
-                    FROM extracted_hex
-                    WHERE timestamp_hex IS NOT NULL
-                    )
-
-                    SELECT DISTINCT ON (thread_id)
-                    thread_id,
-                    checkpoint_ts
-                    FROM final_tb
-                    ORDER BY thread_id, checkpoint_ts DESC
+            SELECT DISTINCT ON (thread_id)
+                thread_id,
+                (checkpoint->>'ts')::timestamptz AS checkpoint_ts
+            FROM "public"."checkpoints"
+            WHERE checkpoint->>'ts' IS NOT NULL
+            ORDER BY thread_id, (checkpoint->>'ts')::timestamptz DESC
         );
+        
+        Note: This view now works with JSONB checkpoint column.
+        It extracts the 'ts' field from the checkpoint JSONB object.
         """
 
         query = f"""
