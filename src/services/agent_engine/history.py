@@ -9,29 +9,40 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 
 class GoogleAgentEngineHistory:
-    def __init__(self, checkpointer: AsyncPostgresSaver):
-        self._checkpointer = checkpointer
+    def __init__(self, conn_string: str):
+        self._conn_string = conn_string
+        self._checkpointer = None
+        self._checkpointer_ctx = None
+
+    async def __aenter__(self):
+        """Enter async context manager - initialize checkpointer"""
+        self._checkpointer_ctx = AsyncPostgresSaver.from_conn_string(self._conn_string)
+        self._checkpointer = await self._checkpointer_ctx.__aenter__()
+        await self._checkpointer.setup()
+        logger.info("AsyncPostgresSaver inicializado com sucesso")
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit async context manager - cleanup checkpointer"""
+        if self._checkpointer_ctx:
+            await self._checkpointer_ctx.__aexit__(exc_type, exc_val, exc_tb)
+        return False
 
     @classmethod
-    async def create(cls) -> "GoogleAgentEngineHistory":
-        """Factory method para criar uma instância com checkpointer inicializado"""
+    def create(cls) -> "GoogleAgentEngineHistory":
+        """Factory method to create instance with connection string"""
         # Build connection string from PG_URI or individual env vars
         if hasattr(env, 'PG_URI') and env.PG_URI:
             conn_string = env.PG_URI
         else:
-            # Fallback to building from individual components (like in the script)
+            # Fallback to building from individual components
             user = getattr(env, 'DATABASE_USER', 'postgres')
             password = getattr(env, 'DATABASE_PASSWORD', '')
             host = getattr(env, 'DATABASE_HOST', 'localhost')
             port = getattr(env, 'DATABASE_PORT', '5432')
             database = getattr(env, 'DATABASE', 'postgres')
             conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-        
-        # Use AsyncPostgresSaver (same as the working script)
-        checkpointer = AsyncPostgresSaver.from_conn_string(conn_string)
-        await checkpointer.setup()
-        logger.info("AsyncPostgresSaver inicializado com sucesso")
-        return cls(checkpointer)
+        return cls(conn_string)
 
     async def get_checkpointer(self) -> AsyncPostgresSaver:
         return self._checkpointer
