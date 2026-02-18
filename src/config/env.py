@@ -42,7 +42,17 @@ ISSUE_AGENT_ENABLE_SLEEPTIME = (
     getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME", action="ignore").lower() == "false"
 )
 
+# Database configuration
+# Primary method: Use PG_URI connection string
 PG_URI = getenv_or_action("PG_URI", action="ignore")
+
+# Alternative method: Use individual DATABASE_* variables (fallback if PG_URI not set)
+DATABASE_USER = getenv_or_action("DATABASE_USER", default="postgres", action="ignore")
+DATABASE_PASSWORD = getenv_or_action("DATABASE_PASSWORD", default="", action="ignore")
+DATABASE_HOST = getenv_or_action("DATABASE_HOST", default="localhost", action="ignore")
+DATABASE_PORT = getenv_or_action("DATABASE_PORT", default="5432", action="ignore")
+DATABASE = getenv_or_action("DATABASE", default="postgres", action="ignore")
+
 # --- Conexão direta (TCP) ao Postgres ---
 # Usado quando não queremos depender da SQL Admin API/Connector
 DB_SSL = getenv_or_action("DB_SSL", default="true", action="ignore")

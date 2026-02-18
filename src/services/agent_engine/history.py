@@ -5,41 +5,35 @@ from src.utils.log import logger
 from src.config import env
 from src.services.agent_engine.message_formatter import to_gateway_format
 
-from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine, PostgresLoader
-from langchain_core.runnables import RunnableConfig
-from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 
 class GoogleAgentEngineHistory:
-    def __init__(self, checkpointer: PostgresSaver):
+    def __init__(self, checkpointer: AsyncPostgresSaver):
         self._checkpointer = checkpointer
 
     @classmethod
     async def create(cls) -> "GoogleAgentEngineHistory":
         """Factory method para criar uma instância com checkpointer inicializado"""
-        url = env.PG_URI
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-        connect_args = {}
-        if env.DB_SSL.lower() in ("false", "0", "no"):
-            connect_args = {"ssl": False}
-
-        engine = PostgresEngine.from_engine_args(
-            url=url,
-            pool_pre_ping=True,
-            pool_recycle=300,
-            connect_args=connect_args,
-        )
-        # Use JsonPlusSerializer for JSONB column compatibility
-        serde = JsonPlusSerializer()
-        checkpointer = await PostgresSaver.create(engine=engine, serde=serde)
-        logger.info("Checkpointer inicializado com suporte a JSONB")
+        # Build connection string from PG_URI or individual env vars
+        if hasattr(env, 'PG_URI') and env.PG_URI:
+            conn_string = env.PG_URI
+        else:
+            # Fallback to building from individual components (like in the script)
+            user = getattr(env, 'DATABASE_USER', 'postgres')
+            password = getattr(env, 'DATABASE_PASSWORD', '')
+            host = getattr(env, 'DATABASE_HOST', 'localhost')
+            port = getattr(env, 'DATABASE_PORT', '5432')
+            database = getattr(env, 'DATABASE', 'postgres')
+            conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        
+        # Use AsyncPostgresSaver (same as the working script)
+        checkpointer = AsyncPostgresSaver.from_conn_string(conn_string)
+        await checkpointer.setup()
+        logger.info("AsyncPostgresSaver inicializado com sucesso")
         return cls(checkpointer)
 
-    async def get_checkpointer(self) -> PostgresSaver:
+    async def get_checkpointer(self) -> AsyncPostgresSaver:
         return self._checkpointer
 
     async def _get_single_user_history(
@@ -49,13 +43,16 @@ class GoogleAgentEngineHistory:
         use_whatsapp_format: bool = True,
     ) -> tuple[str, list]:
         """Método auxiliar para processar histórico de um único usuário"""
-        config = RunnableConfig(configurable={"thread_id": user_id})
+        config = {"configurable": {"thread_id": user_id}}
 
-        state = await self._checkpointer.aget(config=config)
-        if not state:
+        # Use aget_tuple (same as the working script)
+        checkpoint_tuple = await self._checkpointer.aget_tuple(config)
+        
+        if not checkpoint_tuple:
             return user_id, []
-
-        messages = state.get("channel_values", {}).get("messages", [])
+        
+        checkpoint = checkpoint_tuple.checkpoint
+        messages = checkpoint.get("channel_values", {}).get("messages", [])
         # logger.info(messages)
 
         letta_payload = to_gateway_format(
@@ -97,33 +94,41 @@ class GoogleAgentEngineHistory:
 
     async def _delete_user_history(self, user_id: str, table_id: str = "checkpoints"):
         """Deleta o histórico de um usuário específico"""
-        from sqlalchemy import text
+        import asyncpg
 
-        # Definir a função que será executada com a conexão
-        async def execute_delete():
+        try:
+            # Build connection string
+            if hasattr(env, 'PG_URI') and env.PG_URI:
+                conn_string = env.PG_URI
+            else:
+                user = getattr(env, 'DATABASE_USER', 'postgres')
+                password = getattr(env, 'DATABASE_PASSWORD', '')
+                host = getattr(env, 'DATABASE_HOST', 'localhost')
+                port = getattr(env, 'DATABASE_PORT', '5432')
+                database = getattr(env, 'DATABASE', 'postgres')
+                conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+            
             query = f"""
                 DELETE 
                 FROM "public"."{table_id}" 
-                WHERE thread_id = '{user_id}'
+                WHERE thread_id = $1
             """
-            query_line = " ".join([line.strip() for line in query.split("\n")])
-            pool = self._checkpointer._engine._pool
-            async with pool.connect() as conn:
-                result = await conn.execute(text(query_line))
-                await conn.commit()
-                deleted_count = result.rowcount
-                logger.info(f"Linhas deletadas: {deleted_count}")
-            return deleted_count
-
-        try:
-            # Criar uma coroutine wrapper que chama a função
-            coro = execute_delete()
-            deleted_count = await self._checkpointer._engine._run_as_async(coro)
+            
+            conn = await asyncpg.connect(conn_string)
+            try:
+                result = await conn.execute(query, user_id)
+                # Extract number of deleted rows from result string like "DELETE 5"
+                deleted_count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
+                logger.info(f"Linhas deletadas de {table_id}: {deleted_count}")
+            finally:
+                await conn.close()
+            
             return {
                 "result": "success",
                 "deleted_rows": deleted_count,
             }
         except Exception as e:
+            logger.error(f"Erro ao deletar histórico de {table_id}: {e}")
             return {
                 "result": "error",
                 "error": str(e),
@@ -173,25 +178,39 @@ class GoogleAgentEngineHistory:
         Note: This view now works with JSONB checkpoint column.
         It extracts the 'ts' field from the checkpoint JSONB object.
         """
+        import asyncpg
 
-        query = f"""
+        query = """
             SELECT 
                 thread_id,
                 checkpoint_ts::text
             FROM "public"."thread_ids_2"
         """
 
-        engine = self._checkpointer._engine
-        loader = await PostgresLoader.create(engine=engine, query=query)
-        docs = await loader.aload()
-        logger.info(docs)
-        user_ids_infos = [
-            {
-                "user_id": doc.page_content,
-                "last_update": doc.metadata["checkpoint_ts"][:19].replace(" ", "T"),
-            }
-            for doc in docs
-        ]
+        # Use direct asyncpg connection to execute the query
+        if hasattr(env, 'PG_URI') and env.PG_URI:
+            conn_string = env.PG_URI
+        else:
+            user = getattr(env, 'DATABASE_USER', 'postgres')
+            password = getattr(env, 'DATABASE_PASSWORD', '')
+            host = getattr(env, 'DATABASE_HOST', 'localhost')
+            port = getattr(env, 'DATABASE_PORT', '5432')
+            database = getattr(env, 'DATABASE', 'postgres')
+            conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        
+        conn = await asyncpg.connect(conn_string)
+        try:
+            rows = await conn.fetch(query)
+            user_ids_infos = [
+                {
+                    "user_id": row["thread_id"],
+                    "last_update": row["checkpoint_ts"][:19].replace(" ", "T"),
+                }
+                for row in rows
+            ]
+        finally:
+            await conn.close()
+        
         logger.info(f"Loaded {len(user_ids_infos)} users")
         user_ids = [info["user_id"] for info in user_ids_infos]
         history_to_save = await self.get_history_bulk(
