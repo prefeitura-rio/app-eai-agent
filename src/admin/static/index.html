@@ -64,13 +64,6 @@
             
             <div id="alertArea"></div>
             
-            <div class="mb-4 px-4 pt-3">
-                <label for="agentType" class="form-label">Tipo de Agente</label>
-                <select id="agentType" class="form-select">
-                    <option value="">Carregando...</option>
-                </select>
-            </div>
-            
             <div id="loadingIndicator" class="d-flex justify-content-center my-5">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Carregando...</span>
@@ -188,9 +181,6 @@
                     localStorage.setItem('adminToken', token);
                     document.querySelector('.login-container').classList.add('d-none');
                     document.getElementById('adminPanel').classList.remove('d-none');
-                    
-                    // Disparar evento para carregar tipos de agentes
-                    document.dispatchEvent(new Event('agentTypesReady'));
                 })
                 .catch(error => {
                     const errorMsg = document.getElementById('errorMsg');
@@ -200,9 +190,6 @@
             });
         });
     </script>
-    
-    <!-- JavaScript para carregar tipos de agentes -->
-    <script src="/eai-agent/admin/static/agent-types.js"></script>
     
     <!-- JavaScript principal da Aplicação -->
     <script src="/eai-agent/admin/static/app.js"></script>

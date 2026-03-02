@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useTransition } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useHeader } from '@/app/contexts/HeaderContext';
-import AgentSelector from './AgentSelector';
 import PromptEditor from './PromptEditor';
 import AgentConfiguration from './AgentConfiguration';
 import VersionHistory, { HistoryItem } from './VersionHistory';
@@ -28,20 +27,18 @@ interface AgentData {
 }
 
 interface SettingsClientProps {
-  agentTypes: string[];
   agentData: AgentData;
   selectedAgentType: string;
 }
 
-export default function SettingsClient({ agentTypes, agentData, selectedAgentType }: SettingsClientProps) {
+export default function SettingsClient({ agentData, selectedAgentType }: SettingsClientProps) {
   const { token } = useAuth();
   const router = useRouter();
   const { setTitle, setSubtitle, setPageActions } = useHeader();
-  const [isPending, startTransition] = useTransition();
   
 
   // Estado dos campos do formulário
-  const [selectedAgent, setSelectedAgent] = useState(selectedAgentType);
+  const selectedAgent = selectedAgentType;
   const [promptContent, setPromptContent] = useState(agentData.prompt);
   const [clickUpCards, setClickUpCards] = useState(agentData.config.memory_blocks);
   const [tools, setTools] = useState(agentData.config.tools);
@@ -95,7 +92,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
 
   // Sincroniza o estado do cliente com as props, reseta o estado 'dirty' e seleciona a versão ativa
   useEffect(() => {
-    setSelectedAgent(selectedAgentType);
     setPromptContent(agentData.prompt);
     setClickUpCards(agentData.config.memory_blocks);
     setTools(agentData.config.tools);
@@ -110,11 +106,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       handleSelectVersion(activeVersion);
     }
   }, [agentData, selectedAgentType, handleSelectVersion]);
-
-
-  const handleAgentChange = (newAgentType: string) => {
-    startTransition(() => router.push(`/eai_settings?agent_type=${newAgentType}`));
-  };
 
   const handleOpenSaveModal = () => {
     setAuthor('');
@@ -205,7 +196,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     }
   };
 
-  const isLoading = isPending || isFetchingVersion;
+  const isLoading = isFetchingVersion;
 
   return (
     <>
@@ -265,16 +256,10 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
                     <Settings className="h-5 w-5" />
                     <span>Configurações do Agente</span>
                   </CardTitle>
-                  {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+                  {isSaving && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
               </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-8 pt-4">
-            <AgentSelector 
-              agentTypes={agentTypes} 
-              selectedAgent={selectedAgent} 
-              onAgentChange={handleAgentChange} 
-              disabled={isLoading} 
-            />
             <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
             <AgentConfiguration
               clickUpCards={clickUpCards} onClickUpCardsChange={setClickUpCards}

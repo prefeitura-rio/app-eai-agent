@@ -11,7 +11,6 @@ const CACHE_WHITELIST = [CACHE_NAME];
 // Recursos a serem cacheados inicialmente
 const INITIAL_CACHED_RESOURCES = [
   "/eai-agent/admin/static/app.js",
-  "/eai-agent/admin/static/agent-types.js",
   "/eai-agent/admin/static/editor-expander.js",
   "/eai-agent/admin/static/style.css",
   "/eai-agent/admin/static/cache-buster.js",
