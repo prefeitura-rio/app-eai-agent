@@ -105,29 +105,15 @@ async def update_system_prompt(
         result = await system_prompt_service.update_system_prompt(
             new_prompt=request.new_prompt,
             agent_type=request.agent_type,
-            update_agents=request.update_agents,
-            tags=request.tags,
             metadata=request.metadata,
             db=db,
         )
 
         message = "System prompt atualizado com sucesso"
 
-        if request.update_agents:
-            updated_agents = sum(
-                1 for success in result["agents_updated"].values() if success
-            )
-            total_agents = len(result["agents_updated"])
-
-            if total_agents > 0:
-                message += (
-                    f", {updated_agents}/{total_agents} agentes foram atualizados"
-                )
-
         return SystemPromptUpdateResponse(
             success=result["success"],
             prompt_id=result.get("prompt_id"),
-            agents_updated=result.get("agents_updated", {}),
             message=message,
             version=result.get("unified_version", None),
         )
@@ -212,9 +198,6 @@ async def get_system_prompt_by_id(prompt_id: str, db: Session = Depends(get_db))
 @router.delete("/last", response_model=SystemPromptDeleteResponse)
 async def delete_last_system_prompt(
     agent_type: str = Query(..., description="Tipo do agente"),
-    update_agents: bool = Query(
-        False, description="Atualizar também os agentes existentes com o prompt anterior"
-    ),
     db: Session = Depends(get_db),
 ):
     """
@@ -225,7 +208,6 @@ async def delete_last_system_prompt(
 
     Args:
         agent_type: Tipo do agente
-        update_agents: Se verdadeiro, também atualiza os agentes existentes com o prompt anterior
         db: Sessão do banco de dados
 
     Returns:
@@ -243,21 +225,10 @@ async def delete_last_system_prompt(
             )
 
         result = await system_prompt_service.delete_last_system_prompt(
-            agent_type=agent_type, update_agents=update_agents, db=db
+            agent_type=agent_type, db=db
         )
 
         message = f"Versão {result['deleted_version']} deletada, versão {result['active_version']} agora está ativa"
-
-        if update_agents:
-            updated_agents = sum(
-                1 for success in result["agents_updated"].values() if success
-            )
-            total_agents = len(result["agents_updated"])
-
-            if total_agents > 0:
-                message += (
-                    f", {updated_agents}/{total_agents} agentes foram atualizados"
-                )
 
         return SystemPromptDeleteResponse(
             success=result["success"],
@@ -265,7 +236,6 @@ async def delete_last_system_prompt(
             deleted_version=result.get("deleted_version"),
             active_version=result.get("active_version"),
             previous_prompt_id=result.get("previous_prompt_id"),
-            agents_updated=result.get("agents_updated", {}),
             message=message,
         )
     except ValueError as ve:
@@ -280,9 +250,6 @@ async def delete_last_system_prompt(
 @router.delete("/reset", response_model=SystemPromptResetResponse)
 async def reset_system_prompt(
     agent_type: str = Query(..., description="Tipo do agente para resetar o prompt"),
-    update_agents: bool = Query(
-        False, description="Atualizar também os agentes existentes"
-    ),
     db: Session = Depends(get_db),
 ):
     """
@@ -291,7 +258,6 @@ async def reset_system_prompt(
 
     Args:
         agent_type: Tipo do agente
-        update_agents: Se verdadeiro, também atualiza os agentes existentes
         db: Sessão do banco de dados
 
     Returns:
@@ -305,26 +271,14 @@ async def reset_system_prompt(
             )
 
         result = await system_prompt_service.reset_system_prompt(
-            agent_type=agent_type, update_agents=update_agents, db=db
+            agent_type=agent_type, db=db
         )
 
         message = "System prompt resetado com sucesso"
 
-        if update_agents:
-            updated_agents = sum(
-                1 for success in result["agents_updated"].values() if success
-            )
-            total_agents = len(result["agents_updated"])
-
-            if total_agents > 0:
-                message += (
-                    f", {updated_agents}/{total_agents} agentes foram atualizados"
-                )
-
         return SystemPromptResetResponse(
             success=result["success"],
             agent_type=agent_type,
-            agents_updated=result.get("agents_updated", {}),
             message=message,
         )
     except ValueError as ve:

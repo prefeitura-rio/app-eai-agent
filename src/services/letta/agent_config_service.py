@@ -86,26 +86,22 @@ class AgentConfigService:
         self,
         new_cfg_values: Dict[str, Any],
         agent_type: str = "agentic_search",
-        update_agents: bool = True,
-        tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         db: Session = None,
     ) -> Dict[str, Any]:
-        """Atualiza configuração e opcionalmente propaga para agentes."""
-        result: Dict[str, Any] = {"success": True, "config_id": None, "agents_updated": {}}
+        """Atualiza configuração do agente."""
+        result: Dict[str, Any] = {"success": True, "config_id": None}
 
         if db is None:
             with get_db_session() as session:
                 db = session
-        return await self._perform_update(db, new_cfg_values, agent_type, update_agents, tags, metadata, result)
+        return await self._perform_update(db, new_cfg_values, agent_type, metadata, result)
 
     async def _perform_update(
         self,
         db: Session,
         new_cfg_values: Dict[str, Any],
         agent_type: str,
-        update_agents: bool,
-        tags: Optional[List[str]],
         metadata: Optional[Dict[str, Any]],
         result: Dict[str, Any],
     ) -> Dict[str, Any]:
@@ -139,15 +135,6 @@ class AgentConfigService:
         result["config_id"] = cfg.config_id
         result["unified_version"] = unified_version.version_number
 
-        if update_agents:
-            agents_result = await self._update_all_agents(
-                new_cfg_values=new_cfg_values,
-                agent_type=agent_type,
-                tags=tags,
-            )
-            result["agents_updated"] = agents_result
-            if agents_result and not all(agents_result.values()):
-                result["success"] = False
         return result
 
     async def _update_all_agents(
@@ -246,11 +233,11 @@ class AgentConfigService:
 
     # ------------------------ Reset ------------------------
     async def reset_agent_config(
-        self, agent_type: str, update_agents: bool = False, db: Session = None
+        self, agent_type: str, db: Session = None
     ) -> Dict[str, Any]:
         """Reseta a configuração: remove histórico e recria padrão."""
 
-        result: Dict[str, Any] = {"success": True, "agents_updated": {}}
+        result: Dict[str, Any] = {"success": True}
 
         if db is None:
             with get_db_session() as session:
@@ -290,16 +277,6 @@ class AgentConfigService:
             )
             
             result["unified_version"] = unified_version.version_number
-
-            if update_agents:
-                agents_result = await self._update_all_agents(
-                    new_cfg_values=default_cfg,
-                    agent_type=agent_type,
-                    tags=[agent_type],
-                )
-                result["agents_updated"] = agents_result
-                if agents_result and not all(agents_result.values()):
-                    result["success"] = False
 
             return result
         except Exception as e:

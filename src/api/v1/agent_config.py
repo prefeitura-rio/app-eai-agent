@@ -69,27 +69,15 @@ async def update_agent_config(
         result = await agent_config_service.update_agent_configs(
             new_cfg_values=new_cfg_values,
             agent_type=request.agent_type,
-            update_agents=request.update_agents,
-            tags=request.tags,
             metadata=request.metadata,
             db=db,
         )
 
         message = "Configuração de agente atualizada com sucesso"
-        if request.update_agents:
-            updated_agents = sum(
-                1 for success in result["agents_updated"].values() if success
-            )
-            total_agents = len(result["agents_updated"])
-            if total_agents > 0:
-                message += (
-                    f", {updated_agents}/{total_agents} agentes foram atualizados"
-                )
 
         return AgentConfigUpdateResponse(
             success=result["success"],
             config_id=result.get("config_id"),
-            agents_updated=result.get("agents_updated", {}),
             message=message,
         )
     except ValueError as ve:
@@ -152,9 +140,6 @@ async def get_agent_config_by_id(config_id: str, db: Session = Depends(get_db)):
 @router.delete("/reset", response_model=AgentConfigResetResponse)
 async def reset_agent_config(
     agent_type: str = Query(..., description="Tipo do agente para resetar config"),
-    update_agents: bool = Query(
-        False, description="Atualizar também os agentes existentes"
-    ),
     db: Session = Depends(get_db),
 ):
     """Remove todas as configs e restaura padrão."""
@@ -166,20 +151,14 @@ async def reset_agent_config(
             )
 
         result = await agent_config_service.reset_agent_config(
-            agent_type=agent_type, update_agents=update_agents, db=db
+            agent_type=agent_type, db=db
         )
 
         message = "Configuração resetada com sucesso"
-        if update_agents:
-            upd = sum(1 for s in result["agents_updated"].values() if s)
-            total = len(result["agents_updated"])
-            if total > 0:
-                message += f", {upd}/{total} agentes foram atualizados"
 
         return AgentConfigResetResponse(
             success=result["success"],
             agent_type=agent_type,
-            agents_updated=result.get("agents_updated", {}),
             message=message,
         )
     except ValueError as ve:

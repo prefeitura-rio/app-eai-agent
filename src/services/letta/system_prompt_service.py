@@ -169,8 +169,6 @@ class SystemPromptService:
         self,
         new_prompt: str,
         agent_type: str = "agentic_search",
-        update_agents: bool = True,
-        tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         db: Session = None,
     ) -> Dict[str, any]:
@@ -180,22 +178,20 @@ class SystemPromptService:
         Args:
             new_prompt: Novo texto para o system prompt
             agent_type: Tipo do agente
-            update_agents: Se deve atualizar os agentes existentes
-            tags: Filtrar agentes por tags específicas
             metadata: Metadados adicionais para armazenar com o prompt
             db: Sessão do banco de dados
 
         Returns:
             Dict: Resultado das operações
         """
-        result = {"success": True, "prompt_id": None, "agents_updated": {}}
+        result = {"success": True, "prompt_id": None}
 
         if db is None:
             with get_db_session() as session:
                 db = session
 
         return await self._perform_update(
-            db, new_prompt, agent_type, update_agents, tags, metadata, result
+            db, new_prompt, agent_type, metadata, result
         )
 
     async def _perform_update(
@@ -203,8 +199,6 @@ class SystemPromptService:
         db: Session,
         new_prompt: str,
         agent_type: str,
-        update_agents: bool,
-        tags: Optional[List[str]],
         metadata: Optional[Dict[str, Any]],
         result: Dict[str, Any],
     ) -> Dict[str, Any]:
@@ -215,8 +209,6 @@ class SystemPromptService:
             db: Sessão do banco de dados
             new_prompt: Novo texto para o system prompt
             agent_type: Tipo do agente
-            update_agents: Se deve atualizar os agentes existentes
-            tags: Filtrar agentes por tags específicas
             metadata: Metadados adicionais para armazenar com o prompt
             result: Dicionário de resultado parcial
 
@@ -254,19 +246,6 @@ class SystemPromptService:
         except Exception as e:
             logger.error(f"Erro ao criar prompt com versão {version_number}: {str(e)}")
             raise
-
-        if update_agents:
-            agents_result = await self.update_all_agents_system_prompt(
-                new_prompt=new_prompt,
-                agent_type=agent_type,
-                tags=tags,
-                db=db,
-                prompt_id=prompt.prompt_id,
-            )
-            result["agents_updated"] = agents_result
-
-            if agents_result and not all(agents_result.values()):
-                result["success"] = False
 
         return result
 
@@ -332,14 +311,13 @@ class SystemPromptService:
         return formatted_prompts
 
     async def delete_last_system_prompt(
-        self, agent_type: str, update_agents: bool = False, db: Session = None
+        self, agent_type: str, db: Session = None
     ) -> Dict[str, Any]:
         """
         Deleta apenas o último system prompt do histórico e reativa o anterior.
 
         Args:
             agent_type: Tipo do agente
-            update_agents: Se deve atualizar os agentes existentes com o prompt anterior
             db: Sessão do banco de dados
 
         Returns:
@@ -347,7 +325,6 @@ class SystemPromptService:
         """
         result = {
             "success": True,
-            "agents_updated": {},
             "deleted_version": None,
             "active_version": None,
             "previous_prompt_id": None,
@@ -404,20 +381,6 @@ class SystemPromptService:
             result["active_version"] = previous_prompt.version
             result["previous_prompt_id"] = previous_prompt.prompt_id
 
-            # Atualizar agentes se solicitado
-            if update_agents:
-                agents_result = await self.update_all_agents_system_prompt(
-                    new_prompt=previous_prompt.content,
-                    agent_type=agent_type,
-                    tags=[agent_type],
-                    db=db,
-                    prompt_id=previous_prompt.prompt_id,
-                )
-                result["agents_updated"] = agents_result
-
-                if agents_result and not all(agents_result.values()):
-                    result["success"] = False
-
             return result
 
         except ValueError as ve:
@@ -430,7 +393,7 @@ class SystemPromptService:
             raise Exception(f"Erro ao deletar último system prompt: {str(e)}")
 
     async def reset_system_prompt(
-        self, agent_type: str, update_agents: bool = False, db: Session = None
+        self, agent_type: str, db: Session = None
     ) -> Dict[str, Any]:
         """
         Reseta o system prompt para o tipo de agente, removendo todo o histórico
@@ -438,13 +401,12 @@ class SystemPromptService:
 
         Args:
             agent_type: Tipo do agente para resetar
-            update_agents: Se deve atualizar os agentes existentes
             db: Sessão do banco de dados
 
         Returns:
             Dict: Resultado da operação
         """
-        result = {"success": True, "agents_updated": {}}
+        result = {"success": True}
 
         if db is None:
             with get_db_session() as session:
@@ -489,19 +451,6 @@ class SystemPromptService:
             )
             
             result["unified_version"] = unified_version.version_number
-
-            if update_agents:
-                agents_result = await self.update_all_agents_system_prompt(
-                    new_prompt=default_prompt,
-                    agent_type=agent_type,
-                    tags=[agent_type],
-                    db=db,
-                    prompt_id=new_prompt.prompt_id,
-                )
-                result["agents_updated"] = agents_result
-
-                if agents_result and not all(agents_result.values()):
-                    result["success"] = False
 
             return result
 

@@ -59,7 +59,6 @@ async def _update_system_prompt_from_api(
             headers["Content-Type"] = "application/json"
         payload = {
             "agent_type": agent_type,
-            "update_agents": True,
             "new_prompt": new_system_prompt,
         }
 

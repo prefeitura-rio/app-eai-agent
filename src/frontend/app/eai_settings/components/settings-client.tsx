@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Save, RotateCcw, Settings, History } from 'lucide-react';
-import { fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
+import { fetchUnifiedHistory, fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
 
 interface AgentData {
   prompt: string;
@@ -47,7 +47,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   const [tools, setTools] = useState(agentData.config.tools);
   const [modelName, setModelName] = useState(agentData.config.model_name);
   const [embeddingName, setEmbeddingName] = useState(agentData.config.embedding_name);
-  const [updateAgents, setUpdateAgents] = useState(true);
   const [history, setHistory] = useState(agentData.history);
   
   // Estado da UI
@@ -140,14 +139,48 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         tools: tools.split(',').map(t => t.trim()).filter(Boolean),
         model_name: modelName || null,
         embedding_name: embeddingName || null,
-        update_agents: updateAgents,
         author,
         reason,
       };
       const result = await saveChanges(payload, token);
       toast.success("Sucesso!", { description: `Nova versão ${result.version_display} salva.` });
       setSaveModalOpen(false);
-      window.location.reload();
+      const tempVersionId = `temp-${Date.now()}`;
+      const optimisticItem: HistoryItem = {
+        version_id: tempVersionId,
+        version_number: result.unified_version_number,
+        created_at: new Date().toISOString(),
+        change_type: result.change_type,
+        is_active: true,
+        author,
+        reason,
+        metadata: { version_display: result.version_display },
+        config: {
+          tools: tools.split(',').map(t => t.trim()).filter(Boolean),
+          model_name: modelName || undefined,
+        },
+      };
+
+      setHistory((prev) => [
+        optimisticItem,
+        ...prev.map((item) => ({ ...item, is_active: false })),
+      ]);
+      setSelectedVersionId(tempVersionId);
+
+      void (async () => {
+        try {
+          const historyResponse = await fetchUnifiedHistory(selectedAgent, token);
+          const updatedHistory = historyResponse.items || [];
+          setHistory(updatedHistory);
+
+          const activeVersion = updatedHistory.find((item) => item.is_active);
+          if (activeVersion) {
+            setSelectedVersionId(activeVersion.version_id);
+          }
+        } catch {
+          // Não bloqueia UX do save se falhar apenas a reconciliação do histórico
+        }
+      })();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       toast.error("Erro ao Salvar", { description: errorMessage });
@@ -160,7 +193,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     if (!token) return;
     setIsSaving(true);
     try {
-      const result = await resetAgent(selectedAgent, updateAgents, token);
+      const result = await resetAgent(selectedAgent, token);
       toast.success("Sucesso!", { description: result.message || "Agente resetado com sucesso." });
       setResetModalOpen(false);
       router.refresh();
@@ -240,8 +273,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
               agentTypes={agentTypes} 
               selectedAgent={selectedAgent} 
               onAgentChange={handleAgentChange} 
-              updateAgents={updateAgents}
-              onUpdateAgentsChange={setUpdateAgents}
               disabled={isLoading} 
             />
             <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
@@ -250,7 +281,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
               tools={tools} onToolsChange={setTools}
               modelName={modelName} onModelNameChange={setModelName}
               embeddingName={embeddingName} onEmbeddingNameChange={setEmbeddingName}
-              updateAgents={updateAgents} onUpdateAgentsChange={setUpdateAgents}
               disabled={isLoading}
             />
           </CardContent>

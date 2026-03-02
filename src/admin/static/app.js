@@ -6,7 +6,6 @@ const agentTypeSelect = document.getElementById("agentType");
 const loadingIndicator = document.getElementById("loadingIndicator");
 const contentArea = document.getElementById("contentArea");
 const promptText = document.getElementById("promptText");
-const updateAgentsCheckbox = document.getElementById("updateAgents");
 const copyButton = document.getElementById("copyButton");
 const historyList = document.getElementById("historyList");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -367,20 +366,17 @@ function proceedWithUnifiedSave(
 ) {
   showLoading();
 
-  const updateAgents = updateAgentsCheckbox.checked;
-
   // Usar novo endpoint unificado para salvar tudo em uma única versão
   const unifiedPayload = {
     agent_type: agentType,
     prompt_content: newPrompt,
-    memory_blocks: memoryBlocksArray,
+    clickup_cards: memoryBlocksArray,
     tools: toolsInput.value
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean),
     model_name: modelNameInput.value.trim() || null,
     embedding_name: embeddingNameInput.value.trim() || null,
-    update_agents: updateAgents,
     author: author,
     reason: reason,
   };
@@ -891,12 +887,10 @@ function handleResetAll() {
 
   showLoading();
 
-  const updateAgents = updateAgentsCheckbox.checked;
-
   // Usar o novo endpoint de reset unificado
   apiRequest(
     "DELETE",
-    `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}&update_agents=${updateAgents}`
+    `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}`
   )
     .then((response) => {
       hideLoading();
