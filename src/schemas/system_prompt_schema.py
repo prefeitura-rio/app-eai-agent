@@ -10,12 +10,6 @@ class SystemPromptUpdateRequest(BaseModel):
     agent_type: str = Field(
         "agentic_search", description="Tipo de agente a ser atualizado"
     )
-    update_agents: bool = Field(
-        True, description="Se deve atualizar os agentes existentes"
-    )
-    tags: Optional[List[str]] = Field(
-        None, description="Tags para filtrar os agentes a serem atualizados"
-    )
     metadata: Optional[Dict[str, Any]] = Field(
         None, description="Metadados adicionais para armazenar com o prompt"
     )
@@ -25,21 +19,12 @@ class SystemPromptUpdateRequest(BaseModel):
             "example": {
                 "new_prompt": "Novo conteúdo do system prompt...",
                 "agent_type": "agentic_search",
-                "update_agents": True,
-                "tags": ["agentic_search", "user_123456"],
                 "metadata": {
                     "author": "admin",
                     "reason": "Melhoria na resposta de emergência",
                 },
             }
         }
-
-
-class AgentUpdateResult(BaseModel):
-    """Resultado da atualização de um agente."""
-
-    agent_id: str = Field(..., description="ID do agente")
-    success: bool = Field(..., description="Status da atualização")
 
 
 class SystemPromptUpdateResponse(BaseModel):
@@ -49,9 +34,6 @@ class SystemPromptUpdateResponse(BaseModel):
     prompt_id: Optional[str] = Field(
         None, description="ID do prompt criado no banco de dados"
     )
-    agents_updated: Dict[str, bool] = Field(
-        ..., description="Status da atualização dos agentes"
-    )
     message: str = Field("", description="Mensagem adicional sobre a operação")
     version: Optional[int] = Field(None, description="Versão do prompt")
 
@@ -60,8 +42,7 @@ class SystemPromptUpdateResponse(BaseModel):
             "example": {
                 "success": True,
                 "prompt_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                "agents_updated": {"agt_123456789": True, "agt_987654321": True},
-                "message": "System prompt atualizado com sucesso para 2 agentes.",
+                "message": "System prompt atualizado com sucesso.",
                 "version": 1,
             }
         }
@@ -148,9 +129,6 @@ class SystemPromptResetResponse(BaseModel):
 
     success: bool = Field(..., description="Status geral da operação")
     agent_type: str = Field(..., description="Tipo de agente que foi resetado")
-    agents_updated: Dict[str, bool] = Field(
-        ..., description="Status da atualização dos agentes"
-    )
     message: str = Field("", description="Mensagem adicional sobre a operação")
 
     class Config:
@@ -158,8 +136,7 @@ class SystemPromptResetResponse(BaseModel):
             "example": {
                 "success": True,
                 "agent_type": "agentic_search",
-                "agents_updated": {"agt_123456789": True, "agt_987654321": True},
-                "message": "System prompt resetado com sucesso para 2 agentes.",
+                "message": "System prompt resetado com sucesso.",
             }
         }
 
@@ -178,9 +155,6 @@ class SystemPromptDeleteResponse(BaseModel):
     previous_prompt_id: Optional[str] = Field(
         None, description="ID do prompt que foi reativado"
     )
-    agents_updated: Dict[str, bool] = Field(
-        default_factory=dict, description="Status da atualização dos agentes"
-    )
     message: str = Field("", description="Mensagem adicional sobre a operação")
 
     class Config:
@@ -191,7 +165,6 @@ class SystemPromptDeleteResponse(BaseModel):
                 "deleted_version": 5,
                 "active_version": 4,
                 "previous_prompt_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                "agents_updated": {"agt_123456789": True, "agt_987654321": True},
                 "message": "Última versão do system prompt deletada com sucesso.",
             }
         }

@@ -14,8 +14,6 @@ interface AgentConfigurationProps {
   onModelNameChange: (value: string) => void;
   embeddingName: string;
   onEmbeddingNameChange: (value: string) => void;
-  updateAgents: boolean;
-  onUpdateAgentsChange: (value: boolean) => void;
   disabled?: boolean;
 }
 

@@ -6,7 +6,6 @@ from loguru import logger
 from src.db import get_db_session
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.repositories.unified_version_repository import UnifiedVersionRepository
-from src.services.letta.letta_service import letta_service
 from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
 )
@@ -19,7 +18,7 @@ class AgentConfigService:
     def __init__(self):
         pass
 
-    def _default_config(self, agent_type: str) -> Dict[str, Any]:
+    def _default_config(self) -> Dict[str, Any]:
         """Retorna configuração padrão para um tipo de agente."""
         return {
             "memory_blocks": get_agentic_search_memory_blocks(),
@@ -44,7 +43,7 @@ class AgentConfigService:
             logger.info(
                 f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão (sessão existente)..."
             )
-            default_cfg = self._default_config(agent_type)
+            default_cfg = self._default_config()
             new_cfg = AgentConfigRepository.create_config(
                 db=db,
                 agent_type=agent_type,
@@ -66,7 +65,7 @@ class AgentConfigService:
                 logger.info(
                     f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão..."
                 )
-                default_cfg = self._default_config(agent_type)
+                default_cfg = self._default_config()
                 new_cfg = AgentConfigRepository.create_config(
                     db=db,
                     agent_type=agent_type,
@@ -86,26 +85,22 @@ class AgentConfigService:
         self,
         new_cfg_values: Dict[str, Any],
         agent_type: str = "agentic_search",
-        update_agents: bool = True,
-        tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         db: Session = None,
     ) -> Dict[str, Any]:
-        """Atualiza configuração e opcionalmente propaga para agentes."""
-        result: Dict[str, Any] = {"success": True, "config_id": None, "agents_updated": {}}
+        """Atualiza configuração do agente."""
+        result: Dict[str, Any] = {"success": True, "config_id": None}
 
         if db is None:
             with get_db_session() as session:
                 db = session
-        return await self._perform_update(db, new_cfg_values, agent_type, update_agents, tags, metadata, result)
+        return await self._perform_update(db, new_cfg_values, agent_type, metadata, result)
 
     async def _perform_update(
         self,
         db: Session,
         new_cfg_values: Dict[str, Any],
         agent_type: str,
-        update_agents: bool,
-        tags: Optional[List[str]],
         metadata: Optional[Dict[str, Any]],
         result: Dict[str, Any],
     ) -> Dict[str, Any]:
@@ -130,6 +125,7 @@ class AgentConfigService:
             db=db,
             agent_type=agent_type,
             change_type="config",
+            version_number=version_number,
             config_id=cfg.config_id,
             author=metadata.get("author") if metadata else None,
             reason=metadata.get("reason") if metadata else None,
@@ -139,65 +135,7 @@ class AgentConfigService:
         result["config_id"] = cfg.config_id
         result["unified_version"] = unified_version.version_number
 
-        if update_agents:
-            agents_result = await self._update_all_agents(
-                new_cfg_values=new_cfg_values,
-                agent_type=agent_type,
-                tags=tags,
-            )
-            result["agents_updated"] = agents_result
-            if agents_result and not all(agents_result.values()):
-                result["success"] = False
         return result
-
-    async def _update_all_agents(
-        self,
-        new_cfg_values: Dict[str, Any],
-        agent_type: str,
-        tags: Optional[List[str]],
-    ) -> Dict[str, bool]:
-        client = letta_service.get_client_async()
-        results: Dict[str, bool] = {}
-        filter_tags = tags if tags else ([agent_type] if agent_type else [])
-        agents = await client.agents.list(tags=filter_tags)
-        if not agents:
-            logger.info(f"Nenhum agente encontrado com as tags: {filter_tags}")
-            return results
-
-        # Obter IDs das ferramentas
-        available_tools = await client.tools.list()
-        tool_ids = [tool.id for tool in available_tools if tool.name in (new_cfg_values.get("tools") or [])]
-
-        for agent in agents:
-            try:
-                memory_blocks = await client.agents.blocks.list(agent_id=agent.id)
-                memory_blocks_ids = [block.id for block in memory_blocks if block.name in new_cfg_values.get("memory_blocks")]
-                
-                for memory_block_id in memory_blocks_ids:
-                    await client.blocks.delete(memory_block_id)
-                
-                new_memory_blocks_ids = []
-                
-                for memory_block in new_cfg_values.get("memory_blocks"):
-                  memory_block = await client.blocks.create(
-                    label=memory_block["label"],
-                    value=memory_block["value"],
-                    limit=memory_block["limit"],
-                  )
-                  new_memory_blocks_ids.append(memory_block.id)
-                
-                await client.agents.modify(
-                    agent_id=agent.id,
-                    block_ids=new_memory_blocks_ids,
-                    tool_ids=tool_ids,
-                    model=new_cfg_values.get("model_name"),
-                    embedding=new_cfg_values.get("embedding_name"),
-                )
-                results[agent.id] = True
-            except Exception as agent_error:
-                results[agent.id] = False
-                logger.error(f"Erro ao atualizar agente {agent.id}: {str(agent_error)}")
-        return results
 
     # ------------------------ Histórico ------------------------
     async def get_config_history(
@@ -246,11 +184,11 @@ class AgentConfigService:
 
     # ------------------------ Reset ------------------------
     async def reset_agent_config(
-        self, agent_type: str, update_agents: bool = False, db: Session = None
+        self, agent_type: str, db: Session = None
     ) -> Dict[str, Any]:
         """Reseta a configuração: remove histórico e recria padrão."""
 
-        result: Dict[str, Any] = {"success": True, "agents_updated": {}}
+        result: Dict[str, Any] = {"success": True}
 
         if db is None:
             with get_db_session() as session:
@@ -265,7 +203,7 @@ class AgentConfigService:
             
             db.commit()
 
-            default_cfg = self._default_config(agent_type)
+            default_cfg = self._default_config()
             # Para reset, sempre usar versão 1 já que deletamos todo o histórico
             new_cfg = AgentConfigRepository.create_config(
                 db=db,
@@ -283,6 +221,7 @@ class AgentConfigService:
                 db=db,
                 agent_type=agent_type,
                 change_type="config",
+                version_number=1,
                 config_id=new_cfg.config_id,
                 author="System",
                 reason="Resetado automaticamente",
@@ -290,16 +229,6 @@ class AgentConfigService:
             )
             
             result["unified_version"] = unified_version.version_number
-
-            if update_agents:
-                agents_result = await self._update_all_agents(
-                    new_cfg_values=default_cfg,
-                    agent_type=agent_type,
-                    tags=[agent_type],
-                )
-                result["agents_updated"] = agents_result
-                if agents_result and not all(agents_result.values()):
-                    result["success"] = False
 
             return result
         except Exception as e:

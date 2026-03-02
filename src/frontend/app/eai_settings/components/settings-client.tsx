@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useTransition } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useHeader } from '@/app/contexts/HeaderContext';
-import AgentSelector from './AgentSelector';
 import PromptEditor from './PromptEditor';
 import AgentConfiguration from './AgentConfiguration';
 import VersionHistory, { HistoryItem } from './VersionHistory';
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Save, RotateCcw, Settings, History } from 'lucide-react';
-import { fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
+import { deleteVersion, fetchUnifiedHistory, fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
 
 interface AgentData {
   prompt: string;
@@ -28,26 +27,23 @@ interface AgentData {
 }
 
 interface SettingsClientProps {
-  agentTypes: string[];
   agentData: AgentData;
   selectedAgentType: string;
 }
 
-export default function SettingsClient({ agentTypes, agentData, selectedAgentType }: SettingsClientProps) {
+export default function SettingsClient({ agentData, selectedAgentType }: SettingsClientProps) {
   const { token } = useAuth();
   const router = useRouter();
   const { setTitle, setSubtitle, setPageActions } = useHeader();
-  const [isPending, startTransition] = useTransition();
   
 
   // Estado dos campos do formulário
-  const [selectedAgent, setSelectedAgent] = useState(selectedAgentType);
+  const selectedAgent = selectedAgentType;
   const [promptContent, setPromptContent] = useState(agentData.prompt);
   const [clickUpCards, setClickUpCards] = useState(agentData.config.memory_blocks);
   const [tools, setTools] = useState(agentData.config.tools);
   const [modelName, setModelName] = useState(agentData.config.model_name);
   const [embeddingName, setEmbeddingName] = useState(agentData.config.embedding_name);
-  const [updateAgents, setUpdateAgents] = useState(true);
   const [history, setHistory] = useState(agentData.history);
   
   // Estado da UI
@@ -59,6 +55,9 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
   const [isSaveModalOpen, setSaveModalOpen] = useState(false);
   const [author, setAuthor] = useState('');
   const [reason, setReason] = useState('');
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [versionToDelete, setVersionToDelete] = useState<HistoryItem | null>(null);
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false);
   const [isResetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmationText, setResetConfirmationText] = useState('');
 
@@ -96,7 +95,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
 
   // Sincroniza o estado do cliente com as props, reseta o estado 'dirty' e seleciona a versão ativa
   useEffect(() => {
-    setSelectedAgent(selectedAgentType);
     setPromptContent(agentData.prompt);
     setClickUpCards(agentData.config.memory_blocks);
     setTools(agentData.config.tools);
@@ -111,11 +109,6 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
       handleSelectVersion(activeVersion);
     }
   }, [agentData, selectedAgentType, handleSelectVersion]);
-
-
-  const handleAgentChange = (newAgentType: string) => {
-    startTransition(() => router.push(`/eai_settings?agent_type=${newAgentType}`));
-  };
 
   const handleOpenSaveModal = () => {
     setAuthor('');
@@ -140,14 +133,48 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
         tools: tools.split(',').map(t => t.trim()).filter(Boolean),
         model_name: modelName || null,
         embedding_name: embeddingName || null,
-        update_agents: updateAgents,
         author,
         reason,
       };
       const result = await saveChanges(payload, token);
       toast.success("Sucesso!", { description: `Nova versão ${result.version_display} salva.` });
       setSaveModalOpen(false);
-      window.location.reload();
+      const tempVersionId = `temp-${Date.now()}`;
+      const optimisticItem: HistoryItem = {
+        version_id: tempVersionId,
+        version_number: result.unified_version_number,
+        created_at: new Date().toISOString(),
+        change_type: result.change_type,
+        is_active: true,
+        author,
+        reason,
+        metadata: { version_display: result.version_display },
+        config: {
+          tools: tools.split(',').map(t => t.trim()).filter(Boolean),
+          model_name: modelName || undefined,
+        },
+      };
+
+      setHistory((prev) => [
+        optimisticItem,
+        ...prev.map((item) => ({ ...item, is_active: false })),
+      ]);
+      setSelectedVersionId(tempVersionId);
+
+      void (async () => {
+        try {
+          const historyResponse = await fetchUnifiedHistory(selectedAgent, token);
+          const updatedHistory = historyResponse.items || [];
+          setHistory(updatedHistory);
+
+          const activeVersion = updatedHistory.find((item) => item.is_active);
+          if (activeVersion) {
+            setSelectedVersionId(activeVersion.version_id);
+          }
+        } catch {
+          // Não bloqueia UX do save se falhar apenas a reconciliação do histórico
+        }
+      })();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       toast.error("Erro ao Salvar", { description: errorMessage });
@@ -160,7 +187,7 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     if (!token) return;
     setIsSaving(true);
     try {
-      const result = await resetAgent(selectedAgent, updateAgents, token);
+      const result = await resetAgent(selectedAgent, token);
       toast.success("Sucesso!", { description: result.message || "Agente resetado com sucesso." });
       setResetModalOpen(false);
       router.refresh();
@@ -172,7 +199,86 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
     }
   };
 
-  const isLoading = isPending || isFetchingVersion;
+  const handleOpenDeleteModal = (version: HistoryItem) => {
+    if (isDeletingVersion) return;
+    if (history.length <= 1) return;
+    setVersionToDelete(version);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (isDeletingVersion) return;
+    if (!token || !versionToDelete) return;
+    if (history.length <= 1) return;
+
+    setIsDeletingVersion(true);
+    const deletingVersion = versionToDelete;
+    const filteredHistory = history.filter(
+      (item) => item.version_id !== deletingVersion.version_id
+    );
+    const optimisticHistory = [...filteredHistory]
+      .sort((a, b) => b.version_number - a.version_number)
+      .map((item, idx) => ({ ...item, is_active: idx === 0 }));
+
+    setHistory(optimisticHistory);
+    setDeleteModalOpen(false);
+    setVersionToDelete(null);
+
+    const nextVersion = optimisticHistory[0];
+    if (nextVersion) {
+      setSelectedVersionId(nextVersion.version_id);
+      void handleSelectVersion(nextVersion);
+    } else {
+      setSelectedVersionId(null);
+    }
+
+    try {
+      const result = await deleteVersion(selectedAgent, deletingVersion.version_number, token);
+      const deletedLabel = `v${deletingVersion.version_number}`;
+      const activeMsg = result.active_version
+        ? ` Versão ativa: v${result.active_version}.`
+        : "";
+      toast.success("Histórico Atualizado", { description: `Versão ${deletedLabel} removida.${activeMsg}` });
+
+      void (async () => {
+        try {
+          const historyResponse = await fetchUnifiedHistory(selectedAgent, token);
+          const updatedHistory = historyResponse.items || [];
+          setHistory(updatedHistory);
+
+          const activeVersion = updatedHistory.find((item) => item.is_active) || updatedHistory[0];
+          if (activeVersion) {
+            setSelectedVersionId(activeVersion.version_id);
+          } else {
+            setSelectedVersionId(null);
+          }
+        } catch {
+          // Não interrompe UX se falhar apenas a reconciliação final
+        }
+      })();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Falha ao excluir versão";
+      toast.error("Erro ao Excluir", { description: errorMessage });
+      try {
+        const historyResponse = await fetchUnifiedHistory(selectedAgent, token);
+        const updatedHistory = historyResponse.items || [];
+        setHistory(updatedHistory);
+
+        const activeVersion = updatedHistory.find((item) => item.is_active) || updatedHistory[0];
+        if (activeVersion) {
+          await handleSelectVersion(activeVersion);
+        } else {
+          setSelectedVersionId(null);
+        }
+      } catch {
+        router.refresh();
+      }
+    } finally {
+      setIsDeletingVersion(false);
+    }
+  };
+
+  const isLoading = isFetchingVersion || isDeletingVersion;
 
   return (
     <>
@@ -200,6 +306,16 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
           </div>
         </div>
       </ConfirmationModal>
+
+      <ConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão"
+        description={versionToDelete ? `Deseja excluir a versão ${versionToDelete.metadata.version_display}?` : "Deseja excluir esta versão?"}
+        confirmText={isDeletingVersion ? "Excluindo..." : "Excluir versão"}
+        confirmButtonVariant="destructive"
+      />
 
       <ConfirmationModal
         open={isResetModalOpen}
@@ -232,25 +348,16 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
                     <Settings className="h-5 w-5" />
                     <span>Configurações do Agente</span>
                   </CardTitle>
-                  {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+                  {isSaving && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
               </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-8 pt-4">
-            <AgentSelector 
-              agentTypes={agentTypes} 
-              selectedAgent={selectedAgent} 
-              onAgentChange={handleAgentChange} 
-              updateAgents={updateAgents}
-              onUpdateAgentsChange={setUpdateAgents}
-              disabled={isLoading} 
-            />
             <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
             <AgentConfiguration
               clickUpCards={clickUpCards} onClickUpCardsChange={setClickUpCards}
               tools={tools} onToolsChange={setTools}
               modelName={modelName} onModelNameChange={setModelName}
               embeddingName={embeddingName} onEmbeddingNameChange={setEmbeddingName}
-              updateAgents={updateAgents} onUpdateAgentsChange={setUpdateAgents}
               disabled={isLoading}
             />
           </CardContent>
@@ -267,7 +374,15 @@ export default function SettingsClient({ agentTypes, agentData, selectedAgentTyp
               </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
-            <VersionHistory history={history} onSelectVersion={handleSelectVersion} selectedVersionId={selectedVersionId} disabled={isLoading} />
+            <VersionHistory
+              history={history}
+              onSelectVersion={handleSelectVersion}
+              onDeleteVersion={handleOpenDeleteModal}
+              selectedVersionId={selectedVersionId}
+              deletingVersionNumber={versionToDelete?.version_number}
+              canDeleteVersions={history.length > 1}
+              disabled={isLoading}
+            />
           </CardContent>
         </Card>
       </div>

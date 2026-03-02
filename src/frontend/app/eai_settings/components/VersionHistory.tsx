@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/app/utils/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { Cpu, Tag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Cpu, Tag, Trash2 } from 'lucide-react';
 
 export interface HistoryItem {
   version_id: string;
@@ -27,11 +28,22 @@ export interface HistoryItem {
 interface VersionHistoryProps {
   history: HistoryItem[];
   onSelectVersion: (version: HistoryItem) => void;
+  onDeleteVersion: (version: HistoryItem) => void;
   selectedVersionId?: string | null;
+  deletingVersionNumber?: number | null;
+  canDeleteVersions?: boolean;
   disabled?: boolean;
 }
 
-export default function VersionHistory({ history, onSelectVersion, selectedVersionId, disabled }: VersionHistoryProps) {
+export default function VersionHistory({
+  history,
+  onSelectVersion,
+  onDeleteVersion,
+  selectedVersionId,
+  deletingVersionNumber,
+  canDeleteVersions = true,
+  disabled,
+}: VersionHistoryProps) {
   
   const getChangeTypeBadge = (changeType: HistoryItem['change_type']) => {
     switch (changeType) {
@@ -76,6 +88,21 @@ export default function VersionHistory({ history, onSelectVersion, selectedVersi
                     {item.is_active && <Badge variant="success">Ativo</Badge>}
                     {getChangeTypeBadge(item.change_type)}
                   </div>
+                  {canDeleteVersions && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      disabled={disabled || deletingVersionNumber === item.version_number}
+                      title="Excluir versão"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteVersion(item);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-2 pt-1">
                   <div className="flex items-center gap-2 font-semibold">

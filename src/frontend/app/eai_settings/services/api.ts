@@ -17,7 +17,6 @@ interface SavePayload {
   tools: string[];
   model_name: string | null;
   embedding_name: string | null;
-  update_agents: boolean;
   author: string;
   reason: string;
 }
@@ -33,11 +32,30 @@ interface VersionDetails {
 }
 
 interface SaveResponse {
+  success: boolean;
+  unified_version_number: number;
   version_display: string;
+  change_type: 'prompt' | 'config' | 'both';
+  message: string;
+  prompt_id?: string | null;
+  config_id?: string | null;
 }
 
 interface ResetResponse {
   message: string;
+}
+
+interface DeleteVersionResponse {
+  success: boolean;
+  version_number: number;
+  version_display?: string;
+  active_version?: number;
+  reactivated_version?: number;
+  message: string;
+}
+
+interface UnifiedHistoryResponse {
+  items: HistoryItem[];
 }
 
 // Função genérica para requisições API
@@ -58,6 +76,13 @@ export const fetchVersionDetails = async (version: HistoryItem, agentType: strin
   });
 };
 
+export const fetchUnifiedHistory = async (agentType: string, token: string) => {
+  const url = `${API_BASE_URL}/api/v1/unified-history?agent_type=${agentType}&limit=50`;
+  return await apiRequest<UnifiedHistoryResponse>(url, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+};
+
 // Salva as alterações do prompt e da configuração
 export const saveChanges = async (payload: SavePayload, token: string) => {
   const url = `${API_BASE_URL}/api/v1/unified-save`;
@@ -69,9 +94,17 @@ export const saveChanges = async (payload: SavePayload, token: string) => {
 };
 
 // Reseta o agente para a configuração padrão
-export const resetAgent = async (agentType: string, updateAgents: boolean, token: string) => {
-  const url = `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}&update_agents=${updateAgents}`;
+export const resetAgent = async (agentType: string, token: string) => {
+  const url = `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}`;
   return await apiRequest<ResetResponse>(url, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+};
+
+export const deleteVersion = async (agentType: string, versionNumber: number, token: string) => {
+  const url = `${API_BASE_URL}/api/v1/unified-delete?agent_type=${encodeURIComponent(agentType)}&version_number=${versionNumber}`;
+  return await apiRequest<DeleteVersionResponse>(url, {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` }
   });
