@@ -119,7 +119,6 @@ async def run_experiment():
         # precomputed_responses=precomputed_responses_dict,
         # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
-        # provider="letta",
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):

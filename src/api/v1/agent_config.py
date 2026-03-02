@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.core.security.dependencies import validar_token
 from src.db import get_db
-from src.services.letta.agent_config_service import agent_config_service
+from src.services.agent_settings.agent_config_service import agent_config_service
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.schemas.agent_config_schema import (
     AgentConfigUpdateRequest,

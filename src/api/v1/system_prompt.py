@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.core.security.dependencies import validar_token
 from src.db import get_db
-from src.services.letta.system_prompt_service import system_prompt_service
+from src.services.agent_settings.system_prompt_service import system_prompt_service
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.schemas.system_prompt_schema import (
     SystemPromptUpdateRequest,

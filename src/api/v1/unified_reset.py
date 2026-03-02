@@ -6,8 +6,8 @@ from src.db import get_db_session
 from src.repositories.unified_version_repository import UnifiedVersionRepository
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.repositories.agent_config_repository import AgentConfigRepository
-from src.services.letta.system_prompt_service import system_prompt_service
-from src.services.letta.agent_config_service import agent_config_service
+from src.services.agent_settings.system_prompt_service import system_prompt_service
+from src.services.agent_settings.agent_config_service import agent_config_service
 from src.schemas.unified_reset_schema import UnifiedResetResponse
 
 router = APIRouter(
