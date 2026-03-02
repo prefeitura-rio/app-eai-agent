@@ -6,7 +6,6 @@ from loguru import logger
 from src.db import get_db_session
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.repositories.unified_version_repository import UnifiedVersionRepository
-from src.services.letta.letta_service import letta_service
 from src.services.letta.agents.memory_blocks.agentic_search_mb import (
     get_agentic_search_memory_blocks,
 )
@@ -19,7 +18,7 @@ class AgentConfigService:
     def __init__(self):
         pass
 
-    def _default_config(self, agent_type: str) -> Dict[str, Any]:
+    def _default_config(self) -> Dict[str, Any]:
         """Retorna configuração padrão para um tipo de agente."""
         return {
             "memory_blocks": get_agentic_search_memory_blocks(),
@@ -44,7 +43,7 @@ class AgentConfigService:
             logger.info(
                 f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão (sessão existente)..."
             )
-            default_cfg = self._default_config(agent_type)
+            default_cfg = self._default_config()
             new_cfg = AgentConfigRepository.create_config(
                 db=db,
                 agent_type=agent_type,
@@ -66,7 +65,7 @@ class AgentConfigService:
                 logger.info(
                     f"Nenhuma configuração encontrada para o tipo de agente: {agent_type}. Criando configuração padrão..."
                 )
-                default_cfg = self._default_config(agent_type)
+                default_cfg = self._default_config()
                 new_cfg = AgentConfigRepository.create_config(
                     db=db,
                     agent_type=agent_type,
@@ -138,55 +137,6 @@ class AgentConfigService:
 
         return result
 
-    async def _update_all_agents(
-        self,
-        new_cfg_values: Dict[str, Any],
-        agent_type: str,
-        tags: Optional[List[str]],
-    ) -> Dict[str, bool]:
-        client = letta_service.get_client_async()
-        results: Dict[str, bool] = {}
-        filter_tags = tags if tags else ([agent_type] if agent_type else [])
-        agents = await client.agents.list(tags=filter_tags)
-        if not agents:
-            logger.info(f"Nenhum agente encontrado com as tags: {filter_tags}")
-            return results
-
-        # Obter IDs das ferramentas
-        available_tools = await client.tools.list()
-        tool_ids = [tool.id for tool in available_tools if tool.name in (new_cfg_values.get("tools") or [])]
-
-        for agent in agents:
-            try:
-                memory_blocks = await client.agents.blocks.list(agent_id=agent.id)
-                memory_blocks_ids = [block.id for block in memory_blocks if block.name in new_cfg_values.get("memory_blocks")]
-                
-                for memory_block_id in memory_blocks_ids:
-                    await client.blocks.delete(memory_block_id)
-                
-                new_memory_blocks_ids = []
-                
-                for memory_block in new_cfg_values.get("memory_blocks"):
-                  memory_block = await client.blocks.create(
-                    label=memory_block["label"],
-                    value=memory_block["value"],
-                    limit=memory_block["limit"],
-                  )
-                  new_memory_blocks_ids.append(memory_block.id)
-                
-                await client.agents.modify(
-                    agent_id=agent.id,
-                    block_ids=new_memory_blocks_ids,
-                    tool_ids=tool_ids,
-                    model=new_cfg_values.get("model_name"),
-                    embedding=new_cfg_values.get("embedding_name"),
-                )
-                results[agent.id] = True
-            except Exception as agent_error:
-                results[agent.id] = False
-                logger.error(f"Erro ao atualizar agente {agent.id}: {str(agent_error)}")
-        return results
-
     # ------------------------ Histórico ------------------------
     async def get_config_history(
         self, agent_type: str = "agentic_search", limit: int = 10, db: Session = None
@@ -253,7 +203,7 @@ class AgentConfigService:
             
             db.commit()
 
-            default_cfg = self._default_config(agent_type)
+            default_cfg = self._default_config()
             # Para reset, sempre usar versão 1 já que deletamos todo o histórico
             new_cfg = AgentConfigRepository.create_config(
                 db=db,

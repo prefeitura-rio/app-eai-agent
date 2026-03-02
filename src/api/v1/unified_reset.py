@@ -79,7 +79,7 @@ async def unified_reset(
             )
 
             # 5. Criar configuração padrão (versão 1)  
-            default_config = agent_config_service._default_config(agent_type)
+            default_config = agent_config_service._default_config()
             new_config = AgentConfigRepository.create_config(
                 db=db,
                 agent_type=agent_type,

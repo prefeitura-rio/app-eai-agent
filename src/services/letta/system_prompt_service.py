@@ -6,14 +6,13 @@ from loguru import logger
 from src.db import get_db_session
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.repositories.unified_version_repository import UnifiedVersionRepository
-from src.services.letta.letta_service import letta_service
-from src.models.system_prompt_model import SystemPrompt, SystemPromptDeployment
+from src.models.system_prompt_model import SystemPrompt
 
 
 class SystemPromptService:
     """
     Serviço para gerenciar system prompts dos agentes.
-    Permite atualizar o system prompt e os agentes existentes.
+    Mantém apenas operações de versionamento/estado em banco.
     """
 
     def __init__(self):
@@ -86,85 +85,6 @@ class SystemPromptService:
             logger.error(f"Erro ao obter/criar system prompt do banco: {str(e)}")
             raise
 
-    async def update_all_agents_system_prompt(
-        self,
-        new_prompt: str,
-        agent_type: str = "agentic_search",
-        tags: Optional[List[str]] = None,
-        db: Session = None,
-        prompt_id: str = None,
-    ) -> Dict[str, bool]:
-        """
-        Atualiza o system prompt de todos os agentes existentes do tipo especificado.
-
-        Args:
-            new_prompt: Novo texto para o system prompt
-            agent_type: Tipo do agente
-            tags: Filtrar agentes por tags específicas
-            db: Sessão do banco de dados
-            prompt_id: ID do prompt no banco de dados
-
-        Returns:
-            Dict[str, bool]: Dicionário com agent_id: status da atualização
-        """
-        client = letta_service.get_client_async()
-        results = {}
-
-        try:
-            filter_tags = (
-                tags
-                if tags
-                else (["agentic_search"] if agent_type == "agentic_search" else [])
-            )
-            agents = await client.agents.list(tags=filter_tags)
-
-            if not agents:
-                logger.info(f"Nenhum agente encontrado com as tags: {filter_tags}")
-                return results
-
-            for agent in agents:
-                try:
-                    await client.agents.modify(agent_id=agent.id, system=new_prompt)
-                    results[agent.id] = True
-                    logger.info(f"System prompt atualizado para o agente: {agent.id}")
-
-                    if db and prompt_id:
-                        SystemPromptRepository.create_deployment(
-                            db=db,
-                            prompt_id=prompt_id,
-                            agent_id=agent.id,
-                            agent_type=agent_type,
-                            status="success",
-                            details={
-                                "tags": agent.tags if hasattr(agent, "tags") else []
-                            },
-                        )
-
-                except Exception as agent_error:
-                    results[agent.id] = False
-                    logger.error(
-                        f"Erro ao atualizar agente {agent.id}: {str(agent_error)}"
-                    )
-
-                    if db and prompt_id:
-                        SystemPromptRepository.create_deployment(
-                            db=db,
-                            prompt_id=prompt_id,
-                            agent_id=agent.id,
-                            agent_type=agent_type,
-                            status="failed",
-                            details={
-                                "error": str(agent_error),
-                                "tags": agent.tags if hasattr(agent, "tags") else [],
-                            },
-                        )
-
-            return results
-
-        except Exception as e:
-            logger.error(f"Erro ao atualizar agents: {str(e)}")
-            return results
-
     async def update_system_prompt(
         self,
         new_prompt: str,
@@ -173,7 +93,7 @@ class SystemPromptService:
         db: Session = None,
     ) -> Dict[str, any]:
         """
-        Atualiza o system prompt no banco de dados e em todos os agentes existentes.
+        Atualiza o system prompt no banco de dados.
 
         Args:
             new_prompt: Novo texto para o system prompt

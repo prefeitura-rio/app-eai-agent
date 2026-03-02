@@ -21,13 +21,16 @@ router = APIRouter(
     dependencies=[Depends(validar_token)],
 )
 
+DEFAULT_AGENT_TYPE = "agentic_search"
+
 
 @router.get("", response_model=AgentConfigGetResponse)
 async def get_agent_config(
-    agent_type: str = "agentic_search", db: Session = Depends(get_db)
+    agent_type: str = DEFAULT_AGENT_TYPE, db: Session = Depends(get_db)
 ):
     """Obtém a configuração atual (ativa) para o tipo de agente especificado."""
     try:
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
         cfg = await agent_config_service.get_current_config(agent_type, db)
         active_cfg = AgentConfigRepository.get_active_config(db, agent_type)
         return AgentConfigGetResponse(
@@ -57,7 +60,7 @@ async def get_agent_config(
 async def update_agent_config(
     request: AgentConfigUpdateRequest = Body(...), db: Session = Depends(get_db)
 ):
-    """Atualiza a configuração do agente e, opcionalmente, propaga para agentes existentes."""
+    """Atualiza a configuração do agente no banco de dados."""
     try:
         new_cfg_values = {
             "memory_blocks": request.memory_blocks,
@@ -68,7 +71,7 @@ async def update_agent_config(
 
         result = await agent_config_service.update_agent_configs(
             new_cfg_values=new_cfg_values,
-            agent_type=request.agent_type,
+            agent_type=(request.agent_type or "").strip() or DEFAULT_AGENT_TYPE,
             metadata=request.metadata,
             db=db,
         )
@@ -91,12 +94,13 @@ async def update_agent_config(
 
 @router.get("/history", response_model=AgentConfigHistoryResponse)
 async def get_agent_config_history(
-    agent_type: str = "agentic_search",
+    agent_type: str = DEFAULT_AGENT_TYPE,
     limit: int = Query(10, ge=1, description="Limite de resultados"),
     db: Session = Depends(get_db),
 ):
     """Obtém histórico de configurações."""
     try:
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
         history = await agent_config_service.get_config_history(agent_type, limit, db)
         configs = [AgentConfigHistoryItem(**item) for item in history]
         return AgentConfigHistoryResponse(agent_type=agent_type, configs=configs)
@@ -139,16 +143,12 @@ async def get_agent_config_by_id(config_id: str, db: Session = Depends(get_db)):
 
 @router.delete("/reset", response_model=AgentConfigResetResponse)
 async def reset_agent_config(
-    agent_type: str = Query(..., description="Tipo do agente para resetar config"),
+    agent_type: str = Query(DEFAULT_AGENT_TYPE, description="Tipo do agente para resetar config"),
     db: Session = Depends(get_db),
 ):
     """Remove todas as configs e restaura padrão."""
     try:
-        if not agent_type or agent_type.strip() == "":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="É necessário especificar um tipo de agente válido",
-            )
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
 
         result = await agent_config_service.reset_agent_config(
             agent_type=agent_type, db=db

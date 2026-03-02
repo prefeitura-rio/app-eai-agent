@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, Body, HTTPException, status, Query
-from typing import Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from src.core.security.dependencies import validar_token
 from src.db import get_db
 from src.services.letta.system_prompt_service import system_prompt_service
-from src.services.letta.letta_service import letta_service
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.schemas.system_prompt_schema import (
     SystemPromptUpdateRequest,
@@ -23,28 +21,12 @@ router = APIRouter(
     dependencies=[Depends(validar_token)],
 )
 
-
-@router.get("/agent-types", response_model=List[str])
-async def get_agent_types():
-    """
-    Obtém os tipos de agentes disponíveis baseados nas tags que contêm 'agentic'.
-
-    Returns:
-        List[str]: Lista de tags de agentes
-    """
-    try:
-        agent_types = await letta_service.get_agentic_tags()
-        return agent_types
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter tipos de agentes: {str(e)}",
-        )
+DEFAULT_AGENT_TYPE = "agentic_search"
 
 
 @router.get("", response_model=SystemPromptGetResponse)
 async def get_system_prompt(
-    agent_type: str = "agentic_search", db: Session = Depends(get_db)
+    agent_type: str = DEFAULT_AGENT_TYPE, db: Session = Depends(get_db)
 ):
     """
     Obtém o system prompt atual para o tipo de agente especificado.
@@ -57,11 +39,7 @@ async def get_system_prompt(
         SystemPromptGetResponse: Resposta contendo o system prompt atual
     """
     try:
-        if not agent_type or agent_type.strip() == "":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="É necessário especificar um tipo de agente válido",
-            )
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
 
         prompt_text = await system_prompt_service.get_current_system_prompt(
             agent_type, db
@@ -104,7 +82,7 @@ async def update_system_prompt(
     try:
         result = await system_prompt_service.update_system_prompt(
             new_prompt=request.new_prompt,
-            agent_type=request.agent_type,
+            agent_type=(request.agent_type or "").strip() or DEFAULT_AGENT_TYPE,
             metadata=request.metadata,
             db=db,
         )
@@ -128,7 +106,7 @@ async def update_system_prompt(
 
 @router.get("/history", response_model=SystemPromptHistoryResponse)
 async def get_system_prompt_history(
-    agent_type: str = "agentic_search",
+    agent_type: str = DEFAULT_AGENT_TYPE,
     limit: int = Query(10, ge=1, description="Limite de resultados"),
     db: Session = Depends(get_db),
 ):
@@ -144,6 +122,7 @@ async def get_system_prompt_history(
         SystemPromptHistoryResponse: Histórico de versões
     """
     try:
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
         history = await system_prompt_service.get_prompt_history(
             agent_type=agent_type, limit=limit, db=db
         )
@@ -197,7 +176,7 @@ async def get_system_prompt_by_id(prompt_id: str, db: Session = Depends(get_db))
 
 @router.delete("/last", response_model=SystemPromptDeleteResponse)
 async def delete_last_system_prompt(
-    agent_type: str = Query(..., description="Tipo do agente"),
+    agent_type: str = Query(DEFAULT_AGENT_TYPE, description="Tipo do agente"),
     db: Session = Depends(get_db),
 ):
     """
@@ -218,11 +197,7 @@ async def delete_last_system_prompt(
         HTTPException 500: Se houver erro durante a operação
     """
     try:
-        if not agent_type or agent_type.strip() == "":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="É necessário especificar um tipo de agente válido",
-            )
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
 
         result = await system_prompt_service.delete_last_system_prompt(
             agent_type=agent_type, db=db
@@ -249,7 +224,7 @@ async def delete_last_system_prompt(
 
 @router.delete("/reset", response_model=SystemPromptResetResponse)
 async def reset_system_prompt(
-    agent_type: str = Query(..., description="Tipo do agente para resetar o prompt"),
+    agent_type: str = Query(DEFAULT_AGENT_TYPE, description="Tipo do agente para resetar o prompt"),
     db: Session = Depends(get_db),
 ):
     """
@@ -264,11 +239,7 @@ async def reset_system_prompt(
         SystemPromptResetResponse: Resposta contendo o resultado da operação
     """
     try:
-        if not agent_type or agent_type.strip() == "":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="É necessário especificar um tipo de agente válido",
-            )
+        agent_type = (agent_type or "").strip() or DEFAULT_AGENT_TYPE
 
         result = await system_prompt_service.reset_system_prompt(
             agent_type=agent_type, db=db
