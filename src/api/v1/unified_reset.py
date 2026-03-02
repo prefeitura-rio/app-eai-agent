@@ -100,6 +100,7 @@ async def unified_reset(
                 db=db,
                 agent_type=agent_type,
                 change_type="both",
+                version_number=1,
                 prompt_id=new_prompt.prompt_id,
                 config_id=new_config.config_id,
                 author="System",

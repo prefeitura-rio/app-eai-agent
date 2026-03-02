@@ -45,6 +45,15 @@ interface ResetResponse {
   message: string;
 }
 
+interface DeleteVersionResponse {
+  success: boolean;
+  version_number: number;
+  version_display?: string;
+  active_version?: number;
+  reactivated_version?: number;
+  message: string;
+}
+
 interface UnifiedHistoryResponse {
   items: HistoryItem[];
 }
@@ -88,6 +97,14 @@ export const saveChanges = async (payload: SavePayload, token: string) => {
 export const resetAgent = async (agentType: string, token: string) => {
   const url = `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}`;
   return await apiRequest<ResetResponse>(url, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+};
+
+export const deleteVersion = async (agentType: string, versionNumber: number, token: string) => {
+  const url = `${API_BASE_URL}/api/v1/unified-delete?agent_type=${encodeURIComponent(agentType)}&version_number=${versionNumber}`;
+  return await apiRequest<DeleteVersionResponse>(url, {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` }
   });

@@ -12,6 +12,7 @@ class UnifiedDeleteResponse(BaseModel):
     prompt_id: Optional[str] = Field(None, description="ID do prompt excluído")
     config_id: Optional[str] = Field(None, description="ID da configuração excluída")
     deployments_deleted: int = Field(default=0, description="Número de deployments excluídos")
+    active_version: Optional[int] = Field(None, description="Número da versão ativa após a exclusão")
     reactivated_version: Optional[int] = Field(None, description="Número da versão do prompt que foi reativada (se aplicável)")
     reactivated_prompt_id: Optional[str] = Field(None, description="ID do prompt que foi reativado (se aplicável)")
     reactivated_config_version: Optional[int] = Field(None, description="Número da versão do config que foi reativada (se aplicável)")

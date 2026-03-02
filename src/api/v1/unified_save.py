@@ -136,6 +136,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                 db=db,
                 agent_type=request.agent_type,
                 change_type=change_type,
+                version_number=version_number,
                 prompt_id=prompt_id,
                 config_id=config_id,
                 author=request.author or "API",

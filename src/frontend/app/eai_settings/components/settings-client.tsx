@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Save, RotateCcw, Settings, History } from 'lucide-react';
-import { fetchUnifiedHistory, fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
+import { deleteVersion, fetchUnifiedHistory, fetchVersionDetails, saveChanges, resetAgent } from '../services/api';
 
 interface AgentData {
   prompt: string;
@@ -55,6 +55,9 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
   const [isSaveModalOpen, setSaveModalOpen] = useState(false);
   const [author, setAuthor] = useState('');
   const [reason, setReason] = useState('');
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [versionToDelete, setVersionToDelete] = useState<HistoryItem | null>(null);
+  const [isDeletingVersion, setIsDeletingVersion] = useState(false);
   const [isResetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmationText, setResetConfirmationText] = useState('');
 
@@ -196,7 +199,86 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
     }
   };
 
-  const isLoading = isFetchingVersion;
+  const handleOpenDeleteModal = (version: HistoryItem) => {
+    if (isDeletingVersion) return;
+    if (history.length <= 1) return;
+    setVersionToDelete(version);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (isDeletingVersion) return;
+    if (!token || !versionToDelete) return;
+    if (history.length <= 1) return;
+
+    setIsDeletingVersion(true);
+    const deletingVersion = versionToDelete;
+    const filteredHistory = history.filter(
+      (item) => item.version_id !== deletingVersion.version_id
+    );
+    const optimisticHistory = [...filteredHistory]
+      .sort((a, b) => b.version_number - a.version_number)
+      .map((item, idx) => ({ ...item, is_active: idx === 0 }));
+
+    setHistory(optimisticHistory);
+    setDeleteModalOpen(false);
+    setVersionToDelete(null);
+
+    const nextVersion = optimisticHistory[0];
+    if (nextVersion) {
+      setSelectedVersionId(nextVersion.version_id);
+      void handleSelectVersion(nextVersion);
+    } else {
+      setSelectedVersionId(null);
+    }
+
+    try {
+      const result = await deleteVersion(selectedAgent, deletingVersion.version_number, token);
+      const deletedLabel = `v${deletingVersion.version_number}`;
+      const activeMsg = result.active_version
+        ? ` Versão ativa: v${result.active_version}.`
+        : "";
+      toast.success("Histórico Atualizado", { description: `Versão ${deletedLabel} removida.${activeMsg}` });
+
+      void (async () => {
+        try {
+          const historyResponse = await fetchUnifiedHistory(selectedAgent, token);
+          const updatedHistory = historyResponse.items || [];
+          setHistory(updatedHistory);
+
+          const activeVersion = updatedHistory.find((item) => item.is_active) || updatedHistory[0];
+          if (activeVersion) {
+            setSelectedVersionId(activeVersion.version_id);
+          } else {
+            setSelectedVersionId(null);
+          }
+        } catch {
+          // Não interrompe UX se falhar apenas a reconciliação final
+        }
+      })();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Falha ao excluir versão";
+      toast.error("Erro ao Excluir", { description: errorMessage });
+      try {
+        const historyResponse = await fetchUnifiedHistory(selectedAgent, token);
+        const updatedHistory = historyResponse.items || [];
+        setHistory(updatedHistory);
+
+        const activeVersion = updatedHistory.find((item) => item.is_active) || updatedHistory[0];
+        if (activeVersion) {
+          await handleSelectVersion(activeVersion);
+        } else {
+          setSelectedVersionId(null);
+        }
+      } catch {
+        router.refresh();
+      }
+    } finally {
+      setIsDeletingVersion(false);
+    }
+  };
+
+  const isLoading = isFetchingVersion || isDeletingVersion;
 
   return (
     <>
@@ -224,6 +306,16 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
           </div>
         </div>
       </ConfirmationModal>
+
+      <ConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão"
+        description={versionToDelete ? `Deseja excluir a versão ${versionToDelete.metadata.version_display}?` : "Deseja excluir esta versão?"}
+        confirmText={isDeletingVersion ? "Excluindo..." : "Excluir versão"}
+        confirmButtonVariant="destructive"
+      />
 
       <ConfirmationModal
         open={isResetModalOpen}
@@ -282,7 +374,15 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
               </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
-            <VersionHistory history={history} onSelectVersion={handleSelectVersion} selectedVersionId={selectedVersionId} disabled={isLoading} />
+            <VersionHistory
+              history={history}
+              onSelectVersion={handleSelectVersion}
+              onDeleteVersion={handleOpenDeleteModal}
+              selectedVersionId={selectedVersionId}
+              deletingVersionNumber={versionToDelete?.version_number}
+              canDeleteVersions={history.length > 1}
+              disabled={isLoading}
+            />
           </CardContent>
         </Card>
       </div>
