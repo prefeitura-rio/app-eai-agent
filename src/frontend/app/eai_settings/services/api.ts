@@ -22,7 +22,13 @@ interface SavePayload {
 }
 
 interface VersionDetails {
-  prompt: { content: string };
+  prompt?: {
+    content: string;
+    metadata?: {
+      prompt_tokens?: number | null;
+      prompt_tokenizer?: string | null;
+    };
+  };
   config: {
     memory_blocks: ClickUpCard[];
     tools: string[];
@@ -39,6 +45,8 @@ interface SaveResponse {
   message: string;
   prompt_id?: string | null;
   config_id?: string | null;
+  prompt_tokens?: number | null;
+  prompt_tokenizer?: string | null;
 }
 
 interface ResetResponse {

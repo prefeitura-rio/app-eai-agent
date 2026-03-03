@@ -53,6 +53,7 @@ async def get_system_prompt(
                 version=active_prompt.version,
                 prompt_id=active_prompt.prompt_id,
                 created_at=active_prompt.created_at,
+                metadata=active_prompt.prompt_metadata or {},
             )
         else:
             return SystemPromptGetResponse(prompt=prompt_text, agent_type=agent_type)
@@ -164,6 +165,7 @@ async def get_system_prompt_by_id(prompt_id: str, db: Session = Depends(get_db))
             version=prompt.version,
             prompt_id=prompt.prompt_id,
             created_at=prompt.created_at,
+            metadata=prompt.prompt_metadata or {},
         )
     except HTTPException:
         raise

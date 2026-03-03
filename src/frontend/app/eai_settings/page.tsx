@@ -10,6 +10,8 @@ import { HistoryItem } from './components/VersionHistory';
 // Definindo a estrutura dos dados para clareza
 interface AgentData {
   prompt: string;
+  promptTokens?: number | null;
+  promptTokenizer?: string | null;
   config: {
     memory_blocks: string;
     tools: string;
@@ -43,6 +45,8 @@ function SettingsPageContent() {
 
           setAgentData({
             prompt: promptData.prompt || '',
+            promptTokens: promptData.metadata?.prompt_tokens ?? null,
+            promptTokenizer: promptData.metadata?.prompt_tokenizer ?? null,
             config: {
               memory_blocks: JSON.stringify(configData.memory_blocks || [], null, 2),
               tools: (configData.tools || []).join(', '),
@@ -53,7 +57,13 @@ function SettingsPageContent() {
           });
         } catch (error) {
           console.error(`Failed to fetch data for agent ${AGENT_TYPE}:`, error);
-          setAgentData({ prompt: '', config: { memory_blocks: '[]', tools: '', model_name: '', embedding_name: '' }, history: [] });
+          setAgentData({
+            prompt: '',
+            promptTokens: null,
+            promptTokenizer: null,
+            config: { memory_blocks: '[]', tools: '', model_name: '', embedding_name: '' },
+            history: [],
+          });
         }
       };
       getAgentData();

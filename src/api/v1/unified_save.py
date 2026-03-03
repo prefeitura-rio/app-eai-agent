@@ -10,6 +10,7 @@ from src.repositories.unified_version_repository import UnifiedVersionRepository
 from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.services.discord.notification_service import discord_service
+from src.utils.token_estimator import estimate_prompt_tokens
 
 router = APIRouter(
     prefix="/unified-save",
@@ -38,6 +39,8 @@ class UnifiedSaveResponse(BaseModel):
     change_type: str
     prompt_id: Optional[str] = None
     config_id: Optional[str] = None
+    prompt_tokens: Optional[int] = None
+    prompt_tokenizer: Optional[str] = None
     message: str
 
 
@@ -87,6 +90,8 @@ async def save_unified_changes(request: UnifiedSaveRequest):
             
             prompt_id = None
             config_id = None
+            prompt_tokens = None
+            prompt_tokenizer = None
             
             # Obter configuração atual para usar como base (mesmo se não houver mudanças de config)
             current_config = AgentConfigRepository.get_active_config(db, request.agent_type)
@@ -99,6 +104,9 @@ async def save_unified_changes(request: UnifiedSaveRequest):
             
             # Salvar prompt se fornecido
             if has_prompt_changes:
+                prompt_tokens, prompt_tokenizer = await estimate_prompt_tokens(
+                    request.prompt_content or "", model_name_value
+                )
                 prompt = SystemPromptRepository.create_prompt(
                     db=db,
                     agent_type=request.agent_type,
@@ -107,7 +115,9 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                     metadata={
                         "author": request.author or "API",
                         "reason": request.reason or "Alteração via API",
-                        "version_display": version_display
+                        "version_display": version_display,
+                        "prompt_tokens": prompt_tokens,
+                        "prompt_tokenizer": prompt_tokenizer,
                     },
                 )
                 prompt_id = prompt.prompt_id
@@ -145,7 +155,9 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                 metadata={
                     "version_display": version_display,
                     "author": request.author or "API",
-                    "reason": request.reason or "Alteração via API"
+                    "reason": request.reason or "Alteração via API",
+                    "prompt_tokens": prompt_tokens,
+                    "prompt_tokenizer": prompt_tokenizer,
                 },
             )
 
@@ -154,6 +166,8 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                 "version_display": version_display,
                 "prompt_id": str(prompt_id) if prompt_id else None,
                 "config_id": str(config_id) if config_id else None,
+                "prompt_tokens": prompt_tokens,
+                "prompt_tokenizer": prompt_tokenizer,
             })
 
             # Send Discord notification for production environment

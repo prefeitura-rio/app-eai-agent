@@ -17,6 +17,8 @@ import { deleteVersion, fetchUnifiedHistory, fetchVersionDetails, saveChanges, r
 
 interface AgentData {
   prompt: string;
+  promptTokens?: number | null;
+  promptTokenizer?: string | null;
   config: {
     memory_blocks: string;
     tools: string;
@@ -40,6 +42,12 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
   // Estado dos campos do formulário
   const selectedAgent = selectedAgentType;
   const [promptContent, setPromptContent] = useState(agentData.prompt);
+  const [promptTokens, setPromptTokens] = useState<number | null>(
+    agentData.promptTokens ?? null
+  );
+  const [promptTokenizer, setPromptTokenizer] = useState<string | null>(
+    agentData.promptTokenizer ?? null
+  );
   const [clickUpCards, setClickUpCards] = useState(agentData.config.memory_blocks);
   const [tools, setTools] = useState(agentData.config.tools);
   const [modelName, setModelName] = useState(agentData.config.model_name);
@@ -79,6 +87,13 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
     try {
       const versionDetails = await fetchVersionDetails(version, selectedAgent, token);
       if (versionDetails.prompt) setPromptContent(versionDetails.prompt.content || '');
+      if (versionDetails.prompt?.metadata) {
+        setPromptTokens(versionDetails.prompt.metadata.prompt_tokens ?? null);
+        setPromptTokenizer(versionDetails.prompt.metadata.prompt_tokenizer ?? null);
+      } else {
+        setPromptTokens(null);
+        setPromptTokenizer(null);
+      }
       if (versionDetails.config) {
         const config = versionDetails.config;
         setClickUpCards(JSON.stringify(config.memory_blocks || [], null, 2));
@@ -96,6 +111,8 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
   // Sincroniza o estado do cliente com as props, reseta o estado 'dirty' e seleciona a versão ativa
   useEffect(() => {
     setPromptContent(agentData.prompt);
+    setPromptTokens(agentData.promptTokens ?? null);
+    setPromptTokenizer(agentData.promptTokenizer ?? null);
     setClickUpCards(agentData.config.memory_blocks);
     setTools(agentData.config.tools);
     setModelName(agentData.config.model_name);
@@ -154,11 +171,19 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
           model_name: modelName || undefined,
         },
       };
+      if (typeof result.prompt_tokens === 'number') {
+        optimisticItem.metadata.prompt_tokens = result.prompt_tokens;
+      }
+      if (result.prompt_tokenizer) {
+        optimisticItem.metadata.prompt_tokenizer = result.prompt_tokenizer;
+      }
 
       setHistory((prev) => [
         optimisticItem,
         ...prev.map((item) => ({ ...item, is_active: false })),
       ]);
+      setPromptTokens(result.prompt_tokens ?? null);
+      setPromptTokenizer(result.prompt_tokenizer ?? null);
       setSelectedVersionId(tempVersionId);
 
       void (async () => {
@@ -352,7 +377,17 @@ export default function SettingsClient({ agentData, selectedAgentType }: Setting
               </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-8 pt-4">
-            <PromptEditor promptContent={promptContent} onPromptChange={setPromptContent} disabled={isLoading} />
+            <PromptEditor
+              promptContent={promptContent}
+              onPromptChange={(content) => {
+                setPromptContent(content);
+                setPromptTokens(null);
+              }}
+              promptTokens={promptTokens}
+              promptTokenizer={promptTokenizer}
+              showTokenizer={false}
+              disabled={isLoading}
+            />
             <AgentConfiguration
               clickUpCards={clickUpCards} onClickUpCardsChange={setClickUpCards}
               tools={tools} onToolsChange={setTools}
