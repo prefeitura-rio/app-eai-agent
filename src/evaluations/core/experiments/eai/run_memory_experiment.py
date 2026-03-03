@@ -28,12 +28,12 @@ EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 # ========================================
 
 # Escolha qual versão rodar: "v1" ou "v2"
-VERSION = "v1"  # Altere aqui para "v2" quando quiser testar memória restrita
+VERSION = "v2"  # Altere aqui para "v2" quando quiser testar memória restrita
 
 # IDs dos reasoning engines (configure com seus IDs reais ou use None para padrão)
 REASONING_ENGINE_IDS = {
     "v1": None,  # Memória Total - None usa o engine padrão
-    "v2": "3875545391445311488",  # Memória Restrita - ou None para padrão
+    "v2": "5697391078693404672",  # Memória Restrita - ou None para padrão
 }
 
 # Descrições automáticas por versão
