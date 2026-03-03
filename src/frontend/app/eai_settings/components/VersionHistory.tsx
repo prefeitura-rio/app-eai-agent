@@ -18,6 +18,8 @@ export interface HistoryItem {
   reason?: string;
   metadata: {
     version_display: string;
+    prompt_tokens?: number | null;
+    prompt_tokenizer?: string | null;
   };
   config?: {
     tools?: string[];

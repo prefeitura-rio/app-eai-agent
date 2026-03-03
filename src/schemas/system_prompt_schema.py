@@ -58,6 +58,9 @@ class SystemPromptGetResponse(BaseModel):
     created_at: Optional[datetime] = Field(
         None, description="Data de criação do prompt"
     )
+    metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Metadados do prompt"
+    )
 
     class Config:
         json_schema_extra = {
@@ -67,6 +70,10 @@ class SystemPromptGetResponse(BaseModel):
                 "version": 3,
                 "prompt_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
                 "created_at": "2023-05-16T14:30:15.123456",
+                "metadata": {
+                    "prompt_tokens": 1234,
+                    "prompt_tokenizer": "cl100k_base",
+                },
             }
         }
 
