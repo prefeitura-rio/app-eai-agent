@@ -12,13 +12,6 @@ INFISICAL_HOST = getenv_or_action("INFISICAL_HOST", action="ignore")
 INFISICAL_TOKEN = getenv_or_action("INFISICAL_TOKEN", action="ignore")
 INFISICAL_PROJECT_ID = getenv_or_action("INFISICAL_PROJECT_ID", action="ignore")
 
-LETTA_API_URL = getenv_or_action("LETTA_API_URL", action="ignore")
-LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN", action="ignore")
-
-LETTA_STREAM_TIMEOUT = 300
-LETTA_STREAM_RETRY_ATTEMPTS = 3
-LETTA_STREAM_RETRY_DELAY = 2.0
-
 EAI_AGENT_URL = getenv_or_action("EAI_AGENT_URL", action="ignore")
 EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN", action="ignore")
 

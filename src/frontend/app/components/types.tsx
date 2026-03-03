@@ -40,7 +40,7 @@ export interface Annotation {
 }
 
 export interface OrderedStep {
-  type: 'reasoning_message' | 'tool_call_message' | 'tool_return_message' | 'assistant_message' | 'letta_usage_statistics';
+  type: 'reasoning_message' | 'tool_call_message' | 'tool_return_message' | 'assistant_message' | 'usage_statistics';
   message: {
     reasoning?: string;
     tool_call?: {

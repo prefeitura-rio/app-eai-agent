@@ -6,7 +6,7 @@ from loguru import logger
 from src.db import get_db_session
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.repositories.unified_version_repository import UnifiedVersionRepository
-from src.services.letta.agents.memory_blocks.agentic_search_mb import (
+from src.services.agent_settings.memory_blocks import (
     get_agentic_search_memory_blocks,
 )
 from src.config import env

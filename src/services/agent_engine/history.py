@@ -66,14 +66,14 @@ class GoogleAgentEngineHistory:
         messages = checkpoint.get("channel_values", {}).get("messages", [])
         # logger.info(messages)
 
-        letta_payload = to_gateway_format(
+        gateway_payload = to_gateway_format(
             messages=messages,
             thread_id=user_id,
             session_timeout_seconds=session_timeout_seconds,
             use_whatsapp_format=use_whatsapp_format,
         )
 
-        return user_id, letta_payload.get("data", {}).get("messages", [])
+        return user_id, gateway_payload.get("data", {}).get("messages", [])
 
     async def get_history_bulk(
         self,
