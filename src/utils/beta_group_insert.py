@@ -191,6 +191,8 @@ class BetaGroupManager:
             
             try:
                 response = requests.get(url, headers=self.get_headers(), params=params)
+                # print(self.get_headers())
+                # print(response.text)
                 response.raise_for_status()
                 
                 data = response.json()
