@@ -204,7 +204,8 @@ class GoogleAgentEngineHistory:
             SELECT 
                 thread_id,
                 checkpoint_ts::text
-            FROM "public"."thread_ids_2"
+            FROM "public"."thread_ids"
+            WHERE checkpoint_ts >= $1::timestamptz
         """
 
         # Use direct asyncpg connection to execute the query
@@ -212,7 +213,7 @@ class GoogleAgentEngineHistory:
         
         conn = await asyncpg.connect(conn_string, ssl=self._get_ssl_param())
         try:
-            rows = await conn.fetch(query)
+            rows = await conn.fetch(query, last_update)
             user_ids_infos = [
                 {
                     "user_id": row["thread_id"],
