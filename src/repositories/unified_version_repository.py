@@ -60,6 +60,7 @@ class UnifiedVersionRepository:
         reason: Optional[str] = None,
         description: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        auto_commit: bool = True,
     ) -> UnifiedVersion:
         """
         Cria uma nova versão no controle unificado.
@@ -74,6 +75,8 @@ class UnifiedVersionRepository:
             reason: Motivo da alteração
             description: Descrição detalhada
             metadata: Metadados adicionais
+            auto_commit: Se True (padrão), faz commit após criar a versão. Se False,
+                apenas faz flush — útil quando o chamador gerencia a transação.
             
         Returns:
             UnifiedVersion: Nova versão criada
@@ -94,8 +97,11 @@ class UnifiedVersionRepository:
         )
         
         db.add(version)
-        db.commit()
-        db.refresh(version)
+        if auto_commit:
+            db.commit()
+            db.refresh(version)
+        else:
+            db.flush()
         
         return version
 

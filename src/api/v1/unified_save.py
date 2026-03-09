@@ -119,6 +119,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                         "prompt_tokens": prompt_tokens,
                         "prompt_tokenizer": prompt_tokenizer,
                     },
+                    auto_commit=False,
                 )
                 prompt_id = prompt.prompt_id
 
@@ -138,6 +139,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                         "reason": request.reason or "Alteração via API",
                         "version_display": version_display
                     },
+                    auto_commit=False,
                 )
                 config_id = config.config_id
 
@@ -159,6 +161,7 @@ async def save_unified_changes(request: UnifiedSaveRequest):
                     "prompt_tokens": prompt_tokens,
                     "prompt_tokenizer": prompt_tokenizer,
                 },
+                auto_commit=False,
             )
 
             result.update({

@@ -76,6 +76,7 @@ async def unified_reset(
                     "reason": "Reset unificado automaticamente",
                     "version_display": version_display
                 },
+                auto_commit=False,
             )
 
             # 5. Criar configuração padrão (versão 1)  
@@ -93,6 +94,7 @@ async def unified_reset(
                     "reason": "Reset unificado automaticamente",
                     "version_display": version_display
                 },
+                auto_commit=False,
             )
 
             # 6. Criar entrada de versão unificada (versão 1)
@@ -111,6 +113,7 @@ async def unified_reset(
                     "reason": "Reset unificado automaticamente",
                     "version_display": version_display
                 },
+                auto_commit=False,
             )
 
             result["unified_version"] = unified_version.version_number
