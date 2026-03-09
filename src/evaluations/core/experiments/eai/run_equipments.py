@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from pathlib import Path
 from datetime import datetime
 
@@ -84,17 +85,18 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 20
+    MAX_CONCURRENCY = int(os.getenv("EAI_MAX_CONCURRENCY", "12"))
+    RATE_LIMIT_RPM = int(os.getenv("EAI_RATE_LIMIT_RPM", "1200"))
 
     runner = AsyncExperimentRunner(
         experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
-        experiment_description="gemini-2.5-flash",
+        experiment_description="EAí - gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
         # upload_to_bq=False,
         output_dir=EXPERIMENT_DATA_PATH,
-        rate_limit_requests_per_minute=10000,
+        rate_limit_requests_per_minute=RATE_LIMIT_RPM,
         # reasoning_engine_id="3875545391445311488", #DHARMA_REASONING_ENGINE_ID
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
