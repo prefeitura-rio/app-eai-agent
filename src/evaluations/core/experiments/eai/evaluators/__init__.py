@@ -98,6 +98,12 @@ from src.evaluations.core.experiments.eai.evaluators.typesense import (
     TypesenseActivateEvaluator,
 )
 
+from src.evaluations.core.experiments.eai.evaluators.disaster_eval import (
+    ToolUsageEvaluator,
+    CivilDefenseDisasterResponseEvaluator,
+    ResponseQualityEvaluator,
+)
+
 __all__ = [
     "GoldenLinkInAnswerEvaluator",
     "GoldenLinkInToolCallingEvaluator",
@@ -128,4 +134,7 @@ __all__ = [
     "BaseTypesenseEvaluator",
     "TypesenseHasMatchEvaluator",
     "TypesenseActivateEvaluator",
+    "ToolUsageEvaluator",
+    "CivilDefenseDisasterResponseEvaluator",
+    "ResponseQualityEvaluator",
 ]

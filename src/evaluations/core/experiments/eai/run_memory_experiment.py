@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from pathlib import Path
 from datetime import datetime
 
@@ -28,7 +29,7 @@ EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 # ========================================
 
 # Escolha qual versão rodar: "v1" ou "v2"
-VERSION = "v2"  # Altere aqui para "v2" quando quiser testar memória restrita
+VERSION = "v1"  # Altere aqui para "v2" quando quiser testar memória restrita
 
 # IDs dos reasoning engines (configure com seus IDs reais ou use None para padrão)
 REASONING_ENGINE_IDS = {
@@ -121,17 +122,19 @@ async def run_experiment(
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 20
+    MAX_CONCURRENCY = int(os.getenv("EAI_MAX_CONCURRENCY", "12"))
+    RATE_LIMIT_RPM = int(os.getenv("EAI_RATE_LIMIT_RPM", "1200"))
 
     runner = AsyncExperimentRunner(
-        experiment_name=f"eai-memory-{version}-{datetime.now().strftime('%Y-%m-%d')}",
+        experiment_name=f"eai-memory-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
+        # experiment_name=f"eai-memory-{version}-{datetime.now().strftime('%Y-%m-%d')}",
         experiment_description=description or f"Memory test - {version}",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
         # upload_to_bq=False,  # Descomente para não fazer upload ao BigQuery
         output_dir=EXPERIMENT_DATA_PATH,
-        rate_limit_requests_per_minute=1000,
+        rate_limit_requests_per_minute=RATE_LIMIT_RPM,
         reasoning_engine_id=reasoning_engine_id,
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
