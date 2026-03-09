@@ -161,6 +161,7 @@ async def delete_unified_version(
                 )
 
                 if prompt_refs == 0:
+                    savepoint = db.begin_nested()
                     try:
                         deployments_deleted = SystemPromptRepository.delete_deployments_by_prompt_ids(
                             db, [str(prompt_id)]
@@ -173,10 +174,10 @@ async def delete_unified_version(
                         if prompt_deleted:
                             items_deleted.append("prompt")
                             logger.info(f"Prompt {prompt_id} excluído com sucesso")
-                        db.commit()
+                        savepoint.commit()
                     except Exception as e:
                         logger.warning(f"Erro ao excluir prompt/deployments {prompt_id}: {str(e)}")
-                        db.rollback()
+                        savepoint.rollback()
                 else:
                     logger.info(
                         f"Prompt {prompt_id} mantido: ainda referenciado por {prompt_refs} versão(ões)"
@@ -193,15 +194,16 @@ async def delete_unified_version(
                 )
 
                 if config_refs == 0:
+                    savepoint = db.begin_nested()
                     try:
                         config_deleted = AgentConfigRepository.delete_config_by_id(db, str(config_id))
                         if config_deleted:
                             items_deleted.append("config")
                             logger.info(f"Config {config_id} excluído com sucesso")
-                        db.commit()
+                        savepoint.commit()
                     except Exception as e:
                         logger.warning(f"Erro ao excluir config {config_id}: {str(e)}")
-                        db.rollback()
+                        savepoint.rollback()
                 else:
                     logger.info(
                         f"Config {config_id} mantido: ainda referenciado por {config_refs} versão(ões)"
