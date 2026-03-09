@@ -28,21 +28,39 @@ class GoogleAgentEngineHistory:
             await self._checkpointer_ctx.__aexit__(exc_type, exc_val, exc_tb)
         return False
 
+    @staticmethod
+    def _get_ssl_enabled() -> bool:
+        """Returns True if SSL should be used, False when DB_SSL is set to 'false'/'0'/'no'."""
+        return str(env.DB_SSL).lower() not in ('false', '0', 'no')
+
     @classmethod
-    def create(cls) -> "GoogleAgentEngineHistory":
-        """Factory method to create instance with connection string"""
-        # Build connection string from PG_URI or individual env vars
+    def _get_ssl_param(cls):
+        """Returns the ssl parameter value for asyncpg.connect(): None (default) or False."""
+        return None if cls._get_ssl_enabled() else False
+
+    @classmethod
+    def _build_conn_string(cls) -> str:
+        """Build a connection string from env vars, honouring DB_SSL."""
         if hasattr(env, 'PG_URI') and env.PG_URI:
             conn_string = env.PG_URI
+            if not cls._get_ssl_enabled() and 'sslmode' not in conn_string:
+                separator = '&' if '?' in conn_string else '?'
+                conn_string = f"{conn_string}{separator}sslmode=disable"
         else:
-            # Fallback to building from individual components
             user = getattr(env, 'DATABASE_USER', 'postgres')
             password = getattr(env, 'DATABASE_PASSWORD', '')
             host = getattr(env, 'DATABASE_HOST', 'localhost')
             port = getattr(env, 'DATABASE_PORT', '5432')
             database = getattr(env, 'DATABASE', 'postgres')
             conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-        return cls(conn_string)
+            if not cls._get_ssl_enabled():
+                conn_string = f"{conn_string}?sslmode=disable"
+        return conn_string
+
+    @classmethod
+    def create(cls) -> "GoogleAgentEngineHistory":
+        """Factory method to create instance with connection string"""
+        return cls(cls._build_conn_string())
 
     async def get_checkpointer(self) -> AsyncPostgresSaver:
         return self._checkpointer
@@ -108,24 +126,15 @@ class GoogleAgentEngineHistory:
         import asyncpg
 
         try:
-            # Build connection string
-            if hasattr(env, 'PG_URI') and env.PG_URI:
-                conn_string = env.PG_URI
-            else:
-                user = getattr(env, 'DATABASE_USER', 'postgres')
-                password = getattr(env, 'DATABASE_PASSWORD', '')
-                host = getattr(env, 'DATABASE_HOST', 'localhost')
-                port = getattr(env, 'DATABASE_PORT', '5432')
-                database = getattr(env, 'DATABASE', 'postgres')
-                conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-            
+            conn_string = self._build_conn_string()
+
             query = f"""
                 DELETE 
                 FROM "public"."{table_id}" 
                 WHERE thread_id = $1
             """
             
-            conn = await asyncpg.connect(conn_string)
+            conn = await asyncpg.connect(conn_string, ssl=self._get_ssl_param())
             try:
                 result = await conn.execute(query, user_id)
                 # Extract number of deleted rows from result string like "DELETE 5"
@@ -199,17 +208,9 @@ class GoogleAgentEngineHistory:
         """
 
         # Use direct asyncpg connection to execute the query
-        if hasattr(env, 'PG_URI') and env.PG_URI:
-            conn_string = env.PG_URI
-        else:
-            user = getattr(env, 'DATABASE_USER', 'postgres')
-            password = getattr(env, 'DATABASE_PASSWORD', '')
-            host = getattr(env, 'DATABASE_HOST', 'localhost')
-            port = getattr(env, 'DATABASE_PORT', '5432')
-            database = getattr(env, 'DATABASE', 'postgres')
-            conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        conn_string = self._build_conn_string()
         
-        conn = await asyncpg.connect(conn_string)
+        conn = await asyncpg.connect(conn_string, ssl=self._get_ssl_param())
         try:
             rows = await conn.fetch(query)
             user_ids_infos = [
