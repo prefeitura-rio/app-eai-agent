@@ -115,17 +115,16 @@ async def get_user_history(
         HistoryResponse: List of formatted messages for the user
     """
     try:
-        # Initialize the history service
-        history_service = await GoogleAgentEngineHistory.create()
+        # Initialize the history service using context manager
+        async with GoogleAgentEngineHistory.create() as history_service:
+            # Get the history for the single user
+            _, messages = await history_service._get_single_user_history(
+                user_id=request.user_id,
+                session_timeout_seconds=request.session_timeout_seconds,
+                use_whatsapp_format=request.use_whatsapp_format,
+            )
 
-        # Get the history for the single user
-        _, messages = await history_service._get_single_user_history(
-            user_id=request.user_id,
-            session_timeout_seconds=request.session_timeout_seconds,
-            use_whatsapp_format=request.use_whatsapp_format,
-        )
-
-        return HistoryResponse(data=messages)
+            return HistoryResponse(data=messages)
 
     except Exception as e:
         logger.exception(f"Error retrieving history for user {request.user_id}")
@@ -146,17 +145,16 @@ async def get_bulk_user_history(
         BulkHistoryResponse: Dictionary mapping user_id to their message history
     """
     try:
-        # Initialize the history service
-        history_service = await GoogleAgentEngineHistory.create()
+        # Initialize the history service using context manager
+        async with GoogleAgentEngineHistory.create() as history_service:
+            # Get the history for multiple users
+            bulk_history = await history_service.get_history_bulk(
+                user_ids=request.user_ids,
+                session_timeout_seconds=request.session_timeout_seconds,
+                use_whatsapp_format=request.use_whatsapp_format,
+            )
 
-        # Get the history for multiple users
-        bulk_history = await history_service.get_history_bulk(
-            user_ids=request.user_ids,
-            session_timeout_seconds=request.session_timeout_seconds,
-            use_whatsapp_format=request.use_whatsapp_format,
-        )
-
-        return BulkHistoryResponse(data=bulk_history)
+            return BulkHistoryResponse(data=bulk_history)
 
     except Exception as e:
         logger.exception(f"Error retrieving bulk history for users {request.user_ids}")
@@ -177,13 +175,12 @@ async def delete_user_history(
         DeleteHistoryResponse: Results of the deletion operation for both tables
     """
     try:
-        # Initialize the history service
-        history_service = await GoogleAgentEngineHistory.create()
+        # Initialize the history service using context manager
+        async with GoogleAgentEngineHistory.create() as history_service:
+            # Delete user history from both tables
+            result = await history_service.delete_user_history(user_id=request.user_id)
 
-        # Delete user history from both tables
-        result = await history_service.delete_user_history(user_id=request.user_id)
-
-        return DeleteHistoryResponse(**result)
+            return DeleteHistoryResponse(**result)
 
     except Exception as e:
         logger.exception(f"Error deleting history for user {request.user_id}")

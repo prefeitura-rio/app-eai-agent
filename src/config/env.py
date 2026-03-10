@@ -12,15 +12,11 @@ INFISICAL_HOST = getenv_or_action("INFISICAL_HOST", action="ignore")
 INFISICAL_TOKEN = getenv_or_action("INFISICAL_TOKEN", action="ignore")
 INFISICAL_PROJECT_ID = getenv_or_action("INFISICAL_PROJECT_ID", action="ignore")
 
-LETTA_API_URL = getenv_or_action("LETTA_API_URL", action="ignore")
-LETTA_API_TOKEN = getenv_or_action("LETTA_API_TOKEN", action="ignore")
-
-LETTA_STREAM_TIMEOUT = 300
-LETTA_STREAM_RETRY_ATTEMPTS = 3
-LETTA_STREAM_RETRY_DELAY = 2.0
-
 EAI_AGENT_URL = getenv_or_action("EAI_AGENT_URL", action="ignore")
 EAI_AGENT_TOKEN = getenv_or_action("EAI_AGENT_TOKEN", action="ignore")
+
+EAI_AGENT_URL_PROD = getenv_or_action("EAI_AGENT_URL_PROD", action="ignore")
+EAI_AGENT_TOKEN_PROD = getenv_or_action("EAI_AGENT_TOKEN_PROD", action="ignore")
 
 LLM_MODEL = getenv_or_action("LLM_MODEL", action="ignore")
 EMBEDDING_MODEL = getenv_or_action("EMBEDDING_MODEL", action="ignore")
@@ -39,7 +35,17 @@ ISSUE_AGENT_ENABLE_SLEEPTIME = (
     getenv_or_action("ISSUE_AGENT_ENABLE_SLEEPTIME", action="ignore").lower() == "false"
 )
 
+# Database configuration
+# Primary method: Use PG_URI connection string
 PG_URI = getenv_or_action("PG_URI", action="ignore")
+
+# Alternative method: Use individual DATABASE_* variables (fallback if PG_URI not set)
+DATABASE_USER = getenv_or_action("DATABASE_USER", default="postgres", action="ignore")
+DATABASE_PASSWORD = getenv_or_action("DATABASE_PASSWORD", default="", action="ignore")
+DATABASE_HOST = getenv_or_action("DATABASE_HOST", default="localhost", action="ignore")
+DATABASE_PORT = getenv_or_action("DATABASE_PORT", default="5432", action="ignore")
+DATABASE = getenv_or_action("DATABASE", default="postgres", action="ignore")
+
 # --- Conexão direta (TCP) ao Postgres ---
 # Usado quando não queremos depender da SQL Admin API/Connector
 DB_SSL = getenv_or_action("DB_SSL", default="true", action="ignore")

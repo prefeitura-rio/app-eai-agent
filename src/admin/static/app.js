@@ -2,11 +2,9 @@
 const loginForm = document.getElementById("loginForm");
 const adminPanel = document.getElementById("adminPanel");
 const alertArea = document.getElementById("alertArea");
-const agentTypeSelect = document.getElementById("agentType");
 const loadingIndicator = document.getElementById("loadingIndicator");
 const contentArea = document.getElementById("contentArea");
 const promptText = document.getElementById("promptText");
-const updateAgentsCheckbox = document.getElementById("updateAgents");
 const copyButton = document.getElementById("copyButton");
 const historyList = document.getElementById("historyList");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -35,6 +33,7 @@ let isHistoryItemView = false; // Nova variável para rastrear se estamos visual
 
 // API base URL - ajustar de acordo com o ambiente
 const API_BASE_URL = "https://services.staging.app.dados.rio/eai-agent";
+const DEFAULT_AGENT_TYPE = "agentic_search";
 
 // Configuração inicial
 document.addEventListener("DOMContentLoaded", function () {
@@ -46,12 +45,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // Verificar se já existe um token salvo
   if (currentToken) {
     showAdminPanel();
-    // Não chamar loadData() aqui - será chamado após carregamento dos tipos de agentes
+    loadData();
   }
 
   // Event Listeners
   loginForm.addEventListener("submit", handleLogin);
-  agentTypeSelect.addEventListener("change", loadData);
   saveAllButton.addEventListener("click", handleSaveAll);
   logoutBtn.addEventListener("click", handleLogout);
   copyButton.addEventListener("click", handleCopyPrompt);
@@ -63,8 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Adicionar event listener global para itens de histórico
   document.addEventListener("click", function (e) {
-    consique detectado em:", e.target);
-
     // Não interceptar cliques em editores/inputs para permitir seleção de texto
     if (
       e.target.matches(
@@ -86,18 +82,6 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       e.stopPropagation();
     }
-  });
-
-  // Adicionar listener para o evento de tipos de agentes carregados
-  document.addEventListener("agentTypesLoaded", function (e) {
-
-    // Aguardar um momento para garantir que o valor do select esteja estável
-    setTimeout(() => {
-
-      loadData();
-      // Garantir que a interface esteja corretamente exibida
-      checkPromptInterface();
-    }, 100);
   });
 
   // Adicionar debug específico para o historyList
@@ -207,11 +191,8 @@ function handleLogin(e) {
       currentToken = token;
       errorMsg.classList.add("d-none");
       showAdminPanel();
-
-      // Disparar o evento para carregar tipos de agentes
-      document.dispatchEvent(new Event("agentTypesReady"));
-
-      // Não chamar loadData() aqui - será chamado após carregamento dos tipos de agentes
+      loadData();
+      checkPromptInterface();
     })
     .catch((error) => {
       errorMsg.textContent = "Token inválido ou erro de conexão";
@@ -226,7 +207,7 @@ function handleLogout() {
 }
 
 function handleSaveAll() {
-  const agentType = agentTypeSelect.value;
+  const agentType = DEFAULT_AGENT_TYPE;
   const newPrompt = promptText.value;
 
   // Verificar se o prompt está vazio
@@ -367,20 +348,17 @@ function proceedWithUnifiedSave(
 ) {
   showLoading();
 
-  const updateAgents = updateAgentsCheckbox.checked;
-
   // Usar novo endpoint unificado para salvar tudo em uma única versão
   const unifiedPayload = {
     agent_type: agentType,
     prompt_content: newPrompt,
-    memory_blocks: memoryBlocksArray,
+    clickup_cards: memoryBlocksArray,
     tools: toolsInput.value
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean),
     model_name: modelNameInput.value.trim() || null,
     embedding_name: embeddingNameInput.value.trim() || null,
-    update_agents: updateAgents,
     author: author,
     reason: reason,
   };
@@ -472,7 +450,7 @@ function showCopyFeedback() {
 // Funções de dados
 function loadData() {
   showLoading();
-  const agentType = agentTypeSelect.value;
+  const agentType = DEFAULT_AGENT_TYPE;
 
   // Resetar o estado de visualização de histórico
   isHistoryItemView = false;
@@ -792,12 +770,6 @@ function checkPromptInterface() {
   }
 }
 
-// Verificar a interface quando os tipos de agentes forem carregados
-document.addEventListener("agentTypesReady", function () {
-  // Aguardar um momento para garantir que a interface seja carregada
-  setTimeout(checkPromptInterface, 1000);
-});
-
 // Verificar novamente quando a página for totalmente carregada
 window.addEventListener("load", function () {
   setTimeout(checkPromptInterface, 1500);
@@ -815,7 +787,7 @@ function selectBackendUnifiedVersion(item) {
   // Usar o endpoint de detalhes de versão para obter dados completos
   apiRequest(
     "GET",
-    `${API_BASE_URL}/api/v1/unified-history/version/${item.version_number}?agent_type=${agentTypeSelect.value}`
+    `${API_BASE_URL}/api/v1/unified-history/version/${item.version_number}?agent_type=${DEFAULT_AGENT_TYPE}`
   )
     .then((versionDetails) => {
 
@@ -879,7 +851,7 @@ function updateActiveBackendHistoryItem(selectedItem) {
 
 // ---------------------- RESET ALL ----------------------
 function handleResetAll() {
-  const agentType = agentTypeSelect.value;
+  const agentType = DEFAULT_AGENT_TYPE;
 
   if (
     !confirm(
@@ -891,12 +863,10 @@ function handleResetAll() {
 
   showLoading();
 
-  const updateAgents = updateAgentsCheckbox.checked;
-
   // Usar o novo endpoint de reset unificado
   apiRequest(
     "DELETE",
-    `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}&update_agents=${updateAgents}`
+    `${API_BASE_URL}/api/v1/unified-reset?agent_type=${agentType}`
   )
     .then((response) => {
       hideLoading();

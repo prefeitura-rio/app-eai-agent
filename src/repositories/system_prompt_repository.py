@@ -17,6 +17,7 @@ class SystemPromptRepository:
         content: str,
         version: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        auto_commit: bool = True,
     ) -> SystemPrompt:
         """
         Cria um novo system prompt.
@@ -27,6 +28,8 @@ class SystemPromptRepository:
             content: Conteúdo do system prompt
             version: Versão do prompt (se None, será incrementado automaticamente)
             metadata: Metadados adicionais
+            auto_commit: Se True (padrão), faz commit após criar o prompt. Se False,
+                apenas faz flush — útil quando o chamador gerencia a transação.
 
         Returns:
             SystemPrompt: Novo system prompt criado
@@ -78,8 +81,12 @@ class SystemPromptRepository:
                 )
 
                 db.add(prompt)
-                db.commit()
-                db.refresh(prompt)
+                if auto_commit:
+                    db.commit()
+                else:
+                    db.flush()
+                if auto_commit:
+                    db.refresh(prompt)
 
                 return prompt
                 

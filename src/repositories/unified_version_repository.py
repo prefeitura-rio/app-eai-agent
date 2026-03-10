@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
 from src.models.unified_version_model import UnifiedVersion
+from src.models.system_prompt_model import SystemPrompt
+from src.models.agent_config_model import AgentConfig
 
 
 class UnifiedVersionRepository:
@@ -12,6 +14,8 @@ class UnifiedVersionRepository:
     def get_next_version_number(db: Session, agent_type: str) -> int:
         """
         Obtém o próximo número de versão para um tipo de agente.
+        Considera todas as tabelas versionadas para evitar colisões
+        quando houver buracos no histórico unificado.
         
         Args:
             db: Sessão do banco de dados
@@ -20,25 +24,43 @@ class UnifiedVersionRepository:
         Returns:
             int: Próximo número de versão
         """
-        latest_version = (
+        latest_unified_version = (
             db.query(func.max(UnifiedVersion.version_number))
             .filter(UnifiedVersion.agent_type == agent_type)
             .scalar()
         )
-        
-        return (latest_version or 0) + 1
+        latest_prompt_version = (
+            db.query(func.max(SystemPrompt.version))
+            .filter(SystemPrompt.agent_type == agent_type)
+            .scalar()
+        )
+        latest_config_version = (
+            db.query(func.max(AgentConfig.version))
+            .filter(AgentConfig.agent_type == agent_type)
+            .scalar()
+        )
+
+        latest_version = max(
+            latest_unified_version or 0,
+            latest_prompt_version or 0,
+            latest_config_version or 0,
+        )
+
+        return latest_version + 1
 
     @staticmethod
     def create_version(
         db: Session,
         agent_type: str,
         change_type: str,
+        version_number: Optional[int] = None,
         prompt_id: Optional[str] = None,
         config_id: Optional[str] = None,
         author: Optional[str] = None,
         reason: Optional[str] = None,
         description: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        auto_commit: bool = True,
     ) -> UnifiedVersion:
         """
         Cria uma nova versão no controle unificado.
@@ -53,11 +75,14 @@ class UnifiedVersionRepository:
             reason: Motivo da alteração
             description: Descrição detalhada
             metadata: Metadados adicionais
+            auto_commit: Se True (padrão), faz commit após criar a versão. Se False,
+                apenas faz flush — útil quando o chamador gerencia a transação.
             
         Returns:
             UnifiedVersion: Nova versão criada
         """
-        version_number = UnifiedVersionRepository.get_next_version_number(db, agent_type)
+        if version_number is None:
+            version_number = UnifiedVersionRepository.get_next_version_number(db, agent_type)
         
         version = UnifiedVersion(
             agent_type=agent_type,
@@ -72,8 +97,11 @@ class UnifiedVersionRepository:
         )
         
         db.add(version)
-        db.commit()
-        db.refresh(version)
+        if auto_commit:
+            db.commit()
+            db.refresh(version)
+        else:
+            db.flush()
         
         return version
 

@@ -33,7 +33,7 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                     case "tool_call_message": return Wrench;
                     case "tool_return_message": return LogIn;
                     case "assistant_message": return MessageSquare;
-                    case "letta_usage_statistics": return BarChart;
+                    case "usage_statistics": return BarChart;
                     default: return Lightbulb;
                 }
             };
@@ -146,7 +146,7 @@ export default function ReasoningTimeline({ orderedSteps }: ReasoningTimelinePro
                         title = `Mensagem do Assistente`;
                         content = <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(step.message.content || '') as string) }} />;
                         break;
-                    case "letta_usage_statistics":
+                    case "usage_statistics":
                         title = "Estatísticas de Uso";
                         content = (
                             <div className="text-sm grid grid-cols-3 gap-2">

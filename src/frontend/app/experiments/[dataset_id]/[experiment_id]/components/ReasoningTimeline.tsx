@@ -78,8 +78,122 @@ const renderContent = (content: unknown, messageType: string): React.ReactNode =
                                             {(() => {
                                                 const entries = Object.entries(obj.tool_return);
                                                 
-                                                // If it's google_search, order the fields specifically
+                                                // If it's google_search, get fields from the nested "text" object
                                                 if (obj.name === 'google_search') {
+                                                    const textEntry = entries.find(([key]) => key === 'text');
+                                                    if (textEntry) {
+                                                        let textObject: Record<string, unknown> | null = null;
+                                                        
+                                                        // Try to parse if it's a JSON string
+                                                        if (typeof textEntry[1] === 'string') {
+                                                            try {
+                                                                textObject = JSON.parse(textEntry[1]);
+                                                            } catch {
+                                                                // If parsing fails, it's just a regular string
+                                                                return (
+                                                                    <div className="space-y-1">
+                                                                        <div className="pl-4">
+                                                                            <div
+                                                                                className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(textEntry[1]) as string) }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        } else if (typeof textEntry[1] === 'object' && textEntry[1] !== null) {
+                                                            textObject = textEntry[1] as Record<string, unknown>;
+                                                        }
+                                                        
+                                                        // Now handle the parsed object
+                                                        if (textObject) {
+                                                            // Check if it has a nested "text" field (tool_return["text"]["text"])
+                                                            if (textObject.text && typeof textObject.text === 'object') {
+                                                                const nestedTextObject = textObject.text as Record<string, unknown>;
+                                                                const nestedEntries = Object.entries(nestedTextObject);
+                                                                
+                                                                return nestedEntries.map(([key, value]) => (
+                                                                    <div key={key} className="space-y-1">
+                                                                        <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
+                                                                        <div className="pl-4">
+                                                                            {key === 'sources' ? (
+                                                                                <Accordion type="single" collapsible className="w-full">
+                                                                                    <AccordionItem value="sources" className="border-none">
+                                                                                        <AccordionTrigger className="text-xs p-2 hover:no-underline">
+                                                                                            Ver Fontes
+                                                                                        </AccordionTrigger>
+                                                                                        <AccordionContent>
+                                                                                            {typeof value === 'string' ? (
+                                                                                                <div
+                                                                                                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                                                    {JSON.stringify(value, null, 2)}
+                                                                                                </pre>
+                                                                                            )}
+                                                                                        </AccordionContent>
+                                                                                    </AccordionItem>
+                                                                                </Accordion>
+                                                                            ) : typeof value === 'string' ? (
+                                                                                <div
+                                                                                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                                />
+                                                                            ) : (
+                                                                                <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                                    {JSON.stringify(value, null, 2)}
+                                                                                </pre>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                ));
+                                                            } else {
+                                                                // Handle tool_return["text"] format - display each field separately
+                                                                const directEntries = Object.entries(textObject);
+                                                                return directEntries.map(([key, value]) => (
+                                                                    <div key={key} className="space-y-1">
+                                                                        <h5 className="font-medium text-xs capitalize text-muted-foreground">{key.replace(/_/g, ' ')}</h5>
+                                                                        <div className="pl-4">
+                                                                            {key === 'sources' ? (
+                                                                                <Accordion type="single" collapsible className="w-full">
+                                                                                    <AccordionItem value="sources" className="border-none">
+                                                                                        <AccordionTrigger className="text-xs p-2 hover:no-underline">
+                                                                                            Ver Fontes
+                                                                                        </AccordionTrigger>
+                                                                                        <AccordionContent>
+                                                                                            {typeof value === 'string' ? (
+                                                                                                <div
+                                                                                                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                                                    {JSON.stringify(value, null, 2)}
+                                                                                                </pre>
+                                                                                            )}
+                                                                                        </AccordionContent>
+                                                                                    </AccordionItem>
+                                                                                </Accordion>
+                                                                            ) : typeof value === 'string' ? (
+                                                                                <div
+                                                                                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap"
+                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(value) as string) }}
+                                                                                />
+                                                                            ) : (
+                                                                                <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground overflow-auto">
+                                                                                    {JSON.stringify(value, null, 2)}
+                                                                                </pre>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                ));
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    // Final fallback: use original logic
                                                     const orderedFields = ['text', 'web_search_queries', 'sources', 'id'];
                                                     const orderedEntries = [];
                                                     

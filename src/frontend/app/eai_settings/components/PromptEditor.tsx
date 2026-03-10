@@ -10,11 +10,22 @@ import { Copy, Check } from 'lucide-react';
 interface PromptEditorProps {
   promptContent: string;
   onPromptChange: (content: string) => void;
+  promptTokens?: number | null;
+  promptTokenizer?: string | null;
+  showTokenizer?: boolean;
   disabled?: boolean;
 }
 
-export default function PromptEditor({ promptContent, onPromptChange, disabled }: PromptEditorProps) {
+export default function PromptEditor({
+  promptContent,
+  onPromptChange,
+  promptTokens,
+  promptTokenizer,
+  showTokenizer = false,
+  disabled,
+}: PromptEditorProps) {
   const [hasCopied, setHasCopied] = useState(false);
+  const charCount = promptContent.length;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(promptContent);
@@ -38,6 +49,19 @@ export default function PromptEditor({ promptContent, onPromptChange, disabled }
             <p>Copiar</p>
           </TooltipContent>
         </Tooltip>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span className="rounded-md border border-border bg-muted px-2 py-1">
+          Tokens: {typeof promptTokens === 'number' ? promptTokens.toLocaleString('pt-BR') : '-'}
+        </span>
+        <span className="rounded-md border border-border bg-muted px-2 py-1">
+          Caracteres: {charCount.toLocaleString('pt-BR')}
+        </span>
+        {showTokenizer && promptTokenizer && (
+          <span className="rounded-md border border-border bg-muted px-2 py-1">
+            {promptTokenizer}
+          </span>
+        )}
       </div>
       <Textarea
         id="prompt-editor"

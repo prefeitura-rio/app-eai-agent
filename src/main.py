@@ -41,11 +41,6 @@ for _log in ["httpcore._trace", "httpx._client"]:
     _logger.propagate = False
     _logger.setLevel(logging.DEBUG)
 
-_logger = logging.getLogger("src.services.letta")
-_logger.handlers = [InterceptHandler()]
-_logger.propagate = False
-_logger.setLevel(logging.DEBUG)
-
 # Configurar loguru
 logger.configure(
     handlers=[

@@ -739,7 +739,7 @@ function renderEvaluations(annotations) {
  * FIX: The logic for `sequenceCounter` was refined to correctly number distinct logical turns.
  * The `sequenceCounter` now increments for `reasoning_message` and `assistant_message` types,
  * and `tool_call_message` and `tool_return_message` use the current prefix from the most recent
- * reasoning/assistant message. `letta_usage_statistics` does not receive a prefix.
+ * reasoning/assistant message. `usage_statistics` does not receive a prefix.
  */
 function renderReasoningTimeline(orderedSteps) {
   if (!elements.reasoningTimelineContainer) return;
@@ -873,7 +873,7 @@ function renderReasoningTimeline(orderedSteps) {
           title = `Mensagem do Assistente`;
           content = marked.parse(step.message.content);
           break;
-        case "letta_usage_statistics":
+        case "usage_statistics":
           isNumberedStep = false; // This step should not be numbered
           iconClass = "timeline-icon-stats"; // Specific icon class for stats
           icon = "bi-bar-chart-fill";

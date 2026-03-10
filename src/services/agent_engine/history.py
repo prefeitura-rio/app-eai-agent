@@ -5,38 +5,64 @@ from src.utils.log import logger
 from src.config import env
 from src.services.agent_engine.message_formatter import to_gateway_format
 
-from langchain_google_cloud_sql_pg import PostgresSaver, PostgresEngine, PostgresLoader
-from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 
 class GoogleAgentEngineHistory:
-    def __init__(self, checkpointer: PostgresSaver):
-        self._checkpointer = checkpointer
+    def __init__(self, conn_string: str):
+        self._conn_string = conn_string
+        self._checkpointer = None
+        self._checkpointer_ctx = None
+
+    async def __aenter__(self):
+        """Enter async context manager - initialize checkpointer"""
+        self._checkpointer_ctx = AsyncPostgresSaver.from_conn_string(self._conn_string)
+        self._checkpointer = await self._checkpointer_ctx.__aenter__()
+        await self._checkpointer.setup()
+        logger.info("AsyncPostgresSaver inicializado com sucesso")
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit async context manager - cleanup checkpointer"""
+        if self._checkpointer_ctx:
+            await self._checkpointer_ctx.__aexit__(exc_type, exc_val, exc_tb)
+        return False
+
+    @staticmethod
+    def _get_ssl_enabled() -> bool:
+        """Returns True if SSL should be used, False when DB_SSL is set to 'false'/'0'/'no'."""
+        return str(env.DB_SSL).lower() not in ('false', '0', 'no')
 
     @classmethod
-    async def create(cls) -> "GoogleAgentEngineHistory":
-        """Factory method para criar uma instância com checkpointer inicializado"""
-        url = env.PG_URI
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    def _get_ssl_param(cls):
+        """Returns the ssl parameter value for asyncpg.connect(): None (default) or False."""
+        return None if cls._get_ssl_enabled() else False
 
-        connect_args = {}
-        if env.DB_SSL.lower() in ("false", "0", "no"):
-            connect_args = {"ssl": False}
+    @classmethod
+    def _build_conn_string(cls) -> str:
+        """Build a connection string from env vars, honouring DB_SSL."""
+        if hasattr(env, 'PG_URI') and env.PG_URI:
+            conn_string = env.PG_URI
+            if not cls._get_ssl_enabled() and 'sslmode' not in conn_string:
+                separator = '&' if '?' in conn_string else '?'
+                conn_string = f"{conn_string}{separator}sslmode=disable"
+        else:
+            user = getattr(env, 'DATABASE_USER', 'postgres')
+            password = getattr(env, 'DATABASE_PASSWORD', '')
+            host = getattr(env, 'DATABASE_HOST', 'localhost')
+            port = getattr(env, 'DATABASE_PORT', '5432')
+            database = getattr(env, 'DATABASE', 'postgres')
+            conn_string = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+            if not cls._get_ssl_enabled():
+                conn_string = f"{conn_string}?sslmode=disable"
+        return conn_string
 
-        engine = PostgresEngine.from_engine_args(
-            url=url,
-            pool_pre_ping=True,
-            pool_recycle=300,
-            connect_args=connect_args,
-        )
-        checkpointer = await PostgresSaver.create(engine=engine)
-        logger.info("Checkpointer inicializado")
-        return cls(checkpointer)
+    @classmethod
+    def create(cls) -> "GoogleAgentEngineHistory":
+        """Factory method to create instance with connection string"""
+        return cls(cls._build_conn_string())
 
-    async def get_checkpointer(self) -> PostgresSaver:
+    async def get_checkpointer(self) -> AsyncPostgresSaver:
         return self._checkpointer
 
     async def _get_single_user_history(
@@ -46,23 +72,26 @@ class GoogleAgentEngineHistory:
         use_whatsapp_format: bool = True,
     ) -> tuple[str, list]:
         """Método auxiliar para processar histórico de um único usuário"""
-        config = RunnableConfig(configurable={"thread_id": user_id})
+        config = {"configurable": {"thread_id": user_id}}
 
-        state = await self._checkpointer.aget(config=config)
-        if not state:
+        # Use aget_tuple (same as the working script)
+        checkpoint_tuple = await self._checkpointer.aget_tuple(config)
+        
+        if not checkpoint_tuple:
             return user_id, []
-
-        messages = state.get("channel_values", {}).get("messages", [])
+        
+        checkpoint = checkpoint_tuple.checkpoint
+        messages = checkpoint.get("channel_values", {}).get("messages", [])
         # logger.info(messages)
 
-        letta_payload = to_gateway_format(
+        gateway_payload = to_gateway_format(
             messages=messages,
             thread_id=user_id,
             session_timeout_seconds=session_timeout_seconds,
             use_whatsapp_format=use_whatsapp_format,
         )
 
-        return user_id, letta_payload.get("data", {}).get("messages", [])
+        return user_id, gateway_payload.get("data", {}).get("messages", [])
 
     async def get_history_bulk(
         self,
@@ -94,33 +123,32 @@ class GoogleAgentEngineHistory:
 
     async def _delete_user_history(self, user_id: str, table_id: str = "checkpoints"):
         """Deleta o histórico de um usuário específico"""
-        from sqlalchemy import text
+        import asyncpg
 
-        # Definir a função que será executada com a conexão
-        async def execute_delete():
+        try:
+            conn_string = self._build_conn_string()
+
             query = f"""
                 DELETE 
                 FROM "public"."{table_id}" 
-                WHERE thread_id = '{user_id}'
+                WHERE thread_id = $1
             """
-            query_line = " ".join([line.strip() for line in query.split("\n")])
-            pool = self._checkpointer._engine._pool
-            async with pool.connect() as conn:
-                result = await conn.execute(text(query_line))
-                await conn.commit()
-                deleted_count = result.rowcount
-                logger.info(f"Linhas deletadas: {deleted_count}")
-            return deleted_count
-
-        try:
-            # Criar uma coroutine wrapper que chama a função
-            coro = execute_delete()
-            deleted_count = await self._checkpointer._engine._run_as_async(coro)
+            
+            conn = await asyncpg.connect(conn_string, ssl=self._get_ssl_param())
+            try:
+                result = await conn.execute(query, user_id)
+                # Extract number of deleted rows from result string like "DELETE 5"
+                deleted_count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
+                logger.info(f"Linhas deletadas de {table_id}: {deleted_count}")
+            finally:
+                await conn.close()
+            
             return {
                 "result": "success",
                 "deleted_rows": deleted_count,
             }
         except Exception as e:
+            logger.error(f"Erro ao deletar histórico de {table_id}: {e}")
             return {
                 "result": "error",
                 "error": str(e),
@@ -159,55 +187,43 @@ class GoogleAgentEngineHistory:
     async def get_history_bulk_from_last_update(self, last_update: str = "2025-07-25"):
         """
         CREATE VIEW "public"."thread_ids" AS (
-                    WITH tb AS (
-                    SELECT
-                        thread_id,
-                        encode(checkpoint, 'hex') as checkpoint_hex
-                    FROM "public"."checkpoints"
-                    ),
-                    extracted_hex AS (
-                    SELECT
-                        thread_id,
-                        (regexp_matches(
-                        checkpoint_hex,
-                        '((3[0-9]){4}2d(3[0-9]){2}2d(3[0-9]){2}54(3[0-9]){2}3a(3[0-9]){2}3a(3[0-9]){2}2e(3[0-9])+(2b|2d)(3[0-9]){2}3a(3[0-9]){2})'
-                        ))[1] AS timestamp_hex
-                    FROM tb
-                    ),
-                    final_tb AS (
-                    SELECT DISTINCT
-                    thread_id,
-                    (convert_from(decode(timestamp_hex, 'hex'), 'UTF8'))::timestamptz AS checkpoint_ts
-                    FROM extracted_hex
-                    WHERE timestamp_hex IS NOT NULL
-                    )
-
-                    SELECT DISTINCT ON (thread_id)
-                    thread_id,
-                    checkpoint_ts
-                    FROM final_tb
-                    ORDER BY thread_id, checkpoint_ts DESC
+            SELECT DISTINCT ON (thread_id)
+                thread_id,
+                (checkpoint->>'ts')::timestamptz AS checkpoint_ts
+            FROM "public"."checkpoints"
+            WHERE checkpoint->>'ts' IS NOT NULL
+            ORDER BY thread_id, (checkpoint->>'ts')::timestamptz DESC
         );
+        
+        Note: This view now works with JSONB checkpoint column.
+        It extracts the 'ts' field from the checkpoint JSONB object.
         """
+        import asyncpg
 
-        query = f"""
+        query = """
             SELECT 
                 thread_id,
                 checkpoint_ts::text
-            FROM "public"."thread_ids_2"
+            FROM "public"."thread_ids"
+            WHERE checkpoint_ts >= $1::timestamptz
         """
 
-        engine = self._checkpointer._engine
-        loader = await PostgresLoader.create(engine=engine, query=query)
-        docs = await loader.aload()
-        logger.info(docs)
-        user_ids_infos = [
-            {
-                "user_id": doc.page_content,
-                "last_update": doc.metadata["checkpoint_ts"][:19].replace(" ", "T"),
-            }
-            for doc in docs
-        ]
+        # Use direct asyncpg connection to execute the query
+        conn_string = self._build_conn_string()
+        
+        conn = await asyncpg.connect(conn_string, ssl=self._get_ssl_param())
+        try:
+            rows = await conn.fetch(query, last_update)
+            user_ids_infos = [
+                {
+                    "user_id": row["thread_id"],
+                    "last_update": row["checkpoint_ts"][:19].replace(" ", "T"),
+                }
+                for row in rows
+            ]
+        finally:
+            await conn.close()
+        
         logger.info(f"Loaded {len(user_ids_infos)} users")
         user_ids = [info["user_id"] for info in user_ids_infos]
         history_to_save = await self.get_history_bulk(

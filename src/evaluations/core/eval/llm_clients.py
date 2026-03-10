@@ -1,5 +1,7 @@
 import asyncio
 import json
+import os
+import random
 from typing import Optional
 from abc import ABC, abstractmethod
 from src.config import env
@@ -88,15 +90,55 @@ class EAIConversationManager:
         #         "O gerenciador de conversa não foi inicializado. Chame initialize() primeiro."
         #     )
 
+        max_retries = int(os.getenv("EAI_SEND_MAX_RETRIES", "2"))
+        backoff_base_seconds = float(os.getenv("EAI_SEND_BACKOFF_BASE_SECONDS", "0.3"))
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info(
+                    f"Enviando mensagem para o numero ({self.eai_client.provider}) {self.user_number}..."
+                )
+                response = await self.eai_client.send_message_and_get_response(
+                    # agent_id=self.agent_id,
+                    user_number=self.user_number,
+                    message=message,
+                )
+                break
+            except EAIClientError as e:
+                error_text = str(e).lower()
+                is_retryable = (
+                    "status_code=503" in error_text
+                    or "connection refused" in error_text
+                    or "upstream connect error" in error_text
+                    or "disconnect/reset before headers" in error_text
+                )
+
+                if is_retryable and attempt < max_retries:
+                    backoff_seconds = (
+                        backoff_base_seconds * (2 ** (attempt - 1))
+                    ) + random.uniform(0, 0.25)
+                    logger.warning(
+                        f"Falha temporária na chamada do agente (tentativa {attempt}/{max_retries}). "
+                        f"Novo retry em {backoff_seconds:.2f}s. Erro: {e}"
+                    )
+                    await asyncio.sleep(backoff_seconds)
+                    continue
+
+                # Apenas loga e relança a exceção já contextualizada
+                logger.error(e)
+                raise
+            except Exception as e:
+                logger.error(
+                    f"Erro inesperado ao enviar mensagem para o agente: {e}",
+                    exc_info=True,
+                )
+                # Encapsula exceções inesperadas na nossa exceção customizada
+                raise EAIClientError(
+                    message=f"Erro inesperado na comunicação com o agente: {e}",
+                    agent_id=self.user_number,
+                ) from e
+
         try:
-            logger.info(
-                f"Enviando mensagem para o numero ({self.eai_client.provider}) {self.user_number}..."
-            )
-            response = await self.eai_client.send_message_and_get_response(
-                # agent_id=self.agent_id,
-                user_number=self.user_number,
-                message=message,
-            )
             logger.info(f"Resposta recebida do numero: {self.user_number}.")
             response_dict = response.model_dump(exclude_none=True)
 
@@ -137,11 +179,6 @@ class EAIConversationManager:
                 )
 
             return AgentResponse(message=None, reasoning_trace=[])
-
-        except EAIClientError as e:
-            # Apenas loga e relança a exceção já contextualizada
-            logger.error(e)
-            raise
         except Exception as e:
             logger.error(
                 f"Erro inesperado ao enviar mensagem para o agente: {e}", exc_info=True

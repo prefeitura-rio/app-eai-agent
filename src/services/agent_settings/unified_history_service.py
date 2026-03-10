@@ -53,6 +53,7 @@ class UnifiedHistoryService:
         versions = UnifiedVersionRepository.list_versions(
             db=db, agent_type=agent_type, limit=limit
         )
+        active_version_number = versions[0].version_number if versions else None
 
         unified_history = []
         
@@ -143,12 +144,8 @@ class UnifiedHistoryService:
 
             item["preview"] = " | ".join(preview_parts) if preview_parts else "Alteração registrada"
 
-            # Informações sobre status ativo
-            item["is_active"] = False
-            if "prompt" in item and item["prompt"]["is_active"]:
-                item["is_active"] = True
-            if "config" in item and item["config"]["is_active"]:
-                item["is_active"] = True
+            # A versão ativa no histórico unificado é sempre a mais recente restante.
+            item["is_active"] = version.version_number == active_version_number
 
             unified_history.append(item)
 

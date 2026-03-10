@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from pathlib import Path
 from datetime import datetime
 
@@ -43,11 +44,11 @@ async def run_experiment():
 
     loader = DataLoader(
         source="https://docs.google.com/spreadsheets/d/1VPnJSf9puDgZ-Ed9MRkpe3Jy38nKxGLp7O9-ydAdm98/edit?gid=370781785",  # golden dataset
-        #number_rows=3,
+        # number_rows=20,
         id_col="id",
         prompt_col="mensagem_whatsapp_simulada",
-        dataset_name="Rio: Comparação de Modelos - 2026.1",
-        dataset_description="Dataset de avaliacao de modelos do Rio utilizando Google Search como ferramenta de busca",
+        dataset_name="EAí - Refactor Tests",
+        dataset_description="Avaliação de métricas com refatoração do system prompt",
         metadata_cols=[
             "golden_documents_list",
             "golden_answer",
@@ -66,21 +67,17 @@ async def run_experiment():
     evaluators_to_run = [
         # GoldenLinkInAnswerEvaluator(judge_client),
         # GoldenLinkInToolCallingEvaluator(judge_client),
+        ActivateSearchEvaluator(judge_client),
+        AnswerAddressingEvaluator(judge_client),
         AnswerCompletenessEvaluator(judge_client),
         AnswerCompletenessOldEvaluator(judge_client),
-        AnswerAddressingEvaluator(judge_client),
         ClarityEvaluator(judge_client),
-        ActivateSearchEvaluator(judge_client),
-        WhatsAppFormatEvaluator(judge_client),
-        ProactivityEvaluator(judge_client),
         MessageLengthEvaluator(judge_client),
+        ProactivityEvaluator(judge_client),
+        WhatsAppFormatEvaluator(judge_client),
         # HasLinkEvaluator(judge_client),
         # LinkCompletenessEvaluator(judge_client),
         # ToolCallingLinkCompletenessEvaluator(judge_client),
-        # TypesenseFormatEvaluator(judge_client),
-        # SearchPrecisionEvaluator(judge_client), # quantidade de documentos relevantes retornados / total de documentos retornados
-        # SearchRecallEvaluator(judge_client), # quantidade de documentos relevantes retornados / total de documentos relevantes existentes
-        # SearchAveragePrecisionEvaluator(judge_client), # precisão considerando o ranking dos documentos retornados. Maior peso para documentos relevantes no topo da lista
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
@@ -101,13 +98,13 @@ async def run_experiment():
     }
 
     # --- 5. Configuração e Execução do Runner ---
-    MAX_CONCURRENCY = 20
+    MAX_CONCURRENCY = int(os.getenv("EAI_MAX_CONCURRENCY", "12"))
+    RATE_LIMIT_RPM = int(os.getenv("EAI_RATE_LIMIT_RPM", "1200"))
 
     runner = AsyncExperimentRunner(
-        # experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
-        experiment_name=f"Rio-Fast-2.5_{datetime.now().strftime('%Y-%m-%d_%Hh%Mm')}",
-        # experiment_name=f"dharma-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v0.3",
-        experiment_description="Rio Fast 2.5 utilizando o Google Search como ferramenta de busca.",
+        experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
+        # experiment_name=f"Rio-Preview-3.0_{datetime.now().strftime('%Y-%m-%d-%Hh%Mm')}",
+        experiment_description="EAí - gemini-2.5-flash",
         metadata=metadata,
         evaluators=evaluators_to_run,
         max_concurrency=MAX_CONCURRENCY,
@@ -116,9 +113,9 @@ async def run_experiment():
         output_dir=EXPERIMENT_DATA_PATH,
         timeout=300,
         polling_interval=5,
-        rate_limit_requests_per_minute=1000,
-        # reasoning_engine_id="5579399187381878784", # DHARMA_REASONING_ENGINE_ID = 5579399187381878784, RIO_FAST_2.5 = 6324744925711695872
-        reasoning_engine_id="6324744925711695872", #RIO_FAST_2.5 = 6324744925711695872 RIO_PREVIEW_3.0 = 5148050880200704000 RIO_NANO_3.0 = 2180987966321590272
+        rate_limit_requests_per_minute=RATE_LIMIT_RPM,
+        # reasoning_engine_id="5579399187381878784", # DHARMA_REASONING_ENGINE_ID = 5579399187381878784, RIO_FAST_2.5_REASONING_ENGINE_ID = 6324744925711695872
+        # reasoning_engine_id="5148050880200704000", # RIO_FAST_2.5= 6324744925711695872, RIO_NANO_3.0= 2180987966321590272, RIO_3.0_PREVIEW = 5148050880200704000
     )
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):

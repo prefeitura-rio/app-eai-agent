@@ -8,15 +8,12 @@ class AgentConfigUpdateRequest(BaseModel):
     tools: Optional[List[str]] = Field(None, description="Lista de ferramentas")
     model_name: Optional[str] = Field(None, description="Nome do modelo LLM")
     embedding_name: Optional[str] = Field(None, description="Nome do modelo de embedding")
-    update_agents: bool = Field(True, description="Atualizar agentes existentes")
-    tags: Optional[List[str]] = Field(None, description="Filtrar agentes por tags")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Metadados adicionais (autor, motivo, etc.)")
 
 
 class AgentConfigUpdateResponse(BaseModel):
     success: bool
     config_id: Optional[str]
-    agents_updated: Dict[str, bool] = {}
     message: str
 
 
@@ -51,5 +48,4 @@ class AgentConfigHistoryResponse(BaseModel):
 class AgentConfigResetResponse(BaseModel):
     success: bool
     agent_type: str
-    agents_updated: Dict[str, bool] = {}
-    message: str 
+    message: str

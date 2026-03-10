@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.core.security.dependencies import validar_token
 from src.db import get_db
-from src.services.letta.unified_history_service import unified_history_service
+from src.services.agent_settings.unified_history_service import unified_history_service
 from src.schemas.unified_history_schema import (
     UnifiedHistoryResponse,
     UnifiedHistoryItem,

@@ -18,11 +18,16 @@ class AgentConfigRepository:
         embedding_name: Optional[str] = None,
         version: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        auto_commit: bool = True,
     ) -> AgentConfig:
         """Cria uma nova configuração de agente.
 
         Se version não for fornecida, incrementa automaticamente em relação à última ativa.
         Todos os registros ativos anteriores serão desativados.
+
+        Args:
+            auto_commit: Se True (padrão), faz commit após criar a configuração. Se False,
+                apenas faz flush — útil quando o chamador gerencia a transação.
         """
         if version is None:
             latest_cfg = AgentConfigRepository.get_latest_config(db, agent_type)
@@ -46,8 +51,11 @@ class AgentConfigRepository:
         )
 
         db.add(cfg)
-        db.commit()
-        db.refresh(cfg)
+        if auto_commit:
+            db.commit()
+            db.refresh(cfg)
+        else:
+            db.flush()
         return cfg
 
     @staticmethod

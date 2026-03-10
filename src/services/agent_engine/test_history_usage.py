@@ -20,11 +20,11 @@ async def test_bulk_users():
     try:
         start_time = time.time()
 
-        # Testando usando a classe diretamente
-        history_instance = await GoogleAgentEngineHistory.create()
-        results = await history_instance.get_history_bulk(
-            user_ids=user_ids, session_timeout_seconds=10, use_whatsapp_format=True
-        )
+        # Testando usando a classe diretamente com context manager
+        async with GoogleAgentEngineHistory.create() as history_instance:
+            results = await history_instance.get_history_bulk(
+                user_ids=user_ids, session_timeout_seconds=10, use_whatsapp_format=True
+            )
 
         end_time = time.time()
 
@@ -44,18 +44,18 @@ async def test_bulk_users():
 async def test_get_thread_ids():
     """Teste para buscar thread_ids"""
     print("\n=== Teste 2: Thread IDs ===")
-    history_instance = await GoogleAgentEngineHistory.create()
-    results = await history_instance.get_history_bulk_from_last_update(
-        last_update="2025-08-15"
-    )
+    async with GoogleAgentEngineHistory.create() as history_instance:
+        results = await history_instance.get_history_bulk_from_last_update(
+            last_update="2025-08-15"
+        )
     return results
 
 
 async def test_delete_user_history():
     """Teste para buscar thread_ids"""
     print("\n=== Teste 3: Delete Thread IDs ===")
-    history_instance = await GoogleAgentEngineHistory.create()
-    results = await history_instance.delete_user_history(user_id="663509127")
+    async with GoogleAgentEngineHistory.create() as history_instance:
+        results = await history_instance.delete_user_history(user_id="663509127")
     return results
 
 
