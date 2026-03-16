@@ -60,7 +60,7 @@ async def run_golden_tool_experiment():
     MAX_CONCURRENCY = 10
 
     runner = AsyncExperimentRunner(
-        experiment_name=f"golden-tool-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data.get('version', '1')}",
+        experiment_name=f"golden-tool-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data.get('version', '1')}",
         experiment_description="Golden Tool Invocation Accuracy Evaluation",
         metadata=metadata,
         evaluators=evaluators_to_run,
