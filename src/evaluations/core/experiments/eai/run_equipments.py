@@ -90,7 +90,7 @@ async def run_experiment(reasoning_engine_id: str | None = None):
     RATE_LIMIT_RPM = int(os.getenv("EAI_RATE_LIMIT_RPM", "1200"))
 
     runner_kwargs = {
-        "experiment_name": f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+         "experiment_name": f"eai-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
         "experiment_description": "EAí - gemini-2.5-flash",
         "metadata": metadata,
         "evaluators": evaluators_to_run,
