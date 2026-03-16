@@ -1,7 +1,8 @@
+import argparse
+import os
 import subprocess
 import sys
 import time
-import os
 from pathlib import Path
 
 
@@ -15,12 +16,32 @@ SCRIPT_ORDER = [
 ]
 
 
-def run_script(script_path: Path, run_number: int, total_runs: int) -> None:
+def run_script(
+    script_path: Path,
+    run_number: int,
+    total_runs: int,
+    reasoning_engine_id: str | None,
+) -> None:
     print(f"[{run_number}/{total_runs}] Executando {script_path.name}...")
-    subprocess.run([sys.executable, str(script_path)], check=True)
+    cmd = [sys.executable, str(script_path)]
+    if reasoning_engine_id:
+        cmd.extend(["--reasoning-engine-id", reasoning_engine_id])
+    subprocess.run(cmd, check=True)
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run batch experiments (3x each).")
+    parser.add_argument(
+        "--reasoning-engine-id",
+        dest="reasoning_engine_id",
+        default=None,
+        help="ID do reasoning engine a ser usado (opcional).",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
+    args = _parse_args()
     base_dir = Path(__file__).resolve().parent
     total_runs = len(SCRIPT_ORDER) * RUNS_PER_SCRIPT
     current_run = 1
@@ -31,7 +52,7 @@ def main() -> None:
             raise FileNotFoundError(f"Arquivo não encontrado: {script_path}")
 
         for _ in range(RUNS_PER_SCRIPT):
-            run_script(script_path, current_run, total_runs)
+            run_script(script_path, current_run, total_runs, args.reasoning_engine_id)
             if current_run < total_runs:
                 print(
                     f"Aguardando {SLEEP_BETWEEN_RUNS_SECONDS}s antes da próxima execução..."
