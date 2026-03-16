@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import logging
 import os
@@ -29,7 +30,7 @@ from src.evaluations.core.experiments.eai.evaluators.agent_config import (
 EXPERIMENT_DATA_PATH = Path(__file__).parent / "data"
 
 
-async def run_experiment():
+async def run_experiment(reasoning_engine_id: str | None = None):
     """
     Ponto de entrada principal para configurar e executar um experimento de avaliação.
     """
@@ -88,25 +89,40 @@ async def run_experiment():
     MAX_CONCURRENCY = int(os.getenv("EAI_MAX_CONCURRENCY", "12"))
     RATE_LIMIT_RPM = int(os.getenv("EAI_RATE_LIMIT_RPM", "1200"))
 
-    runner = AsyncExperimentRunner(
-        experiment_name=f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
-        experiment_description="EAí - gemini-2.5-flash",
-        metadata=metadata,
-        evaluators=evaluators_to_run,
-        max_concurrency=MAX_CONCURRENCY,
-        # upload_to_bq=False,
-        output_dir=EXPERIMENT_DATA_PATH,
-        rate_limit_requests_per_minute=RATE_LIMIT_RPM,
-        # reasoning_engine_id="3875545391445311488", #DHARMA_REASONING_ENGINE_ID
-    )
+    runner_kwargs = {
+        "experiment_name": f"eai-{datetime.now().strftime('%Y-%m-%d')}-v{prompt_data['version']}",
+        "experiment_description": "EAí - gemini-2.5-flash",
+        "metadata": metadata,
+        "evaluators": evaluators_to_run,
+        "max_concurrency": MAX_CONCURRENCY,
+        # "upload_to_bq": False,
+        "output_dir": EXPERIMENT_DATA_PATH,
+        "rate_limit_requests_per_minute": RATE_LIMIT_RPM,
+    }
+    if reasoning_engine_id:
+        runner_kwargs["reasoning_engine_id"] = reasoning_engine_id
+
+    runner = AsyncExperimentRunner(**runner_kwargs)
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     for i in range(1):
         await runner.run(loader)
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run equipamentos experiment.")
+    parser.add_argument(
+        "--reasoning-engine-id",
+        dest="reasoning_engine_id",
+        default=None,
+        help="ID do reasoning engine a ser usado (opcional).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
     try:
-        asyncio.run(run_experiment())
+        args = _parse_args()
+        asyncio.run(run_experiment(reasoning_engine_id=args.reasoning_engine_id))
     except Exception as e:
         logging.getLogger(__name__).error(
             f"Ocorreu um erro fatal durante a execução do experimento: {e}",
