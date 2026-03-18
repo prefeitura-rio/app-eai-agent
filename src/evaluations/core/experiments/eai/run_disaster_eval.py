@@ -92,7 +92,7 @@ async def run_experiment(reasoning_engine_id: str | None = None):
     )
 
     runner_kwargs = {
-        "experiment_name": f"disaster-eval-{datetime.now().strftime('%Y-%m-%d-%H%M')}-{prompt_data['version']}",
+        "experiment_name": f"disaster-eval-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
         "experiment_description": "Avaliação de respostas sobre desastres hidrológicos com foco em defesa civil",
         "metadata": metadata,
         "evaluators": evaluators_to_run,
