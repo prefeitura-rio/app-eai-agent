@@ -316,6 +316,7 @@ class EAIClient:
         #     f"Message sent to user number ({self.provider}): {user_number} with message_id: {message_id}"
         # )
         start_time = time.time()
+        retry_attempts = 0
         while time.time() - start_time < self.timeout:
             try:
                 response = await self.get_message_response(message_id)
@@ -334,6 +335,11 @@ class EAIClient:
                     )
             except EAIClientError as e:
                 # Ignore 404 Not Found, as it means the response is not ready yet.
+                if e.status_code in (429, 503):
+                    retry_attempts += 1
+                    backoff = min(8.0, 0.5 * (2 ** (retry_attempts - 1)))
+                    await asyncio.sleep(backoff)
+                    continue
                 if e.status_code != 404:
                     raise EAIClientError(
                         message=f"API Error during polling: {e.message}",

@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import logging
 import os
@@ -125,22 +126,36 @@ async def run_experiment(
     MAX_CONCURRENCY = int(os.getenv("EAI_MAX_CONCURRENCY", "12"))
     RATE_LIMIT_RPM = int(os.getenv("EAI_RATE_LIMIT_RPM", "1200"))
 
-    runner = AsyncExperimentRunner(
-        experiment_name=f"eai-memory-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
-        # experiment_name=f"eai-memory-{version}-{datetime.now().strftime('%Y-%m-%d')}",
-        experiment_description=description or f"Memory test - {version}",
-        metadata=metadata,
-        evaluators=evaluators_to_run,
-        max_concurrency=MAX_CONCURRENCY,
-        # upload_to_bq=False,  # Descomente para não fazer upload ao BigQuery
-        output_dir=EXPERIMENT_DATA_PATH,
-        rate_limit_requests_per_minute=RATE_LIMIT_RPM,
-        reasoning_engine_id=reasoning_engine_id,
-    )
+    runner_kwargs = {
+        "experiment_name": f"eai-memory-{datetime.now().strftime('%Y-%m-%d-%H%M')}-v{prompt_data['version']}",
+        # "experiment_name": f"eai-memory-{version}-{datetime.now().strftime('%Y-%m-%d')}",
+        "experiment_description": description or f"Memory test - {version}",
+        "metadata": metadata,
+        "evaluators": evaluators_to_run,
+        "max_concurrency": MAX_CONCURRENCY,
+        # "upload_to_bq": False,  # Descomente para não fazer upload ao BigQuery
+        "output_dir": EXPERIMENT_DATA_PATH,
+        "rate_limit_requests_per_minute": RATE_LIMIT_RPM,
+    }
+    if reasoning_engine_id:
+        runner_kwargs["reasoning_engine_id"] = reasoning_engine_id
+
+    runner = AsyncExperimentRunner(**runner_kwargs)
     logger.info(f"✅ Runner pronto para o experimento: '{runner.experiment_name}'")
     
     # Executa o experimento
     await runner.run(loader)
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run memory experiment.")
+    parser.add_argument(
+        "--reasoning-engine-id",
+        dest="reasoning_engine_id",
+        default=None,
+        help="ID do reasoning engine a ser usado (opcional).",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
@@ -158,8 +173,10 @@ if __name__ == "__main__":
         print("   Edite a variável VERSION no topo do arquivo.")
         exit(1)
     
+    args = _parse_args()
+
     # Pega o reasoning_engine_id (pode ser None para usar o padrão)
-    reasoning_engine_id = REASONING_ENGINE_IDS.get(VERSION)
+    reasoning_engine_id = args.reasoning_engine_id or REASONING_ENGINE_IDS.get(VERSION)
     
     description = DESCRIPTIONS.get(VERSION, f"Memory test - {VERSION}")
     

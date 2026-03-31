@@ -108,6 +108,7 @@ class EAIConversationManager:
                 error_text = str(e).lower()
                 is_retryable = (
                     "status_code=503" in error_text
+                    or "status_code=429" in error_text
                     or "connection refused" in error_text
                     or "upstream connect error" in error_text
                     or "disconnect/reset before headers" in error_text
