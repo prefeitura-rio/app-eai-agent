@@ -9,6 +9,7 @@ from src.repositories.system_prompt_repository import SystemPromptRepository
 from src.repositories.agent_config_repository import AgentConfigRepository
 from src.models.unified_version_model import UnifiedVersion
 from src.models.system_prompt_model import SystemPrompt
+from src.models.agent_config_model import AgentConfig
 from src.schemas.unified_delete_schema import UnifiedDeleteResponse
 
 router = APIRouter(
@@ -209,11 +210,43 @@ async def delete_unified_version(
                         f"Config {config_id} mantido: ainda referenciado por {config_refs} versão(ões)"
                     )
 
-            # 5. A versão ativa é sempre a mais recente remanescente.
+            # 5. Reconciliar flags is_active com a versão unificada mais recente remanescente.
             latest_versions = UnifiedVersionRepository.list_versions(db, agent_type, limit=1)
+            latest_version = latest_versions[0] if latest_versions else None
             result["active_version"] = (
-                latest_versions[0].version_number if latest_versions else None
+                latest_version.version_number if latest_version else None
             )
+
+            # O histórico unificado considera a versão mais recente como ativa.
+            # Precisamos espelhar isso nas tabelas materializadas de prompt/config.
+            db.query(SystemPrompt).filter(
+                SystemPrompt.agent_type == agent_type
+            ).update({"is_active": False})
+            db.query(AgentConfig).filter(
+                AgentConfig.agent_type == agent_type
+            ).update({"is_active": False})
+
+            if latest_version and latest_version.prompt_id:
+                reactivated_prompt = (
+                    db.query(SystemPrompt)
+                    .filter(SystemPrompt.prompt_id == str(latest_version.prompt_id))
+                    .first()
+                )
+                if reactivated_prompt:
+                    reactivated_prompt.is_active = True
+                    result["reactivated_version"] = reactivated_prompt.version
+                    result["reactivated_prompt_id"] = reactivated_prompt.prompt_id
+
+            if latest_version and latest_version.config_id:
+                reactivated_config = (
+                    db.query(AgentConfig)
+                    .filter(AgentConfig.config_id == str(latest_version.config_id))
+                    .first()
+                )
+                if reactivated_config:
+                    reactivated_config.is_active = True
+                    result["reactivated_config_version"] = reactivated_config.version
+                    result["reactivated_config_id"] = reactivated_config.config_id
 
             # Atualizar mensagem com detalhes do que foi excluído
             if items_deleted:
