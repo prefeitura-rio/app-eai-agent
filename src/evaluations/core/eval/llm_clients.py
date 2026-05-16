@@ -90,8 +90,12 @@ class EAIConversationManager:
         #         "O gerenciador de conversa não foi inicializado. Chame initialize() primeiro."
         #     )
 
-        max_retries = int(os.getenv("EAI_SEND_MAX_RETRIES", "2"))
-        backoff_base_seconds = float(os.getenv("EAI_SEND_BACKOFF_BASE_SECONDS", "0.3"))
+        # Defaults bumped 2026-05-16: evals batiam 429 com defaults antigos
+        # (2 tentativas + 0.3s backoff) porque tasks paralelas excediam o
+        # rate-limit do gateway de staging. 5 tentativas com 2s base dão
+        # tempo do gateway recuperar entre tentativas (~2 + 4 + 8 + 16s).
+        max_retries = int(os.getenv("EAI_SEND_MAX_RETRIES", "5"))
+        backoff_base_seconds = float(os.getenv("EAI_SEND_BACKOFF_BASE_SECONDS", "2.0"))
 
         for attempt in range(1, max_retries + 1):
             try:
