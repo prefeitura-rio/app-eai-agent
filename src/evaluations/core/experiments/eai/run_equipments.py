@@ -18,6 +18,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     EquipmentsSpeedEvaluator,
     EquipmentsToolsEvaluator,
     EquipmentsCategoriesEvaluator,
+    TokenUsageBilledEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -66,6 +67,7 @@ async def run_experiment(reasoning_engine_id: str | None = None):
         EquipmentsCorrectnessEvaluator(judge_client),
         EquipmentsSpeedEvaluator(judge_client),
         EquipmentsToolsEvaluator(judge_client),
+        TokenUsageBilledEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]

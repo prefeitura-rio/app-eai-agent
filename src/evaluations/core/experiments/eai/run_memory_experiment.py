@@ -18,6 +18,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     CriticalFactAccuracyEvaluator,
     HallucinationFlagEvaluator,
     TokenUsageTotalEvaluator,
+    TokenUsageBilledEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -96,6 +97,7 @@ async def run_experiment(
         CriticalFactAccuracyEvaluator(judge_client),
         HallucinationFlagEvaluator(judge_client),
         TokenUsageTotalEvaluator(judge_client),
+        TokenUsageBilledEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
