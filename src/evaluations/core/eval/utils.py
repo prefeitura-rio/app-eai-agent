@@ -59,6 +59,7 @@ def parse_reasoning_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, A
                 "total_tokens": msg.get("total_tokens"),
                 "prompt_tokens": msg.get("prompt_tokens"),
                 "completion_tokens": msg.get("completion_tokens"),
+                "cached_tokens": msg.get("cached_tokens"),
                 "step_count": msg.get("step_count"),
                 "steps_messages": msg.get("steps_messages"),
                 "run_ids": msg.get("run_ids"),

@@ -91,6 +91,11 @@ from src.evaluations.core.experiments.eai.evaluators.token_usage_total import (
     TokenUsageTotalEvaluator,
 )
 
+from src.evaluations.core.experiments.eai.evaluators.token_usage_billed import (
+    TokenUsageBilledEvaluator,
+    TokenUsageBilledOneTurnEvaluator,
+)
+
 # Typesense evaluators (new)
 from src.evaluations.core.experiments.eai.evaluators.typesense import (
     BaseTypesenseEvaluator,
@@ -130,6 +135,8 @@ __all__ = [
     "CriticalFactAccuracyEvaluator",
     "HallucinationFlagEvaluator",
     "TokenUsageTotalEvaluator",
+    "TokenUsageBilledEvaluator",
+    "TokenUsageBilledOneTurnEvaluator",
     # Typesense evaluators (new)
     "BaseTypesenseEvaluator",
     "TypesenseHasMatchEvaluator",

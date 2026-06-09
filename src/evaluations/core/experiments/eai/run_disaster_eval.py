@@ -16,6 +16,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     ToolUsageEvaluator,
     CivilDefenseDisasterResponseEvaluator,
     ResponseQualityEvaluator,
+    TokenUsageBilledOneTurnEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -59,6 +60,7 @@ async def run_experiment(reasoning_engine_id: str | None = None):
         ToolUsageEvaluator(judge_client),
         CivilDefenseDisasterResponseEvaluator(judge_client),
         ResponseQualityEvaluator(judge_client),
+        TokenUsageBilledOneTurnEvaluator(judge_client),
     ]
 
     evaluator_names = [e.name for e in evaluators_to_run]
