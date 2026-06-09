@@ -424,6 +424,7 @@ class LangGraphMessageFormatter:
         output_tokens = 0
         total_tokens = 0
         thoughts_tokens = 0
+        cached_tokens = 0
         model_names = set()
 
         for msg in messages_to_process:
@@ -440,6 +441,9 @@ class LangGraphMessageFormatter:
 
             # thoughts (se houver)
             thoughts_tokens += int(usage_md.get("thoughts_token_count", 0) or 0)
+
+            # cached (prefixo servido do cache implícito do Vertex — pra split de custo)
+            cached_tokens += int(usage_md.get("cached_content_token_count", 0) or 0)
 
             # total (geralmente a soma, mas usamos o valor retornado se existir)
             msg_total = int(usage_md.get("total_token_count", 0) or 0)
@@ -466,6 +470,7 @@ class LangGraphMessageFormatter:
             "completion_tokens": total_output_tokens,  # Inclui pensamentos para refletir geração total
             "thoughts_tokens": thoughts_tokens,  # Novo campo para expor o total de tokens de pensamento
             "prompt_tokens": input_tokens,
+            "cached_tokens": cached_tokens,  # Parcela de prompt servida do cache implícito (cached_content_token_count)
             "total_tokens": total_tokens,
             "step_count": len(
                 {m.get("step_id") for m in self.processed_messages if m.get("step_id")}

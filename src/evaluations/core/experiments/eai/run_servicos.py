@@ -28,6 +28,7 @@ from src.evaluations.core.experiments.eai.evaluators import (
     LinkCompletenessEvaluator,
     ToolCallingLinkCompletenessEvaluator,
     AnswerCompletenessOldEvaluator,
+    TokenUsageBilledOneTurnEvaluator,
 )
 from src.evaluations.core.experiments.eai.evaluators.prompts import (
     prompt_data,
@@ -76,6 +77,7 @@ async def run_experiment(reasoning_engine_id: str | None = None):
         MessageLengthEvaluator(judge_client),
         ProactivityEvaluator(judge_client),
         WhatsAppFormatEvaluator(judge_client),
+        TokenUsageBilledOneTurnEvaluator(judge_client),
         # HasLinkEvaluator(judge_client),
         # LinkCompletenessEvaluator(judge_client),
         # ToolCallingLinkCompletenessEvaluator(judge_client),
